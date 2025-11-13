@@ -1,0 +1,106 @@
+.permission-css-check input[type="checkbox"] {
+    font-size: 15px;
+    visibility: hidden;
+    /* transform: scale(1); */
+}
+
+.permission-css-check input[type="checkbox"][checked] {
+    font-size: 15px;
+    visibility: hidden;
+    appearance: none;
+}
+
+.permission-css-check input[type="checkbox"][checked]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.permission-css-check input[type=checkbox] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    -moz-border-colors: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.permission-css-check input[type=checkbox][disabled] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+
+.permission-css-check input[type=checkbox]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+
+}
+
+.permission-css-check input[type=checkbox]:not(:checked):after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.permission-css-check input[type=checkbox]:checked:after {
+    content: "\2714";
+    font-weight: bold;
+}
+
+input[type="checkbox"][disabled] {
+    outline: none !important;
+    -moz-outline: none;
+}
+
+
+.table-css-permission td {
+    height: 46px;
+}
+
+.w_input {
+    width: 30%;
+}
+
+@media screen and (min-width: 360px) and (max-width: 750px) {
+    .w_input {
+        width: 100% !important;
+    }
+
+}

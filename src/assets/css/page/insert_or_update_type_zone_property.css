@@ -1,0 +1,189 @@
+.wrap-insert-or-update-type-zone-property-item {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 10px;
+}
+
+.wrap-insert-or-update-type-zone-property-item-check {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    margin: 0px !important;
+    padding: 0px !important;
+    cursor: pointer;
+}
+
+.wrap-insert-or-update-type-zone-property-item-label {
+    align-self: center;
+    min-width: 100px;
+    margin: 0px !important;
+    padding: 0px !important;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+}
+
+.wrap-insert-or-update-type-zone-property-item-check-item {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.wrap-insert-or-update-type-zone-property-item-check-item-radio {
+    cursor: pointer;
+}
+
+.wrap-insert-or-update-type-zone-property-item-check-item-label {
+    margin: 0px !important;
+    padding: 0px !important;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+    margin-left: 5px !important;
+    cursor: pointer;
+}
+
+.wrap-insert-or-update-type-zone-property-item-label {
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+}
+
+.wrap-insert-or-update-type-zone-property-item-input {
+    flex: 1;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+    border: 1px solid var(--color-aqua);
+    padding: 5px;
+    width: 100%;
+}
+
+.wrap-insert-or-update-type-zone-property-add {
+    margin-top: 5px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.wrap-insert-or-update-type-zone-property-add-button {
+    background-color: var(--color-green);
+    border: none;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-white);
+    padding: 5px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wrap-insert-or-update-type-zone-property-area-list {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.wrap-insert-or-update-type-zone-property-area-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 45%;
+    margin-top: 5px;
+}
+
+.wrap-insert-or-update-type-zone-property-area-list-item-label {
+    margin: 0px;
+    padding: 0px;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-white);
+    flex: 1;
+    background-color: var(--color-aqua);
+    padding: 1px 5px;
+    border-radius: 5px;
+}
+
+.wrap-insert-or-update-type-zone-property-area-list-item-delete {
+    border: none;
+    background: none;
+    outline: none;
+    margin: 0px;
+    padding: 0px;
+    margin-left: 5px;
+}
+
+.wrap-insert-or-update-type-zone-property-area-list-item-delete-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.wrap-insert-or-update-type-zone-property-item-box {
+    flex: 1
+}
+
+.wrap-insert-or-update-type-zone-property-area-list {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 5px;
+}
+
+.wrap-insert-or-update-type-zone-property-list {
+    margin-top: 5px;
+    width: 100%;
+}
+
+.wrap-insert-or-update-type-zone-property-list thead tr {
+    background-color: #09B2FD;
+}
+
+.wrap-insert-or-update-type-zone-property-list .wrap-insert-or-update-type-zone-property-list-header-row-col-1,
+.wrap-insert-or-update-type-zone-property-list .wrap-insert-or-update-type-zone-property-list-body-row-col-1 {
+    min-width: 50px !important;
+}
+
+.wrap-insert-or-update-type-zone-property-list-header-row-col {
+    padding: 5px;
+}
+
+.wrap-insert-or-update-type-zone-property-list-body-row-col-delete {
+    border: none;
+    background: none;
+    outline: none;
+}
+
+.wrap-insert-or-update-type-zone-property-list-header-row-4 {
+    min-width: 50px;
+    width: 50px;
+}
+
+.wrap-insert-or-update-type-zone-property-list-body-row-col-4 {
+    min-width: 50px;
+    width: 50px;
+}
+
+.wrap-insert-or-update-type-zone-property-table {
+    width: 100%;
+    max-height: 300px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.wrap-insert-or-update-type-zone-property-list-body-row-col-input {
+    border: none;
+    padding: 5px;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+    width: 100%;
+}
+
+.wrap-insert-or-update-type-zone-property-list-body-row-col-select {
+    border: none;
+    padding: 5px;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+    width: 100%;
+}

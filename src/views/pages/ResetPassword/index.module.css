@@ -1,0 +1,34 @@
+.label {
+    margin-bottom: 10px;
+}
+
+.error, .error p {
+    color: red;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.disbaleBtn {
+    background: #d1d1d1;
+}
+
+.disbaleBtn span {
+    color: white;
+}
+
+.moduleHeaderArea {
+    background: #09b2fd;
+    justify-content: center;
+}
+
+.moduleHeaderArea h5 {
+    font-size: 1rem;
+    color: white;
+    text-transform: uppercase;
+}
+
+.type {
+    text-align: center;
+}

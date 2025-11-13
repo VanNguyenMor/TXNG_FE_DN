@@ -1,0 +1,47 @@
+.google-autocomplete-input-list {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+    background-color: #ffffff;
+    margin-top: 5px;
+    border-radius: 5px;
+}
+
+.google-autocomplete-input-list-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    transition: all 0.1s ease-out;
+}
+
+.google-autocomplete-input-list-item:nth-last-child(1) {
+    border-bottom: none;
+}
+
+.google-autocomplete-input-list-item:nth-child(1) {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.google-autocomplete-input-list-item:nth-last-child(1) {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.google-autocomplete-input-list-item:hover {
+    background-color:rgba(0, 0, 0, 0.1);
+}
+
+.google-autocomplete-input-list-item-button {
+    border: none;
+    background: none;
+    width: 100%;
+    margin: 0px;
+    padding: 5px;
+}
+
+.google-autocomplete-input-list-item-button-text {
+    padding: 0px;
+    margin: 0px;
+    text-align: left;
+    font-size: 14px;
+    color: #000000;
+}

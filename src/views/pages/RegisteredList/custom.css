@@ -1,0 +1,15 @@
+#registered-list-id .rdtPicker {
+    top: 50px;
+    right: 0;
+    width: 265px;
+}
+
+#registered-list-id .rdtPicker:before,
+#registered-list-id .rdtPicker:after {
+    right: 10px;
+    left: auto;
+}
+
+#registered-list-id .form-group {
+    margin-bottom: 10px;
+}

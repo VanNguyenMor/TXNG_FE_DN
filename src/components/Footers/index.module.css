@@ -1,0 +1,9 @@
+.footerArea {
+    padding: .92rem 1rem;
+    background: white;
+    box-shadow: 4px -1px 3px 1px #8080802e;
+    -webkit-box-shadow: 4px -1px 3px 1px #8080802e;
+    -moz-box-shadow: 4px -1px 3px 1px #8080802e;
+    -ms-box-shadow: 4px -1px 3px 1px #8080802e;
+    -o-box-shadow: 4px -1px 3px 1px #8080802e;
+}

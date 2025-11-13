@@ -1,0 +1,13 @@
+.printarea {
+    color: #000080;
+    font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    border: 1px solid #000;
+    padding: 10px;
+}
+
+.rowItem {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}

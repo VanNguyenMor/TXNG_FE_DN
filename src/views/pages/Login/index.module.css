@@ -1,0 +1,33 @@
+.label {
+    margin-bottom: 10px;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.disbaleBtn {
+    background: #d1d1d1;
+}
+
+.disbaleBtn span {
+    color: white;
+}
+
+.textIntro {
+    background-color: #5fc2ff;
+    border-radius: 0 15px 15px 0;
+    padding: 15px 30px;
+}
+
+@media (max-width: 768px) {
+    .textIntro {
+        background-color: #5fc2ff;
+        border-radius: 15px;
+        padding: 15px 30px;
+    }
+}

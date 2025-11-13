@@ -1,0 +1,20 @@
+.table-css-partnerVerify .thead-dark th:nth-child(2) {
+    width: 300px;
+}
+
+.table-css-partnerVerify .thead-dark th:nth-child(3) {
+    width: 500px;
+}
+
+.table-css-partnerVerify .thead-dark th:nth-child(6) {
+    width: 590px;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.css-img-partner-manufact img {
+    width: 82px !important;
+    height: 82px !important;
+}

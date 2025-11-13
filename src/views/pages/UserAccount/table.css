@@ -1,0 +1,45 @@
+/* .table-class-css>.thead-dark>th:nth-child(1) {
+    width: 250px !important;
+} */
+.table-class-css .thead-dark th:nth-child(2) {
+    width: 500px !important;
+}
+
+.table-class-css .thead-dark th:nth-child(3) {
+    width: 950px !important;
+}
+
+.table-class-css tbody td:nth-child(2) {
+    padding: 10px 5px !important;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.form-control {
+    padding: 0 0.75rem !important;
+}
+
+.UserAccount_rowItem__3xAPo {
+    margin-bottom: 0px !important;
+}
+
+.css-border-input {
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    border: 0;
+    transition: box-shadow .15s ease;
+}
+
+
+.form-control {
+    height: calc(1em + 1rem + 2px);
+}
+
+.form-control-label {
+    color: #525f7f;
+}
+
+.mr-b-0 {
+    margin-bottom: 0px !important;
+}

@@ -1,0 +1,20 @@
+.table-css-partnerTransformVerify .thead-dark th:nth-child(2) {
+    width: 500px;
+}
+
+.table-css-partnerTransformVerify .thead-dark th:nth-child(3) {
+    width: 500px;
+}
+
+.table-css-partnerTransformVerify .thead-dark th:nth-child(6) {
+    width: 660px;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.partnerTransformVerify-img img {
+    width: 82px !important;
+    height: 82px !important;
+}

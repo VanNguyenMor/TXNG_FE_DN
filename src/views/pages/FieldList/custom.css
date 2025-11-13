@@ -1,0 +1,22 @@
+#field-area .hide {
+    display: none;
+}
+
+.tablecs .btn-group button {
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    -ms-box-shadow: none;
+    -o-box-shadow: none;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.table-css-fieldList .thead-dark th:nth-child(2) {
+    width: 180px !important;
+}

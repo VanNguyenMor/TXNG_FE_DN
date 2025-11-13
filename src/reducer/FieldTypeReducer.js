@@ -1,0 +1,20 @@
+import {
+    GET_FIELD_TYPE_SUCCESS_TYPE
+} from "../services/Common";
+
+const initialState = { data: [], isLoading: false, status: null, message: '' };
+
+export const fieldTypeReducer = (state, action) => {
+    state = state || initialState;
+
+    if (action.type === GET_FIELD_TYPE_SUCCESS_TYPE) {
+        return {
+            data: action.data,
+            isLoading: action.isLoading,
+            status: action.status,
+            message: action.message
+        };
+    }
+
+    return state;
+};

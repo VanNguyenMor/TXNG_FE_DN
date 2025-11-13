@@ -1,0 +1,19 @@
+//
+// Forms
+//
+
+@import "forms/form";
+@import "forms/form-validation";
+@import "forms/input-group";
+
+.form-control {
+    color: #000000;
+}
+
+.form-control:focus {
+    color: #000000;
+}
+
+.form-control-label {
+    color: #000000;
+}

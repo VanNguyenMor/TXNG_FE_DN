@@ -1,0 +1,176 @@
+.wrapper {
+    height: calc(100vh - 100px);
+    padding: 20px 0;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.error p {
+    font-size: 12px;
+    margin-bottom: 0;
+}
+
+.editArea {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.editArea .item {
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.editArea .item:last-child {
+    margin-right: 0;
+}
+
+.noActiveStt,
+.activeStt {
+    font-weight: 600;
+}
+
+.noActiveStt {
+    color: red;
+}
+
+.activeStt {
+    color: green;
+}
+
+.editHeaderArea {
+    width: 78px;
+}
+
+.searchArea .searchRow .searchRowItem {
+    margin-bottom: 5px;
+}
+
+.searchArea .searchRow .searchRowItem:last-child {
+    margin-bottom: 0;
+}
+
+.treeParent {
+    font-size: .9rem !important;
+    /* font-weight: 700; */
+}
+
+.treeChild {
+    font-size: .8rem !important;
+}
+
+.treeChild.childs {
+    color: #09b2fd;
+    font-weight: 600;
+}
+
+.treeChild.childsItem {
+    font-weight: 500;
+}
+
+.childLine {
+    font-size: 1rem;
+}
+
+.formControl .rowItem {
+    display: flex;
+    margin-bottom: 0px;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.formControl .rowItem.noSpacing {
+    margin-bottom: 0;
+}
+
+/* .formControl .rowItem.checkboxItem {
+    justify-content: flex-end;
+    align-items: center;
+} */
+
+.formControl .rowItem.checkboxItem input {
+    width: auto;
+}
+
+.formControl .rowItem.checkboxItem label {
+    color: red;
+    font-size: 0.875rem;
+    height: auto;
+    margin-left: 8px;
+}
+
+.formControl .rowItem:last-child {
+    margin-bottom: 0;
+}
+
+.formControl .rowItem label {
+    display: inherit;
+    width: 260px;
+    height: 43px;
+    margin-bottom: 0;
+    align-items: center;
+}
+
+.formControl .rowItem input {
+    width: 100%;
+}
+
+.formControl .rowItem .inputArea {
+    width: 100%;
+}
+
+.filterArea {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.filterArea label {
+    width: 90px;
+    margin-bottom: 0;
+}
+
+.filterArea select {
+    width: 300px;
+    margin-right: 8px;
+    height: 2.2em;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+@media screen and (max-width: 991px) {
+    .filterArea select {
+        width: 200px;
+    }
+
+    .mainFunc {
+        flex-wrap: wrap;
+        justify-content: initial;
+    }
+}
+
+@media screen and (max-width: 568px) {
+    .filterArea {
+        width: 100%;
+        margin-bottom: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+        ;
+    }
+
+    .filterArea select {
+        width: 100%;
+    }
+}

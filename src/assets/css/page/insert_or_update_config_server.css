@@ -1,0 +1,99 @@
+.config-system-insert-or-update {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.config-system-insert-or-update-form {
+    background-color: var(--color-white);
+    width: 721px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-system-insert-or-update-form-box {
+    padding: 20px;
+    flex: 1;
+}
+
+.config-system-insert-or-update-form-function {
+    border-top: 1px solid var(--color-aqua);
+    height: 80px;
+}
+
+.config-system-insert-or-update-form-box-header {
+    text-align: center;
+    background-color: var(--color-blue);
+    color: var(--color-white);
+    font-size: 1.4em;
+    font-family: var(--font-normal);
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0px 5px;
+    height: 40px;
+}
+
+.config-system-insert-or-update-form-box-list {
+    height: calc(100% - 40px);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.config-system-insert-or-update-form-function {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.config-system-insert-or-update-form-function-button {
+    border: none;
+    background: none;
+    outline: none;
+}
+
+.config-system-insert-or-update-form-function-button-icon {
+    width: 120px;
+}
+
+.config-system-insert-or-update-form-box-item {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 10px;
+}
+
+.config-system-insert-or-update-form-box-item-label {
+    min-width: 180px;
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+}
+
+.config-system-insert-or-update-form-box-item-box {
+    flex: 1;
+}
+
+.config-system-insert-or-update-form-box-item-input {
+    border: 1px solid var(--color-aqua);
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+    padding: 5px;
+    width: 100%;
+}
+
+.config-system-insert-or-update-form-box-item-chekbox-label {
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+    margin-left: 5px;
+}

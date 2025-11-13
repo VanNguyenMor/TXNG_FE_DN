@@ -1,0 +1,144 @@
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.table-css-companyAwait .thead-dark th:nth-child(2) {
+    width: 350px;
+}
+
+.table-css-companyAwait .thead-dark th:nth-child(3) {
+    width: 400px;
+}
+
+.table-css-companyAwait .thead-dark th:nth-child(6) {
+    width: 350px;
+}
+
+.table-css-companyAwait .thead-dark th:nth-child(5) {
+    width: 180px;
+}
+
+.css-border-input {
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    border: 0;
+    transition: box-shadow .15s ease;
+}
+
+.Select_select__3PGnh {
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    /* border: 0; */
+    transition: box-shadow .15s ease;
+    border-color: #ffffff !important;
+    height: calc(1em + 1rem + 2px);
+    padding: 0.3rem 0.75rem !important;
+}
+
+.Select_select__FZ4fG {
+    height: calc(1em + 1rem + 2px) !important;
+    padding: 0.3rem 0.75rem !important;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+}
+
+.Select_selectHeader__2sQC3 {
+    height: 20px !important;
+}
+
+.form-control {
+    padding: 0 0.75rem !important;
+}
+
+.UserAccount_rowItem__3xAPo {
+    margin-bottom: 0px !important;
+}
+
+/* .Select_selectHeader__2sQC3 {
+    color: #8898aa;
+} */
+
+.form-control {
+    height: calc(1em + 1rem + 2px);
+}
+
+.form-control-label {
+    color: #525f7f;
+}
+
+
+.css-margin-company-await {
+    margin-top: 10px;
+}
+
+.CompanyAwait_rowItem__3JPLl {
+    margin-bottom: -5px !important;
+}
+
+.css-p-margin p {
+    margin: 0;
+}
+
+.div_flex {
+    display: flex;
+}
+
+.w_div_100 {
+    width: 100%;
+    /* align-items: flex-end; */
+}
+
+.flex-div_search {
+    align-items: flex-end;
+}
+
+.mg-div-search {
+    margin: 0 15px;
+}
+
+.mg-div-search:first-child {
+    margin-left: 0px;
+}
+
+.mg-div-search:last-child {
+    margin-right: 0px;
+}
+
+.w_input {
+    width: 30%;
+}
+
+/* .margin_right_div_search {
+    margin-right: 10px;
+} */
+
+.mg-btn {
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+@media screen and (min-width: 360px) and (max-width: 750px) {
+    .div_flex {
+        display: block;
+        width: 100%;
+    }
+
+    .mg-div-search {
+        margin: 0;
+    }
+
+    .div_flex {
+        margin-bottom: 5px;
+    }
+
+    .w_input {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .margin_right_div_search {
+        margin-right: 0px !important;
+    }
+
+    .mg-btn {
+        margin-bottom: 5px;
+        margin-right: 0px !important;
+    }
+}

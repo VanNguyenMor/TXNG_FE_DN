@@ -1,0 +1,17 @@
+.SelectParent_selectHeader__height {
+    height: calc(1em + 1rem + 2px) !important;
+    padding: 0.3rem 0.75rem;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    transition: box-shadow .15s ease;
+    color: inherit;
+    border: 0;
+}
+
+.Select_parent_header__height {
+    height: 20px !important;
+}
+
+.Select_parent_text__height {
+    padding: 0.3rem 0.75rem;
+    /* height: 25px !important; */
+}

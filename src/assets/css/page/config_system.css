@@ -1,0 +1,249 @@
+.config-system {
+    padding: 10px;
+    padding-bottom: 100px;
+}
+
+.config-system-tab {
+    display: flex;
+    align-items: center;
+}
+
+.config-system-tab-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+    height: 40px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--color-aqua);
+    margin-right: 10px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    transition: all 0.15s ease-out;
+}
+
+@media screen and (min-width: 360px) and (max-width: 750px) {
+    .config-system-tab-item {
+        font-size: 0.7em;
+    }
+
+}
+
+.config-system-tab-item:nth-last-of-type(1) {
+    margin-right: 0px;
+}
+
+.config-system-tab-item.active {
+    background-color: #d1d1d1;
+    font-weight: 600;
+}
+
+.config-system-tab-item:hover {
+    background-color: #d1d1d1;
+}
+
+.config-system-content-info-company-item-group {
+    display: flex;
+    justify-content: space-evenly;
+    flex: 1;
+}
+
+.config-system-content-info-company-item-group-item {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.config-system-content-info-company-item-group-item:nth-last-of-type(1) {
+    margin-right: 0px;
+}
+
+.config-system-content-info-company-item {
+    display: flex;
+    margin-top: 10px;
+}
+
+.config-system-content-info-company-item-label {
+    min-width: 120px;
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+}
+
+.config-system-content-info-company-item-box {
+    flex: 1;
+}
+
+.config-system-content-info-company-item-input {
+    width: 100%;
+    border: 1px solid var(--color-aqua);
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+    padding: 5px;
+}
+
+.config-system-content-info-company-item-logo {
+    width: 250px;
+    height: 250px;
+    cursor: pointer;
+}
+
+.config-system-content-info-company-function {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 20px;
+    border-top: 1px solid var(--color-aqua);
+    padding-top: 20px;
+}
+
+.config-system-content-info-company-function-button {
+    outline: none;
+    border: none;
+    background: none;
+}
+
+.config-system-content-info-company-function-button-icon {
+    width: 120px;
+}
+
+.config-system-content-config-system-item,
+.config-system-content-config-system-multi {
+    margin-top: 10px;
+}
+
+.config-system-content-config-system-multi {
+    display: flex;
+    justify-content: space-between;
+}
+
+.config-system-content-config-system-item-box {
+    flex: 1;
+}
+
+.config-system-content-config-system-multi-item {
+    flex: 1;
+}
+
+.config-system-content-config-system-item-label {
+    min-width: 120px;
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+}
+
+.config-system-content-config-system-item-input,
+.config-system-content-config-system-item-textarea {
+    width: 100%;
+    border: 1px solid var(--color-aqua);
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+    padding: 5px;
+}
+
+.config-system-content-config-system-item-function {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 20px;
+    border-top: 1px solid var(--color-aqua);
+    padding-top: 20px;
+}
+
+.config-system-content-config-system-item-function-button {
+    outline: none;
+    border: none;
+    background: none;
+}
+
+.config-system-content-config-system-item-function-button-icon {
+    width: 120px;
+}
+
+.config-system-content-config-server {
+    margin-top: 10px;
+}
+
+.config-system-content-config-server-filter {
+    display: flex;
+    align-items: center;
+}
+
+.config-system-content-config-server-filter-label {
+    min-width: 150px;
+    font-size: 1em;
+    color: var(--color-black);
+    font-family: var(--font-normal);
+    margin: 0px;
+}
+
+.config-system-content-config-server-filter {
+    display: flex;
+    align-items: center;
+}
+
+.config-system-content-config-server-function {
+    margin: 10px 0px;
+}
+
+.config-system-content-config-server-function-add {
+    border: none;
+    outline: none;
+    background: none;
+}
+
+.config-system-content-config-server-function-add-icon {
+    width: 120px;
+}
+
+.config-system-content-config-server-list-table-header-row-col,
+.config-system-content-config-server-list-table-body-row-col {
+    font-size: 1em;
+    font-family: var(--font-normal);
+    padding: 5px;
+}
+
+.config-system-content-config-server-list-table-header-row-col {
+    color: var(--color-white) !important;
+    background-color: var(--color-blue);
+    font-weight: 600;
+}
+
+.config-system-content-config-server-list-table-body-row-col {
+    color: var(--color-black) !important;
+}
+
+.config-system-content-config-server-list-table-body-row-col-button {
+    border: none;
+    outline: none;
+    background: none;
+}
+
+.config-system-content-config-server-list-table-body-row-col-button-icon {}
+
+.config-system-content-config-server-list-table-header-row-col-function {
+    width: 100px;
+    min-width: 100px;
+}
+
+.config-system-content-config-server-list-table-body-row-col-function {
+    width: 100px;
+    min-width: 100px;
+}
+
+.config-system-content-info-company-item-delete-logo-button {
+    margin-top: 5px;
+    background: none;
+    outline: none;
+    background-color: red;
+    border: none;
+    color: var(--color-white);
+    border-radius: 5px;
+    padding: 5px 10px;
+}

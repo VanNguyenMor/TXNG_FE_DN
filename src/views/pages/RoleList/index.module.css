@@ -1,0 +1,95 @@
+.wrapper {
+    height: calc(100vh - 100px);
+    padding: 20px 0;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.error p {
+    font-size: 12px;
+}
+
+.editArea {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.editArea .item {
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.editArea .item:last-child {
+    margin-right: 0;
+}
+
+.noActiveStt,
+.activeStt {
+    font-weight: 600;
+}
+
+.noActiveStt {
+    color: red;
+}
+
+.activeStt {
+    color: green;
+}
+
+.editHeaderArea {
+    width: 78px;
+}
+
+.formControl {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.formControl .rowItem {
+    display: flex;
+    width: 100%;
+    margin-bottom: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.formControl .rowItem.alignTop {
+    align-items: flex-start;
+}
+
+.formControl .rowItem .inputArea {
+    width: 100%;
+}
+
+.formControl .rowItem label {
+    width: 160px;
+    margin-bottom: 0;
+}
+
+.formControl .rowTitle {
+    width: 100%;
+}
+
+textarea {
+    resize: none;
+}
+
+
+
+@media screen and (min-width: 360px) and (max-width: 750px) {
+    .w-input {
+        width: 100%;
+    }
+
+}

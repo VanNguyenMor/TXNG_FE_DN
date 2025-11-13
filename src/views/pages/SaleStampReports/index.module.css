@@ -1,0 +1,142 @@
+.wrapper {
+    height: calc(100vh - 100px);
+    padding: 20px 0;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.editArea {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.editArea .item {
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.editArea .item:last-child {
+    margin-right: 0;
+}
+
+.noActiveStt,
+.activeStt {
+    font-weight: 600;
+} 
+
+.noActiveStt {
+    color: red;
+}
+
+.activeStt {
+    color: green;
+}
+
+.editHeaderArea {
+    width: 78px;
+}
+
+.searchArea {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}   
+
+.searchArea .searchRow {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.searchArea .searchRow:last-child {
+    margin-bottom: 0;
+}
+
+.searchArea .searchRow .checkBoxItem {
+    margin-right: 15px;
+}
+
+.searchArea .searchRow .checkBoxItem input[type=checkbox] {
+    margin-right: 10px;
+    transform: scale(1.2);
+    -webkit-transform: scale(1.2);
+    -moz-transform: scale(1.2);
+    -ms-transform: scale(1.2);
+    -o-transform: scale(1.2);
+} 
+
+.searchArea .searchRow .searchRowItem {
+    width: 100%;
+}
+
+.formControl {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.formControl .rowItem {
+    display: flex;
+    width: 100%;
+    margin-bottom: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.formControl .rowItem .inputArea {
+    width: 100%;
+}
+
+.formControl .rowItem label {
+    width: 160px;
+    margin-bottom: 0;
+}
+
+.formControl .rowTitle {
+    width: 100%;
+}
+
+.filterArea {
+    display: flex;
+    padding: 0 35px;
+}
+
+.filterArea div {
+    width: 120px;
+}
+input[type=number] {
+    -moz-appearance: textfield;
+  }
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+@media screen and (max-width: 359px) {
+    .searchArea .searchRow .checkBoxItem input[type=checkbox] {
+        margin-right: 8px;
+        transform: scale(1);
+        -webkit-transform: scale(1);
+        -moz-transform: scale(1);
+        -ms-transform: scale(1);
+        -o-transform: scale(1);
+    }
+
+    .searchArea .searchRow .checkBoxItem label {
+        font-size: .8rem;
+    }
+}

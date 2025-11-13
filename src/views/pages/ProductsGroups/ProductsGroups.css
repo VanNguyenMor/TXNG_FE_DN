@@ -1,0 +1,45 @@
+.ProductsGroups_rowItem__2AAms {
+    margin-bottom: 0px !important;
+}
+
+.SelectParent_selectHeader__ibbaK {
+    color: #525f7f;
+}
+
+.table-css-productsGroup .thead-dark th:nth-child(2) {
+    width: 250px;
+}
+
+.css-icon-button-product-group {
+    color: #fff;
+    /* background: rgba(0, 0, 0, 0.5); */
+    background-color: #d9001b;
+    height: 20px;
+    padding: 0;
+    margin: auto;
+    width: 20px;
+    margin: auto;
+    line-height: 20px;
+    border-radius: 0;
+    /* border-color: rgba(0, 0, 0, 0.5); */
+    border-color: #d9001b;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.css-icon-button-product-group:hover {
+    background: #d9001b;
+    border-color: #d9001b;
+}
+
+.css-button-product-group button {
+    margin: 0;
+}
+
+.SelectParent_select__3314y {
+    height: calc(1em + 1rem + 2px);
+    padding: 0.3rem 0.75rem;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    border: 0;
+    /* transition: box-shadow .15s ease; */
+}

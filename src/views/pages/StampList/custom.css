@@ -1,0 +1,11 @@
+#stamp-list .rdtPicker {
+    top: 50px;
+    right: 0;
+    width: 265px;
+}
+
+#stamp-list .rdtPicker:before,
+#stamp-list .rdtPicker:after {
+    right: 10px;
+    left: auto;
+}

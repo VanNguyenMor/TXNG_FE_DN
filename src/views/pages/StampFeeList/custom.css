@@ -1,0 +1,43 @@
+#fee-list-id .rdtPicker {
+    top: 50px;
+    right: 0;
+    width: 265px;
+}
+
+#fee-list-id .rdtPicker:before,
+#fee-list-id .rdtPicker:after {
+    right: 10px;
+    left: auto;
+}
+
+#fee-list-id .form-group {
+    margin-bottom: 10px;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.table-css-stampFeeList .thead-dark th:nth-child(2) {
+    width: 300px;
+}
+
+.table-css-stampFeeList .thead-dark th:nth-child(3) {
+    width: 300px;
+}
+
+.table-css-stampFeeList .thead-dark th:nth-child(4) {
+    width: 300px;
+}
+
+.table-css-stampFeeList .thead-dark th:nth-child(6) {
+    width: 250px;
+}
+
+.table-css-stampFeeList .thead-dark th:nth-child(7) {
+    width: 400px;
+}
+
+.height-form-input {
+    height: calc(1em + 1rem + 2px) !important;
+}

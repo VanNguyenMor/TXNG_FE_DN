@@ -1,0 +1,44 @@
+/* .table-css-roleList .thead-dark th:nth-child(2) {
+    width: 1000px;
+} */
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.UserAccount_rowItem__3xAPo {
+    margin-bottom: 0px !important;
+}
+
+.css-border-input {
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    border: 0;
+    transition: box-shadow .15s ease;
+}
+
+/* .Select_selectHeader__2sQC3 {
+    color: #8898aa;
+} */
+
+.form-control {
+    height: calc(1em + 1rem + 2px);
+}
+
+.form-control-label {
+    color: #525f7f;
+}
+
+
+@media screen and (min-width: 360px) and (max-width: 750px) {
+    .w_input {
+        width: 100% !important;
+        margin-bottom: 5px;
+    }
+
+    .mg-btn {
+        margin-bottom: 5px;
+        margin-right: 0px !important;
+    }
+
+
+}

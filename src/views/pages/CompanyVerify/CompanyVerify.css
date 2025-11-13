@@ -1,0 +1,42 @@
+.table-css-companyVerify .thead-dark th:nth-child(2) {
+    width: 500px;
+}
+
+.table-css-companyVerify .thead-dark th:nth-child(3) {
+    width: 500px;
+}
+
+.table-css-companyVerify .thead-dark th:nth-child(6) {
+    width: 725px;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.companyVerify-img img {
+    width: 82px !important;
+    height: 82px !important;
+}
+
+/* .CompanyVerify_formControl__2tzHM .CompanyVerify_rowItem__3yvdt label {
+    margin: 5px 0px;
+} */
+
+/* .css-height-company-verify {
+    height: 30px !important;
+} */
+
+/* .Select_select__3PGnh {
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    border: 0;
+    transition: box-shadow .15s ease;
+    border-color: #ffffff !important;
+    height: calc(1em + 1rem + 2px);
+    padding: 0.3rem 0.75rem !important;
+} */
+
+.css-margin-span-company-verify {
+    line-height: 43px;
+    font-size: 14px;
+}

@@ -1,0 +1,39 @@
+.table-css-partner .thead-dark th:nth-child(2) {
+    width: 250px;
+    /* #d2d2d2 */
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.css-img-partner img {
+    width: 82px !important;
+    height: 82px !important;
+}
+
+.css-icon-button-partner-print {
+    color: #fff;
+    /* background: rgba(0, 0, 0, 0.5); */
+    background-color: #d9001b;
+    height: 20px;
+    padding: 0;
+    margin: auto;
+    width: 20px;
+    margin: auto;
+    line-height: 20px;
+    border-radius: 0;
+    /* border-color: rgba(0, 0, 0, 0.5); */
+    border-color: #d9001b;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.css-icon-button-partner-print:hover {
+    background: #d9001b;
+    border-color: #d9001b;
+}
+
+.css-button-partner-print button {
+    margin: 0;
+}

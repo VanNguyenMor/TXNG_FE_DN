@@ -1,0 +1,44 @@
+.alert {
+    position: fixed;
+    width: 350px;
+    bottom: 8px;
+    right: 1px;
+    padding: 13px 20px;
+    color: white;
+    margin-bottom: 0;
+    animation-name: opacity_alert;
+    animation-duration: 2s;
+    border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -ms-border-radius: 4px;
+    -o-border-radius: 4px;
+    text-transform: uppercase;
+    z-index: 1;
+}
+
+.alert.error { background-color: #f44336; }
+
+.closebtn {
+    margin-left: 15px;
+    color: white;
+    font-weight: bold;
+    float: right;
+    font-size: 22px;
+    line-height: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+    -webkit-transition: 0.3s;
+    -moz-transition: 0.3s;
+    -ms-transition: 0.3s;
+    -o-transition: 0.3s;
+}
+
+.closebtn:hover {
+    color: black;
+}
+
+@keyframes opacity_alert {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}

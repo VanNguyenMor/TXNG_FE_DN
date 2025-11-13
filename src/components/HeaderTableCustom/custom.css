@@ -1,0 +1,25 @@
+.rdtPicker table {
+    overflow-y: initial;
+}
+
+.rdtPicker table thead th.dow {
+    padding: 0;
+}
+
+table thead th.rdtPrev {
+    width: 36px!important;
+}
+
+.rdtPicker td, .rdtPicker th {
+    height: 32px;
+}
+
+.rdtPicker th.rdtSwitch {
+    width: 150px;
+}
+
+.rdtMonths .rdtMonth, .rdtMonths .rdtYear, .rdtYears .rdtMonth, .rdtYears .rdtYear {
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+}

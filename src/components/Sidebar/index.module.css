@@ -1,0 +1,71 @@
+.navbarcs {
+    padding: 0 !important;
+}
+
+.logo {
+    padding: .65rem 0;
+}
+
+.navItem {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.avatar {
+    top: 0 !important;
+    font-size: 36px;
+}
+
+.avatarBck {
+    width: 36px;
+    height: 36px;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    border-radius: 50%;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+}
+
+@media screen and (max-width: 767px) {
+    .logo {
+        padding-bottom: 0;
+
+    }
+
+    .navbarcs {
+        padding-bottom: 0;
+    }
+
+    .logo.desktop {
+        display: none !important;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .logo.mobile {
+        display: none !important;
+    }
+
+    .logo.desktop {
+        display: block !important;
+        position: sticky;
+        height: 50px;
+        top: 0;
+        background: white;
+        z-index: 1;
+        border-bottom: 1px solid #dddddd;
+        /* box-shadow: 1px 1px 7px -1px rgb(128 128 128);
+        -webkit-box-shadow: 1px 1px 7px -1px rgb(128 128 128);
+        -moz-box-shadow: 1px 1px 7px -1px rgb(128 128 128);
+        -ms-box-shadow: 1px 1px 7px -1px rgb(128 128 128);
+        -o-box-shadow: 1px 1px 7px -1px rgb(128 128 128); */
+    }
+
+    .logo.desktop .nav-link i {
+        z-index: 0;
+    }
+}

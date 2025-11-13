@@ -1,0 +1,33 @@
+.table-css-productsVerify .thead-dark th:nth-child(2) {
+    width: 500px;
+}
+
+.table-css-productsVerify .thead-dark th:nth-child(3) {
+    width: 500px;
+}
+
+.table-css-productsVerify .thead-dark th:nth-child(6) {
+    width: 820px;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.productsVerify-img img {
+    width: 82px !important;
+    height: 82px !important;
+}
+
+.select-search-box {
+    padding: 0.3rem 0.75rem !important;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+}
+
+.w_input {
+    width: 30%;
+}
+
+.flex-div_search {
+    align-items: flex-end;
+}

@@ -1,0 +1,137 @@
+.headerTable {
+    display: flex;
+    width: 100%;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #09b2fd;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.headerTable .pageName {
+    margin-bottom: 0;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.textButton {
+    /* padding-left: 10px; */
+    text-transform: uppercase;
+}
+
+.iconButton {
+    width: 20px;
+}
+
+.searchArea {
+    position: relative;
+}
+
+.searchArea button {
+    display: flex;
+    margin-right: 0 !important;
+    justify-content: center;
+    align-items: center;
+}
+
+.searchBox {
+    position: absolute;
+    width: 342px;
+    right: 0;
+    padding: 20px;
+    margin-bottom: 10px;
+    background: white;
+    box-shadow: 1px 1px 8px 1px grey;
+    -webkit-box-shadow: 1px 1px 8px 1px grey;
+    -moz-box-shadow: 1px 1px 8px 1px grey;
+    -ms-box-shadow: 1px 1px 8px 1px grey;
+    -o-box-shadow: 1px 1px 8px 1px grey;
+    border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -ms-border-radius: 4px;
+    -o-border-radius: 4px;
+    z-index: 3;
+}
+
+.searchBox label {
+    font-size: .95rem;
+    margin-bottom: 2px;
+}
+
+.searchButtonArea {
+    display: flex;
+    margin-top: 20px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.searchButtonArea button {
+    display: flex;
+    width: 100px;
+    height: 40px;
+    justify-content: center;
+    align-items: center;
+}
+
+.searchButtonArea button:first-child {
+    margin-left: 0;
+}
+
+.searchBox table thead th {
+    color: inherit !important;
+}
+
+.iconButtonCreate:hover {
+    content: url("../../assets/img/buttons/btnThemMoi1LocBui.png");
+    /* display: block; */
+    cursor: pointer;
+}
+
+.iconButtonSearch:hover {
+    content: url("../../assets/img/buttons/btnTimKiem1LocBui.png");
+    /* display: block; */
+    cursor: pointer;
+}
+
+.iconButtonDong:hover {
+    content: url("../../assets/img/buttons/btnDong1LocBui.png");
+    display: block;
+    cursor: pointer;
+}
+
+.iconButtonApdung:hover {
+    content: url("../../assets/img/buttons/btnApDung1LocBui.png");
+    display: block;
+    cursor: pointer;
+}
+
+@media screen and (min-width: 751px) and (max-width: 1200px) {
+    .headerTable {
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-direction: column;
+    }
+
+    .mainFunc {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 359px) {
+    .searchBox {
+        width: 288px;
+        padding: 20px 15px;
+    }
+}
+
+@media screen and (min-width: 360px) and (max-width: 750px) {
+    .headerTable {
+        display: block !important;
+    }
+
+    /* .mainFunc {
+        display: inline-block !important;
+    } */
+
+}

@@ -1,0 +1,68 @@
+.headerNavbar {
+    height: 50px;
+}
+
+.avatar {
+    top: 0!important;
+    font-size: 36px;
+}
+
+.avatarBck {
+    width: 36px;
+    height: 36px;
+    background-size: cover!important;
+    background-position: center!important;
+    background-repeat: no-repeat!important;
+    border-radius: 50%;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+}
+
+.updateAvaArea {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.updateAva {
+    margin-right: 1rem;
+    font-size: 1rem;
+    vertical-align: -17%;
+}
+
+.hoverNoti :hover{
+    background-color:#DDDDDD
+}
+
+.formControl {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.formControl .rowItem {
+    display: flex;
+    width: 100%;
+    margin-bottom: 10px;
+    justify-content: center;
+}
+
+.formControl .rowItem .inputArea {
+    width: 100%;
+}
+
+.formControl .rowItem label {
+    display: flex;
+    width: 140px;
+    height: 48px;
+    margin-bottom: 0;
+    align-items: center;
+}
+
+.formControl .rowTitle {
+    width: 100%;
+}
+

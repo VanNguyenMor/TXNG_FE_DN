@@ -1,0 +1,204 @@
+/* .table-css-stampProvide .thead-dark th:nth-child(2) {
+    width: 500px;
+} */
+
+.table-css-stampProvide .thead-dark th:nth-child(4) {
+    width: 300px;
+}
+
+.table-css-stampProvide .thead-dark th:nth-child(5) {
+    width: 300px;
+}
+
+.table-css-stampProvide .thead-dark th:nth-child(6) {
+    width: 200px;
+}
+
+/* .table-css-stampProvide .thead-dark th:nth-child(7) {
+    width: 200px;
+} */
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.modal-css-footer-unconfirm {
+    background-color: #d5d7dd;
+    /* color: #fff !important; */
+}
+
+.modal-css-footer-unconfirm:hover {
+    background-color: #d5d7dd;
+}
+
+.ml-button-stamp-provide {
+    margin-left: 8px;
+}
+
+.rdtPicker table thead th.dow {
+    position: inherit;
+}
+
+.css-font-htx-dn {
+    font-weight: bold;
+}
+
+.css-label-stamp-provide {
+    font-weight: bold;
+    margin: 0px;
+    min-width: 210px
+}
+
+.css-p-attach p {
+    margin-bottom: 0px !important;
+}
+
+.css-p-stamp-provide {
+    padding: 0;
+    margin: 0px;
+    text-align: center;
+}
+
+.modal-body-item-textarea {
+    margin-top: 0px;
+}
+
+.stamp-provide-css-check input[type="checkbox"] {
+    font-size: 15px;
+    visibility: hidden;
+}
+
+.stamp-provide-css-check input[type="checkbox"][checked] {
+    font-size: 15px;
+    appearance: none;
+}
+
+.stamp-provide-css-check input[type="checkbox"][checked]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.stamp-provide-css-check input[type=checkbox] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    -moz-border-colors: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.stamp-provide-css-check input[type=checkbox][disabled] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+
+}
+
+
+.stamp-provide-css-check input[type=checkbox]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.stamp-provide-css-check input[type=checkbox]:not(:checked):after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.stamp-provide-css-check input[type=checkbox]:checked:after {
+    content: "\2714";
+    /* display: unset; */
+    font-weight: bold;
+}
+
+input[type="checkbox"][disabled] {
+    outline: none !important;
+    -moz-outline: none;
+}
+
+.css-text-button {
+    padding: 3px 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.css-text-button-print {
+    padding: 3px 10px;
+    white-space: nowrap;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    position: absolute;
+    z-index: 1;
+    width: 180px;
+    background-color: #fff;
+    padding: 3px 10px;
+    border: 1px solid #fff;
+    border-radius: 40px;
+    bottom: 100%;
+    color: black;
+    left: -10%;
+    margin-bottom: 5px;
+    margin-left: -60px;
+    overflow: visible;
+}
+
+.tooltip-box {
+    /* padding: 3px 10px;
+    white-space: nowrap; */
+    position: relative;
+    display: inline-block;
+}
+
+/* .tooltip-box:hover {
+    overflow: visible;
+} */
+
+.tooltip-box:hover .tooltip-text {
+    visibility: visible;
+
+}

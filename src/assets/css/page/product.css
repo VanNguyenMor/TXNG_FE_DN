@@ -1,0 +1,13 @@
+.product-view-popup-modal-body {
+    max-height: 80vh;
+    overflow-x: hidden;
+    overflow-x: auto;
+}
+
+.product-view-popup-modal-footer-button-unconfirm {
+    color: #505050 !important;
+    border: 1px solid #505050 !important;
+    background-color: #d7d7d7 !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem;
+}

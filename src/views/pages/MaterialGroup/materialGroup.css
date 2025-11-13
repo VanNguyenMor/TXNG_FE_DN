@@ -1,0 +1,37 @@
+.table-css-materialGroup .thead-dark th:nth-child(2) {
+    width: 200px;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.css-icon-button-material-group {
+    color: #fff;
+    /* background: rgba(0, 0, 0, 0.5); */
+    background-color: #d9001b;
+    height: 20px;
+    padding: 0;
+    margin: auto;
+    width: 20px;
+    margin: auto;
+    line-height: 20px;
+    border-radius: 0;
+    /* border-color: rgba(0, 0, 0, 0.5); */
+    border-color: #d9001b;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.css-icon-button-material-group:hover {
+    background: #d9001b;
+    border-color: #d9001b;
+}
+
+.css-button-material-group button {
+    margin: 0;
+}
+
+.width-add-label-material-group {
+    width: 250px !important;
+}

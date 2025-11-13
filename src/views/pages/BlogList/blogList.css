@@ -1,0 +1,95 @@
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.table-css-blogList .thead-dark th:nth-child(2) {
+    width: 200px;
+}
+
+.table-css-blogList .thead-dark th:nth-child(4) {
+    width: 250px;
+}
+
+.table-css-blogList .thead-dark th:nth-child(5) {
+    width: 250px;
+}
+
+.table-css-blogList .thead-dark th:nth-child(6) {
+    width: 200px;
+}
+
+.table-css-blogList .thead-dark th:nth-child(7) {
+    width: 250px;
+}
+
+.table-css-blogList input[type=checkbox] {
+    /* cursor: pointer; */
+    font-size: 15px;
+    visibility: hidden;
+    /* position: absolute; */
+    /* transform: scale(1.5); */
+}
+
+.table-css-blogList input[type=checkbox]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    /* margin: 5px; */
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+
+.table-css-blogList input[type=checkbox]:checked:after {
+    content: "\2714";
+    font-weight: bold;
+}
+
+.blogList-css-check input[type=checkbox] {
+    cursor: pointer;
+    font-size: 15px;
+    visibility: hidden;
+    /* position: absolute; */
+    /* transform: scale(1.5); */
+}
+
+.blogList-css-check input[type=checkbox]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    /* position: absolute;
+    line-height: 12px; */
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    margin: 0px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+
+.blogList-css-check input[type=checkbox]:checked:after {
+    content: "\2714";
+    /* display: unset;*/
+    font-weight: bold;
+}
+
+.css-select-border select {
+    /* box-shadow: 0 1px 3px rgb(50 50 93 / 15%), 0 1px 0 rgb(0 0 0 / 2%); */
+    /* border: 0; */
+    transition: box-shadow .15s ease;
+    border-color: #ffffff !important;
+}
+
+.tox-tinymce {
+    border-radius: 0.375rem !important;
+}

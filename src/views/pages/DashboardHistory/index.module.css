@@ -1,0 +1,84 @@
+.cardArea {
+    border-radius: 0;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    -ms-border-radius: 0;
+    -o-border-radius: 0;
+}
+
+.boxHeader {
+    padding: 0 15px;
+    border-radius: 0!important;
+    -webkit-border-radius: 0!important;
+    -moz-border-radius: 0!important;
+    -ms-border-radius: 0!important;
+    -o-border-radius: 0!important;
+}
+
+.boxHeader .title {
+    font-weight: 600;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    text-transform: uppercase;
+}
+
+.flexArea {
+    display: flex;
+    height: 168px;
+    padding: 20px 15px;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+    overflow: hidden;
+    overflow-y: scroll;
+}
+
+.flexRow {
+    display: flex;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 1rem;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.flexRow:last-child {
+    margin-bottom: 0;
+}
+
+.flexRow .item {
+    width: 100%; 
+}
+
+.flexRow .item p {
+    font-size: .8rem;
+    line-height: 20px;
+    margin-bottom: 0;
+}
+
+.stronger {
+    font-weight: 700;
+}
+
+@media screen and (max-width: 1366px) {
+    .flexRow {
+        margin-bottom: .4rem;
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .flexRow {
+        margin-bottom: 0;
+        flex-direction: column;
+    }
+
+    .flexRow .item {
+        width: 100%;
+    }
+
+    .flexRow .item:last-child {
+        text-align: left;
+    }
+}

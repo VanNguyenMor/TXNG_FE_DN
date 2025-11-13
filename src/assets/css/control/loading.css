@@ -1,0 +1,21 @@
+.wrap-loading {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 101;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.wrap-loading.active {
+    display: flex;
+}
+
+.wrap-loading-icon {
+    font-size: 3em;
+    color: var(--color-white);
+}

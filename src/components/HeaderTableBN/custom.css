@@ -1,0 +1,76 @@
+.rdtPicker table {
+    overflow-y: initial;
+}
+
+.rdtPicker table thead th.dow {
+    padding: 0;
+}
+
+table thead th.rdtPrev {
+    width: 36px !important;
+}
+
+.rdtPicker td,
+.rdtPicker th {
+    height: 32px;
+}
+
+.rdtPicker th.rdtSwitch {
+    width: 150px;
+}
+
+.rdtMonths .rdtMonth,
+.rdtMonths .rdtYear,
+.rdtYears .rdtMonth,
+.rdtYears .rdtYear {
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+}
+
+.custom-width-head-search {
+    width: 100%;
+    justify-content: left !important;
+}
+
+/* .HeaderTable_mainFunc__BlA5V {
+    justify-content: left;
+} */
+
+.HeaderTable_headerTable__3td5D {
+    align-items: end;
+}
+
+.position-div-header-table {
+    position: relative;
+}
+
+.position-button-header-table {
+    position: absolute;
+}
+
+.position-button-refresh {
+    bottom: 5px;
+    right: 111px;
+}
+
+/* .HeaderTable_mainFunc__13l0i {
+    justify-content: left;
+} */
+
+.css-Header-table-align-item {
+    align-items: flex-end;
+}
+
+.class-justify-left {
+    align-items: end;
+}
+
+.mg-btn {
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+/* .position-button-search{
+
+} */

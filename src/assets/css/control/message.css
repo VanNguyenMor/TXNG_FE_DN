@@ -1,0 +1,63 @@
+.wrap-message {
+    width: 300px;
+    border-radius: 5px;
+    position: fixed;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: all 0.3s ease-out;
+    background-color: var(--color-white);
+    min-height: 50px;
+    opacity: 0;
+    visibility: hidden;
+    box-shadow: 1px -1px 5px 1px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    z-index: 104;
+}
+
+.wrap-message.active {
+    opacity: 1;
+    visibility: visible;
+    top: 5px;
+}
+
+.wrap-message-title {
+    font-size: 1em;
+    color: var(--color-black);
+    font-weight: 600;
+    font-family: var(--font-normal);
+    text-align: center;
+    margin: 0px;
+    padding: 2px 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-black);
+}
+
+.wrap-message-title.success {
+    background-color: var(--color-blue);
+    color: var(--color-white);
+    border-bottom: 1px solid var(--color-blue);
+}
+
+.wrap-message-title.error {
+    background-color: var(--color-red);
+    color: var(--color-white);
+    border-bottom: 1px solid var(--color-red);
+}
+
+.wrap-message-title.warning {
+    background-color: var(--color-green);
+    color: var(--color-white);
+    border-bottom: 1px solid var(--color-green);
+}
+
+.wrap-message-message {
+    text-align: center;
+    font-size: 0.8em;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+    margin: 0px;
+    padding: 5px 0px;
+}

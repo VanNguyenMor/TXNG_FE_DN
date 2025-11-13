@@ -1,0 +1,368 @@
+.table-css-access .thead-dark th:nth-child(2) {
+    width: 320px;
+}
+
+.table-css-access .thead-dark th:nth-child(4) {
+    width: 300px;
+}
+
+.table-css-access .thead-dark th:nth-child(5) {
+    width: 300px;
+}
+
+.table-css-access .thead-dark th:nth-child(6) {
+    width: 300px;
+}
+
+.table-css-access .thead-dark th:nth-child(7) {
+    width: 300px;
+}
+
+.table-css-access .thead-dark th:nth-child(8) {
+    width: 300px;
+}
+
+.table-hover-css:hover {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+.table-css-access input[type=checkbox] {
+    /* cursor: pointer; */
+    font-size: 15px;
+    appearance: none;
+    /* transform: scale(1.5); */
+}
+
+.table-css-access input[type=checkbox]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    margin: 5px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+    appearance: none;
+}
+
+
+.table-css-access input[type="checkbox"]:checked:after {
+    content: "\2714";
+    font-weight: bold;
+}
+
+
+.access-css-checkbox input[type="checkbox"] {
+    font-size: 15px;
+    visibility: hidden;
+}
+
+.access-css-checkbox input[type="checkbox"][checked] {
+    font-size: 15px;
+    visibility: hidden;
+    appearance: none;
+}
+
+.access-css-checkbox input[type="checkbox"][checked]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.access-css-checkbox input[type=checkbox] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    -moz-border-colors: #04BF16;
+    width: 20px;
+    height: 20px;
+    visibility: visible;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.access-css-checkbox input[type=checkbox][disabled] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    cursor: not-allowed;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.access-css-checkbox input {
+    cursor: pointer;
+}
+
+.update-css-check input {
+    cursor: pointer;
+}
+
+input[type="checkbox"][disabled] {
+    outline: none !important;
+    -moz-outline: none;
+}
+
+.access-css-checkbox input[type=checkbox]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.access-css-checkbox input[type=checkbox]:not(:checked):after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.access-css-checkbox input[type=checkbox]:checked:after {
+    content: "\2714";
+    font-weight: bold;
+}
+
+
+.update-css-check input[type="checkbox"] {
+    font-size: 18px;
+    visibility: hidden;
+}
+
+.update-css-check input[type="checkbox"][checked] {
+    font-size: 16px;
+    visibility: hidden;
+    appearance: none;
+}
+
+.update-css-check input[type="checkbox"][checked]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.update-css-check input[type=checkbox] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    -moz-border-colors: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.update-css-check input[type=checkbox][disabled] {
+    content: " ";
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+
+.update-css-check input[type=checkbox]:after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.update-css-check input[type=checkbox]:not(:checked):after {
+    content: " ";
+    background-color: #fff;
+    display: inline-block;
+    color: #04BF16;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    visibility: visible;
+    border: 1px solid #04BF16;
+    padding: 0 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.08), 0 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.update-css-check input[type=checkbox]:checked:after {
+    content: "\2714";
+    /* display: unset; */
+    font-weight: bold;
+}
+
+.Access_formControl__3EZHP .Access_rowItem__3V-T- {
+    margin-bottom: 0px;
+}
+
+
+
+.form-control {
+    padding: 0.3rem 0.75rem !important;
+}
+
+.UserAccount_rowItem__3xAPo {
+    margin-bottom: 0px !important;
+}
+
+.css-border-input {
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    border: 0;
+    transition: box-shadow .15s ease;
+    border-color: rgb(50 50 93 / 73%),
+        0 1px 0 rgb(0 0 0 / 2%);
+}
+
+.SelectTree_select__1oYhQ {
+    height: calc(1em + 1rem + 2px);
+    padding: 0.3rem 0.75rem;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    transition: box-shadow .15s ease;
+}
+
+.SelectTree_select__1oYhQ {
+    color: #8898aa;
+}
+
+.Access_rowItem__3e8rv {
+    margin-bottom: 0px !important;
+}
+
+.Access_margin {
+    margin-bottom: 0px !important;
+}
+
+.form-control {
+    height: calc(1em + 1rem + 2px);
+}
+
+.form-control-label {
+    color: #525f7f;
+}
+
+/* .Select_select__1GZAZ {
+    height: calc(1em + 1rem + 2px);
+    padding: 0.3rem 0.75rem;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    transition: box-shadow .15s ease;
+    color: inherit;
+}
+
+.SelectTree_select__1SSuk {
+    height: calc(1em + 1rem + 2px);
+    padding: 0.3rem 0.75rem;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    transition: box-shadow .15s ease;
+    color: inherit;
+
+}
+
+.SelectTree_select__1oYhQ {
+    height: calc(1em + 1rem + 2px);
+    padding: 0.3rem 0.75rem;
+    box-shadow: 0 1px 3px rgb(50 50 93 / 73%), 0 1px 0 rgb(0 0 0 / 2%);
+    transition: box-shadow .15s ease;
+    color: inherit;
+} */
+
+/* .SelectTree_select__1SSuk:first-child {
+    color: #8898aa !important;
+} */
+
+/* .SelectTree_selectHeader__1Z81S {
+    color: #8898aa !important;
+} */
+
+.css-icon-button-access {
+    color: #fff;
+    /* background: rgba(0, 0, 0, 0.5); */
+    background-color: #d9001b;
+    height: 20px;
+    padding: 0;
+    margin: auto;
+    width: 20px;
+    margin: auto;
+    line-height: 20px;
+    border-radius: 0;
+    /* border-color: rgba(0, 0, 0, 0.5); */
+    border-color: #d9001b;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.css-icon-button-access:hover {
+    background: #d9001b;
+    border-color: #d9001b;
+}
+
+.css-button-access button {
+    margin: 0;
+}
+
+.w_input {
+    width: 30%;
+}
+
+
+/* @media screen and (min-width: 360px) and (max-width: 750px) {
+    .w_input {
+        width: 100% !important;
+    }
+
+} */

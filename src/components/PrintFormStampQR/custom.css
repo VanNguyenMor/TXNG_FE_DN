@@ -1,0 +1,120 @@
+#printarea {
+    border: 1px solid #000;
+}
+
+#printarea > div {
+    padding: 10px;
+}
+
+.rowItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rowItem.end {
+    justify-content: flex-end;
+}
+
+.rowItem .text {
+    position: relative;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.rowItem .text .value {
+    position: absolute;
+    left: 24%;
+    top: -3px;
+}
+
+.text-bold {
+    font-family: 'Arial Bold', 'Arial', sans-serif;
+    font-weight: 700;
+}
+
+.title {
+    color: #000080;
+    text-align: center;
+    padding-left: 217px;
+}
+
+.title-area {
+    display: flex;
+    margin-top: 20px;
+    justify-content: center;
+    align-items:  center;
+}
+
+.title-area .num {
+    position: relative;
+    padding-left: 60px;
+}
+
+.title-area .num .text {
+    font-size: 14px;
+}
+
+.border-dot {
+    border-bottom: 1px dotted;
+}
+
+.italic-text {
+    font-style: italic;
+}
+
+.rowItem .text .date {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+    width: 70px;
+}
+
+.rowItem .text .date::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: 4px;
+    left: 0;
+    border-bottom: 1px dotted;
+}
+
+.rowItem .text .month {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+    width: 70px;
+}
+
+.rowItem .text .month::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: 4px;
+    left: 0;
+    border-bottom: 1px dotted;
+}
+
+.rowItem .text .year {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+    width: 70px;
+}
+
+.rowItem .text .year::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: 4px;
+    left: 0;
+    border-bottom: 1px dotted;
+}
+@media (min-width: 992px) {
+    .modal-lg, .modal-xl {
+        max-width: 768px;
+    }
+}

@@ -1,0 +1,161 @@
+import React, { Component } from "react";
+import classes from './index.module.css';
+import InputCurrency from '../../../components/InputCurrency';
+import Validate from "react-validate-form";
+import { rules, validations, checkPasswordConfirm } from "../../../helpers/validation";
+import Select from "components/Select";
+import SelectParent from "components/SelectParent";
+
+// reactstrap components
+import {
+    Input,
+    InputGroup
+} from "reactstrap";
+
+class AddNewModal extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            data: {
+                materialGroupID:'',
+                name: '',
+                note: ''
+            },
+            checkConfirmPass: '',
+            activeSubmit: false
+        }
+    }
+
+    handleChange = (event) => {
+        let { data } = this.state;
+        const ev = event.target;
+        data[ev['name']] = ev['value'];
+        this.setState({ data });
+
+        // Check Validation 
+        this.handleCheckValidation();
+    }
+
+    handleSelect = (value, name) => {
+        let { data } = this.state;
+
+        if (value === null) value = "";
+        data[name] = value;
+
+        this.setState({ data });
+
+        // Check Validation 
+        this.handleCheckValidation();
+    }
+
+    handleCheckValidation = () => {
+        const { handleCheckValidation, handleNewData } = this.props;
+        let { data } = this.state;
+
+        if (Number(data.quantity) > 0) {
+            this.setState({ activeSubmit: true });
+
+            // Check Validation 
+            handleCheckValidation(true);
+
+
+            // Handle New Data
+            handleNewData(data);
+        } else {
+            this.setState({ activeSubmit: false });
+            handleCheckValidation(false);
+
+            // Handle New Data
+            handleNewData(data);
+        }
+    }
+
+    handleChangeNum = (event) => {
+        let { data } = this.state;
+        const ev = event.target;
+
+        data[ev['name']] = Number(ev['value'].replaceAll('.', ''));
+        this.setState({ data });
+
+        // Check Validation 
+        this.handleCheckValidation();
+    }
+
+    render() {
+        const { data } = this.state;
+        const { errorInsert, dataMaterial } = this.props;
+        return (
+            <div className={classes.formControl}>
+                <div className={classes.rowItem}>
+                    <label
+                        className="form-control-label"
+                    >
+                        Tên nhóm NVL &nbsp;<b style={{ color: 'red' }}>*</b>
+                    </label>
+
+                    <div className={classes.inputArea}>
+                        <InputGroup className="input-group-alternative">
+                            <SelectParent
+                                name="materialGroupID"
+                                //defaultValue={filter.fieldID}
+                                title='Chọn nhóm NVL'
+                                data={dataMaterial}
+                                labelName='name'
+                                parentId='fieldID'
+                                parentName='fieldName'
+                                val='id'
+                                handleChange={this.handleSelect}
+                            />
+                        </InputGroup>
+                        <p className='form-error-message margin-bottom-0'>{errorInsert['materialGroupID'] || ''}</p>
+                    </div>
+                </div>
+                <div className={classes.rowItem}>
+                    <label
+                        className="form-control-label"
+                    >
+                        Tên loại &nbsp;<b style={{ color: 'red' }}>*</b>
+                    </label>
+
+                    <div className={classes.inputArea}>
+                        <InputGroup className="input-group-alternative">
+                            <Input
+                                name='name'
+                                //placeholder='Số lượng'
+                                //defaultValue={data.quantity}
+                                //required
+                                autoFocus={true}
+                                onKeyUp={(event) => this.handleChange(event)}
+                            />
+                        </InputGroup>
+                        <p className='form-error-message margin-bottom-0'>{errorInsert['name'] || ''}</p>
+                    </div>
+                </div>
+                <div className={classes.rowItem}>
+                    <label
+                        className="form-control-label"
+                    >
+                        Ghi chú
+                    </label>
+                    <div className={classes.inputArea}>
+                        <InputGroup className="input-group-alternative">
+                            <Input
+                                name='note'
+                                type='textarea'
+                                //placeholder='Số lượng'
+                                //defaultValue={data.quantity}
+                                //required
+                                //autoFocus={true}
+                                onKeyUp={(event) => this.handleChange(event)}
+                            />
+                        </InputGroup>
+                    </div>
+
+                </div>
+            </div>
+        );
+    }
+};
+
+export default AddNewModal;

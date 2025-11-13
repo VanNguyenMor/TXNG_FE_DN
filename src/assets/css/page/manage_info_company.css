@@ -1,0 +1,201 @@
+.wrap-manage-company {
+    padding: 5px;
+}
+
+.wrap-manage-company-header {
+    
+}
+
+.wrap-manage-company-header-button {
+    width: 200px;
+    height: 35px;
+    border-radius: 5px;
+    border: 1px solid var(--color-aqua);
+    background: #EAEAEA;
+    font-size: 14px;
+    font-family: var(--font-normal);
+    color: var(--color-black);
+    margin-right: 5px;
+}
+
+.wrap-manage-company-header-button.active {
+    background-color: var(--color-blue);
+    color: var(--color-white);
+}
+
+.wrap-manage-company-body {
+    margin: 5px;
+}
+    
+.wrap-manage-company-body-item {
+    display: flex;
+    margin-top: 15px;
+}
+
+.wrap-manage-company-body-item-label {
+    font-size: 14px;
+    font-family: var(--font-family);
+    color: var(--color-black);
+    min-width: 140px;
+    display: block; 
+    margin: 0px;
+    padding: 0px;
+}
+
+.wrap-manage-company-body-item-label-introduce {
+    align-self: flex-start;
+}
+
+.wrap-manage-company-body-item-input, .wrap-manage-company-body-item-select, .wrap-manage-company-body-item-textarea {
+    margin-left: 5px;
+    flex: 1;
+    margin: 0px;
+    padding: 5px;
+    height: 30px;
+    border: 1px solid var(--color-aqua);
+    font-size: 14px;
+    font-family: var(--font-family);
+    color: var(--color-black);
+}
+
+.wrap-manage-company-body-item-textarea {
+    height: auto;
+}
+
+.wrap-manage-company-body-item-group-address {
+    display: flex;
+    flex: 1;
+}
+
+.wrap-manage-company-body-item-group-address-item {
+    flex: 1;
+}
+
+.wrap-manage-company-body-item-group-address-item-district {
+    margin: 0px 5px;
+}
+
+.wrap-manage-company-body-item-1, .wrap-manage-company-body-item-2 {
+    display: flex;
+    flex: 1;
+}
+
+.wrap-manage-company-body-item-2 {
+    margin-left: 5px;
+}
+
+.wrap-manage-company-body-item-image {
+    width: 300px;
+    height: 300px;
+}
+
+.wrap-manage-company-body-item-label-location, .wrap-manage-company-body-item-label-logo, .wrap-manage-company-body-item-label-image {
+    align-self: flex-start;
+}
+
+.wrap-manage-company-function {
+    margin-bottom: 5px;
+}
+
+.wrap-manage-company-function-add {
+    width: 120px;
+    height: 30px;
+    border: none;
+    background: none;
+}
+
+.wrap-manage-company-function-add-icon {
+    width: 100%;
+    height: 100%;
+}
+
+.wrap-manage-company-body-item-box {
+    flex: 1;
+}
+
+.wrap-manage-company-body-item-box-input, .wrap-manage-company-body-item-box-select {
+    width: 100%;
+}
+
+.wrap-manage-company-body-item-box-function {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 300px;
+    margin-top: 5px;
+}
+
+.wrap-manage-company-body-item-box-function-button {
+    width: 75px;
+    height: 30px;
+    border-radius: 5px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-family: var(--font-family);
+    color: var(--color-white);
+}
+
+.wrap-manage-company-body-item-box-function-button-delete {
+    background-color: var(--color-red);
+}
+
+.wrap-manage-company-body-item-box-function-button-update {
+    margin-left: 5px;
+    background-color: var(--color-blue);
+}
+
+.wrap-manage-company-body-item-map-view {
+    width: 300px;
+    height: 300px;
+    position: relative;
+}
+
+.wrap-manage-company-body-item-map-view-drop {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.wrap-manage-company-location {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100vw;
+    height: 100vh;
+    z-index: 105;
+}
+
+.wrap-manage-company-location-function {
+    position: fixed;
+    z-index: 106;
+    right: 60px;
+    bottom: 20px;
+}
+
+.wrap-manage-company-location-function-button {
+    border: none;
+    background: none;
+    border-radius: 5px;
+    font-size: 14px;
+    color: var(--color-white);
+    font-family: var(--font-family);
+    padding: 5px 10px;
+    height: 30px;
+}
+
+.wrap-manage-company-location-function-button-close {
+    background-color: var(--color-red);
+}
+
+.wrap-manage-company-location-function-button-confirm {
+    margin-left: 10px;
+    background-color: var(--color-blue);
+}
+
+.wrap-manage-company-body-item .tox.tox-tinymce {
+    width: 100%;
+}
