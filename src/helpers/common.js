@@ -5,9 +5,9 @@ import { useLocation } from "react-router-dom";
 import moment from "moment";
 
 export const alertContext = { status: null, message: '' };
-export let AlertContext = React.createContext(AlertContext);
+export let AlertContext = React.createContext(alertContext);
 export const menuContext = { data: null };
-export let MenuContext = React.createContext(MenuContext);
+export let MenuContext = React.createContext(menuContext);
 
 /**
  * Set Alert Context

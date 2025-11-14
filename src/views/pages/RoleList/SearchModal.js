@@ -1,17 +1,14 @@
 import React, { Component } from "react";
-import classes from './index.module.css';
+import classes from "./index.module.css";
 
 // reactstrap components
-import {
-  Input
-} from "reactstrap";
+import { Input } from "reactstrap";
 
 class SearchModal extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-    }
+    this.state = {};
   }
 
   render() {
@@ -36,6 +33,6 @@ class SearchModal extends Component {
       </div>
     );
   }
-};
+}
 
 export default SearchModal;

@@ -44,8 +44,8 @@ export const HUB_LISTENS = {
 
 export const CLIENT_ID = 'AdminClientId';
 export const CLIENT_SECRET = 'd7a61fac-8071-e5c5-d541-4b1ddb82f9fd';
-export const DOMAIN = 'https://txng-admin-v1.isopro.vn/';// dm ca1i api chinh1 ne2
-export const BASE_URL = 'https://txng-ids-v1.isopro.vn/';
+export const DOMAIN = 'https://hcm-admin-v1.tracecenter.vn/';// dm ca1i api chinh1 ne2
+export const BASE_URL = 'https://hcm-ids-v1.tracecenter.vn/';
 export const SCOPE = 'Txng_Center_api openid roles profile offline_access'; 
 
 // export const DOMAIN = 'https://localhost:44309/';// dm ca1i api chinh1 ne2
