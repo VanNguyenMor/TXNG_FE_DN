@@ -42,11 +42,12 @@ export const HUB_LISTENS = {
 // export const BASE_URL = 'https://txng-ids-v1.isopro.vn/';
 // export const SCOPE = 'Txng_Center_api openid roles profile offline_access';  
 
+//Tien Giang BUILD
 export const CLIENT_ID = 'AdminClientId';
-export const CLIENT_SECRET = 'd7a61fac-8071-e5c5-d541-4b1ddb82f9fd';
-export const DOMAIN = 'https://txng-admin-v1.isopro.vn/';// dm ca1i api chinh1 ne2
-export const BASE_URL = 'https://txng-ids-v1.isopro.vn/';
-export const SCOPE = 'Txng_Center_api openid roles profile offline_access'; 
+export const CLIENT_SECRET = '4884db16-0d52-a069-457d-727db99ab673';
+export const DOMAIN = 'https://truyxuatnguongoc.tiengiang.gov.vn:9801/';// dm ca1i api chinh1 ne2
+export const BASE_URL = 'https://truyxuatnguongoc.tiengiang.gov.vn:9903/';
+export const SCOPE = 'Txng_Center_api openid roles profile offline_access';
 
 // export const DOMAIN = 'https://localhost:44309/';// dm ca1i api chinh1 ne2
 // export const DOMAIN = 'https://txng-admin-v1.isopro.vn/';// dm ca1i api chinh1 ne2
