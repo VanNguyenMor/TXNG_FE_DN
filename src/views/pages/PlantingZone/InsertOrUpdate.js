@@ -1,49 +1,44 @@
-import React, { Component } from 'react';
-import compose from 'recompose/compose';
+import React, { Component } from "react";
+import compose from "recompose/compose";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import { actionLocationCreators } from "../../../actions/LocationListAction";
 import { areaDataAction } from "../../../actions/AreaDataAction";
 import { platingZoneAction } from "../../../actions/PlantingZoneAction";
-import GoogleAutoCompleteInput from '../../../components/GoogleAutoCompleteInput';
+import GoogleAutoCompleteInput from "../../../components/GoogleAutoCompleteInput";
 import PopupMessage from "../../../components/PopupMessage";
 import Select from "components/Select";
-import '../../../assets/css/page/insert_or_update_planting_zone.css';
-import classes from './index.module.css';
-import { UNITS } from 'helpers/constant';
-import { ICON_COMMONS } from '../../../assets/img';
-import GoogleMapReact from 'google-map-react';
-import { LOCATION_DEFAULT, ZOOM_DEFAULT } from '../../../services/Common'
-import locationIcon from '../../../assets/img/locationIcon/location.png';
-import { MAP_KEY } from '../../../services/Common';
-import { currentPosition } from 'utils/geo';
+import "../../../assets/css/page/insert_or_update_planting_zone.css";
+import classes from "./index.module.css";
+import { UNITS } from "helpers/constant";
+import { ICON_COMMONS } from "../../../assets/img";
+import GoogleMapReact from "google-map-react";
+import { LOCATION_DEFAULT, ZOOM_DEFAULT } from "../../../services/Common";
+import locationIcon from "../../../assets/img/locationIcon/location.png";
+import { MAP_KEY } from "../../../services/Common";
+import { currentPosition } from "utils/geo";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 import delImg from "../../../assets/img/buttons/xoahinh.svg";
 import Imgbt from "../../../assets/img/buttons/chonhinh.svg";
-import IconAdd from '../../../assets/img/buttons/add.svg';
-import IconDelete from '../../../assets/img/buttons/delete.png';
-import { Guid } from 'guid-typescript';
+import IconAdd from "../../../assets/img/buttons/add.svg";
+import IconDelete from "../../../assets/img/buttons/delete.png";
+import { Guid } from "guid-typescript";
 import PlusImg from "../../../assets/img/buttons/chonhinh.svg";
-import CloseIcon from "../../../assets/img/buttons/xoahinh.svg"
+import CloseIcon from "../../../assets/img/buttons/xoahinh.svg";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { SketchPicker } from 'react-color';
-import { validExtensionFileImage } from 'bases/helper';
-import { validSize } from 'bases/helper';
-import { MAX_FILE_IMAGE_SIZE } from 'bases/helper';
-import { EXTENSION_FILE_IMAGE } from 'bases/helper';
+import { SketchPicker } from "react-color";
+import { validExtensionFileImage } from "bases/helper";
+import { validSize } from "bases/helper";
+import { MAX_FILE_IMAGE_SIZE } from "bases/helper";
+import { EXTENSION_FILE_IMAGE } from "bases/helper";
 
 // const AnyReactComponent = ({ text }) => <div>{text}</div>
-import {
-  Input,
-  Button,
-  InputGroup,
-  Textarea
-} from "reactstrap";
+import { Input, Button, InputGroup, Textarea } from "reactstrap";
 
-const getItems = count =>
-  Array.from({ length: count }, (v, k) => k).map(k => ({
+const getItems = (count) =>
+  Array.from({ length: count }, (v, k) => k).map((k) => ({
     id: `item-${k}`,
-    content: `item ${k}`
+    content: `item ${k}`,
   }));
 
 // a little function to help us with reordering the result
@@ -67,15 +62,19 @@ const getItemStyle = (isDragging, draggableStyle) => ({
   background: isDragging ? "lightgreen" : "#11C7EF",
 
   // styles we need to apply on draggables
-  ...draggableStyle
+  ...draggableStyle,
 });
 
-const getListStyle = isDraggingOver => ({
+const getListStyle = (isDraggingOver) => ({
   background: isDraggingOver ? "lightblue" : "lightgrey",
   padding: grid,
-  width: '100%'
+  width: "100%",
 });
-const AnyReactComponent = ({ text }) => <div><img width={25} src={locationIcon} /></div>
+const AnyReactComponent = ({ text }) => (
+  <div>
+    <img width={25} src={locationIcon} />
+  </div>
+);
 
 class InsertOrUpadte extends Component {
   constructor(props) {
@@ -84,16 +83,21 @@ class InsertOrUpadte extends Component {
     this.state = {
       dataWard: null,
       dataDistrict: null,
+      dataPermission: [
+        { id: "1", name: "Quyền 1 (MockData)" },
+        { id: "2", name: "Quyền 2 (MockData)" },
+        { id: "3", name: "Quyền 3 (MockData)" },
+      ],
       id: null,
       plantingTypeName: null,
       plantingZoneName: null,
       unitRoundName: null,
       unitBadName: null,
-      name: '',
-      gps: '',
+      name: "",
+      gps: "",
       // sortOrder: null,
-      round: '',
-      bad: '',
+      round: "",
+      bad: "",
       gpsNew: [],
       isShowArea: true,
       plantingTypeId: null,
@@ -106,19 +110,19 @@ class InsertOrUpadte extends Component {
       iconFile: null,
       position: {
         latitude: LOCATION_DEFAULT.lat,
-        longitude: LOCATION_DEFAULT.lng
+        longitude: LOCATION_DEFAULT.lng,
       },
       positionChange: {
         latitude: LOCATION_DEFAULT.lat,
-        longitude: LOCATION_DEFAULT.lng
+        longitude: LOCATION_DEFAULT.lng,
       },
       items: getItems(10),
-      pathImageDefaul: '',
-      mfileImg: '',
-      ArrayFileAdd: '',
-      fileImage: '',
-      color: '#000000',
-    }
+      pathImageDefaul: "",
+      mfileImg: "",
+      ArrayFileAdd: "",
+      fileImage: "",
+      color: "#000000",
+    };
     this.onDragEnd = this.onDragEnd.bind(this);
     this.redSelect = null;
     this.refInputName = null;
@@ -127,7 +131,7 @@ class InsertOrUpadte extends Component {
   }
 
   componentWillUnmount() {
-    this.setState(previousState => {
+    this.setState((previousState) => {
       return {
         ...previousState,
         id: null,
@@ -135,21 +139,27 @@ class InsertOrUpadte extends Component {
         plantingZoneName: null,
         unitRoundName: null,
         unitBadName: null,
-        name: '',
-        gps: '',
-        round: '',
-        bad: '',
+        name: "",
+        gps: "",
+        round: "",
+        bad: "",
         plantingTypeId: null,
         plantingZoneId: null,
         wardId: null,
         districtId: null,
-      }
+      };
     });
   }
 
   async componentDidMount() {
-    const { getDetailPlantingZone, getListPlantingType, onHandleChangeValue,
-      id, getListPlantingZoneForComboBox, getDistrictList, getWardList
+    const {
+      getDetailPlantingZone,
+      getListPlantingType,
+      onHandleChangeValue,
+      getListPlantingZoneForComboBox,
+      getDistrictList,
+      getWardList,
+      id,
     } = this.props;
 
     if (onHandleChangeValue) {
@@ -178,35 +188,35 @@ class InsertOrUpadte extends Component {
       const data = ((result || {}).data || {}).data || null;
 
       if (!data) {
-        alert('Không tìm thấy vùng sản xuất này');
+        alert("Không tìm thấy vùng sản xuất này");
         return;
       }
 
       if (data.images) {
         const pIm = data.images;
-        const spl = pIm.split(';')
-        this.setState(previousState => {
+        const spl = pIm.split(";");
+        this.setState((previousState) => {
           return {
             ...previousState,
-            pathImageDefaul: spl
-          }
-        })
+            pathImageDefaul: spl,
+          };
+        });
       }
 
       plantingTypeId = data.plantingTypeID;
       plantingZoneId = data.parentID;
       districtId = data.districtID;
       wardId = data.wardID;
-      dataGPSSub = data.gpsNew.split(';')
-      dataGPSSub.map(x => {
+      dataGPSSub = data.gpsNew.split(";");
+      dataGPSSub.map((x) => {
         chilGPSSubConvert = {
           id: Guid.create().toString(),
-          content: x
-        }
-        dataGPSSubConvert.push(chilGPSSubConvert)
-      })
+          content: x,
+        };
+        dataGPSSubConvert.push(chilGPSSubConvert);
+      });
 
-      dataGPS = dataGPSSub[0].split(',');
+      dataGPS = dataGPSSub[0].split(",");
       dataLat = parseInt(dataGPS[0]);
       dataLng = parseInt(dataGPS[1]);
 
@@ -216,71 +226,86 @@ class InsertOrUpadte extends Component {
       this.setState({
         position: {
           latitude: dataLat,
-          longitude: dataLng
+          longitude: dataLng,
         },
         positionChange: {
           latitude: dataLat,
-          longitude: dataLng
+          longitude: dataLng,
         },
-      })
+      });
 
-      let districtName = '';
-      let wardName = '';
+      let districtName = "";
+      let wardName = "";
       if (districtId) {
-        districtName = (dataDistrict.find(p => p.id == districtId) || {}).districtName;
-
+        districtName = (dataDistrict.find((p) => p.id == districtId) || {})
+          .districtName;
       }
 
       if (wardId) {
-        wardName = (dataWard.find(p => p.id == wardId) || {}).wardName;
+        wardName = (dataWard.find((p) => p.id == wardId) || {}).wardName;
       }
 
-      this.setState(previousState => {
+      this.setState(
+        (previousState) => {
+          return {
+            ...previousState,
+            districtName,
+            wardName,
+            dataWard,
+            gpsNew: dataGPSSubConvert,
+            dataLat,
+            dataLng,
+            id: data.id,
+            name: data.name,
+            plantingTypeId,
+            districtId,
+            wardId,
+            fileImage: data.images,
+            plantingZoneId,
+            gps: data.gps,
+            color: data.color ? data.color : "",
+            round: data.radius,
+            icon: data.icon,
+            fileView: data.icon,
+            bad: data.tolerance,
+            unitIdBad: data.toleranceUnit,
+            unitIdRound: data.unit,
+            unitBadName:
+              (UNITS.find((p) => p.value == data.toleranceUnit) || {}).label ||
+              "",
+            unitRoundName:
+              (UNITS.find((p) => p.value == data.unit) || {}).label || "",
+          };
+        },
+        () => {
+          if (onHandleChangeValue) {
+            onHandleChangeValue(this.state);
+          }
+        }
+      );
+    }
+
+    this.setState(
+      (previousState) => {
         return {
           ...previousState,
-          districtName,
-          wardName,
-          dataWard,
-          gpsNew: dataGPSSubConvert,
-          dataLat,
-          dataLng,
-          id: data.id,
-          name: data.name,
-          plantingTypeId,
-          districtId,
-          wardId,
-          fileImage: data.images,
-          plantingZoneId,
-          gps: data.gps,
-          color: data.color ? data.color : '',
-          round: data.radius,
-          icon: data.icon,
-          fileView: data.icon,
-          bad: data.tolerance,
-          unitIdBad: data.toleranceUnit,
-          unitIdRound: data.unit,
-          unitBadName: (UNITS.find(p => p.value == data.toleranceUnit) || {}).label || '',
-          unitRoundName: (UNITS.find(p => p.value == data.unit) || {}).label || ''
-        }
-      }, () => {
+          dataDistrict,
+        };
+      },
+      () => {
         if (onHandleChangeValue) {
           onHandleChangeValue(this.state);
         }
-      });
-    }
-
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        dataDistrict,
       }
-    }, () => {
-      if (onHandleChangeValue) {
-        onHandleChangeValue(this.state);
-      }
-    });
+    );
 
-    getListPlantingType({ "search": "", "filter": "", "orderBy": "", "page": null, "limit": null }).then(res => {
+    getListPlantingType({
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    }).then((res) => {
       const data = res.data;
 
       if (data.status == 200) {
@@ -289,40 +314,53 @@ class InsertOrUpadte extends Component {
         if (plantingTypes.length > 0) {
           const plantingType = plantingTypes[0];
 
-          let plantingTypeName = '';
+          let plantingTypeName = "";
 
           if (plantingTypeId) {
-            plantingTypeName = (plantingTypes.find(p => p.id == plantingTypeId) || {}).name;
+            plantingTypeName = (
+              plantingTypes.find((p) => p.id == plantingTypeId) || {}
+            ).name;
           } else {
             plantingTypeName = plantingType.name;
           }
 
           if (plantingType) {
-            this.setState(previousState => {
-              return {
-                ...previousState,
-                plantingTypeId: plantingTypeId || null,
-                plantingTypeName
+            this.setState(
+              (previousState) => {
+                return {
+                  ...previousState,
+                  plantingTypeId: plantingTypeId || null,
+                  plantingTypeName,
+                };
+              },
+              () => {
+                if (this.props.onHandleChangeValue) {
+                  this.props.onHandleChangeValue(this.state);
+                }
               }
-            }, () => {
-              if (this.props.onHandleChangeValue) {
-                this.props.onHandleChangeValue(this.state);
-              }
-            });
+            );
           }
         }
       }
     });
 
-    getListPlantingZoneForComboBox({ "search": "", "filter": "", "orderBy": "", "page": null, "limit": null }).then(res => {
+    getListPlantingZoneForComboBox({
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    }).then((res) => {
       const data = res.data;
 
       if (data.status == 200) {
         const plantingZones = (data.data || {}).plantingZones || [];
-        let plantingZoneName = '';
+        let plantingZoneName = "";
         if (plantingZones.length > 0) {
           if (id) {
-            plantingZoneName = (plantingZones.find(p => p.id == plantingZoneId) || {}).name;
+            plantingZoneName = (
+              plantingZones.find((p) => p.id == plantingZoneId) || {}
+            ).name;
           } else {
             const plantingZone = plantingZones[0];
             if (plantingZone) {
@@ -330,18 +368,20 @@ class InsertOrUpadte extends Component {
               plantingZoneName = plantingZone.name;
             }
           }
-          this.setState(previousState => {
-            return {
-              ...previousState,
-              // plantingZoneId,
-              plantingZoneName
+          this.setState(
+            (previousState) => {
+              return {
+                ...previousState,
+                // plantingZoneId,
+                plantingZoneName,
+              };
+            },
+            () => {
+              if (this.props.onHandleChangeValue) {
+                this.props.onHandleChangeValue(this.state);
+              }
             }
-          }, () => {
-            if (this.props.onHandleChangeValue) {
-              this.props.onHandleChangeValue(this.state);
-            }
-          });
-
+          );
         }
       }
     });
@@ -357,126 +397,140 @@ class InsertOrUpadte extends Component {
         clearTimeout(timeOut);
       }, 100);
     }
-  }
+  };
 
-  onChangeSelect = name => value => {
-    const { getWardList, onHandleChangeValue, PlantingZoneStore } = this.props
+  onChangeSelect = (name) => (value) => {
+    const { getWardList, onHandleChangeValue, PlantingZoneStore } = this.props;
 
     let districtName = this.state.districtName;
     let wardName = this.state.wardName;
-    if (name === 'districtId') {
+    if (name === "districtId") {
       this.redSelect.resetValue();
-      districtName = '';
-      wardName = '';
-      getWardList(value).then(res => {
+      districtName = "";
+      wardName = "";
+      getWardList(value).then((res) => {
         if (res.data.status == 200) {
-          this.setState(previousState => {
-            return {
-              ...previousState,
-              dataWard: res.data.data,
+          this.setState(
+            (previousState) => {
+              return {
+                ...previousState,
+                dataWard: res.data.data,
+              };
+            },
+            () => {
+              if (onHandleChangeValue) {
+                onHandleChangeValue(this.state);
+              }
             }
-          }, () => {
+          );
+        }
+      });
+    }
+
+    if (name === "plantingTypeId") {
+      const plantingTypes = PlantingZoneStore.platingTypes || [];
+
+      let _color = plantingTypes.filter((p) => p.id == value);
+
+      if (_color) {
+        this.setState(
+          {
+            color: (_color[0] || {}).color || "",
+            icon: (_color[0] || {}).icon || "",
+            fileView: (_color[0] || {}).icon || "",
+          },
+          () => {
             if (onHandleChangeValue) {
               onHandleChangeValue(this.state);
             }
-          });
-        }
-      })
-    }
-
-    if (name === 'plantingTypeId') {
-
-      const plantingTypes = PlantingZoneStore.platingTypes || [];
-
-      let _color = plantingTypes.filter(p => p.id == value)
-
-      if (_color) {
-        this.setState({
-          color: ((_color[0] || {}).color) || '',
-          icon: ((_color[0] || {}).icon) || '',
-          fileView: ((_color[0] || {}).icon) || '',
-        }, () => {
-          if (onHandleChangeValue) {
-            onHandleChangeValue(this.state);
           }
-        })
+        );
       }
     }
 
-    if (name === 'wardId') {
-      wardName = '';
+    if (name === "wardId") {
+      wardName = "";
     }
     let plantingTypeName = this.state.plantingTypeName;
 
     let plantingZoneName = this.state.plantingZoneName;
 
-    if (name === 'plantingZoneId') {
-      plantingZoneName = '';
+    if (name === "plantingZoneId") {
+      plantingZoneName = "";
     }
 
     let unitBadName = this.state.unitBadName;
 
-    if (name === 'unitIdBad') {
-      unitBadName = '';
+    if (name === "unitIdBad") {
+      unitBadName = "";
     }
 
     let unitRoundName = this.state.unitRoundName;
 
-    if (name === 'unitIdRound') {
-      unitRoundName = '';
+    if (name === "unitIdRound") {
+      unitRoundName = "";
     }
 
-    if (name === 'plantingTypeId') {
-      plantingTypeName = '';
+    if (name === "plantingTypeId") {
+      plantingTypeName = "";
     }
 
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        [name]: value,
-        plantingTypeName,
-        plantingZoneName,
-        unitBadName,
-        unitRoundName,
-        districtName,
-        wardName
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          [name]: value,
+          plantingTypeName,
+          plantingZoneName,
+          unitBadName,
+          unitRoundName,
+          districtName,
+          wardName,
+        };
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
-    }, () => {
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(this.state);
-      }
-    });
-  }
+    );
+  };
 
-  onChangeValue = name => e => {
+  onChangeValue = (name) => (e) => {
     const value = e.target.value;
 
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        [name]: value
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          [name]: value,
+        };
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
-    }, () => {
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(this.state);
-      }
-    });
-  }
+    );
+  };
 
-  onChangeValueGPS = name => e => {
-    const value = e.target.value.replace(/[^0-9., ]/ig, "");
+  onChangeValueGPS = (name) => (e) => {
+    const value = e.target.value.replace(/[^0-9., ]/gi, "");
 
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        [name]: value
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          [name]: value,
+        };
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
-    }, () => {
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(this.state);
-      }
-    });
-  }
+    );
+  };
 
   // onChangeRadio = event => {
   //   this.state[event.target.name] = Number(event.target.value);
@@ -493,145 +547,145 @@ class InsertOrUpadte extends Component {
       const location = gps.split(",");
       const mapLocation = {
         lat: parseFloat(location[0]),
-        lng: parseFloat(location[1])
+        lng: parseFloat(location[1]),
       };
 
       return mapLocation;
     }
-  }
+  };
 
   handleZoomMap = (gps) => {
     if (gps.length === 0) return ZOOM_DEFAULT;
     else {
       const location = gps.split(",");
 
-      if (typeof (location[2]) !== 'undefined') {
-        const zoom = Number(location[2].replace('z', ''));
+      if (typeof location[2] !== "undefined") {
+        const zoom = Number(location[2].replace("z", ""));
 
         return zoom;
       } else return ZOOM_DEFAULT;
     }
-  }
+  };
 
   handleApiLoaded = (map, maps) => {
     // use map and maps objects
   };
 
   onCloseMapViewLocation = () => {
-    this.setState(previousState => {
+    this.setState((previousState) => {
       return {
         ...previousState,
-        isShowMapViewLocation: false
-      }
+        isShowMapViewLocation: false,
+      };
     });
-  }
+  };
 
   onOpenMaps = () => {
-    this.setState(previousState => {
+    this.setState((previousState) => {
       return {
         ...previousState,
-        isShowMapViewLocation: true
-      }
+        isShowMapViewLocation: true,
+      };
     });
-  }
+  };
 
-  onChangeLocation = location => {
-    this.setState(previousState => {
+  onChangeLocation = (location) => {
+    this.setState((previousState) => {
       return {
         ...previousState,
         locationChange: {
           lat: location.center.lat,
-          lng: location.center.lng
+          lng: location.center.lng,
         },
         positionChange: {
           latitude: location.center.lat,
           longitude: location.center.lng,
-        }
-      }
+        },
+      };
     });
-  }
+  };
 
-  onClickMap = e => {
-    this.setState(previousState => {
+  onClickMap = (e) => {
+    this.setState((previousState) => {
       return {
         ...previousState,
         locationChange: {
           lat: e.lat,
-          lng: e.lng
+          lng: e.lng,
         },
         position: {
           latitude: e.lat,
           longitude: e.lng,
-        }
-      }
+        },
+      };
     });
-  }
+  };
 
   onConfirmLocation = () => {
     let { gps, position } = this.state;
     const locationChange = this.state.locationChange;
-    gps = `${position.latitude},${position.longitude}`
+    gps = `${position.latitude},${position.longitude}`;
     if (locationChange) {
-      this.setState(previousState => {
+      this.setState((previousState) => {
         return {
           ...previousState,
           // location: locationChange,
           gps,
           locationChange: null,
-          isShowMapViewLocation: false
-        }
+          isShowMapViewLocation: false,
+        };
       });
     }
-  }
+  };
 
   onCurrentPosition = () => {
-    currentPosition().then(res => {
+    currentPosition().then((res) => {
       if (res.status) {
-        this.setState(previousState => {
+        this.setState((previousState) => {
           return {
             ...previousState,
             position: {
               latitude: res.latitude,
-              longitude: res.longitude
+              longitude: res.longitude,
             },
             positionChange: {
               latitude: res.latitude,
-              longitude: res.longitude
-            }
-          }
+              longitude: res.longitude,
+            },
+          };
         });
       }
     });
-  }
+  };
 
   onSelectPosition = ({ latitude, longitude }) => {
-    this.setState(previousState => {
+    this.setState((previousState) => {
       return {
         ...previousState,
         position: {
           latitude: latitude,
-          longitude: longitude
+          longitude: longitude,
         },
         positionChange: {
           latitude: latitude,
-          longitude: longitude
-        }
-      }
+          longitude: longitude,
+        },
+      };
     });
-  }
+  };
 
-  handleChangeIMG = event => {
+  handleChangeIMG = (event) => {
     let { icon, iconFile } = this.state;
     if (event.target.files[0] != undefined) {
       this.setState({
         fileView: URL.createObjectURL(event.target.files[0]),
         file: event.target.files[0],
-      })
+      });
     } else {
       this.setState({
         fileView: null,
         file: null,
-      })
+      });
     }
 
     const ev = event.target.files[0];
@@ -644,8 +698,7 @@ class InsertOrUpadte extends Component {
     });
 
     //console.log(event.target.files[0])
-
-  }
+  };
 
   toggleModal = (state, type) => {
     if (this.state[state] && type == 1) {
@@ -661,21 +714,20 @@ class InsertOrUpadte extends Component {
 
   onUpdateFileImage = () => {
     this.refFileImage.click();
-  }
+  };
   onUpdateFileImages = () => {
     this.refFileImages.click();
-  }
+  };
 
   onDeleImg = () => {
-    this.setState(previousState => {
+    this.setState((previousState) => {
       return {
         ...previousState,
         file: null,
-        fileView: null
-      }
-    }
-    )
-  }
+        fileView: null,
+      };
+    });
+  };
 
   onAddArea = () => {
     const { gps, gpsNew: gpsDetails } = this.state;
@@ -687,8 +739,8 @@ class InsertOrUpadte extends Component {
       // alert('Bạn vui lòng chọn vùng');
 
       this.setState({
-        errMessage: 'Bạn vui lòng chọn GPS'
-      })
+        errMessage: "Bạn vui lòng chọn GPS",
+      });
       //this.toggleModal('popupMessage')
       return;
     }
@@ -703,21 +755,21 @@ class InsertOrUpadte extends Component {
     //   return;
     // }
 
-    const gpsDetail = gpsDetails.find(p => p.content.trim().toUpperCase() == gps.trim().toUpperCase());
+    const gpsDetail = gpsDetails.find(
+      (p) => p.content.trim().toUpperCase() == gps.trim().toUpperCase()
+    );
 
     if (gpsDetail) {
       // alert('Bạn đã chọn vùng này');
 
       this.setState({
-        errMessage: 'Bạn đã chọn GPS này'
-      })
+        errMessage: "Bạn đã chọn GPS này",
+      });
       //this.toggleModal('popupMessage')
       return;
     }
 
-    gpsDetails.map(gps => {
-
-    })
+    gpsDetails.map((gps) => {});
 
     // const sortDetail = gpsDetails.find(p => parseInt(p.sortOrder) == parseInt(sortOrder));
     // if (sortDetail) {
@@ -732,56 +784,62 @@ class InsertOrUpadte extends Component {
 
     gpsNew.push({
       id: Guid.create().toString(),
-      content: gps || '',
+      content: gps || "",
       // sortOrder: sortOrder || null
     });
 
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        errMessage: '',
-        gpsNew
-      }
-    }, () => {
-      if (onHandleChangeValue) {
-        onHandleChangeValue(this.state);
-      }
-    });
-
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        gps: ''
-      }
-    })
-  }
-
-  onDeleteArea = id => () => {
-    const gpsNew = [...this.state.gpsNew];
-
-    const zone = gpsNew.find(p => p.id == id);
-
-    if (zone) {
-      const zoneNews = gpsNew.filter(p => p.id != id);
-
-      this.setState(previousState => {
+    this.setState(
+      (previousState) => {
         return {
           ...previousState,
-          gpsNew: zoneNews
+          errMessage: "",
+          gpsNew,
+        };
+      },
+      () => {
+        if (onHandleChangeValue) {
+          onHandleChangeValue(this.state);
         }
-      }, () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
+      }
+    );
+
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        gps: "",
+      };
+    });
+  };
+
+  onDeleteArea = (id) => () => {
+    const gpsNew = [...this.state.gpsNew];
+
+    const zone = gpsNew.find((p) => p.id == id);
+
+    if (zone) {
+      const zoneNews = gpsNew.filter((p) => p.id != id);
+
+      this.setState(
+        (previousState) => {
+          return {
+            ...previousState,
+            gpsNew: zoneNews,
+          };
+        },
+        () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
         }
-      });
+      );
     } else {
       // alert('Không tìm thấy vùng này');
       this.setState({
-        errMessage: 'Không tìm thấy vùng này'
-      })
+        errMessage: "Không tìm thấy vùng này",
+      });
       //this.toggleModal('popupMessage')
     }
-  }
+  };
 
   onDragEnd(result) {
     // dropped outside the list
@@ -789,23 +847,22 @@ class InsertOrUpadte extends Component {
       return;
     }
 
-
     const gpsNew = reorder(
       this.state.gpsNew,
       result.source.index,
       result.destination.index
     );
 
-
-    this.setState({
-      gpsNew
-    }, () => {
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(this.state);
+    this.setState(
+      {
+        gpsNew,
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
-    });
-
-
+    );
   }
 
   handleChangeComplete = (color) => {
@@ -817,7 +874,7 @@ class InsertOrUpadte extends Component {
     });
   };
 
-  onChangeFileImage = e => {
+  onChangeFileImage = (e) => {
     const { id, pathImageDefaul } = this.state;
     const { onHandleChangeValue } = this.props;
     const files = e.target.files || [];
@@ -826,75 +883,86 @@ class InsertOrUpadte extends Component {
       if (file) {
         const errorsInfoConfig = {};
 
-        this.setState(previousState => {
+        this.setState((previousState) => {
           return {
             ...previousState,
-            errorsInfoConfig
-          }
+            errorsInfoConfig,
+          };
         });
         for (let i = 0; i < file.length; i++) {
           if (!validSize(file[i].size, MAX_FILE_IMAGE_SIZE)) {
-            errorsInfoConfig.banner = 'Kích thước ảnh phải nhỏ hơn hoặc bằng ' + MAX_FILE_IMAGE_SIZE + ' mb';
+            errorsInfoConfig.banner =
+              "Kích thước ảnh phải nhỏ hơn hoặc bằng " +
+              MAX_FILE_IMAGE_SIZE +
+              " mb";
           }
           if (!validExtensionFileImage(file[i].name)) {
-            errorsInfoConfig.banner = 'File hình ảnh sai định dạng ' + EXTENSION_FILE_IMAGE.join(', ');
+            errorsInfoConfig.banner =
+              "File hình ảnh sai định dạng " + EXTENSION_FILE_IMAGE.join(", ");
           }
         }
-        this.setState(previousState => {
+        this.setState((previousState) => {
           return {
             ...previousState,
-            errorsInfoConfig
-          }
+            errorsInfoConfig,
+          };
         });
 
         if (Object.keys(errorsInfoConfig).length > 0) {
           return;
         }
-        if (this.state.mfileImg != '') {
+        if (this.state.mfileImg != "") {
           let _mfileImg = [...this.state.mfileImg];
           for (let i = 0; i < files.length; i++) {
-            _mfileImg.push(new File([files[i]], files[i].name, { type: files[i].type }));
+            _mfileImg.push(
+              new File([files[i]], files[i].name, { type: files[i].type })
+            );
           }
-          this.setState(previousState => {
-            return {
-              ...previousState,
-              mfileImg: _mfileImg
+          this.setState(
+            (previousState) => {
+              return {
+                ...previousState,
+                mfileImg: _mfileImg,
+              };
+            },
+            () => {
+              if (onHandleChangeValue) {
+                onHandleChangeValue(this.state);
+              }
             }
-          }, () => {
-            if (onHandleChangeValue) {
-              onHandleChangeValue(this.state);
-            }
-          })
+          );
         } else {
           this.setState({ mfileImg: files }, () => {
             if (onHandleChangeValue) {
               onHandleChangeValue(this.state);
             }
-          })
+          });
         }
-        const pathImage = Array.from(files).map((ee) => URL.createObjectURL(ee));
-        if (this.state.ArrayFileAdd != '') {
+        const pathImage = Array.from(files).map((ee) =>
+          URL.createObjectURL(ee)
+        );
+        if (this.state.ArrayFileAdd != "") {
           let _ArrayFileAdd = this.state.ArrayFileAdd;
           for (let i = 0; i < files.length; i++) {
             _ArrayFileAdd.push(pathImage[i]);
           }
         } else {
-          this.setState({ ArrayFileAdd: pathImage })
+          this.setState({ ArrayFileAdd: pathImage });
         }
         // if (id) {
         if (pathImageDefaul) {
-          this.setState(previousState => {
+          this.setState((previousState) => {
             return {
               ...previousState,
-              pathImageDefaul: this.state.pathImageDefaul.concat(pathImage)
-            }
+              pathImageDefaul: this.state.pathImageDefaul.concat(pathImage),
+            };
           });
         } else {
-          this.setState(previousState => {
+          this.setState((previousState) => {
             return {
               ...previousState,
-              pathImageDefaul: pathImage
-            }
+              pathImageDefaul: pathImage,
+            };
           });
         }
         // } else {
@@ -905,15 +973,14 @@ class InsertOrUpadte extends Component {
         //         }
         //     });
         // }
-
       }
     }
-  }
+  };
 
   onDeleteFileImage = (e) => {
     const { pathImageDefaul, fileImage, ArrayFileAdd } = this.state;
     const { onHandleChangeValue } = this.props;
-    var array = [...pathImageDefaul]
+    var array = [...pathImageDefaul];
     var index = array.indexOf(e);
     if (index !== -1) {
       array.splice(index, 1);
@@ -924,110 +991,161 @@ class InsertOrUpadte extends Component {
 
     let flah = false;
     if (fileImage) {
-      const spl = fileImage.split(';')
-      Array.from(spl).filter(x => x === e).map(
-        item => { flah = true }
-      )
+      const spl = fileImage.split(";");
+      Array.from(spl)
+        .filter((x) => x === e)
+        .map((item) => {
+          flah = true;
+        });
 
       if (flah == true) {
         spl.splice(spl.indexOf(e), 1);
-        var fileImageSend = spl.join(';')
-        this.setState(previousState => {
-          return {
-            ...previousState,
-            fileImage: fileImageSend
+        var fileImageSend = spl.join(";");
+        this.setState(
+          (previousState) => {
+            return {
+              ...previousState,
+              fileImage: fileImageSend,
+            };
+          },
+          () => {
+            if (onHandleChangeValue) {
+              onHandleChangeValue(this.state);
+            }
           }
-        }, () => {
-          if (onHandleChangeValue) {
-            onHandleChangeValue(this.state);
-          }
-        })
+        );
       }
     }
 
     let flag = false;
     if (ArrayFileAdd) {
-      Array.from(ArrayFileAdd).filter(x => x === e).map(
-        item => {
-          flag = true
-        }
-      )
+      Array.from(ArrayFileAdd)
+        .filter((x) => x === e)
+        .map((item) => {
+          flag = true;
+        });
 
       if (flag == true) {
         ArrayFileAdd.splice(ArrayFileAdd.indexOf(e), 1);
         let _ArrayFileAdd = [];
         for (let i = 0; i < ArrayFileAdd.length; i++) {
-          fetch(ArrayFileAdd[i]).then(res => res.blob()).then(blob => {
-            _ArrayFileAdd.push(new File([blob], `${ArrayFileAdd[i].replace('blob:http://localhost:5000/')}.jpeg`,
-              { lastModified: new Date().getTime(), type: 'image/jpeg' }));
-          });
+          fetch(ArrayFileAdd[i])
+            .then((res) => res.blob())
+            .then((blob) => {
+              _ArrayFileAdd.push(
+                new File(
+                  [blob],
+                  `${ArrayFileAdd[i].replace(
+                    "blob:http://localhost:5000/"
+                  )}.jpeg`,
+                  { lastModified: new Date().getTime(), type: "image/jpeg" }
+                )
+              );
+            });
         }
 
-        this.setState(previousState => {
+        this.setState((previousState) => {
           return {
             ...previousState,
-            mfileImg: _ArrayFileAdd
-          }
-        })
+            mfileImg: _ArrayFileAdd,
+          };
+        });
       }
-
     }
-  }
+  };
 
   render() {
     const {
-      positionChange, position, unitIdRound, unitIdBad,
-      gps, round, bad, plantingZoneId, plantingTypeId,
-      unitBadName, unitRoundName, plantingZoneName,
-      plantingTypeName, name, isShowMapViewLocation, locationChange,
-      dataLat, dataLng, districtName, wardName, dataWard, dataDistrict,
-      districtId, wardId, isShowArea, gpsNew, errMessage,
-      popupMessage, items, pathImageDefaul,
+      positionChange,
+      position,
+      unitIdRound,
+      unitIdBad,
+      gps,
+      round,
+      bad,
+      plantingZoneId,
+      plantingTypeId,
+      unitBadName,
+      unitRoundName,
+      plantingZoneName,
+      plantingTypeName,
+      name,
+      isShowMapViewLocation,
+      locationChange,
+      dataLat,
+      dataLng,
+      districtName,
+      wardName,
+      dataWard,
+      dataDistrict,
+      dataPermission,
+      districtId,
+      wardId,
+      isShowArea,
+      gpsNew,
+      errMessage,
+      popupMessage,
+      items,
+      pathImageDefaul,
     } = this.state;
     const { errors, PlantingZoneStore, id, message } = this.props;
 
     const plantingTypes = PlantingZoneStore.platingTypes || [];
 
-    let plantingZoneForComboBoxs
-    let _plantingZoneForComboBoxs
+    let plantingZoneForComboBoxs;
+    let _plantingZoneForComboBoxs;
     if (id) {
-      _plantingZoneForComboBoxs = PlantingZoneStore.plantingZoneForComboBoxs || [];
-      plantingZoneForComboBoxs = _plantingZoneForComboBoxs.filter(x => x.id != id)
+      _plantingZoneForComboBoxs =
+        PlantingZoneStore.plantingZoneForComboBoxs || [];
+      plantingZoneForComboBoxs = _plantingZoneForComboBoxs.filter(
+        (x) => x.id != id
+      );
     } else {
-      plantingZoneForComboBoxs = PlantingZoneStore.plantingZoneForComboBoxs || [];
+      plantingZoneForComboBoxs =
+        PlantingZoneStore.plantingZoneForComboBoxs || [];
     }
 
     return (
-      <div className='wrap-insert-or-update-zone'>
-        <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>Loại vùng sản xuất&nbsp;<b style={{ color: 'red' }}>*</b></label>
-          <div className='wrap-insert-or-update-zone-item-box'>
+      <div className="wrap-insert-or-update-zone">
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Tên vùng sản xuất&nbsp;<b style={{ color: "red" }}>*</b>
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
+            <InputGroup className="input-group-alternative css-border-input">
+              <input
+                value={name}
+                onChange={this.onChangeValue("name")}
+                type="text"
+                className="wrap-insert-or-update-zone-item-input"
+              />
+            </InputGroup>
+
+            <p className="form-error-message">{errors.name || ""}</p>
+          </div>
+        </div>
+
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Loại vùng sản xuất&nbsp;<b style={{ color: "red" }}>*</b>
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
             <Select
               value={id ? plantingTypeId : null}
               defaultValue={id ? plantingTypeId : null}
               labelMark={id ? plantingTypeName : null}
-              className='wrap-insert-or-update-zone-item-select'
+              className="wrap-insert-or-update-zone-item-select"
               name="plantingTypeId"
-              title='Chọn loại vùng sản xuất'
+              title="Chọn loại vùng sản xuất"
               data={plantingTypes}
-              labelName='name'
-              val='id'
-              handleChange={this.onChangeSelect('plantingTypeId')}
+              labelName="name"
+              val="id"
+              handleChange={this.onChangeSelect("plantingTypeId")}
             />
-            <p className='form-error-message'>{errors.plantingTypeId || ''}</p>
+            <p className="form-error-message">{errors.plantingTypeId || ""}</p>
           </div>
         </div>
 
-        <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>Tên vùng sản xuất&nbsp;<b style={{ color: 'red' }}>*</b></label>
-          <div className='wrap-insert-or-update-zone-item-box'>
-            <InputGroup className="input-group-alternative css-border-input">
-              <input value={name} onChange={this.onChangeValue('name')} type='text' className='wrap-insert-or-update-zone-item-input' />
-            </InputGroup>
-
-            <p className='form-error-message'>{errors.name || ''}</p>
-          </div>
-        </div>
         {/* <div className='wrap-insert-or-update-zone-item'>
                     <label className='wrap-insert-or-update-zone-item-label'>
                         Thuộc vùng sản xuất{districtId ? null : <>&nbsp;<b style={{ color: 'red' }}>*</b></>}</label>
@@ -1048,196 +1166,156 @@ class InsertOrUpadte extends Component {
                         <p className='form-error-message'>{errors.plantingZoneId || ''}</p>
                     </div>
                 </div> */}
-        <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>
-            Quận/Huyện{plantingZoneId ? null : <>&nbsp;<b style={{ color: 'red' }}>*</b></>}</label>
-          <div className='wrap-insert-or-update-zone-item-box'>
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Tỉnh/thành
+            {plantingZoneId ? null : (
+              <>
+                &nbsp;<b style={{ color: "red" }}>*</b>
+              </>
+            )}
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
+            <Select
+              value={null}
+              defaultValue={null}
+              labelMark={null}
+              className="wrap-insert-or-update-zone-item-select"
+              name="districtId"
+              title="Chọn Tỉnh/thành"
+              data={[]}
+              labelName="districtName"
+              val="id"
+              handleChange={this.onChangeSelect("districtId")}
+            />
+            <p className="form-error-message">{errors.districtId || ""}</p>
+          </div>
+        </div>
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Quận/Huyện
+            {plantingZoneId ? null : (
+              <>
+                &nbsp;<b style={{ color: "red" }}>*</b>
+              </>
+            )}
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
             <Select
               value={id ? districtId : null}
               defaultValue={id ? districtId : null}
               labelMark={id ? districtName : null}
-              className='wrap-insert-or-update-zone-item-select'
+              className="wrap-insert-or-update-zone-item-select"
               name="districtId"
-              title='Chọn Quận/Huyện'
+              title="Chọn Quận/Huyện"
               data={dataDistrict}
               //isDisable={plantingZoneId ? true : false}
-              labelName='districtName'
-              val='id'
-              handleChange={this.onChangeSelect('districtId')}
+              labelName="districtName"
+              val="id"
+              handleChange={this.onChangeSelect("districtId")}
             />
-            <p className='form-error-message'>{errors.districtId || ''}</p>
+            <p className="form-error-message">{errors.districtId || ""}</p>
           </div>
         </div>
-        <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>
-            Phường/Xã{plantingZoneId ? null : <>&nbsp;<b style={{ color: 'red' }}>*</b></>}</label>
-          <div className='wrap-insert-or-update-zone-item-box'>
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Phường/Xã
+            {plantingZoneId ? null : (
+              <>
+                &nbsp;<b style={{ color: "red" }}>*</b>
+              </>
+            )}
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
             <Select
-              ref={ref => this.redSelect = ref}
+              ref={(ref) => (this.redSelect = ref)}
               value={id ? wardId : null}
               defaultValue={id ? wardId : null}
               labelMark={id ? wardName : null}
-              className='wrap-insert-or-update-zone-item-select'
+              className="wrap-insert-or-update-zone-item-select"
               name="wardId"
-              title='Chọn Phường/Xã'
+              title="Chọn Phường/Xã"
               data={dataWard}
-              isDisable={(districtId) ? false : true}
-              labelName='wardName'
-              val='id'
-              handleChange={this.onChangeSelect('wardId')}
+              isDisable={districtId ? false : true}
+              labelName="wardName"
+              val="id"
+              handleChange={this.onChangeSelect("wardId")}
             />
-            <p className='form-error-message'>{errors.wardId || ''}</p>
+            <p className="form-error-message">{errors.wardId || ""}</p>
           </div>
         </div>
-        <div className='wrap-insert-or-update-zone-item' style={{ marginBottom: 10 }}>
-          <label className='wrap-insert-or-update-zone-item-label'>
-            Màu sắc{plantingZoneId ? null : <>&nbsp;<b style={{ color: 'red' }}>*</b></>}</label>
-          <div className='wrap-insert-or-update-zone-item-box'>
-            <SketchPicker
-              color={this.state.color}
-              onChangeComplete={this.handleChangeComplete}
-            />
-          </div>
-        </div>
-        <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>
-            Biểu tượng
+        <div className={`${classes.rowItem} mr-b-0 `}>
+          <label className="wrap-insert-or-update-zone-item-label">
+            Nhóm quyền&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
-          <div className='wrap-insert-or-update-zone-item-box'>
-            <div style={{ width: 82, height: 82 }} className='css-position-x'>
-              <input
-                type="file"
-                name='files'
-                style={{ display: 'none' }}
-                //value={data.ThumbnailFile}
-                required
-                ref={ref => this.refFileImage = ref}
-                onChange={this.handleChangeIMG}
-                accept="image/*"
-              //onKeyUp={(event) => this.handleChangeIMG(event)}
-              />
-              <img
-                src={this.state.fileView ? this.state.fileView : NoImg}
-                style={{ width: '100%', height: '100%', maxWidth: 100, maxHeight: 100 }} />
-              {this.state.file != null ? (
-                <div style={{ position: 'absolute', top: "-10px", right: "-8px" }}>
-                  <Button
-                    color="default"
-                    data-dismiss="modal"
-                    type="button"
-                    className={`css-icon-button-type-Zone-planting`}
-                    onClick={this.onDeleImg}
-                  >
-                    {/* <img src={delImg} alt='Thoát ra' /> */}
-                    <span>x</span>
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-            <div className="row" style={{ marginLeft: 0, marginRight: 0, marginTop: 5, alignSelf: 'start' }}>
-              <Button type="button" size="lg" className='btn-primary-cs'
-                onClick={this.onUpdateFileImage}>
-                <img src={Imgbt} alt='Thêm mới' />
-                <span>Chọn hình</span>
-              </Button>
 
-            </div>
-
+          <div className={`${classes.inputArea} `}>
+            <Select
+              className="css-select-border"
+              name="roleID"
+              title="Chọn nhóm quyền"
+              data={dataPermission}
+              labelName="name"
+              val="id"
+              isHideSelectAll={true}
+              isMulti={true}
+              handleChange={this.handleSelect}
+            />
           </div>
         </div>
-
-        <div className='wrap-insert-or-update-zone-item'>
-          <div className='wrap-manage-company-body-item'>
-            <input onChange={this.onChangeFileImage}
-              multiple ref={ref => this.refFileImages = ref}
-              id='image'
-              type='file'
-              className='hidden'
-              style={{
-                display: 'none'
-              }} />
-
-            <label className='wrap-insert-or-update-zone-item-label'>
-              Hình ảnh giới thiệu
-            </label>
-            <div className='wrap-manage-company-body-item-box'>
-
-              <div className="row" style={{ marginLeft: 0, marginRight: 0 }}>
-                {pathImageDefaul != '' ? (
-                  pathImageDefaul.map((e) => (
-                    e != "" ?
-                      (
-                        <div style={{ position: "relative", margin: 10 }}>
-                          <div style={{ width: 82, height: 82 }}>
-                            <img
-                              src={e ? e : NoImg}
-                              style={{ width: '90px', height: '100px', maxWidth: 100, maxHeight: 100, padding: 5 }} />
-                          </div>
-
-                          <div style={{ padding: 5, position: "absolute", top: '-10px', right: '-15px' }}>
-                            <Button
-                              color="default"
-                              data-dismiss="modal"
-                              type="button"
-                              className={`css-icon-button-type-Zone-planting`}
-                              onClick={() => this.onDeleteFileImage(e)}
-                            >
-                              {/* <img src={CloseIcon} alt='Thoát ra' /> */}
-                              <span>x</span>
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                      : null
-                  ))
-                ) : (
-                  <img
-                    src={NoImg}
-                    style={{ width: '100%', height: '100%', maxWidth: 100, maxHeight: 100, padding: 5 }} />
-                )
-                }
-              </div>
-              <div className='wrap-manage-company-body-item-box-function'
-                style={{ justifyContent: 'flex-start', padding: 5 }}>
-                <Button
-                  type="button"
-                  size="lg"
-                  style={{ margin: 0 }}
-                  className='btn-primary-cs'
-                  onClick={this.onUpdateFileImages}>
-                  <img src={PlusImg} alt='Thêm mới' />
-                  <span>Chọn hình</span>
-                </Button>
-                {/* <p className="form-error-message" style={{ marginLeft: 5 }}>{errorsInfoConfig.banner || ''}</p> */}
-              </div>
-            </div>
-          </div>
-        </div>
-        <hr style={{ marginTop: 10, marginBottom: 0 }} />
-        <b>KHAI BÁO GPS</b>
-        <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>
-            GPS{plantingZoneId ? null : <>&nbsp;<b style={{ color: 'red' }}>*</b></>}</label>
-          <div className='wrap-insert-or-update-zone-item-box'>
+        <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Nhiệt độ
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input value={gps} onChange={this.onChangeValueGPS('gps')} type='text'
-                className='wrap-insert-or-update-zone-item-input'
-                disabled={plantingZoneId ? true : false}
-              // pattern='[0-9]'
+              <input
+                type="text"
+                className="wrap-insert-or-update-zone-item-input"
               />
             </InputGroup>
 
-            <p className='form-error-message'>{errors.gps || ''}</p>
-            {errMessage != '' ? (
-              <p className='form-error-message'>{errMessage}</p>
+            <p className="form-error-message">{errors.name || ""}</p>
+          </div>
+        </div>
+        <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
+        <b>KHAI BÁO GPS</b>
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            GPS
+            {plantingZoneId ? null : (
+              <>
+                &nbsp;<b style={{ color: "red" }}>*</b>
+              </>
+            )}
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
+            <InputGroup className="input-group-alternative css-border-input">
+              <input
+                value={gps}
+                onChange={this.onChangeValueGPS("gps")}
+                type="text"
+                className="wrap-insert-or-update-zone-item-input"
+                disabled={plantingZoneId ? true : false}
+              />
+            </InputGroup>
+
+            <p className="form-error-message">{errors.gps || ""}</p>
+            {errMessage != "" ? (
+              <p className="form-error-message">{errMessage}</p>
             ) : null}
           </div>
-          <button className='wrap-insert-or-update-zone-item-location'>
-            <img className='wrap-insert-or-update-zone-item-location-icon'
-              style={{ cursor: `${plantingZoneId ? 'not-allowed' : 'pointer'}` }}
-              src={ICON_COMMONS.Location} onClick={plantingZoneId ? null : this.onOpenMaps} />
+          <button className="wrap-insert-or-update-zone-item-location">
+            <img
+              className="wrap-insert-or-update-zone-item-location-icon"
+              style={{
+                cursor: `${plantingZoneId ? "not-allowed" : "pointer"}`,
+              }}
+              src={ICON_COMMONS.Location}
+              onClick={plantingZoneId ? null : this.onOpenMaps}
+            />
           </button>
-
         </div>
         {/* <div className='wrap-insert-or-update-zone-item map-area'>
                     {
@@ -1266,8 +1344,8 @@ class InsertOrUpadte extends Component {
                         )
                     }
                 </div> */}
-        {isShowMapViewLocation &&
-          <div className='wrap-manage-company-location'>
+        {isShowMapViewLocation && (
+          <div className="wrap-manage-company-location">
             <GoogleMapReact
               animation={window.google.maps.Animation.DROP}
               bootstrapURLKeys={{ key: MAP_KEY }}
@@ -1275,30 +1353,53 @@ class InsertOrUpadte extends Component {
               yesIWantToUseGoogleMapApiInternals
               defaultCenter={{
                 lat: positionChange.latitude,
-                lng: positionChange.longitude
+                lng: positionChange.longitude,
               }}
               center={{
                 lat: positionChange.latitude,
-                lng: positionChange.longitude
+                lng: positionChange.longitude,
               }}
               onClick={this.onClickMap}
-              onChange={this.onChangeLocation}>
+              onChange={this.onChangeLocation}
+            >
               <AnyReactComponent
                 lat={position.latitude}
                 lng={position.longitude}
                 text="My Marker"
               />
             </GoogleMapReact>
-            <GoogleAutoCompleteInput onSelect={this.onSelectPosition} placeholder='Tìm kiếm địa chỉ...' className='wrap-manage-company-location-search-input' classNameContainer='wrap-manage-company-location-search' />
-            <div className='wrap-manage-company-location-function'>
-              <button onClick={this.onCloseMapViewLocation} className='wrap-manage-company-location-function-button wrap-manage-company-location-function-button-close'>ĐÓNG</button>
-              <button onClick={this.onConfirmLocation} className='wrap-manage-company-location-function-button wrap-manage-company-location-function-button-confirm'>CHỌN VỊ TRÍ NÀY</button>
+            <GoogleAutoCompleteInput
+              onSelect={this.onSelectPosition}
+              placeholder="Tìm kiếm địa chỉ..."
+              className="wrap-manage-company-location-search-input"
+              classNameContainer="wrap-manage-company-location-search"
+            />
+            <div className="wrap-manage-company-location-function">
+              <button
+                onClick={this.onCloseMapViewLocation}
+                className="wrap-manage-company-location-function-button wrap-manage-company-location-function-button-close"
+              >
+                ĐÓNG
+              </button>
+              <button
+                onClick={this.onConfirmLocation}
+                className="wrap-manage-company-location-function-button wrap-manage-company-location-function-button-confirm"
+              >
+                CHỌN VỊ TRÍ NÀY
+              </button>
             </div>
-            <button onClick={this.onCurrentPosition} className='wrap-manage-company-location-current'>
-              <img className='wrap-manage-company-location-current-icon' src='/cores/imgs/ics/current_position.png' alt='Current position' />
+            <button
+              onClick={this.onCurrentPosition}
+              className="wrap-manage-company-location-current"
+            >
+              <img
+                className="wrap-manage-company-location-current-icon"
+                src="/cores/imgs/ics/current_position.png"
+                alt="Current position"
+              />
             </button>
           </div>
-        }
+        )}
 
         {/* <div className='wrap-insert-or-update-zone-item'>
           <label className='wrap-insert-or-update-zone-item-label'>Thứ tự</label>
@@ -1311,33 +1412,24 @@ class InsertOrUpadte extends Component {
             }
           </div>
         </div> */}
-        <div className='wrap-insert-or-update-zone-add'>
-          <button type='button' onClick={this.onAddArea} className='wrap-insert-or-update-zone-add-button'>
-            <img className='wrap-insert-or-update-zone-add-button-icon' src={IconAdd} />
+        <div className="wrap-insert-or-update-zone-add">
+          <button
+            type="button"
+            onClick={this.onAddArea}
+            className="wrap-insert-or-update-zone-add-button"
+          >
+            <img
+              className="wrap-insert-or-update-zone-add-button-icon"
+              src={IconAdd}
+            />
             Thêm
           </button>
         </div>
-        <div className='wrap-insert-or-update-zone-area'>
-          <label className='wrap-insert-or-update-zone-item-label'>GPS được chọn</label>
-          <p className='form-error-message'>{errors.zone || ''}</p>
-          {/* <div className='wrap-insert-or-update-zone-area-list'>
-            {isShowArea ?
-              <React.Fragment>
-                {gpsNew
-                  // .sort((a, b) => a.sortOrder > b.sortOrder ? 1 : -1)
-                  .map(item => {
-                    return (
-                      <div key={item.id} className='wrap-insert-or-update-zone-area-list-item' style={{ width: 'fit-content' }}>
-                        <p className='wrap-insert-or-update-zone-area-list-item-label'>{item.content}</p>
-                        <button onClick={this.onDeleteArea(item.id)} className='wrap-insert-or-update-zone-area-list-item-delete'>
-                          <img className='wrap-insert-or-update-zone-area-list-item-delete-icon' src={IconDelete} />
-                        </button>
-                      </div>
-                    )
-                  })}
-              </React.Fragment> : null}
-          </div> */}
-
+        <div className="wrap-insert-or-update-zone-area">
+          <label className="wrap-insert-or-update-zone-item-label">
+            GPS được chọn
+          </label>
+          <p className="form-error-message">{errors.zone || ""}</p>
           <DragDropContext onDragEnd={this.onDragEnd}>
             <Droppable droppableId="droppable">
               {(provided, snapshot) => (
@@ -1347,11 +1439,16 @@ class InsertOrUpadte extends Component {
                   style={getListStyle(snapshot.isDraggingOver)}
                 >
                   {gpsNew.map((item, index) => (
-                    <Draggable key={item.id} draggableId={item.id} index={index}>
+                    <Draggable
+                      key={item.id}
+                      draggableId={item.id}
+                      index={index}
+                    >
                       {(provided, snapshot) => (
                         <>
-                          <div className='wrap-css-planting-zone'>
-                            <div className='wrap-width-plating-zone'
+                          <div className="wrap-css-planting-zone">
+                            <div
+                              className="wrap-width-plating-zone"
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
@@ -1362,14 +1459,18 @@ class InsertOrUpadte extends Component {
                             >
                               {item.content}
                             </div>
-                            <button onClick={this.onDeleteArea(item.id)} className='wrap-insert-or-update-zone-area-list-item-delete margin-left-button-planting-zone'>
-                              <img className='wrap-insert-or-update-zone-area-list-item-delete-icon' src={IconDelete} />
+                            <button
+                              onClick={this.onDeleteArea(item.id)}
+                              className="wrap-insert-or-update-zone-area-list-item-delete margin-left-button-planting-zone"
+                            >
+                              <img
+                                className="wrap-insert-or-update-zone-area-list-item-delete-icon"
+                                src={IconDelete}
+                              />
                             </button>
                           </div>
                         </>
-
                       )}
-
                     </Draggable>
                   ))}
                   {provided.placeholder}
@@ -1377,7 +1478,95 @@ class InsertOrUpadte extends Component {
               )}
             </Droppable>
           </DragDropContext>
+          <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
+          <div className="wrap-insert-or-update-zone-item">
+            <label className="wrap-insert-or-update-zone-item-label">
+              Diện tích
+            </label>
+            <div className="wrap-insert-or-update-zone-item-box">
+              <InputGroup className="input-group-alternative css-border-input">
+                <input
+                  type="text"
+                  className="wrap-insert-or-update-zone-item-input"
+                  readOnly
+                />
+              </InputGroup>
 
+              <p className="form-error-message">{errors.name || ""}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => alert()}
+            className="wrap-insert-or-update-zone-add-button"
+          >
+            Kiểm tra
+          </button>
+        </div>
+        <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Biểu tượng
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
+            <div style={{ width: 82, height: 82 }} className="css-position-x">
+              <input
+                type="file"
+                name="files"
+                style={{ display: "none" }}
+                //value={data.ThumbnailFile}
+                required
+                ref={(ref) => (this.refFileImage = ref)}
+                onChange={this.handleChangeIMG}
+                accept="image/*"
+                //onKeyUp={(event) => this.handleChangeIMG(event)}
+              />
+              <img
+                src={this.state.fileView ? this.state.fileView : NoImg}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  maxWidth: 100,
+                  maxHeight: 100,
+                }}
+              />
+              {this.state.file != null ? (
+                <div
+                  style={{ position: "absolute", top: "-10px", right: "-8px" }}
+                >
+                  <Button
+                    color="default"
+                    data-dismiss="modal"
+                    type="button"
+                    className={`css-icon-button-type-Zone-planting`}
+                    onClick={this.onDeleImg}
+                  >
+                    {/* <img src={delImg} alt='Thoát ra' /> */}
+                    <span>x</span>
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+            <div
+              className="row"
+              style={{
+                marginLeft: 0,
+                marginRight: 0,
+                marginTop: 5,
+                alignSelf: "start",
+              }}
+            >
+              <Button
+                type="button"
+                size="lg"
+                className="btn-primary-cs"
+                onClick={this.onUpdateFileImage}
+              >
+                <img src={Imgbt} alt="Thêm mới" />
+                <span>Chọn hình</span>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* {isShowMapViewLocation &&
@@ -1481,12 +1670,12 @@ class InsertOrUpadte extends Component {
         </div> */}
         <PopupMessage
           popupMessage={popupMessage}
-          moduleTitle={'Thông báo'}
+          moduleTitle={"Thông báo"}
           moduleBody={errMessage}
           toggleModal={this.toggleModal}
         />
       </div>
-    )
+    );
   }
 }
 
@@ -1494,20 +1683,17 @@ const mapStateToProps = (state) => {
   return {
     PlantingZoneStore: state.PlantingZoneStore,
     location: state.LocationStore,
-  }
-}
+  };
+};
 
 const mapDispatchToProps = (dispatch) => {
   return {
     ...bindActionCreators(areaDataAction, dispatch),
     ...bindActionCreators(platingZoneAction, dispatch),
     ...bindActionCreators(actionLocationCreators, dispatch),
-  }
-}
+  };
+};
 
-export default compose(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
-)(InsertOrUpadte);
+export default compose(connect(mapStateToProps, mapDispatchToProps))(
+  InsertOrUpadte
+);
