@@ -64,6 +64,7 @@ import {
 import Message, { TYPES } from "../../../components/message";
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { functions } from "lodash";
+import { getUrlCompanyAPI } from "../../../utils/service.js";
 
 class Login extends Component {
   constructor(props) {
@@ -113,69 +114,9 @@ class Login extends Component {
     this.closeStatusModal();
   }
 
-  // cpoSetStateError() {
-  // 	this.setState({ errUsernameOrPassword: 'Sai tên đăng nhập hoặc mật khẩu!' });
-  // }
-
-  // handleUserLogin = (event) => {
-  // 	const { onUserLogin } = this.props;
-  // 	const { username, password } = this.state;
-
-  // 	event.preventDefault();
-
-  // 	if (username.trim().length > 0 && password.trim().length > 0) {
-
-  // 		this.setState({ isLoaded: true });
-
-  // 		onUserLogin(JSON.stringify({
-  // 			username: username,
-  // 			password: password,
-  // 			deviceType: this.handleDetectDevice()
-  // 		}), res => {
-  // 			this.setState({ isLoaded: false });
-
-  // 			const data = res || {};
-
-  // 			if (data.status == 200) {
-
-  // 			}
-  // 			// else {
-  // 			// 	const message = getErrorMessageServer(res);
-  // 			// 	if (message.trim() === 'Mật khẩu không chính xác!') {
-  // 			// 		this.setState({ errPassWord: message })
-  // 			// 	} else
-  // 			// 		if (message.trim() === 'Tài khoản không tồn tại!') {
-  // 			// 			this.setState({ errUsername: message })
-  // 			// 		} else
-  // 			// 			if (message.trim() === 'Tài khoản đang bị khoá!') {
-  // 			// 				this.setState({ errLock: message })
-  // 			// 			} else {
-  // 			// 				this.setState({ errSys: 'Lỗi hệ thống' })
-  // 			// 			}
-  // 			// }
-  // 		});
-  // 	}
-  // }
 
   handleDetectDevice = () => {
-    // const deviceDetector = new DeviceDetector();
     const userAgent = navigator.userAgent;
-    // const device = deviceDetector.parse(userAgent);
-    // let deviceType = '';
-
-    // if (device.device !== null) {
-    //     deviceType = `${device.device.type}${device.device.brand && '_'}${device.device.brand}${device.device.model && '_'}${device.device.model}_`;
-    // }
-
-    // if (device.os !== null) {
-    //     deviceType += `${device.os.name}${device.os.platform && '_'}${device.os.platform}${device.os.version && '_'}${device.os.version}_`;
-    // }
-
-    // if (device.client !== null) {
-    //     deviceType += `${device.client.name}${device.client.type && '_'}${device.client.type}${device.client.type && '_'}${device.client.version}`;
-    // }
-
-    // deviceType = deviceType;
 
     return userAgent;
   }
@@ -575,39 +516,81 @@ export const getAccessToken = async (username, password, redirect, getStateError
 
   axios.post('/connect/token', qs.stringify(requestData), axiosConfig).then(async result => {
     let key = null;
-
+    
     if (result.status == 200) {
-      await axios.get(USER_LOGIN, {
-        headers: {
-          authorization: 'Bearer ' + result.data.access_token
-        }
-      })
-        .then(res => {
-          if (res.data.status == 200) {
-            key = res;
-          } else {
-            getStateError(result);
-            if (getStateError) {
-              onOpenSpiner(false)
-            }
+      // await axios.get(USER_LOGIN, {
+      //   headers: {
+      //     authorization: 'Bearer ' + result.data.access_token
+      //   }
+      // })
+      //   .then(res => {
+      //     if (res.data.status == 200) {
+      //       key = res;
+      //     } else {
+      //       getStateError(result);
+      //       if (getStateError) {
+      //         onOpenSpiner(false)
+      //       }
+      //     }
+      //   })
+
+      // const data = key.data.data.token || {};
+
+      // data.token = result.data.access_token;
+
+      // data.expires = result.data.expires_in;
+
+      // data.refreshToken = result.data.refresh_token;
+
+      // setCookie('AUTHEN_INFO', JSON.stringify(data));
+
+      // if (callBack) {
+      //   callBack();
+      // }
+
+      // redirect(data);
+      const token = ((result || {}).data || {}).access_token || null;
+      const refreshToken = ((result || {}).data || {}).refresh_token || "";
+      
+      if (token) {
+        const url = getUrlCompanyAPI("user/login");
+        
+        const info = await axios.get(url, {
+          headers: {
+            authorization: "Bearer " + token,
+          },
+        });
+        const infoData = info.data || {};
+
+        const tokenAccount = (infoData.data || {}).token || {};
+        const company = (infoData.data || {}).company || {};
+        if (infoData.status == 200) {
+          if (localStorage.getItem("TOKEN") != null) {
+            deleteCookie("AUTHEN_INFO");
           }
-        })
+          const data = {
+            id: tokenAccount.id,
+            userName: tokenAccount.userName,
+            fullName: tokenAccount.fullName,
+            companyID: tokenAccount.companyID,
+            isAdmin: tokenAccount.isAdmin,
+            claims: JSON.parse(tokenAccount.claims || "[]") || [],
+            companyCode: company.companyCode,
+          };
+          data.expires = result.data.expires_in;
+          data.token = result.data.access_token;
+          data.refreshToken = result.data.refresh_token;
+          setCookie("AUTHEN_INFO", JSON.stringify(data));
 
-      const data = key.data.data.token || {};
-
-      data.token = result.data.access_token;
-
-      data.expires = result.data.expires_in;
-
-      data.refreshToken = result.data.refresh_token;
-
-      setCookie('AUTHEN_INFO', JSON.stringify(data));
-
-      if (callBack) {
-        callBack();
+          if (callBack) {
+            callBack();
+          }
+          
+          redirect(data);
+        } else {
+          resolve(false);
+        }
       }
-
-      redirect(data);
     } else {
       getStateError(result);
       if (getStateError) {
@@ -653,29 +636,47 @@ export const getRefreshToken = (redirect, callBack) => {
 
     try {
       await axios.post('/connect/token', qs.stringify(requestData), axiosConfig).then(async result => {
-        let key = null;
-
-
         if (result.status == 200) {
-          key = await axios.get(DOMAIN + API + USER + 'info', {
-            headers: {
-              authorization: 'Bearer ' + result.data.access_token
+          const token = ((result || {}).data || {}).access_token || null;
+          const refreshToken = ((result || {}).data || {}).refresh_token || "";
+
+          if (token) {
+            const url = getUrlCompanyAPI("user/login");
+
+            const info = await axios.get(url, {
+              headers: {
+                authorization: "Bearer " + token,
+              },
+            });
+            const infoData = info.data || {};
+
+            const tokenAccount = (infoData.data || {}).token || {};
+            const company = (infoData.data || {}).company || {};
+            if (infoData.status == 200) {
+              if (localStorage.getItem("TOKEN") != null) {
+                deleteCookie("AUTHEN_INFO");
+              }
+              const data = {
+                id: tokenAccount.id,
+                userName: tokenAccount.userName,
+                fullName: tokenAccount.fullName,
+                companyID: tokenAccount.companyID,
+                isAdmin: tokenAccount.isAdmin,
+                claims: JSON.parse(tokenAccount.claims || "[]") || [],
+                companyCode: company.companyCode,
+              };
+              data.expires = result.data.expires_in;
+              data.token = result.data.access_token;
+              data.refreshToken = result.data.refresh_token;
+              setCookie("AUTHEN_INFO", JSON.stringify(data));
+
+              redirect(data);
+              window.location.reload();
+              resolve(true);
+            } else {
+              resolve(false);
             }
-          });
-          const data = key.data.data.token || {};
-          data.expires = result.data.expires_in;
-          data.token = result.data.access_token;
-          data.refreshToken = result.data.refresh_token;
-
-          if (localStorage.getItem('TOKEN') != null) {
-            deleteCookie('AUTHEN_INFO');
           }
-
-          setCookie('AUTHEN_INFO', JSON.stringify(data));
-
-          redirect(data);
-          window.location.reload();
-          resolve(true);
         } else {
           resolve(false);
         }
