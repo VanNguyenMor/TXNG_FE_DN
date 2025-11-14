@@ -20,13 +20,13 @@ import { useEffect, useState } from "react";
 import { NavLink as NavLinkRRD, Link, Route } from "react-router-dom";
 // nodejs library to set properties for components
 import { PropTypes } from "prop-types";
-import _, { clamp, filter } from 'lodash';
+import _, { clamp, filter } from "lodash";
 import { deleteCookie } from "../../helpers/cookie";
 import { NAVBAR_PARENT_ITEM_LIST } from "../../helpers/constant";
-import classes from './index.module.css';
+import classes from "./index.module.css";
 //import { ACCOUNT_CLAIM, ACCOUNT_ID, ACCOUNT_AVA, ACCOUNT_NAME, IS_ADMIN } from "../../services/Common";
-import { ICON_MENUS } from '../../assets/img';
-import NoImg from "../../assets/img/NoImg/NoImg.jpg"
+import { ICON_MENUS } from "../../assets/img";
+import NoImg from "../../assets/img/NoImg/NoImg.jpg";
 import UpdatePopup from "../UpdatePopup";
 
 // reactstrap components
@@ -59,6 +59,7 @@ import {
   Row,
   Col,
 } from "reactstrap";
+import { MENU_DATA } from "mockData/menuData";
 
 var ps;
 
@@ -68,6 +69,8 @@ const Sidebar = (props) => {
   const [file, setFile] = useState("");
   const [details, setDetails] = useState(null);
   const [notChang, setNotChang] = useState(false);
+  const filteredMenus = MENU_DATA.filter((item) => item.status === 1);
+  const menusToRender = filteredMenus;
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
     return props.location.pathname.indexOf(routeName) > -1 ? "active" : "";
@@ -87,7 +90,7 @@ const Sidebar = (props) => {
     // this.setState({ file: data.ThumbnailFile, fileView: data.fileView })
     setFile = data.ThumbnailFile;
     setFileView = data.fileView;
-  }
+  };
 
   const toggleModal = (state) => {
     [state] = !this.state[state];
@@ -97,53 +100,47 @@ const Sidebar = (props) => {
   const handleOpenEdit = () => {
     const { getUserInfo } = this.props;
     // getUserInfo(ACCOUNT_ID).then(res => {
-    getUserInfo(localStorage.getItem('ACCOUNT_ID')).then(res => {
+    getUserInfo(localStorage.getItem("ACCOUNT_ID")).then((res) => {
       if (res.data.status == 200) {
         this.setState({ details: res.data.data });
       }
-    })
-  }
+    });
+  };
 
   // creates the links that appear in the left menu / Sidebar
   const createLinks = (routes) => {
-    return (
-      parentMenuList.map((item, key) => (
-        <div key={key} className={classes.navItem}>
-          {
-            /* Heading */
-            <h6 className={`navbar-heading text-muted ${classes.sessionTitle}`}>{item}</h6>
-          }
-          {
-            routes
-              .filter((prop) => key === prop.key)
-              .map((prop, key) => {
-                return (
-                  <Nav navbar key={key}>
-                    <NavItem>
-                      <NavLink
-                        to={prop.layout + prop.path}
-                        tag={NavLinkRRD}
-                        onClick={closeCollapse}
-                        activeClassName="active"
-                      >
-                        <i className={prop.icon} />
-                        {prop.name}
-                      </NavLink>
-                    </NavItem>
-                  </Nav>
-                );
-              })
-          }
+    return parentMenuList.map((item, key) => (
+      <div key={key} className={classes.navItem}>
+        {
+          /* Heading */
+          <h6 className={`navbar-heading text-muted ${classes.sessionTitle}`}>
+            {item}
+          </h6>
+        }
+        {routes
+          .filter((prop) => key === prop.key)
+          .map((prop, key) => {
+            return (
+              <Nav navbar key={key}>
+                <NavItem>
+                  <NavLink
+                    to={prop.layout + prop.path}
+                    tag={NavLinkRRD}
+                    onClick={closeCollapse}
+                    activeClassName="active"
+                  >
+                    <i className={prop.icon} />
+                    {prop.name}
+                  </NavLink>
+                </NavItem>
+              </Nav>
+            );
+          })}
 
-          {/* Divider */}
-          {
-            parentMenuList.length - 1 > key && (
-              <hr className="my-3" />
-            )
-          }
-        </div>
-      ))
-    );
+        {/* Divider */}
+        {parentMenuList.length - 1 > key && <hr className="my-3" />}
+      </div>
+    ));
   };
 
   function splitMulti(str, tokens) {
@@ -151,7 +148,7 @@ const Sidebar = (props) => {
       return str;
     }
 
-    str = str || '';
+    str = str || "";
 
     var tempChar = tokens[0]; // We can use the first token as a temporary join character
     for (var i = 1; i < tokens.length; i++) {
@@ -161,102 +158,82 @@ const Sidebar = (props) => {
     return str;
   }
 
-  const createLinkMenu = routes => {
-
-
+  const createLinkMenu = (routes) => {
     routes = routes || [];
-    //const claim = [];
-    let childrens = [];
-    let claimFilter = [];
-    const parents = _.sortBy(routes.filter(p => !p.parentID && p.status == 1), p => p.sortOrder);
+    const parents = _.sortBy(
+      routes.filter((p) => !p.parentID && p.status == 1),
+      (p) => p.sortOrder
+    );
 
-    // if (ACCOUNT_CLAIM) {
-    //   const claim = splitMulti(ACCOUNT_CLAIM, [',', '[', ']', '"']).filter(x => x != "") || [];
-    if (localStorage.getItem('ACCOUNT_CLAIM')) {
-      const claim = splitMulti(localStorage.getItem('ACCOUNT_CLAIM'), [',', '[', ']', '"']).filter(x => x != "") || [];
-      claim.map(x => {
-        if (x.includes(".View")) {
-          claimFilter.push(x);
-        }
-      })
-    }
+    return parents.map((itemParent) => {
+      // 2. Lấy TẤT CẢ Menu Con có parentID phù hợp VÀ status = 1
+      const allChildrens = _.sortBy(
+        routes.filter((p) => p.parentID == itemParent.id && p.status == 1),
+        (p) => p.sortOrder
+      );
 
-    return parents.map(itemParent => {
+      // >> KHÔNG CẦN LỌC viewableChildrens NỮA <<
+      // Sử dụng allChildrens làm mảng để render.
+      const menusToRender = allChildrens;
 
-      childrens = _.sortBy(routes.filter(p => p.parentID == itemParent.id && p.status == 1), p => p.sortOrder);
-
-      claimFilter.map(x => {
-        childrens.filter(chiu => (chiu.uniqueCode + '.View' === x))
-          .map(childrens => {
-            childrens.sttuniqueCodeView = 1;
-          })
+      // 3. (Tuỳ chọn) Ẩn Menu Cha nếu không phải Category và không có Menu Con nào
+      if (menusToRender.length === 0 && !itemParent.isCategory) {
+        return null;
       }
-      )
+
       return (
         <div key={itemParent.id} className={classes.navItem}>
-          <div className='wrap-navigation-item-header-item'>
-            {ICON_MENUS[itemParent.uniqueCode] ? <img src={ICON_MENUS[itemParent.uniqueCode]} className='wrap-navigation-item-header-item-icon' /> : null}
-            <h6 className={`navbar-heading text-muted ${classes.sessionTitle} wrap-navigation-item-header-item-title`}>{itemParent.name || ''}</h6>
+          {/* Render Menu Cha */}
+          <div className="wrap-navigation-item-header-item">
+            {ICON_MENUS[itemParent.uniqueCode] ? (
+              <img
+                src={ICON_MENUS[itemParent.uniqueCode]}
+                className="wrap-navigation-item-header-item-icon"
+                alt={itemParent.name}
+              />
+            ) : null}
+            <h6
+              className={`navbar-heading text-muted ${classes.sessionTitle} wrap-navigation-item-header-item-title`}
+            >
+              {itemParent.name || ""}
+            </h6>
           </div>
-          {/* {!IS_ADMIN ? ( */}
 
-          {!JSON.parse(localStorage.getItem('IS_ADMIN')) ? (
-            childrens.filter(child => child.sttuniqueCodeView == 1)
-              .map(itemChildren => {
-                return (
-                  <Nav navbar key={itemChildren.id}>
-                    <Route path={'/trang_chu' + itemChildren.url} children={({ match }) => {
-                      return (
-                        <NavItem className='wrap-navigation-item-body-item'>
-                          {ICON_MENUS[itemChildren.uniqueCode] ? <img src={ICON_MENUS[itemChildren.uniqueCode]} className='wrap-navigation-item-body-item-icon' /> : null}
-                          <NavLink
-                            to={'/trang_chu' + itemChildren.url}
-                            tag={NavLinkRRD}
-                            //exact="/"
-                            onClick={closeCollapse}
-                            activeClassName="active"
-                            active={true}
-                            className={`wrap-navigation-item-body-item-link ${((match || {}).isExact && itemChildren.url) ? 'link-active' : ''}`}
-                          >
-                            {itemChildren.name || ''}
-                          </NavLink>
-                        </NavItem>
-                      )
-                    }} />
-                  </Nav>
-                );
-              })
-          ) : (
-            childrens
-              .map(itemChildren => {
-                return (
-                  <Nav navbar key={itemChildren.id}>
-                    <Route path={'/trang_chu' + itemChildren.url} children={({ match }) => {
-                      return (
-                        <NavItem className='wrap-navigation-item-body-item'>
-                          {ICON_MENUS[itemChildren.uniqueCode] ? <img src={ICON_MENUS[itemChildren.uniqueCode]} className='wrap-navigation-item-body-item-icon' /> : null}
-                          <NavLink
-                            to={'/trang_chu' + itemChildren.url}
-                            tag={NavLinkRRD}
-                            //exact="/"
-                            onClick={closeCollapse}
-                            activeClassName="active"
-                            active={true}
-                            className={`wrap-navigation-item-body-item-link ${((match || {}).isExact && itemChildren.url) ? 'link-active' : ''}`}
-                          >
-                            {itemChildren.name || ''}
-                          </NavLink>
-                        </NavItem>
-                      )
-                    }} />
-                  </Nav>
-                );
-              }))
-          }
+          {/* 4. Render TẤT CẢ Menu Con đã được lọc theo ID Cha và status = 1 */}
+          {menusToRender.map((itemChildren) => (
+            <Nav navbar key={itemChildren.id}>
+              <Route
+                path={"/trang_chu" + itemChildren.url}
+                children={({ match }) => (
+                  <NavItem className="wrap-navigation-item-body-item">
+                    {ICON_MENUS[itemChildren.uniqueCode] && (
+                      <img
+                        src={ICON_MENUS[itemChildren.uniqueCode]}
+                        className="wrap-navigation-item-body-item-icon"
+                        alt={itemChildren.name}
+                      />
+                    )}
+                    <NavLink
+                      to={"/trang_chu" + itemChildren.url}
+                      tag={NavLinkRRD}
+                      onClick={closeCollapse}
+                      activeClassName="active"
+                      className={`wrap-navigation-item-body-item-link ${
+                        (match || {}).isExact && itemChildren.url
+                          ? "link-active"
+                          : ""
+                      }`}
+                    >
+                      {itemChildren.name || ""}
+                    </NavLink>
+                  </NavItem>
+                )}
+              />
+            </Nav>
+          ))}
         </div>
-      )
-
-    })
+      );
+    });
   };
 
   const { bgColor, routes, logo } = props;
@@ -275,9 +252,9 @@ const Sidebar = (props) => {
   }
 
   const handleCloseApp = () => {
-    deleteCookie('AUTHEN_INFO');
-    window.location.href = '/';
-  }
+    deleteCookie("AUTHEN_INFO");
+    window.location.href = "/";
+  };
 
   return (
     <Navbar
@@ -296,7 +273,10 @@ const Sidebar = (props) => {
         </button>
         {/* Brand */}
         {logo ? (
-          <NavbarBrand className={`pt-0 ${classes.logo} ${classes.desktop}`} {...navbarBrandProps}>
+          <NavbarBrand
+            className={`pt-0 ${classes.logo} ${classes.desktop}`}
+            {...navbarBrandProps}
+          >
             <img
               alt={logo.imgAlt}
               className="navbar-brand-img"
@@ -305,7 +285,10 @@ const Sidebar = (props) => {
           </NavbarBrand>
         ) : null}
         {logo ? (
-          <NavbarBrand className={`pt-0 ${classes.logo} ${classes.mobile}`} {...navbarBrandProps}>
+          <NavbarBrand
+            className={`pt-0 ${classes.logo} ${classes.mobile}`}
+            {...navbarBrandProps}
+          >
             <img
               alt={logo.imgAlt}
               className="navbar-brand-img"
@@ -342,19 +325,34 @@ const Sidebar = (props) => {
                     //     style={{
                     //       background: `url(${notChang == true ? (fileView == null ? NoImg : fileView) : ACCOUNT_AVA})`
                     //     }} />
-                    (localStorage.getItem('ACCOUNT_AVA') !== null && fileView !== null) ||
-                      (localStorage.getItem('ACCOUNT_AVA') == null && fileView !== null) ||
-                      (localStorage.getItem('ACCOUNT_AVA') !== null && fileView == null) ? (
-                      <div id='avatar' className={`${classes.avatar} ${classes.avatarBck}`}
+                    (localStorage.getItem("ACCOUNT_AVA") !== null &&
+                      fileView !== null) ||
+                    (localStorage.getItem("ACCOUNT_AVA") == null &&
+                      fileView !== null) ||
+                    (localStorage.getItem("ACCOUNT_AVA") !== null &&
+                      fileView == null) ? (
+                      <div
+                        id="avatar"
+                        className={`${classes.avatar} ${classes.avatarBck}`}
                         style={{
-                          background: `url(${notChang == true ? (fileView == null ? NoImg : fileView) : localStorage.getItem('ACCOUNT_AVA')})`
-                        }} />
+                          background: `url(${
+                            notChang == true
+                              ? fileView == null
+                                ? NoImg
+                                : fileView
+                              : localStorage.getItem("ACCOUNT_AVA")
+                          })`,
+                        }}
+                      />
                     ) : (
                       // <i className={`ni ni-circle-08 ${classes.avatar}`} />
-                      <div id='avatar' className={`${classes.avatar} ${classes.avatarBck}`}
+                      <div
+                        id="avatar"
+                        className={`${classes.avatar} ${classes.avatarBck}`}
                         style={{
-                          background: `url(${NoImg})`
-                        }} />
+                          background: `url(${NoImg})`,
+                        }}
+                      />
                     )
                   }
                 </span>
@@ -366,11 +364,14 @@ const Sidebar = (props) => {
                 <span>Đổi mật khẩu</span>
               </DropdownItem>
               {/* {ACCOUNT_NAME == "Administrator" ? null : ( */}
-              {localStorage.getItem('ACCOUNT_NAME') == "Administrator" ? null : (
-                <DropdownItem onClick={() => {
-                  toggleModal('updateModal');
-                  handleOpenEdit();
-                }}>
+              {localStorage.getItem("ACCOUNT_NAME") ==
+              "Administrator" ? null : (
+                <DropdownItem
+                  onClick={() => {
+                    toggleModal("updateModal");
+                    handleOpenEdit();
+                  }}
+                >
                   {/* <div className={classes.updateAvaArea}>
 										<div className="upload-btn-wrapper">
 											<div>*/}
@@ -382,26 +383,25 @@ const Sidebar = (props) => {
 									</div> */}
                 </DropdownItem>
               )}
-              {
-                details ?
-                  <UpdatePopup
-                    moduleTitle='Đổi hình đại diện'
-                    moduleBody={
-                      <ChangeAvatar
-                        data={details}
-                        handleNewData={handleNewDataUpdate}
-                        handleCheckValidation={this.handleCheckValidation}
-                        // imgAvatarView={ACCOUNT_AVA}
-                        imgAvatarView={localStorage.getItem('ACCOUNT_AVA')}
-                      />}
-                    newData={newData}
-                    updateModal={updateModal}
-                    toggleModal={toggleModal}
-                    activeSubmit={activeCreateSubmit}
-                    handleUpdateInfoData={this.handleUpdateData}
-                  />
-                  : null
-              }
+              {details ? (
+                <UpdatePopup
+                  moduleTitle="Đổi hình đại diện"
+                  moduleBody={
+                    <ChangeAvatar
+                      data={details}
+                      handleNewData={handleNewDataUpdate}
+                      handleCheckValidation={this.handleCheckValidation}
+                      // imgAvatarView={ACCOUNT_AVA}
+                      imgAvatarView={localStorage.getItem("ACCOUNT_AVA")}
+                    />
+                  }
+                  newData={newData}
+                  updateModal={updateModal}
+                  toggleModal={toggleModal}
+                  activeSubmit={activeCreateSubmit}
+                  handleUpdateInfoData={this.handleUpdateData}
+                />
+              ) : null}
               <DropdownItem divider />
               <DropdownItem onClick={() => handleCloseApp()}>
                 <i className="ni ni-user-run" />
@@ -458,7 +458,8 @@ const Sidebar = (props) => {
           </Form>
 
           {/* Navigation */}
-          {createLinkMenu(routes)}
+          {/* {createLinkMenu(routes)} */}
+          {createLinkMenu(MENU_DATA)}
           {/* Heading */}
           {/* <h6 className={`navbar-heading text-muted ${classes.sessionTitle}`}>Documentation</h6>
         
