@@ -588,7 +588,7 @@ export const getAccessToken = async (username, password, redirect, getStateError
           
           redirect(data);
         } else {
-          resolve(false);
+          return false;
         }
       }
     } else {
