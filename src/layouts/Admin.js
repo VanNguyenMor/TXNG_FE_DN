@@ -47,6 +47,7 @@ import { PLEASE_CHECK_CONNECT, BASE_URL, CLIENT_ID, CLIENT_SECRET, SCOPE, GRANT_
 import axios from 'axios';
 import qs from 'qs';
 import { deleteCookie, getCookie, setCookie } from "../helpers/cookie.js";
+import { MENU_DATA } from "mockData/menuData";
 
 
 
@@ -191,29 +192,62 @@ const Admin = (props) => {
     });
   };
 
-  const getRoutesNavigation = routes => {
+  // const getRoutesNavigation = routes => {
 
+  //   const arrayRoute = [];
+
+  //   let route = null;
+
+  //   const routeExcludes = routeComponents.filter(p => (routes || []).filter(m => m.uniqueCode == p.key).length <= 0);
+
+  //   routeExcludes.map((item, index) => {
+  //     arrayRoute.push(
+  //       <Route
+  //         path={item.layout + item.url}
+  //         component={item.component}
+  //         key={index}
+  //       />
+  //     );
+  //   });
+
+  //   routes.map(item => {
+  //     route = routeComponents.find(p => p.key && p.key == item.uniqueCode);
+
+  //     if (route) {
+
+  //       arrayRoute.push(
+  //         <Route
+  //           path={route.layout + item.url}
+  //           component={route.component}
+  //           key={item.id}
+  //         />
+  //       );
+  //     }
+  //   });
+
+  //   return arrayRoute;
+  // };
+
+  const getRoutesFromMenuData = (menuData) => {
     const arrayRoute = [];
 
-    let route = null;
+    const routeExcludes = routeComponents.filter(
+      rc => menuData.filter(md => md.uniqueCode === rc.key).length === 0
+    );
 
-    const routeExcludes = routeComponents.filter(p => (routes || []).filter(m => m.uniqueCode == p.key).length <= 0);
-
-    routeExcludes.map((item, index) => {
+    routeExcludes.forEach((item, index) => {
       arrayRoute.push(
         <Route
           path={item.layout + item.url}
           component={item.component}
-          key={index}
+          key={`exclude-${index}`}
         />
       );
     });
 
-    routes.map(item => {
-      route = routeComponents.find(p => p.key && p.key == item.uniqueCode);
-
+    menuData.forEach(item => {
+      const route = routeComponents.find(rc => rc.key && rc.key === item.uniqueCode);
       if (route) {
-
         arrayRoute.push(
           <Route
             path={route.layout + item.url}
@@ -305,7 +339,8 @@ const Admin = (props) => {
             />
 
             <Switch>
-              {getRoutesNavigation(menus)}
+              {/* {getRoutesNavigation(menus)} */}
+              {getRoutesFromMenuData(MENU_DATA)}
               {/* {getRoutes(routes)} */}
               {/* <Redirect from="*" to="/trang_chu/dashboard" /> */}
               <Route exact path="/" />
