@@ -68,20 +68,6 @@ const Admin = (props) => {
 
   React.useEffect(() => {
 
-    // getRefreshToken(actionCreators.userLogin, actionCreators.loginSuccess).then(async result => {
-    //   // VARIABLES.isFechingAlert = true;
-
-    //   // if (result) {
-    //   //   return await get(url);
-    //   // } else {
-    //   //   deleteCookie('AUTHEN_INFO');
-    //   //   window.location.href = '/';
-    //   // }
-
-    //   console.log(result);
-    //   console.log('has Refhes');
-
-    // });
     const getRefreshToken = () => {
 
       return new Promise(async (resolve, reject) => {

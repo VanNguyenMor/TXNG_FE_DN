@@ -91,6 +91,7 @@ class HeaderTable extends Component {
 			hideReload,
 			styleCustom,
 			typeSearch,
+			isReadOnly,
 		} = this.props;
 
 		return (
@@ -317,6 +318,7 @@ class HeaderTable extends Component {
 					screen={screen}
 					newData={newData}
 					moduleTitle={moduleTitle}
+					isReadOnly={isReadOnly}
 					moduleBody={moduleBody}
 					createNewModal={isShowForEdit || createNewModal}
 					isShowForEdit={isShowForEdit}

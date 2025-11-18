@@ -800,6 +800,8 @@ export const NAVBAR_ITEM = {
     BLOG_LIST: 'Bài viết',
     NEWS_LIST: 'Tin tức',
     MENU_LIST: 'Menu',
+    LOGGING_INFORMATION: 'Nhật ký truy xuất',
+    DECLARE_INFORMATION: 'Kê khai thông tin',
     CONTENT_WEBSITE: 'Cấu hình',
     STAMP_LIST: 'Quản lý dải tem',
     STAMP_PROVIDE: 'Quản lý cấp phát tem',
@@ -867,6 +869,23 @@ export const EXPORT_PRODUCT = [
 
 export const LIMIT_ITEM_IN_PAGE = 10;
 export const LOADING_TIME = 1000;
+
+export const LOGGING_INFORMATION = [
+    'Stt',
+    'Hình ảnh',
+    'Tiêu đề',
+    'Code',
+    'Vị trí',
+    'Trạng thái',
+]
+
+export const DECLARATION_INFORMATION = [
+    'Stt',
+    'Truy xuất',
+    'Tên kê khai',
+    'Nhật ký',
+    'Quét mã',
+]
 
 export const UNITS = [
     {

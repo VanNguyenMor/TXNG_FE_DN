@@ -58,9 +58,9 @@ import GrowthStampReports from "views/pages/GrowthStampReports";
 import SaleStampReports from "views/pages/SaleStampReports";
 import SaleRegisterReports from "views/pages/SaleRegisterReports";
 import PlantingZone from "views/pages/PlantingZone";
+import ConfigSystem from "views/pages/ConfigSystem";
 import ImportProduct from "views/pages/ImportProduct";
 import ExportProduct from "views/pages/ExportProduct";
-import ConfigSystem from "views/pages/ConfigSystem";
 import CompanyListAwaitActivity from "views/pages/CompanyListAwaitActivity";
 import MaterialGroup from "views/pages/MaterialGroup";
 import ProductsGroups from "views/pages/ProductsGroups";
@@ -86,6 +86,8 @@ import ReportQuantityProduct from "views/pages/ReportQuantityProduct";
 import ReportQuantityProductByZone from "views/pages/ReportQuantityProductByZone";
 import ReportProductByProvice from "views/pages/ReportProductByProvice";
 import ReportListCompany from "views/pages/ReportListCompany";
+import LoggingInformation from "views/pages/LoggingInformation";
+import DeclarationInformations from "views/pages/DeclarationInformations";
 
 import { NAVBAR_ITEM } from "./helpers/constant";
 
@@ -652,6 +654,126 @@ var routes = [
     layout: "/trang_chu",
     key: 7,
   },
+  {
+    path: "/nhat_ky",
+    name: NAVBAR_ITEM.LOGGING_INFORMATION,
+    icon: "ni ni-settings-gear-65",
+    component: LoggingInformation,
+    layout: "/trang_chu",
+    key: 12,
+  },
+  {
+    path: "/ke_khai_thong_tin",
+    name: NAVBAR_ITEM.DECLARE_INFORMATION,
+    icon: "ni ni-settings-gear-65",
+    component: DeclarationInformations,
+    layout: "/trang_chu",
+    key: 12,
+  },
+  // Report
+  // Auth
+  {
+    path: "/login",
+    name: "Login",
+    icon: "ni ni-key-25 text-info",
+    component: Login,
+    layout: "/nguoi_dung",
+    key: null,
+  },
+  {
+    path: "/quen_mat_khau",
+    name: "ResetPassword",
+    icon: "ni ni-circle-08 text-pink",
+    component: ResetPassword,
+    layout: "/nguoi_dung",
+    key: null,
+  },
+
+  {
+    path: "/bao_cao_quy_hoach_vung_theo_doanh_nghiep",
+    name: NAVBAR_ITEM.REPORT_ZONING_PRODUCT,
+    icon: "ni ni-circle-08 text-pink",
+    component: ReportZoningCompany,
+    layout: "/trang_chu",
+    key: null,
+  },
+
+  {
+    path: "/bao_cao_quy_hoach_vung_san_xuat",
+    name: NAVBAR_ITEM.REPORT_ZONING_PRODUCT,
+    icon: "ni ni-circle-08 text-pink",
+    component: ReportZoningPlantingZone,
+    layout: "/trang_chu",
+    key: null,
+  },
+  {
+    path: "/bao_cao_chi_tiet_san_luong_theo_san_pham",
+    name: NAVBAR_ITEM.REPORT_ZONING_PRODUCT,
+    icon: "ni ni-circle-08 text-pink",
+    component: ReportZoningCompany,
+    layout: "/trang_chu",
+    key: null,
+  },
+  {
+    path: "/bao_cao_san_luong_theo_vung",
+    name: NAVBAR_ITEM.REPORT_ZONING_PRODUCT,
+    icon: "ni ni-circle-08 text-pink",
+    component: ReportZoningCompany,
+    layout: "/trang_chu",
+    key: null,
+  },
+
+  {
+    path: "/bao_cao_mat_hang_theo_tinh",
+    name: NAVBAR_ITEM.REPORT_ZONING_PRODUCT,
+    icon: "ni ni-circle-08 text-pink",
+    component: ReportZoningCompany,
+    layout: "/trang_chu",
+    key: null,
+  },
+
+  {
+    path: "/bao_cao_danh_sach_doanh_nghiep",
+    name: NAVBAR_ITEM.REPORT_ZONING_PRODUCT,
+    icon: "ni ni-circle-08 text-pink",
+    component: ReportZoningCompany,
+    layout: "/trang_chu",
+    key: null,
+  },
+
+  {
+    path: "/bao_cao_tang_truong_tien_dang_ky",
+    name: NAVBAR_ITEM.REPORT_REGISTER_CHART,
+    icon: "ni ni-chart-bar-32 text-blue",
+    component: null,
+    layout: "/trang_chu",
+    key: 6,
+  },
+  {
+    path: "/bao_cao_hang_hoa",
+    name: NAVBAR_ITEM.REPORT_PRODUCT_CHART,
+    icon: "ni ni-chart-bar-32 text-blue",
+    component: null,
+    layout: "/trang_chu",
+    key: 6,
+  },
+  // Admin Setting System
+  {
+    path: "/thiet_lap_bao_cao",
+    name: NAVBAR_ITEM.REPORT_MANANGER,
+    icon: "ni ni-settings-gear-65",
+    component: null,
+    layout: "/trang_chu",
+    key: 7,
+  },
+  {
+    path: "/xem_bao_cao",
+    name: NAVBAR_ITEM.REPORT_VIEW,
+    icon: "ni ni-settings-gear-65",
+    component: null,
+    layout: "/trang_chu",
+    key: 7,
+  },
   // Report
   // Auth
   {
@@ -739,8 +861,6 @@ const routeComponents = [
   { layout: LAYOUT_HOME, key: "Report3", component: SaleStampReports },
   { layout: LAYOUT_HOME, key: "Report4", component: SaleRegisterReports },
   { layout: LAYOUT_HOME, key: "PlantingZones", component: PlantingZone },
-  { layout: LAYOUT_HOME, key: "ImportProducts", component: ImportProduct },
-  { layout: LAYOUT_HOME, key: "ExportProducts", component: ExportProduct },
   { layout: LAYOUT_HOME, key: "Configs", component: ConfigSystem },
   { layout: LAYOUT_HOME, key: "Report8", component: CompanyAreaReports },
   { layout: LAYOUT_HOME, key: "Report9", component: ProductReports },
@@ -804,6 +924,18 @@ const routeComponents = [
     key: "ReportListCompany",
     component: ReportListCompany,
   },
+  {
+    layout: LAYOUT_HOME,
+    key: "LoggingInformations",
+    component: LoggingInformation,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "DeclarationInformations",
+    component: DeclarationInformations,
+  },
+  { layout: LAYOUT_HOME, key: "ImportProducts", component: ImportProduct },
+  { layout: LAYOUT_HOME, key: "ExportProducts", component: ExportProduct },
 ];
 
 export { routeComponents };

@@ -294,7 +294,6 @@ class Select extends Component {
   render() {
     const { title, data, labelName, val, name, isHideSelectAll, isHideDefault, notActiveRoot, isDisable, labelMark, isMulti, refLabel, isDisNo2 } = this.props;
     const { currentArray, open, value, currentLabel, left, top, width, dissableMulti } = this.state;
-    console.log(currentArray);
     return (
       <div ref={ref => this.refParent = ref}
         className={isDisable == true || dissableMulti === true ?
