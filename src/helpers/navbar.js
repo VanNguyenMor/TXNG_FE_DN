@@ -14,6 +14,8 @@ export const menuTop = [
             { label: NAVBAR_ITEM.DATA_ROLE, icon: null, url: '/phan_vung_du_lieu' },
             { label: NAVBAR_ITEM.PRICES, icon: null, url: '/bang_gia' },
             { label: NAVBAR_ITEM.HISTORY, icon: null, url: '/nhat_ky_he_thong' },
+            { label: NAVBAR_ITEM.LOGGING_INFORMATION, icon: null, url: '/nhat_ky' },
+            { label: NAVBAR_ITEM.DECLARE_INFORMATION, icon: null, url: '/ke_khai_thong_tin' },
         ]
     },
     {

@@ -84,6 +84,8 @@ import ReportQuantityProduct from 'views/pages/ReportQuantityProduct';
 import ReportQuantityProductByZone from 'views/pages/ReportQuantityProductByZone';
 import ReportProductByProvice from 'views/pages/ReportProductByProvice';
 import ReportListCompany from 'views/pages/ReportListCompany';
+import LoggingInformation from 'views/pages/LoggingInformation';
+import DeclarationInformations from 'views/pages/DeclarationInformations';
 
 
 
@@ -638,6 +640,22 @@ var routes = [
 		layout: "/trang_chu",
 		key: 7,
 	},
+	{
+		path: "/nhat_ky",
+		name: NAVBAR_ITEM.LOGGING_INFORMATION,
+		icon: "ni ni-settings-gear-65",
+		component: LoggingInformation,
+		layout: "/trang_chu",
+		key: 12,
+	},
+	{
+		path: "/ke_khai_thong_tin",
+		name: NAVBAR_ITEM.DECLARE_INFORMATION,
+		icon: "ni ni-settings-gear-65",
+		component: DeclarationInformations,
+		layout: "/trang_chu",
+		key: 12,
+	},
 	// Report
 	// Auth
 	{
@@ -738,6 +756,8 @@ const routeComponents = [
 	{ layout: LAYOUT_HOME, key: 'ReportQuantityProductByZone', component: ReportQuantityProductByZone },
 	{ layout: LAYOUT_HOME, key: 'ReportProductByProvice', component: ReportProductByProvice },
 	{ layout: LAYOUT_HOME, key: 'ReportListCompany', component: ReportListCompany },
+	{ layout: LAYOUT_HOME, key: 'LoggingInformations', component: LoggingInformation },
+	{ layout: LAYOUT_HOME, key: 'DeclarationInformations', component: DeclarationInformations },
 ];
 
 export {
