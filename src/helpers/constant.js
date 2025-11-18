@@ -725,6 +725,54 @@ export const DATA_SORTODER_LIST = [
     { number: '100' },
 ];
 
+export const IMPORT_EXPORT_PRODUCT_STATUS = {
+    ACTIVE: 'Đã duyệt',
+    DEACTIVE: 'Chưa duyệt'
+}
+
+export const IMPORT_PRODUCT_TYPE = [
+  {
+    name: "Nguyên vật liệu",
+    description: "Nhập nguyên vật liệu để sử dụng cho sản xuất",
+    id: "1",
+    val: "1",
+  },
+  {
+    name: "Sản phẩm",
+    description: "Nhập sản phẩm để bán",
+    id: "2",
+    val: "2",
+  },
+  {
+    name: "Từ phiếu xuất",
+    description:
+      "Nhập từ phiếu xuất hàng của công ty cùng hệ thống Trace Center",
+    id: null,
+    val: null,
+  },
+];
+
+export const EXPORT_PRODUCT_TYPE = [
+  {
+    name: "Lô hàng",
+    description: "Lô hàng",
+    id: "1",
+    val: "1",
+  },
+  {
+    name: "Sản phẩm",
+    description: "Sản phẩm",
+    id: "2",
+    val: "2",
+  },
+  {
+    name: "Quét QR",
+    description: "Quét QR",
+    id: "3",
+    val: "3",
+  },
+];
+
 export const NAVBAR_ITEM = {
     USER_ACCOUNT: 'Tài khoản người dùng',
     ROLE_GROUP: 'Nhóm quyền',
@@ -757,6 +805,8 @@ export const NAVBAR_ITEM = {
     STAMP_PROVIDE: 'Quản lý cấp phát tem',
     PLANTINGTYPE_LIST: 'Loại vùng sản xuất',
     PLANGTINGZONE_LIST: 'vùng sản xuất',
+    IMPORT_PRODUCT: 'Nhập hàng hóa',
+    EXPORT_PRODUCT: 'Xuất hàng hóa',
     MATERIALGROUP: 'Nhóm sản phẩm',
     PRODUCTGROUP: 'Danh sách loại sản phẩm',
     REPORT_COMPANY_CHART: 'Tăng trưởng doanh nghiệp',
@@ -797,6 +847,22 @@ export const PLANTING_ZONE = [
     // 'Loại vùng sản xuất',
     // 'Địa điểm'
     // 'GPS'
+]
+
+export const IMPORT_PRODUCT = [
+    'Stt',
+    'Số phiếu',
+    'Thời gian',
+    'Nhà cung cấp',
+    'Trạng thái',
+]
+
+export const EXPORT_PRODUCT = [
+    'Stt',
+    'Số phiếu',
+    'Thời gian',
+    'Khách hàng',
+    'Trạng thái',
 ]
 
 export const LIMIT_ITEM_IN_PAGE = 10;
