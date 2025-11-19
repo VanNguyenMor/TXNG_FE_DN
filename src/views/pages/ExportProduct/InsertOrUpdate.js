@@ -1,10 +1,4 @@
 import React, { Component } from "react";
-import compose from "recompose/compose";
-import { connect } from "react-redux";
-import { bindActionCreators } from "redux";
-import { actionLocationCreators } from "../../../actions/LocationListAction";
-import { areaDataAction } from "../../../actions/AreaDataAction";
-import { platingZoneAction } from "../../../actions/PlantingZoneAction";
 import PopupMessage from "../../../components/PopupMessage";
 import Select from "components/Select";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
@@ -27,38 +21,7 @@ class InsertOrUpadte extends Component {
       supplierId: null,
       productId: null,
       warehouseId: null,
-      SUPPLIER_LIST: [
-        { id: 1, name: "Khách hàng A" },
-        { id: 2, name: "Khách hàng B" },
-      ],
-      INGREDIENT_LIST: [
-        {
-          id: 1,
-          name: "Lô hàng A",
-          unit: 1,
-          quantity: 20,
-          warehouseId: 1,
-        },
-        {
-          id: 2,
-          name: "Lô hàng B",
-          unit: 1,
-          quantity: 1,
-          warehouseId: 2,
-        },
-      ],
-      PRODUCT_LIST: [
-        { id: 1, name: "Sản phẩm A" },
-        { id: 2, name: "Sản phẩm B" },
-      ],
-      WAREHOUSE_LIST: [
-        { id: 1, name: "Kho hàng A" },
-        { id: 2, name: "Kho hàng B" },
-      ],
-      UNIT_LIST: [
-        { id: 1, name: "Cái" },
-        { id: 2, name: "Chiếc" },
-      ],
+
       id: null,
       receiptNumber: "",
       creationDate: "",
@@ -207,11 +170,6 @@ class InsertOrUpadte extends Component {
       importTypeId,
       errMessage,
       popupMessage,
-      INGREDIENT_LIST,
-      PRODUCT_LIST,
-      SUPPLIER_LIST,
-      WAREHOUSE_LIST,
-      UNIT_LIST,
       ingredientId,
       productId,
       receiptNumber,
@@ -227,7 +185,15 @@ class InsertOrUpadte extends Component {
       status,
       inventory,
     } = this.state;
-    const { errors, STATUS_OPTIONS } = this.props;
+    const {
+      errors,
+      STATUS_OPTIONS,
+      SUPPLIER_LIST,
+      INGREDIENT_LIST,
+      PRODUCT_LIST,
+      WAREHOUSE_LIST,
+      UNIT_LIST,
+    } = this.props;
     const isIngredient = Number(importTypeId) === 1;
     const isProduct = Number(importTypeId) === 2;
     const isScanQR = Number(importTypeId) === 3;

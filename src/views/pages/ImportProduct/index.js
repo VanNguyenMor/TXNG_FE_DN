@@ -113,6 +113,26 @@ class ImportProduct extends Component {
         { id: 0, name: "Chưa duyệt" },
         { id: 1, name: "Đã duyệt" },
       ],
+      SUPPLIER_LIST: [
+        { id: 1, name: "Nhà cung cấp A" },
+        { id: 2, name: "Nhà cung cấp B" },
+      ],
+      INGREDIENT_LIST: [
+        { id: 1, name: "Nguyên liệu A" },
+        { id: 2, name: "Nguyên liệu B" },
+      ],
+      PRODUCT_LIST: [
+        { id: 1, name: "Sản phẩm A" },
+        { id: 2, name: "Sản phẩm B" },
+      ],
+      WAREHOUSE_LIST: [
+        { id: 1, name: "Kho hàng A" },
+        { id: 2, name: "Kho hàng B" },
+      ],
+      UNIT_LIST: [
+        { id: 1, name: "Cái" },
+        { id: 2, name: "Chiếc" },
+      ],
     };
   }
 
@@ -512,6 +532,11 @@ class ImportProduct extends Component {
       popupMessage,
       activeCreateSubmit,
       STATUS_OPTIONS,
+      SUPPLIER_LIST,
+      INGREDIENT_LIST,
+      PRODUCT_LIST,
+      WAREHOUSE_LIST,
+      UNIT_LIST,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -575,6 +600,11 @@ class ImportProduct extends Component {
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
                           STATUS_OPTIONS={STATUS_OPTIONS}
+                          SUPPLIER_LIST={SUPPLIER_LIST}
+                          INGREDIENT_LIST={INGREDIENT_LIST}
+                          PRODUCT_LIST={PRODUCT_LIST}
+                          WAREHOUSE_LIST={WAREHOUSE_LIST}
+                          UNIT_LIST={UNIT_LIST}
                         />
                       }
                       isShowForEdit={isShowForEdit}
@@ -731,6 +761,12 @@ class ImportProduct extends Component {
                   id={editId}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
+                  STATUS_OPTIONS={STATUS_OPTIONS}
+                  SUPPLIER_LIST={SUPPLIER_LIST}
+                  INGREDIENT_LIST={INGREDIENT_LIST}
+                  PRODUCT_LIST={PRODUCT_LIST}
+                  WAREHOUSE_LIST={WAREHOUSE_LIST}
+                  UNIT_LIST={UNIT_LIST}
                 />
               }
               toggleModal={this.toggleModal}
