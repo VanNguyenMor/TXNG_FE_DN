@@ -359,16 +359,6 @@ export const PRODUCT_GROUP = [
     'Loại sản phẩm',
 ];
 
-export const PRODUCTS = [
-    'Stt',
-
-    'Hình ảnh',
-    'Ngành nghề',
-    'Sản phẩm',
-    'Doanh nghiệp sở hữu',
-
-];
-
 export const PRODUCTS_VERIFY = [
     'Stt',
     'Trạng thái',
@@ -849,6 +839,15 @@ export const PLANTING_ZONE = [
     // 'Loại vùng sản xuất',
     // 'Địa điểm'
     // 'GPS'
+]
+
+export const PRODUCTS = [
+    'Stt',
+    'Số lô',
+    'Sản phẩm',
+    'Số lượng',
+    'Ngày yêu cầu',
+    'Trạng thái',
 ]
 
 export const IMPORT_PRODUCT = [

@@ -26,26 +26,7 @@ class InsertOrUpadte extends Component {
       supplierId: null,
       productId: null,
       warehouseId: null,
-      SUPPLIER_LIST: [
-        { id: "1", name: "Nhà cung cấp A" },
-        { id: "2", name: "Nhà cung cấp B" },
-      ],
-      INGREDIENT_LIST: [
-        { id: "1", name: "Nguyên liệu A" },
-        { id: "2", name: "Nguyên liệu B" },
-      ],
-      PRODUCT_LIST: [
-        { id: "1", name: "Sản phẩm A" },
-        { id: "2", name: "Sản phẩm B" },
-      ],
-      WAREHOUSE_LIST: [
-        { id: "1", name: "Kho hàng A" },
-        { id: "2", name: "Kho hàng B" },
-      ],
-      UNIT_LIST: [
-        { id: "1", name: "Cái" },
-        { id: "2", name: "Chiếc" },
-      ],
+
       id: null,
       receiptNumber: "",
       creationDate: "",
@@ -175,11 +156,6 @@ class InsertOrUpadte extends Component {
       importTypeId,
       errMessage,
       popupMessage,
-      INGREDIENT_LIST,
-      PRODUCT_LIST,
-      SUPPLIER_LIST,
-      WAREHOUSE_LIST,
-      UNIT_LIST,
       ingredientId,
       productId,
       receiptNumber,
@@ -194,7 +170,15 @@ class InsertOrUpadte extends Component {
       unit,
       status,
     } = this.state;
-    const { errors, STATUS_OPTIONS } = this.props;
+    const {
+      errors,
+      STATUS_OPTIONS,
+      SUPPLIER_LIST,
+      INGREDIENT_LIST,
+      PRODUCT_LIST,
+      WAREHOUSE_LIST,
+      UNIT_LIST,
+    } = this.props;
     const isIngredient = Number(importTypeId) === 1;
 
     return (

@@ -1,87 +1,92 @@
 import React, { Component } from "react";
-import { bindActionCreators } from "redux";
-import compose from 'recompose/compose';
-import { connect } from "react-redux";
-import { actionProducts } from "../../../actions/ProductsActions";
-import { PRODUCTS } from "../../../helpers/constant";
+import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import { PLEASE_CHECK_CONNECT, } from "../../../services/Common";
-import MenuButton from "../../../assets/img/buttons/menu.png";
-import ViewModal from "./ViewModal";
+import { bindActionCreators } from "redux";
+import { connect } from "react-redux";
+import { actionZoneCreators } from "../../../actions/ZoneListActions";
+import { platingZoneAction } from "../../../actions/PlantingZoneAction";
+import { areaDataAction } from "../../../actions/AreaDataAction";
+import classes from "./index.module.css";
 import Pagination from "components/Pagination";
 import HeaderTable from "components/HeaderTable";
 import HeadTitleTable from "components/HeadTitleTable";
-import Select from "components/Select";
-import UnconfirmModal from "./UnconfirmModal";
-import WarningPopup from "../../../components/WarningPopup";
-import classes from './index.module.css';
-import PopupMessage from "../../../components/PopupMessage";
 import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
-import UpdatePopup from "../../../components/UpdatePopup";
-import SelectSearch, { fuzzySearch } from "react-select-search";
-// import ReactSearchBox from "react-search-box";
-import SelectTree from "components/SelectTree";
-import SearchImg from "../../../assets/img/buttons/searchig.svg";
-import { actionCompanyListRegistered } from "../../../actions/CompanyListRegisteredActions";
-import { actionField } from "../../../actions/FieldActions.js";
+import MenuButton from "../../../assets/img/buttons/menu.png";
+import WarningPopup from "../../../components/WarningPopup";
+import PopupMessage from "../../../components/PopupMessage";
 import { handleGenTree } from "../../../helpers/trees";
-import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
-import ViewPopup from "../../../components/ViewPopup"
-import Kduyet from "assets/img/buttons/KhongDuyet.svg";
-import Duyet from "assets/img/buttons/Duyet.svg";
-import ReactStars from "react-rating-stars-component";
-import "./select-search.css"
+import Select from "../../../components/Select";
+import CreateNewPopup from "../../../components/CreateNewPopup";
+import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction";
+import SearchImg from "../../../assets/img/buttons/searchig.svg";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-import '../../../assets/css/page/product.css';
-
+// reactstrap components
 import {
   Card,
-  Input,
   Table,
   Container,
   Row,
   Spinner,
+  Input,
   Button,
-  ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem
+  ButtonDropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
 } from "reactstrap";
-import SearchModal from "./SearchModal";
 
-const firstExample = {
+import InsertOrUpdate from "./InsertOrUpdate.js";
 
-};
+import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { PRODUCTS } from "../../../helpers/constant";
 
-class Products extends Component {
+class ImportProduct extends Component {
   constructor(props) {
     super(props);
+
+    const dataMock = [
+      {
+        id: 1,
+        batchNumber: "12",
+        productId: "Giày bata",
+        status: 1,
+        quantity: 12,
+        unit: "kg",
+        requestDate: "17:31 13/11/2025",
+      },
+      {
+        id: 2,
+        batchNumber: "12",
+        productId: "Giày bata",
+        status: 1,
+        quantity: 15,
+        unit: "kg",
+        requestDate: "17:31 14/11/2025",
+      },
+    ];
+
     this.state = {
-      data: [],
-      field: [],
-      options: [{
-        value: '',
-        name: 'Tìm kiếm...'
-      }],
-      detail: null,
-      update: null,
-      create: null,
-      delete: null,
+      data: dataMock,
+      detail: [],
+      update: [],
+      create: [],
+      delete: [],
       isLoaded: null,
       status: null,
       open: false,
-      comfirm: null,
-      message: '',
-      errMesageFail: '',
-      newData: null,
-      forCus: false,
-
-      filter: {
-        "fieldID": "",
-        "productCode": "",
-        "productName": "",
-        "companyID": "",
-        "orderBy": "",
-        "page": null,
-        "limit": null
-      },
+      openAddNew: false,
+      message: "",
+      history: [],
+      roles: [],
+      zones: [],
+      editStatus: true,
+      district: [],
+      districtList: [],
+      province: [],
+      ward: [],
+      provinceIDCurrent: null,
       headerTitle: PRODUCTS,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
@@ -89,239 +94,231 @@ class Products extends Component {
       totalElement: 0,
       listLength: 0,
       currentPage: 0,
-      confirmItem: null,
+      filter: {
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      },
+      dataInsert: {},
+      errorInserts: {},
+      isShowForEdit: false,
+      editId: null,
       warningPopupModal: false,
-      warningPopupUnConfirmModal: false,
-      activeCreateSubmit: false,
-      createNewModal: false,
-      isPopupDetail: false,
-      reasonUnConfirm: '',
-      dataPopupDetail: null,
-      dataProductsUnits: [],
-      productFields: [],
-      dataProducts: {},
-      errorUpdate: {},
-      fieldName: ''
-    }
-    this.redSelect = null;
+      deleteId: null,
+      popupMessage: null,
+      STATUS_OPTIONS: [
+        { id: 0, title: "Mới tạo" },
+        { id: 1, title: "Chờ duyệt" },
+        { id: 2, title: "Đã duyệt" },
+        { id: 3, title: "Không duyệt" },
+        { id: 4, title: "Chờ duyệt lại" },
+      ],
+      DIARY_OPTIONS: [
+        {
+          id: 1,
+          title: "Nhật ký 1",
+          createdAt: "23/06/2025",
+          quantity: 50,
+          location: "Kho A",
+          product: "Phân bón NPK",
+          unit: "kg",
+        },
+        {
+          id: 2,
+          title: "Nhật ký 2",
+          createdAt: "21/06/2025",
+          quantity: 20,
+          location: "Kho B",
+          product: "Phân bón NPKS",
+          unit: "tấn",
+        },
+      ],
+      CLASSIFY_OPTIONS: [
+        {
+          id: 1,
+          title: "Phân loại 1",
+        },
+        {
+          id: 2,
+          title: "Phân loại 2",
+        },
+      ],
+      TEM_OPTIONS: [
+        {
+          id: 1,
+          title: "Dải tem 1",
+        },
+        {
+          id: 2,
+          title: "Dải tem 2",
+        },
+      ],
+      PROVINCE_OPTIONS: [
+        { id: 1, title: "Hà Nội" },
+        { id: 2, title: "Hồ Chí Minh" },
+        { id: 3, title: "Hải Phòng" },
+        { id: 4, title: "Đà Nẵng" },
+        { id: 5, title: "Cần Thơ" },
+        { id: 6, title: "Hà Giang" },
+        { id: 7, title: "Cao Bằng" },
+        { id: 8, title: "Lào Cai" },
+        { id: 9, title: "Yên Bái" },
+        { id: 10, title: "Tuyên Quang" },
+        { id: 11, title: "Lạng Sơn" },
+        { id: 12, title: "Quảng Ninh" },
+        { id: 13, title: "Thái Nguyên" },
+        { id: 14, title: "Bắc Giang" },
+        { id: 15, title: "Phú Thọ" },
+        { id: 16, title: "Vĩnh Phúc" },
+        { id: 17, title: "Bắc Ninh" },
+        { id: 18, title: "Hải Dương" },
+        { id: 19, title: "Hưng Yên" },
+        { id: 20, title: "Thái Bình" },
+        { id: 21, title: "Nam Định" },
+        { id: 22, title: "Ninh Bình" },
+        { id: 23, title: "Thanh Hóa" },
+        { id: 24, title: "Nghệ An" },
+        { id: 25, title: "Hà Tĩnh" },
+        { id: 26, title: "Quảng Bình" },
+        { id: 27, title: "Quảng Trị" },
+        { id: 28, title: "Thừa Thiên Huế" },
+        { id: 29, title: "Quảng Nam" },
+        { id: 30, title: "Quảng Ngãi" },
+        { id: 31, title: "Bình Định" },
+        { id: 32, title: "Phú Yên" },
+        { id: 33, title: "Khánh Hòa" },
+        { id: 34, title: "Đắk Lắk" },
+        { id: 35, title: "Lâm Đồng" },
+        { id: 36, title: "Đồng Nai" },
+        { id: 37, title: "Bình Dương" },
+        { id: 38, title: "Bà Rịa - Vũng Tàu" },
+        { id: 39, title: "Tây Ninh" },
+        { id: 40, title: "Long An" },
+        { id: 41, title: "Tiền Giang" },
+        { id: 42, title: "Bến Tre" },
+        { id: 43, title: "Vĩnh Long" },
+        { id: 44, title: "Đồng Tháp" },
+        { id: 45, title: "An Giang" },
+        { id: 46, title: "Kiên Giang" },
+        { id: 47, title: "Sóc Trăng" },
+        { id: 48, title: "Cà Mau" },
+      ],
+      COUNTRY_OPTIONS: [
+        { id: "VN", title: "Việt Nam" },
+        { id: "CN", title: "Trung Quốc" },
+        { id: "JP", title: "Nhật Bản" },
+        { id: "KR", title: "Hàn Quốc" },
+        { id: "SG", title: "Singapore" },
+        { id: "TH", title: "Thái Lan" },
+        { id: "ID", title: "Indonesia" },
+        { id: "MY", title: "Malaysia" },
+
+        { id: "DE", title: "Đức" },
+        { id: "FR", title: "Pháp" },
+        { id: "GB", title: "Vương quốc Anh" },
+        { id: "IT", title: "Ý" },
+        { id: "ES", title: "Tây Ban Nha" },
+
+        { id: "US", title: "Hoa Kỳ" },
+        { id: "CA", title: "Canada" },
+        { id: "BR", title: "Brazil" },
+        { id: "MX", title: "Mexico" },
+
+        { id: "AU", title: "Úc" },
+        { id: "NZ", title: "New Zealand" },
+
+        { id: "ZA", title: "Nam Phi" },
+      ],
+      WAREHOUSE_OPTIONS: [
+        {
+          id: 1,
+          title: "Kho hàng 1",
+        },
+        {
+          id: 2,
+          title: "Kho hàng 2",
+        },
+      ],
+    };
   }
 
-  componentWillReceiveProps(nextProp) {
-    let { data } = nextProp.products;
-    const { limit, fetching } = this.state;
-    let fieldData = nextProp.field.data;
-    let haveRoot = false;
-    let fieldDataParent = [];
-
-    if (data !== this.state.data) {
-      if (typeof (data) !== 'undefined') {
-        if (typeof (data.list) !== 'undefined') {
-          if (data.list !== null) {
-            if (typeof (data.list.products) !== 'undefined') {
-              if (data.list.products == '') {
-                data.list.products = []
-              }
-              data.list.products.map((item, key) => {
-                item['thumbnail'] = <img src={item.avatar ? item.avatar : NoImg} style={{ width: 60, height: 60 }} />
-
-                item['index'] = key + 1;
-                item['collapse'] = false;
-
-                if (item.rating) {
-                  if (item.rating.toString().split('.')[1] != '0') {
-                    if (parseInt(item.rating.toString().split('.')[1]) >= 1 && parseInt(item.rating.toString().split('.')[1]) <= 4) {
-                      item['ratingFil'] = parseFloat(item.rating.toString().split('.')[0] + '.5')
-                    } else if (parseInt(item.rating.toString().split('.')[1]) >= 6 && parseInt(item.rating.toString().split('.')[1]) <= 9) {
-                      item['ratingFil'] = parseFloat(item.rating.toString().split('.')[0] + '.0') + 1
-                    } else {
-                      item['ratingFil'] = item.rating
-                    }
-                  } else {
-                    item['ratingFil'] = item.rating
-                  }
-                }
-
-              });
-
-              this.setState({
-                data: data.list.products,
-                history: data.list.products,
-                listLength: data.list.products.length,
-                totalPage: Math.ceil(data.list.products.length / limit),
-                isLoaded: data.isLoading,
-                status: data.status,
-                totalElement: data.list.products.length > limit ? limit : data.list.products.length,
-                message: PLEASE_CHECK_CONNECT(data.message)
-              });
-            } else {
-              this.setState({
-                history: data.list.products,
-                isLoaded: data.isLoading,
-                status: data.status,
-                message: PLEASE_CHECK_CONNECT(data.message)
-              });
-            }
-
-          }
-        }
-      }
-    }
-
-    if (fieldData !== this.state.field) {
-      if (typeof (fieldData) !== 'undefined') {
-        if (fieldData.fieldCom !== null) {
-          if (typeof (fieldData.fieldCom) !== 'undefined') {
-            if (typeof (fieldData.fieldCom.fields) !== 'undefined') {
-              fieldData.fieldCom.fields
-                .filter(item => item.parentID === null)
-                .map(item => haveRoot = true);
-
-              if (haveRoot) {
-                fieldDataParent = handleGenTree(fieldData.fieldCom.fields, 'fieldName');
-
-                fieldDataParent.map((item, key) => {
-                  item['index'] = key + 1;
-
-                });
-              } else {
-                // Search Element in tree
-                fieldData.fieldCom.fields.map(
-                  (item, key, array) => (
-                    key === 0 && (item.parentID = null)
-                  ));
-
-                fieldDataParent = handleGenTree(fieldData.fieldCom.fields, 'fieldName');
-
-                fieldDataParent.map((item, key) => {
-                  item['index'] = key + 1
-                });
-              }
-            }
-
-            this.setState({
-              field: fieldData.fieldCom.fields,
-              fieldAll: fieldData.fieldCom.fields,
-              isLoaded: false,
-              status: data.status,
-              message: PLEASE_CHECK_CONNECT(data.message)
-            });
-          } else {
-            this.setState({
-              field: [],
-              isLoaded: false,
-              status: data.status,
-              message: PLEASE_CHECK_CONNECT(data.message)
-            });
-          }
-        }
-      }
-    }
-  }
-
-
-
-  toggle = (el, val) => {
-    let { data } = this.state;
-
-    data.filter(item => item.id === val)
-      .map(item => item.collapse = !item.collapse);
-
-    this.setState({ data });
-  }
-
-  componentDidMount() {
+  componentWillMount() {
+    const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    const { requestFieldStore, requestListProducts, } = this.props;
+    this.fetchSummary(
+      JSON.stringify({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      })
+    );
 
-    const dataCompany = {
-      "fieldID": "",
-      "comapanyName": "",
-      "taxCode": "",
-      "phone": "",
-      "email": "",
-      "provinceID": "",
-      "districtID": "",
-      "wardID": "",
-      "orderBy": "",
-      "page": null,
-      "limit": null
-    }
-
-
-    // requestFieldStore(JSON.stringify({
-    //   "search": "",
-    //   "filter": "",
-    //   "orderBy": "",
-    //   "page": null,
-    //   "limit": null
-    // })).then(res => {
-    //   this.fetchSummary(JSON.stringify({
-    //     "fieldID": "",
-    //     "productCode": "",
-    //     "productName": "",
-    //     "companyID": "",
-    //     
-    //     "orderBy": "",
-    //     "page": null,
-    //     "limit": null
-    //   }));
-    // });
-
-    // this.fetchSummary(JSON.stringify({
-    //   "fieldID": "",
-    //   "productCode": "",
-    //   "productName": "",
-    //   "companyID": "",
-    //   
-    //   "orderBy": "",
-    //   "page": null,
-    //   "limit": null
-    // }));
-  }
-  handleChangeFilter = (event) => {
-    let { filter } = this.state;
-    const ev = event.target;
-
-    filter[ev['name']] = ev['value'];
-
-    this.setState({ filter });
-  }
-
-  componentDidUpdate() {
-    // This method is called when the route parameters change
-    this.closeStatusModal();
+    getListTypeZoneProperty({
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    }).then((res) => {
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          dataTypeZone: ((res.data || {}).data || {}).plantingTypes || [],
+        };
+      });
+    });
   }
 
   fetchSummary = (data) => {
-    const { requestListProducts } = this.props;
+    const { getListPlantingZone } = this.props;
 
-    requestListProducts(data);
-  }
+    this.setState({ isLoaded: true });
 
-  handleClose = (value) => {
-    const { open } = this.state;
+    getListPlantingZone(data).then((res) => {
+      const { limit } = this.state;
+      let collapseList = [];
+      const data = (res.data || {}).data || {};
 
-    this.setState({ open: value });
-  }
+      let newData = [...this.state.data];
 
-  handleChange = (event) => {
-    let { data } = this.state;
-    const ev = event.target;
+      newData.forEach((item, key) => {
+        collapseList.push({ id: item.id, collapse: false });
+        item["parentID"] = item.parentID === null ? "" : item.parentID;
+      });
 
-    data[ev['name']] = ev['value'];
-    // console.log(data);
-    this.setState({ data });
-  }
+      newData = handleGenTree(newData, "name");
+
+      newData.forEach((item, key) => {
+        item["index"] = key + 1;
+      });
+
+      const total = newData.length | 0;
+
+      const length = newData.length;
+
+      this.setState({
+        data: newData,
+        listLength: total,
+        totalPage: Math.ceil(length / limit),
+        isLoaded: false,
+        collapseList: collapseList,
+      });
+    });
+  };
 
   closeStatusModal = () => {
-    const { status, fetching } = this.state;
+    const { status } = this.state;
 
-    if (status || !status && fetching) {
+    if (status || !status) {
       setTimeout(() => {
         this.setState({ status: null, isLoaded: false });
       }, LOADING_TIME);
     }
-  }
+  };
 
   handlePageClick = (data) => {
     let { limit, beginItem, endItem } = this.state;
@@ -332,48 +329,187 @@ class Products extends Component {
     beginItem = offset;
     endItem = offset + limit;
 
-    this.state.data.map((item, key) => (
-      key >= beginItem && key < endItem && total++
-    ));
+    this.state.data.map(
+      (item, key) => key >= beginItem && key < endItem && total++
+    );
 
     if (selected > 0) {
-      total = (selected * limit) + total;
+      total = selected * limit + total;
     } else total = total;
 
-    this.setState({ beginItem: beginItem, endItem: endItem, currentPage: selected + 1, totalElement: total });
+    this.setState({
+      beginItem: beginItem,
+      endItem: endItem,
+      currentPage: selected + 1,
+      totalElement: total,
+    });
   };
 
-  handleStyleStatus = (status) => {
-    if (status === 0) {
-      return classes.moitao;
-    }
-    if (status === 1) {
-      return classes.daduyet;
-    }
-    if (status == 2) {
-      return classes.khongduyet;
-    }
-    if (status == 3) {
-      return classes.yeucauduyet;
+  handleChangeFilter = (event) => {
+    let { filter } = this.state;
+    const ev = event.target;
+
+    filter[ev["name"]] = ev["value"];
+    this.setState({ filter });
+  };
+
+  clearFilter = () => {
+    let clearFilter = {
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
     };
-  }
+    this.setState({ filter: clearFilter });
+  };
 
-  handleSelect = (value, name) => {
+  handleChangeSelectFilter = (value, name) => {
+    let { filter } = this.state;
 
-    if (value) {
-      this.fetchSummary(JSON.stringify({
-        "fieldID": "",
-        "productCode": "",
-        "productName": "",
-        "companyID": "",
+    filter[name] = value;
+    this.setState({ filter });
+  };
 
-        "orderBy": "",
-        "page": null,
-        "limit": null
-      }));
+  handleSubmitSearchForm = () => {
+    const { fromDate, toDate, filter } = this.state;
+    this.fetchSummary(
+      JSON.stringify({
+        search: "",
+        filter,
+        fromDate,
+        toDate,
+        orderBy: "",
+        page: null,
+        limit: null,
+      })
+    );
+  };
+
+  handleModal = (stutus, openModal, closeModal) => {
+    if (stutus || this.state.isShowForEdit) {
+      closeModal();
+    } else {
+      openModal();
     }
 
-  }
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        isShowForEdit: false,
+        editId: null,
+      };
+    });
+  };
+  toggle = (el, val) => {
+    let { collapseList } = this.state;
+
+    collapseList
+      .filter((item) => item.id === val)
+      .map((item) => (item.collapse = !item.collapse));
+
+    this.setState({ collapseList });
+  };
+  checkDataInsert = (isCheck) => {
+    if (!isCheck) {
+      return {};
+    }
+    const { dataInsert, data, editId, currentRow } = this.state;
+    const batchNumber = dataInsert.batchNumber;
+
+    const errorInserts = {};
+
+    if (!batchNumber) {
+      errorInserts.batchNumber = "Số phiếu không được bỏ trống";
+    }
+
+    return errorInserts;
+  };
+
+  onConfirm = (toggleModal, closePopup) => {
+    const { dataInsert } = this.state;
+    const formData = new FormData();
+    console.log(dataInsert);
+    alert("Thao tác thành công");
+    if (toggleModal) {
+      toggleModal();
+    }
+  };
+
+  onHandleChangeValue = (data) => {
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          dataInsert: data,
+        };
+      },
+      () => {
+        const errorInserts = this.checkDataInsert();
+
+        this.setState((previousState) => {
+          return {
+            ...previousState,
+            errorInserts,
+          };
+        });
+      }
+    );
+  };
+
+  onEditData = (id) => () => {
+    this.setState((previousState) => {
+      return {
+        isShowForEdit: true,
+      };
+    });
+  };
+
+  onDeleteData = (id) => () => {
+    alert("Xóa thành công");
+  };
+
+  toggleModalPopupDelete = () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        warningPopupModal: false,
+      };
+    });
+  };
+
+  handleDeleteRow = () => {
+    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          warningPopupModal: false,
+        };
+      });
+
+      const data = res.data;
+
+      if (data.status == 200) {
+        this.fetchSummary(
+          JSON.stringify({
+            search: "",
+            filter: "",
+            orderBy: "",
+            page: null,
+            limit: null,
+          })
+        );
+
+        this.setState({ message: "Xóa dữ liệu thành công" });
+        toast.success("Xoá dữ liệu thành công!");
+      } else {
+        const message = getErrorMessageServer(res);
+
+        this.setState({ message: message || "Xóa dữ liệu thất bại" });
+        this.toggleModal("popupMessage");
+      }
+    });
+  };
 
   toggleModal = (state, type) => {
     if (this.state[state] && type == 1) {
@@ -381,272 +517,183 @@ class Products extends Component {
     } else {
       this.setState({
         [state]: !this.state[state],
-        newData: null,
-        errorUpdate: {},
       });
-    }
-    if (state == 'createNewModal') {
-      this.setState({
-        [state]: true,
-        errorUpdate: {},
-        newData: null,
-      });
-      if (type == 100) {
-        this.setState({
-          [state]: !this.state[state],
-          errorUpdate: {},
-          newData: null,
-        });
-      }
     }
   };
 
-  onOpenPopupView = (id, dataCurent) => () => {
-    const { requestGetProducts } = this.props;
-    let dataCurentPop = dataCurent;
-    this.setState({ dataCurentPop })
-    this.toggleModal('viewModal');
-    requestGetProducts(id).then(res => {
-      const data = res.data || {};
+  renderTreeLine = (nodelv) => {
+    let line = "";
 
-      let dataProducts = (data || {}).product || {};
-      let dataProductsUnits = (data || {}).productsUnits || [];
-      let productFields = (data || {}).productFields || [];
-
-
-      this.setState(previousState => {
-        return {
-          ...previousState,
-          idCurRow: id,
-          dataProducts,
-          dataProductsUnits,
-          productFields
-        }
-      });
-    });
-  }
-
-  handleConfirmProducts = () => {
-    const { idCurRow, filter } = this.state;
-    const { requestConfirmProducts } = this.props;
-
-    if (typeof (idCurRow) !== 'undefined') {
-      requestConfirmProducts(idCurRow).then(res => {
-        if (res.status == 200) {
-          this.fetchSummary(filter);
-          this.toggleModal('viewModal');
-        } else {
-          this.setState({
-            errMesageFail: res.message
-          })
-          this.toggleModal('popupMessage');
-        }
-      })
-
-    }
-  }
-
-  handleUnConfirmProducts = (value) => {
-    const { newData, idCurRow, filter } = this.state;
-    const { requestUnConfirmProducts } = this.props;
-    const errorUpdate = {};
-
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        errorUpdate
-      }
-    });
-
-    if (!(newData || {}).reason) {
-      errorUpdate['reason'] = 'Lý do không được bỏ trống';
+    for (let i = 0; i < nodelv; i++) {
+      line += "-";
     }
 
-    if (Object.keys(errorUpdate).length > 0) {
-      this.setState(previousState => {
-        return {
-          ...previousState,
-          errorUpdate,
-        }
-      });
+    return line;
+  };
 
-      return;
-    }
+  showTitleWithStatus = (id) => {
+    const { STATUS_OPTIONS } = this.state;
 
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        errorUpdate: {},
-      }
-    });
+    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
 
-    requestUnConfirmProducts(idCurRow + '&reason=' + newData.reason).then(res => {
-      if (res.status == 200) {
-        this.fetchSummary(filter);
-        this.toggleModal('viewModal');
-        this.toggleModal('updateModal');
-      } else {
-        this.setState({ errMesageFail: res.message });
-        this.toggleModal('popupMessage')
-      }
-    })
-  }
+    while (queue.length > 0) {
+      const status = queue.shift();
 
-  handleCheckValidation = (status) => {
-    this.setState({ activeCreateSubmit: status });
-  }
-
-  clearFilter = () => {
-    this.setState({
-      filter: {
-        "fieldID": "",
-        "productCode": "",
-        "productName": "",
-        "companyID": "",
-
-        "orderBy": "",
-        "page": null,
-        "limit": null
-      },
-    })
-  }
-  handleFocus = (status) => {
-    this.setState({ forCus: status });
-
-  }
-  handleNewDataUncomfirm = (data) => {
-    this.setState({ newData: data });
-  }
-
-  onComfirmSearch = () => {
-    const { filter } = this.state;
-    if (filter.companyID) {
-      this.fetchSummary(JSON.stringify(filter));
-    }
-    // this.fetchSummary(JSON.stringify(filter));
-  }
-
-
-  onSelectChange = (value, name) => {
-    let { filter } = this.state;
-
-    if (value === null) value = "";
-
-    filter[name] = value;
-
-    if (name == 'companyID') {
-
-      this.redSelect.resetValue();
-      if (!value) {
-        filter.fieldID = ''
-
-      } else {
-        this.setState({ currentCompanyID: value })
-        this.props.requestFieldByCompanyFieldStore(JSON.stringify({
-          "search": "",
-          "filter": value,
-          "orderBy": "",
-          "page": null,
-          "limit": null
-        }));
+      if (status && status.id === id) {
+        return status.title;
       }
 
-    }
-
-    if (name == 'fieldID') {
-      if (value) {
-        this.setState({ currentFieldID: value })
+      if (status && status.children && status.children.length > 0) {
+        queue.push(...status.children);
       }
     }
 
-    this.setState({ filter });
-  }
+    return "";
+  };
 
-  getOptions = (ev) => {
-    const { requestCompanyAll } = this.props;
-    if (ev && ev.length >= 3) {
-      const dataCompany = {
-        "fieldID": "",
-        "comapanyName": ev,
-        "taxCode": "",
-        "phone": "",
-        "email": "",
-        "provinceID": "",
-        "districtID": "",
-        "wardID": "",
-        "orderBy": "",
-        "page": null,
-        "limit": null
-      }
+  renderTable = (data, isDisableEdit, isDisableDelete) => {
+    const { beginItem, endItem, collapseList } = this.state;
+    let list = [];
+    let parentid = [];
+    let autoIndex = 0;
 
-      return new Promise((resolve, reject) => {
-        requestCompanyAll(dataCompany)
-          .then((res) => {
-            if (res.data.status == 200) {
-              resolve(
-                res.data.data.companies.map((item) => ({
-                  value: item.id,
-                  name: item.companyName
-                }))
-              )
+    data.filter((item, key) => key >= beginItem && key < endItem);
+    data.forEach((e) => parentid.push(e.id));
 
-            } else {
-              reject()
-            }
-          })
-          .catch(reject)
-      })
+    const cb = (e, key, array) => {
+      const renderClass =
+        e.parentID.length === 0
+          ? `${classes.treeParent}`
+          : `${classes.treeChild}${
+              parentid.includes(e.parentID)
+                ? ` ${classes.childs}`
+                : ` ${classes.childsItem}`
+            }`;
+      list.push(
+        <tr
+          key={autoIndex}
+          parentid={e.parentID}
+          currentid={e.id}
+          index={autoIndex}
+          className="table-hover-css"
+        >
+          <td
+            className={`className='table-scale-col table-user-col-1' ${renderClass}`}
+          >
+            {autoIndex + 1}
+          </td>
+          <td style={{ textAlign: "center" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.batchNumber}</span>
+          </td>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.productId}</span>
+          </td>
+          <td style={{ textAlign: "center" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>
+              {e.quantity + " " + e.unit}
+            </span>
+          </td>
+          <td style={{ textAlign: "center" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.requestDate}</span>
+          </td>
+          <td style={{ textAlign: "center" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>
+              {this.showTitleWithStatus(e.status)}
+            </span>
+          </td>
+          <td>
+            {collapseList
+              .filter((item) => item.id === e.id)
+              .map((ele, key) => (
+                <div key={key}>
+                  {isDisableEdit == true && isDisableDelete == true ? null : (
+                    <ButtonDropdown
+                      isOpen={ele.collapse}
+                      toggle={() => this.toggle(key, e.id)}
+                    >
+                      <DropdownToggle>
+                        <img src={MenuButton} />
+                      </DropdownToggle>
+                      <DropdownMenu>
+                        {isDisableEdit == true ? null : (
+                          <DropdownItem onClick={this.onEditData(e)}>
+                            Sửa
+                          </DropdownItem>
+                        )}
+                        {isDisableEdit == true ||
+                        isDisableDelete == true ? null : (
+                          <DropdownItem divider />
+                        )}
+                        {isDisableDelete == true ? null : (
+                          <DropdownItem onClick={this.onDeleteData(e.id)}>
+                            Xoá
+                          </DropdownItem>
+                        )}
+                      </DropdownMenu>
+                    </ButtonDropdown>
+                  )}
+                </div>
+              ))}
+          </td>
+        </tr>
+      );
+      autoIndex++;
+      e.children && e.children.forEach(cb);
+    };
 
-    }
-  }
+    data.forEach(cb);
+    return list;
+  };
 
   render() {
-    const { screen } = this.props;
     const {
-      isLoaded,
+      warningPopupModal,
+      editId,
+      isShowForEdit,
+      errorInserts,
       status,
-      message,
+      headerTitle,
       data,
-      statusList,
-      beginItem,
-      endItem,
+      message,
+      isLoaded,
       listLength,
       totalPage,
       totalElement,
-      headerTitle,
-      warningPopupModal,
+      createNewModal,
       popupMessage,
-      errMesageFail,
-      filter,
       activeCreateSubmit,
-      viewModal,
-      options,
-      fieldAll,
-      field,
-      dataProducts,
-      dataProductsUnits,
-      productFields,
-      dataCurentPop,
-      updateModal,
-      newData,
-      fieldName,
-      errorUpdate,
-      currentCompanyID
+      STATUS_OPTIONS,
+      DIARY_OPTIONS,
+      CLASSIFY_OPTIONS,
+      TEM_OPTIONS,
+      COUNTRY_OPTIONS,
+      PROVINCE_OPTIONS,
+      WAREHOUSE_OPTIONS,
     } = this.state;
+
     const statusPopup = { status: status, message: message };
-
-    let isDisableConfirm = true;
-    let isDisableUnconfirm = true;
+    let isDisableAdd = true;
+    let isDisableEdit = true;
+    let isDisableDelete = true;
     let ACCOUNT_CLAIM_FF = [];
-    if (JSON.parse(localStorage.getItem('IS_ADMIN'))) {
-      isDisableConfirm = false;
-      isDisableUnconfirm = false;
-
+    if (JSON.parse(localStorage.getItem("IS_ADMIN"))) {
+      isDisableAdd = false;
+      isDisableEdit = false;
+      isDisableDelete = false;
     } else {
-      ACCOUNT_CLAIM_FF = localStorage.getItem('ACCOUNT_CLAIM_FF').split(',').filter(x => x != "");
-
-      ACCOUNT_CLAIM_FF.filter(x => x == "Products.Confirm").map(y => isDisableConfirm = false)
-      ACCOUNT_CLAIM_FF.filter(x => x == "Products.Unconfirm").map(y => isDisableUnconfirm = false)
+      ACCOUNT_CLAIM_FF = localStorage
+        .getItem("ACCOUNT_CLAIM_FF")
+        .split(",")
+        .filter((x) => x != "");
+      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Add").map(
+        (y) => (isDisableAdd = false)
+      );
+      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Edit").map(
+        (y) => (isDisableEdit = false)
+      );
+      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Delete").map(
+        (y) => (isDisableDelete = false)
+      );
     }
 
     return (
@@ -654,189 +701,168 @@ class Products extends Component {
         {
           <div className={classes.wrapper}>
             <Container fluid>
-              {
-                isLoaded ? (
-                  <div style={{ display: 'table', margin: 'auto' }}>
-                    <Spinner style={{ width: '3rem', height: '3rem' }} />
-                  </div>
-                ) : (
-                  <Row>
-                    <div className="col">
-                      {/* Header */}
-                      <HeaderTable
-                        dataReload={() => {
-
-                          this.clearFilter();
-
-                          if (this.redSelect) {
-                            this.redSelect.resetValue();
-                          }
-
-                          this.setState({
-                            currentCompanyID: '',
-                            currentFieldID: '',
-                            field: []
-                          });
-
-                          this.fetchSummary(
-                            JSON.stringify({
-                              "fieldID": "",
-                              "productCode": "",
-                              "productName": "",
-                              "companyID": "",
-                              "verifiedStatus": null,
-                              "orderBy": "",
-                              "page": null,
-                              "limit": null
-                            })
-                          )
-                        }
-                        }
-                        hideCreate={true}
-                        hideSearch={true}
-                        typeSearch={
-                          <>
-                            <div className="div_flex w_div_100 ">
-                              <div className="mg-div-search w_input">
-                                <label className="form-control-label info-box-text" style={{ width: '100%' }}>Doanh nghiệp/Người sản xuất</label>
-                                <div style={{ width: '100%', borderRadius: "0.375rem" }} className="css-border-input">
-
-                                  <SelectSearch
-                                    options={options}
-                                    name='companyID'
-                                    value={currentCompanyID && currentCompanyID}
-                                    // filterOptions={fuzzySearch}
-                                    getOptions={query => this.getOptions(query)}
-                                    search
-                                    placeholder="Tìm kiếm..."
-                                    onChange={(value) => this.onSelectChange(value, 'companyID')}
-                                  />
-                                </div>
-                              </div>
-                              <div className="mg-div-search w_input">
-                                <label
-                                  className="form-control-label"
-                                >
-                                  Ngành nghề
-                                </label>
-                                <div>
-                                  <Select
-                                    //hidenTitle={true}
-                                    className="css-padding-input-product"
-                                    ref={ref => this.redSelect = ref}
-                                    title='Chọn ngành nghề'
-                                    data={field}
-                                    dataAll={fieldAll}
-                                    labelMark={fieldName}
-                                    name='fieldID'
-                                    // disableParent={true}
-                                    isDisable={currentCompanyID ? false : true}
-                                    labelName='fieldName'
-                                    fieldName='fieldName'
-                                    val='id'
-                                    handleChange={value => this.onSelectChange(value, 'fieldID')}
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="mg-btn">
-                                <label
-                                  className="form-control-label"
-                                >&nbsp;</label>
-                                <Button
-                                  // style={{ margin: 0 }}
-                                  className='btn-warning-cs'
-                                  color="default" type="button" size="md"
-                                  onClick={() => this.onComfirmSearch()
-                                  }
-                                >
-                                  <img src={SearchImg} alt='Tìm kiếm' />
-                                  <span>Tìm kiếm</span>
-                                </Button>
-                              </div>
-                            </div>
-                          </>
-                        }
-                      />
-                      {/* Table */}
-                      <div className="row" style={{ marginBottom: 15 }}>
-
-                      </div>
-                      <Card className="shadow">
-                        <Table className="align-items-center tablecs table-css-products" responsive >
-                          <HeadTitleTable headerTitle={headerTitle} classHeaderColumns={{
-                            0: 'table-scale-col table-user-col-1'
-                          }} />
-                          <tbody>
-                            {
-                              Array.isArray(data) && (
-                                data
-                                  .filter((item, key) => key >= beginItem && key < endItem)
-                                  .map((item, key) => (
-                                    <tr key={key} className="table-hover-css">
-                                      <td className="table-scale-col table-user-col-1" style={{ whiteSpace: 'normal' }}>{item.index}</td>
-
-                                      <td style={{ textAlign: 'center' }} className='table-scale-col img-products'>{item.thumbnail}</td>
-                                      <td style={{ textAlign: 'left', whiteSpace: 'normal' }}>{item.fieldName}</td>
-                                      <td style={{ textAlign: 'left', whiteSpace: 'normal' }}>
-                                        <span style={{ color: '#09b2fd' }}><b>{item.productName}</b></span><br />
-                                        <span>Mã sản phẩm: <b>{item.productCode}</b></span><br />
-                                        {/* <span>Đơn vị tính: <b>{item.unitName}</b></span><br /> */}
-                                        <span>Xuất xứ: <b>{item.nationName}</b></span>
-                                        <ReactStars
-                                          size={25}
-                                          value={item.ratingFil}
-                                          edit={false}
-                                          isHalf={true} />
-                                      </td>
-
-                                      <td style={{ textAlign: 'left', whiteSpace: 'normal' }}>
-                                        {item.companyName}<br />
-                                        <i>{item.address}</i>
-                                      </td>
-                                      <td style={{ whiteSpace: 'normal' }}>
-                                        {(isDisableConfirm == true && isDisableUnconfirm == true) ? null : (
-                                          <ButtonDropdown isOpen={item.collapse} toggle={() => this.toggle(key, item.id)}>
-                                            <DropdownToggle>
-                                              <img src={MenuButton} />
-                                            </DropdownToggle>
-                                            <DropdownMenu>
-                                              <DropdownItem
-                                                onClick={this.onOpenPopupView(item.id, item)}
-                                              >
-                                                Xem
-                                              </DropdownItem>
-                                            </DropdownMenu>
-                                          </ButtonDropdown>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  ))
-                              )
-                            }
-                          </tbody>
-                        </Table>
-                      </Card>
-
-                      {/* Pagination */}
-                      {
-                        // Page of Table
-                        Array.isArray(data) && (
-                          data.length > 0 && (
-                            <Pagination
-                              data={data}
-                              listLength={listLength}
-                              totalPage={totalPage}
-                              totalElement={totalElement}
-                              handlePageClick={this.handlePageClick}
-                            />
-                          )
+              {isLoaded ? (
+                <div style={{ display: "table", margin: "auto" }}>
+                  <Spinner style={{ width: "3rem", height: "3rem" }} />
+                </div>
+              ) : (
+                <Row>
+                  <div className="col">
+                    {/* Header */}
+                    <HeaderTable
+                      dataReload={() =>
+                        this.fetchSummary(
+                          JSON.stringify({
+                            search: "",
+                            filter: "",
+                            orderBy: "",
+                            page: null,
+                            limit: null,
+                          })
                         )
                       }
-                    </div>
-                  </Row>
-                )
-              }
+                      hideSearch={true}
+                      hideCreate={isDisableAdd == false ? false : true}
+                      moduleTitle={
+                        isShowForEdit ? "Sửa phiếu nhập" : "Thêm phiếu nhập"
+                      }
+                      moduleBody={
+                        <InsertOrUpdate
+                          id={editId}
+                          errors={errorInserts}
+                          onHandleChangeValue={this.onHandleChangeValue}
+                          STATUS_OPTIONS={STATUS_OPTIONS}
+                          DIARY_OPTIONS={DIARY_OPTIONS}
+                          CLASSIFY_OPTIONS={CLASSIFY_OPTIONS}
+                          TEM_OPTIONS={TEM_OPTIONS}
+                          COUNTRY_OPTIONS={COUNTRY_OPTIONS}
+                          WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
+                          PROVINCE_OPTIONS={PROVINCE_OPTIONS}
+                          isShowForEdit={isShowForEdit}
+                        />
+                      }
+                      isShowForEdit={isShowForEdit}
+                      handleModal={this.handleModal}
+                      onConfirm={this.onConfirm}
+                      handleSubmitSearchForm={() =>
+                        this.handleSubmitSearchForm()
+                      }
+                      typeSearch={
+                        <>
+                          <div
+                            className="div_flex"
+                            style={{ marginBottom: "10px", flex: "wrap" }}
+                          >
+                            <div className="mg-div-search">
+                              <label className="form-control-label">
+                                Từ ngày
+                              </label>
+                              <div>
+                                <input
+                                  type="date"
+                                  name="fromDate"
+                                  className="form-control"
+                                  value={this.state.fromDate || ""}
+                                  onChange={(e) =>
+                                    this.setState({ fromDate: e.target.value })
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mg-div-search">
+                              <label className="form-control-label">
+                                Đến ngày
+                              </label>
+                              <div>
+                                <input
+                                  type="date"
+                                  name="toDate"
+                                  className="form-control"
+                                  value={this.state.toDate || ""}
+                                  onChange={(e) =>
+                                    this.setState({ toDate: e.target.value })
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="mg-div-search">
+                              <label className="form-control-label">
+                                Trạng thái
+                              </label>
+                              <div>
+                                <Select
+                                  name="filter"
+                                  title="Lọc theo trạng thái"
+                                  data={STATUS_OPTIONS}
+                                  labelName="title"
+                                  val="id"
+                                  handleChange={this.handleChangeSelectFilter}
+                                />
+                              </div>
+                            </div>
+                            <div className="mg-btn">
+                              <label className="form-control-label">
+                                &nbsp;
+                              </label>
+                              <Button
+                                className="btn-warning-cs"
+                                color="default"
+                                type="button"
+                                size="md"
+                                onClick={() => {
+                                  this.handleSubmitSearchForm();
+                                }}
+                              >
+                                <img src={SearchImg} alt="Tìm kiếm" />
+                                <span>Tìm kiếm</span>
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      }
+                    />
+
+                    {/* Table */}
+                    <Card className="shadow">
+                      <Table
+                        className="align-items-center tablecs table-css-planting-zone"
+                        responsive
+                      >
+                        <HeadTitleTable
+                          headerTitle={headerTitle}
+                          classHeaderColumns={{
+                            0: "table-scale-col table-user-col-1",
+                          }}
+                        />
+                        <tbody>
+                          {Array.isArray(data) &&
+                            this.renderTable(
+                              data,
+                              isDisableEdit,
+                              isDisableDelete
+                            )}
+                        </tbody>
+                      </Table>
+                    </Card>
+
+                    {/* Pagination */}
+                    {
+                      // Page of Table
+                      Array.isArray(data) > 0 && (
+                        <Pagination
+                          data={data}
+                          listLength={listLength}
+                          totalPage={totalPage}
+                          totalElement={totalElement}
+                          handlePageClick={this.handlePageClick}
+                        />
+                      )
+                    }
+                  </div>
+                </Row>
+              )}
+
               {
                 //Set Alert Context
                 setAlertContext(statusPopup)
@@ -846,123 +872,77 @@ class Products extends Component {
                 //Open Alert Context
                 openAlertContext(statusPopup)
               }
-
-              <WarningPopup
-                moduleTitle='Thông báo'
-                moduleBody={<p style={{ textAlign: 'center', fontSize: '1.2rem' }}>Bạn đồng ý duyệt thông tin này?</p>}
-                warningPopupModal={warningPopupModal}
-                toggleModal={this.toggleModal}
-                handleWarning={this.handleConfirmProducts}
-              />
-
-              <ViewPopup
-                classNameModalBody='product-view-popup-modal-body'
-                moduleTitle='Thông tin sản phẩm'
-                moduleBody={
-                  <ViewModal
-                    dataProducts={dataProducts}
-                    dataProductsUnits={dataProductsUnits}
-                    dataCurentPop={dataCurentPop}
-                    productFields={productFields}
-                  />}
-                viewModal={viewModal}
-                toggleModal={this.toggleModal}
-                activeSubmit={activeCreateSubmit}
-              // componentFooter={
-              //   <>
-              //     {dataCurentPop && (
-              //       <div>
-              //         {isDisableConfirm == true && isDisableUnconfirm == true ? (
-              //           <div className="modal-footer" style={{ marginRight: '-20px' }}>
-              //             {isDisableConfirm == false ? (
-              //               <div>
-              //                 <Button
-              //                   color="success"
-              //                   type="button"
-              //                   className={`btn-success-cs`}
-              //                   style={{ marginRight: '26px !important', }}
-              //                   onClick={() => {
-              //                     this.toggleModal('warningPopupModal');
-              //                   }}
-              //                 >
-              //                   <img src={Duyet} alt='Duyệt' />
-              //                   <span>Duyệt</span>
-              //                 </Button>
-              //               </div>
-              //             ) : null}
-              //             {isDisableUnconfirm == false ? (
-              //               <div>
-              //                 <Button
-              //                   color="default"
-              //                   type="button"
-              //                   style={{ backgroundColor: '#FF3333' }}
-              //                   className={`btn-danger-cs css-button-no-yes-product`}
-              //                   onClick={() => {
-              //                     this.toggleModal('updateModal');
-              //                   }}
-              //                 >
-              //                   <img src={Kduyet} alt='Không duyệt' />
-              //                   <span>Không duyệt</span>
-              //                 </Button>
-              //               </div>
-              //             ) : null}
-              //           </div>
-              //         ) : null}
-              //       </div>
-              //     )}
-              //   </>
-              // }
-              />
-
-              <UpdatePopup
-                moduleTitle='Thông báo'
-                moduleBody={
-                  <UnconfirmModal
-                    errorUpdate={errorUpdate}
-                    handleCheckValidation={this.handleCheckValidation}
-                    handleNewData={this.handleNewDataUncomfirm}
-                  />}
-                newData={newData}
-                updateModal={updateModal}
-                toggleModal={this.toggleModal}
-                activeSubmit={activeCreateSubmit}
-                handleUpdateInfoData={this.handleUnConfirmProducts}
-              />
-
-              {errMesageFail != '' ?
-                <PopupMessage
-                  popupMessage={popupMessage}
-                  moduleTitle={'Thông báo'}
-                  moduleBody={message}
-                  toggleModal={this.toggleModal}
-                /> : null
-              }
             </Container>
+
+            <WarningPopup
+              moduleTitle="Thông báo"
+              moduleBody={
+                <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+                  Bạn đồng ý xóa thông tin này?
+                </p>
+              }
+              warningPopupModal={warningPopupModal}
+              toggleModal={this.toggleModalPopupDelete}
+              handleWarning={this.handleDeleteRow}
+            />
+
+            <CreateNewPopup
+              createNewModal={createNewModal}
+              moduleTitle="Thêm dữ liệu"
+              type100={true}
+              moduleBody={
+                <InsertOrUpdate
+                  id={editId}
+                  errors={errorInserts}
+                  onHandleChangeValue={this.onHandleChangeValue}
+                  STATUS_OPTIONS={STATUS_OPTIONS}
+                  DIARY_OPTIONS={DIARY_OPTIONS}
+                  CLASSIFY_OPTIONS={CLASSIFY_OPTIONS}
+                  TEM_OPTIONS={TEM_OPTIONS}
+                  COUNTRY_OPTIONS={COUNTRY_OPTIONS}
+                  WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
+                  PROVINCE_OPTIONS={PROVINCE_OPTIONS}
+                  isShowForEdit={isShowForEdit}
+                />
+              }
+              toggleModal={this.toggleModal}
+              activeSubmit={activeCreateSubmit}
+              onConfirm={(data, close) => {
+                this.onConfirm(data, close);
+              }}
+            />
+
+            <PopupMessage
+              popupMessage={popupMessage}
+              moduleTitle={"Thông báo"}
+              moduleBody={message}
+              toggleModal={this.toggleModal}
+            />
+            <ToastContainer position="top-center" autoClose={3000} />
           </div>
         }
       </>
-    )
+    );
   }
-
 }
+
 const mapStateToProps = (state) => {
   return {
-    products: state.ProductsStore,
-    dataCompany: state.CompanyListRegisteredStore,
-    field: state.FieldStore,
-  }
-}
+    zone: state.ZoneStore,
+    PlantingZoneStore: state.PlantingZoneStore,
+    TypeZoneProperty: state.TypeZonePropertyStore,
+  };
+};
+
 const mapDispatchToProps = (dispatch) => {
   return {
-    ...bindActionCreators(actionProducts, dispatch),
-    ...bindActionCreators(actionCompanyListRegistered, dispatch),
-    ...bindActionCreators(actionField, dispatch),
-  }
-}
-export default compose(
-  //withStyles(useStyles),
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )
-)(Products);
+    ...bindActionCreators(actionZoneCreators, dispatch),
+    ...bindActionCreators(typeZonePropertyAction, dispatch),
+    ...bindActionCreators(areaDataAction, dispatch),
+    ...bindActionCreators(platingZoneAction, dispatch),
+  };
+};
+
+export default compose(connect(mapStateToProps, mapDispatchToProps))(
+  ImportProduct
+);
