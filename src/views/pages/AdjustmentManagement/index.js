@@ -490,7 +490,7 @@ class AdjustmentManagement extends Component {
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
           </td>
-          <td>
+          <td className={classes.stickyActionColumn}>
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
@@ -608,7 +608,6 @@ class AdjustmentManagement extends Component {
                         )
                       }
                       hideSearch={true}
-                      hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
                         isShowForEdit
                           ? "Sửa phiếu điều chỉnh"
@@ -627,6 +626,7 @@ class AdjustmentManagement extends Component {
                         />
                       }
                       isShowForEdit={isShowForEdit}
+                      isReadOnly={isShowForEdit}
                       handleModal={this.handleModal}
                       onConfirm={this.onConfirm}
                       handleSubmitSearchForm={() =>
@@ -717,7 +717,7 @@ class AdjustmentManagement extends Component {
                     {/* Table */}
                     <Card className="shadow">
                       <Table
-                        className="align-items-center tablecs table-css-planting-zone"
+                        className={`align-items-center tablecs table-css-planting-zone ${classes.scrollTable}`}
                         responsive
                       >
                         <HeadTitleTable

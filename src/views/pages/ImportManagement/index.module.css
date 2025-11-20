@@ -286,6 +286,23 @@
   background: #33333352;
 }
 
+.stickyActionColumn {
+  position: sticky;
+  right: 0;
+  background-color: #f8f9fa;
+  z-index: 10;
+  min-width: 80px;
+  text-align: right;
+}
+
+.stickyActionHeader {
+  position: sticky;
+  right: 0;
+  background-color: #5bc0de;
+  z-index: 11;
+  text-align: center;
+}
+
 .scrollTable {
   overflow-y: hidden;
   overflow-x: auto;
@@ -308,21 +325,4 @@
 
 .scrollTable::-webkit-scrollbar-thumb:hover {
   background: #555;
-}
-
-.stickyActionColumn {
-  position: sticky;
-  right: 0;
-  background-color: #f8f9fa;
-  z-index: 10;
-  min-width: 80px;
-  text-align: right;
-}
-
-.stickyActionHeader {
-  position: sticky;
-  right: 0;
-  background-color: #5bc0de;
-  z-index: 11;
-  text-align: center;
 }

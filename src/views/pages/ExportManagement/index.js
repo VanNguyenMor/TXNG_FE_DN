@@ -1,7 +1,10 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import { INVENTORY_MANAGEMENT } from "../../../helpers/constant";
+import {
+  ADJUSTMENT_MANAGEMENT,
+  EXPORT_MANAGEMENT,
+} from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { actionZoneCreators } from "../../../actions/ZoneListActions";
@@ -42,37 +45,21 @@ import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 
-class InventoryManagement extends Component {
+class ExportManagement extends Component {
   constructor(props) {
     super(props);
 
     const dataMock = [
       {
         id: 1,
-        warehouse: "Kho hàng 1",
-        itemName: "Dép Cross",
-        unit: "kg",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
-      },
-      {
-        id: 2,
-        warehouse: "Kho hàng 1",
-        itemName: "Giày công sở",
-        unit: "kg",
-        beginningBalance: 10500000,
-        inPeriod: 0,
-        endingBalance: 10,
-      },
-      {
-        id: 3,
-        warehouse: "Kho hàng 1",
-        itemName: "Giày lười",
-        unit: "kg",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
+        fromDay: "22/05/2025",
+        warehouseTransfer: "Kho NextLab A",
+        warehouseImport: "Kho NextLab B",
+        note: "Đổi kho",
+        executor: "Công ty Việt Mỹ",
+        approver: "admin",
+        approvalDate: "22/05/2025",
+        status: 1,
       },
     ];
 
@@ -96,7 +83,7 @@ class InventoryManagement extends Component {
       province: [],
       ward: [],
       provinceIDCurrent: null,
-      headerTitle: INVENTORY_MANAGEMENT,
+      headerTitle: EXPORT_MANAGEMENT,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
@@ -127,17 +114,7 @@ class InventoryManagement extends Component {
           title: "Kho hàng 2",
         },
       ],
-      TYPEOF_OPTIONS: [
-        {
-          id: 1,
-          title: "Sản phẩm",
-        },
-        {
-          id: 2,
-          title: "Nguyên vật liệu",
-        },
-      ],
-      PRODUCT_OPTIONS: [
+      PRODUCTS_OPTIONS: [
         {
           id: 1,
           title: "Sản phẩm 1",
@@ -147,33 +124,19 @@ class InventoryManagement extends Component {
           title: "Sản phẩm 2",
         },
       ],
-      INGREDIENT_OPTIONS: [
+      UNIT_OPTIONS: [
         {
           id: 1,
-          title: "Nguyên liệu 1",
+          title: "kg",
         },
         {
           id: 2,
-          title: "Nguyên liệu 2",
+          title: "tấn",
         },
       ],
-      LOGGING_DATA: [
-        {
-          stt: 1,
-          thoiGian: "2023-11-20 08:00",
-          loai: "Thiết kế tạo mẫu",
-          soLuong: 50,
-          dvt: "Sản phẩm",
-          nguoiThucHien: "Nguyễn Văn A",
-        },
-        {
-          stt: 2,
-          thoiGian: "2023-11-20 09:30",
-          loai: "Chọn nguyên liệu",
-          soLuong: 100,
-          dvt: "kg",
-          nguoiThucHien: "Trần Thị B",
-        },
+      STATUS_OPTIONS: [
+        { id: 0, title: "Chưa duyệt" },
+        { id: 1, title: "Đã duyệt" },
       ],
     };
   }
@@ -465,6 +428,25 @@ class InventoryManagement extends Component {
     return line;
   };
 
+  showTitleWithStatus = (id) => {
+    const { STATUS_OPTIONS } = this.state;
+
+    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
+
+    while (queue.length > 0) {
+      const status = queue.shift();
+
+      if (status && status.id === id) {
+        return status.title;
+      }
+
+      if (status && status.children && status.children.length > 0) {
+        queue.push(...status.children);
+      }
+    }
+    return "";
+  };
+
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
@@ -497,22 +479,28 @@ class InventoryManagement extends Component {
             {autoIndex + 1}
           </td>
           <td className="table-scale-col">
-            <span style={{ color: `${e.color}` }}>{e.warehouse}</span>
+            <span style={{ color: `${e.color}` }}>{e.fromDay}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.itemName}</span>
+            <span style={{ color: `${e.color}` }}>{e.warehouseTransfer}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.unit}</span>
+            <span style={{ color: `${e.color}` }}>{e.warehouseImport}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.beginningBalance}</span>
+            <span style={{ color: `${e.color}` }}>{e.note}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.inPeriod}</span>
+            <span style={{ color: `${e.color}` }}>{e.executor}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.endingBalance}</span>
+            <span style={{ color: `${e.color}` }}>{e.approver}</span>
+          </td>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
+          </td>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{this.showTitleWithStatus(e.status)}</span>
           </td>
           <td className={classes.stickyActionColumn}>
             {collapseList
@@ -576,9 +564,9 @@ class InventoryManagement extends Component {
       popupMessage,
       activeCreateSubmit,
       WAREHOUSE_OPTIONS,
-      TYPEOF_OPTIONS,
-      PRODUCT_OPTIONS,
-      LOGGING_DATA,
+      PRODUCTS_OPTIONS,
+      UNIT_OPTIONS,
+      STATUS_OPTIONS,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -632,18 +620,23 @@ class InventoryManagement extends Component {
                         )
                       }
                       hideSearch={true}
-                      hideCreate={true}
-                      moduleTitle={isShowForEdit ? "Báo cáo tồn kho" : ""}
-                      isReadOnly={true}
+                      moduleTitle={
+                        isShowForEdit ? "Sửa xuất chuyển" : "Thêm xuất chuyển"
+                      }
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
-                          LOGGING_DATA={LOGGING_DATA}
+                          WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
+                          PRODUCTS_OPTIONS={PRODUCTS_OPTIONS}
+                          UNIT_OPTIONS={UNIT_OPTIONS}
+                          isShowForEdit={isShowForEdit}
+                          STATUS_OPTIONS={STATUS_OPTIONS}
                         />
                       }
                       isShowForEdit={isShowForEdit}
+                      isReadOnly={isShowForEdit}
                       handleModal={this.handleModal}
                       onConfirm={this.onConfirm}
                       handleSubmitSearchForm={() =>
@@ -660,51 +653,6 @@ class InventoryManagement extends Component {
                               flexWrap: "wrap",
                             }}
                           >
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Kho hàng
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
-                                  data={WAREHOUSE_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Loại (SP/NVL)
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
-                                  data={TYPEOF_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Nguyên liệu/sản phẩm
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
-                                  data={PRODUCT_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
                             <div className="mg-div-search">
                               <label className="form-control-label">
                                 Từ ngày
@@ -738,7 +686,6 @@ class InventoryManagement extends Component {
                                 />
                               </div>
                             </div>
-
                             <div className="mg-btn">
                               <label className="form-control-label">
                                 &nbsp;
@@ -833,7 +780,11 @@ class InventoryManagement extends Component {
                   id={editId}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
-                  LOGGING_DATA={LOGGING_DATA}
+                  WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
+                  PRODUCTS_OPTIONS={PRODUCTS_OPTIONS}
+                  UNIT_OPTIONS={UNIT_OPTIONS}
+                  isShowForEdit={isShowForEdit}
+                  STATUS_OPTIONS={STATUS_OPTIONS}
                 />
               }
               toggleModal={this.toggleModal}
@@ -875,5 +826,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  InventoryManagement
+  ExportManagement
 );

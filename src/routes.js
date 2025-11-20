@@ -63,6 +63,8 @@ import ImportProduct from "views/pages/ImportProduct";
 import ExportProduct from "views/pages/ExportProduct";
 import InventoryManagement from "views/pages/InventoryManagement";
 import AdjustmentManagement from "views/pages/AdjustmentManagement";
+import ExportManagement from "views/pages/ExportManagement";
+import ImportManagement from "views/pages/ImportManagement";
 import CompanyListAwaitActivity from "views/pages/CompanyListAwaitActivity";
 import MaterialGroup from "views/pages/MaterialGroup";
 import ProductsGroups from "views/pages/ProductsGroups";
@@ -326,7 +328,7 @@ var routes = [
     path: "/nhap_hang_hoa",
     name: NAVBAR_ITEM.IMPORT_PRODUCT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PlantingZone,
+    component: ImportProduct,
     layout: "/trang_chu",
     key: 2,
   },
@@ -334,7 +336,7 @@ var routes = [
     path: "/xuat_hang_hoa",
     name: NAVBAR_ITEM.EXPORT_PRODUCT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PlantingZone,
+    component: ExportProduct,
     layout: "/trang_chu",
     key: 2,
   },
@@ -404,10 +406,26 @@ var routes = [
     key: 2,
   },
   {
-    path: "/ton_kho_phieu_dieu_chinh",
+    path: "/phieu_dieu_chinh",
     name: NAVBAR_ITEM.ADJUSTMENT_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
     component: AdjustmentManagement,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
+    path: "/xuat_chuyen",
+    name: NAVBAR_ITEM.EXPORT_MANAGEMENT,
+    icon: "ni ni-bullet-list-67 text-blue",
+    component: ExportManagement,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
+    path: "/nhap_chuyen",
+    name: NAVBAR_ITEM.IMPORT_MANAGEMENT,
+    icon: "ni ni-bullet-list-67 text-blue",
+    component: ImportManagement,
     layout: "/trang_chu",
     key: 2,
   },
@@ -898,8 +916,26 @@ const routeComponents = [
   },
   { layout: LAYOUT_HOME, key: "ImportProducts", component: ImportProduct },
   { layout: LAYOUT_HOME, key: "ExportProducts", component: ExportProduct },
-  { layout: LAYOUT_HOME, key: "InventoryManagements", component: InventoryManagement },
-  { layout: LAYOUT_HOME, key: "AdjustmentManagements", component: AdjustmentManagement },
+  {
+    layout: LAYOUT_HOME,
+    key: "InventoryManagements",
+    component: InventoryManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "AdjustmentManagements",
+    component: AdjustmentManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "ExportManagements",
+    component: ExportManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "ImportManagements",
+    component: ImportManagement,
+  },
 ];
 
 export { routeComponents };

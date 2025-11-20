@@ -249,3 +249,43 @@
   background: #33333352;
 }
 
+.scrollTable {
+  overflow-y: hidden;
+  overflow-x: auto;
+}
+
+.scrollTable::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.scrollTable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.scrollTable::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.scrollTable::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.stickyActionColumn {
+  position: sticky;
+  right: 0;
+  background-color: #f8f9fa;
+  z-index: 10;
+  min-width: 80px;
+  text-align: right;
+}
+
+.stickyActionHeader {
+  position: sticky;
+  right: 0;
+  background-color: #5bc0de;
+  z-index: 11;
+  text-align: center;
+}
