@@ -624,7 +624,7 @@ class ImportManagement extends Component {
                       hideSearch={true}
                       hideCreate={true}
                       moduleTitle={
-                        isShowForEdit ? "Sửa xuất chuyển" : "Thêm xuất chuyển"
+                        isShowForEdit ? "Xem chi tiết nhập chuyển" : ""
                       }
                       moduleBody={
                         <InsertOrUpdate
