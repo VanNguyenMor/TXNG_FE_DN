@@ -61,6 +61,10 @@ import PlantingZone from "views/pages/PlantingZone";
 import ConfigSystem from "views/pages/ConfigSystem";
 import ImportProduct from "views/pages/ImportProduct";
 import ExportProduct from "views/pages/ExportProduct";
+import InventoryManagement from "views/pages/InventoryManagement";
+import AdjustmentManagement from "views/pages/AdjustmentManagement";
+import ExportManagement from "views/pages/ExportManagement";
+import ImportManagement from "views/pages/ImportManagement";
 import CompanyListAwaitActivity from "views/pages/CompanyListAwaitActivity";
 import MaterialGroup from "views/pages/MaterialGroup";
 import ProductsGroups from "views/pages/ProductsGroups";
@@ -324,7 +328,7 @@ var routes = [
     path: "/nhap_hang_hoa",
     name: NAVBAR_ITEM.IMPORT_PRODUCT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PlantingZone,
+    component: ImportProduct,
     layout: "/trang_chu",
     key: 2,
   },
@@ -332,7 +336,7 @@ var routes = [
     path: "/xuat_hang_hoa",
     name: NAVBAR_ITEM.EXPORT_PRODUCT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PlantingZone,
+    component: ExportProduct,
     layout: "/trang_chu",
     key: 2,
   },
@@ -385,7 +389,6 @@ var routes = [
     layout: "/trang_chu",
     key: 2,
   },
-
   {
     path: "/san_pham",
     name: NAVBAR_ITEM.PRODUCTS,
@@ -394,61 +397,38 @@ var routes = [
     layout: "/trang_chu",
     key: 2,
   },
-
   {
-    path: "/xacthucsanpham",
-    name: NAVBAR_ITEM.PRODUCTS_VERIFY,
+    path: "/ton_kho",
+    name: NAVBAR_ITEM.INVENTORY_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: ProductsVerify,
+    component: InventoryManagement,
     layout: "/trang_chu",
     key: 2,
   },
-
   {
-    path: "/xacthucnhacungcap",
-    name: NAVBAR_ITEM.PARTNER_VERIFY,
+    path: "/phieu_dieu_chinh",
+    name: NAVBAR_ITEM.ADJUSTMENT_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PartnerVerify,
+    component: AdjustmentManagement,
     layout: "/trang_chu",
     key: 2,
   },
-
   {
-    path: "/xacthucnhasanxuat",
-    name: NAVBAR_ITEM.PARTNER_MANUFACT_VERIFY,
+    path: "/xuat_chuyen",
+    name: NAVBAR_ITEM.EXPORT_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PartnerManufactVerify,
+    component: ExportManagement,
     layout: "/trang_chu",
     key: 2,
   },
-
   {
-    path: "/xacthucvanchuyen",
-    name: NAVBAR_ITEM.PARTNER_TRANFORM_VERIFY,
+    path: "/nhap_chuyen",
+    name: NAVBAR_ITEM.IMPORT_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PartnerTranformVerify,
+    component: ImportManagement,
     layout: "/trang_chu",
     key: 2,
   },
-
-  {
-    path: "/xacthucdoanhnghiep",
-    name: NAVBAR_ITEM.COMPANY_VERIFY,
-    icon: "ni ni-bullet-list-67 text-blue",
-    component: CompanyVerify,
-    layout: "/trang_chu",
-    key: 2,
-  },
-
-  {
-    path: "/donvixacthuc",
-    name: NAVBAR_ITEM.PARTNER,
-    icon: "ni ni-bullet-list-67 text-blue",
-    component: Partner,
-    layout: "/trang_chu",
-    key: 2,
-  },
-
   {
     path: "/donviintem",
     name: NAVBAR_ITEM.PARTNER_PRINTER,
@@ -936,6 +916,26 @@ const routeComponents = [
   },
   { layout: LAYOUT_HOME, key: "ImportProducts", component: ImportProduct },
   { layout: LAYOUT_HOME, key: "ExportProducts", component: ExportProduct },
+  {
+    layout: LAYOUT_HOME,
+    key: "InventoryManagements",
+    component: InventoryManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "AdjustmentManagements",
+    component: AdjustmentManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "ExportManagements",
+    component: ExportManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "ImportManagements",
+    component: ImportManagement,
+  },
 ];
 
 export { routeComponents };

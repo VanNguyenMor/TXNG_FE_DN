@@ -1,0 +1,291 @@
+.wrapper {
+  height: calc(100vh - 100px);
+  padding: 20px 0;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+.error {
+  color: red;
+  font-size: 12px;
+  line-height: 1;
+  margin-top: 5px;
+  margin-bottom: 0;
+}
+
+.editArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.editArea .item {
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.editArea .item:last-child {
+  margin-right: 0;
+}
+
+.moitao,
+.daduyet {
+  display: block;
+  width: 7.5rem;
+  margin: auto;
+  color: #04bf16;
+  padding: 3px 0;
+  font-weight: 600;
+  border-radius: 40px;
+}
+
+.khongduyet {
+  display: block;
+  width: 7.5rem;
+  margin: auto;
+  color: #d9001b;
+  padding: 3px 0;
+  font-weight: 600;
+  border-radius: 40px;
+}
+
+.yeucauduyet {
+  display: block;
+  width: 7.5rem;
+  margin: auto;
+  color: #000;
+  padding: 3px 0;
+  font-weight: 600;
+  border-radius: 40px;
+}
+
+.khongduyet {
+  background-color: #fff;
+  border: 1px solid #d9001b;
+}
+
+.yeucauduyet {
+  background-color: #fff;
+  border: 1px solid #000;
+}
+
+.moitao {
+  background-color: #000;
+}
+
+.daduyet {
+  background-color: #fff;
+  border: 1px solid #04bf16;
+}
+
+.editHeaderArea {
+  width: 78px;
+}
+
+.searchArea {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.searchArea .searchRow {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.searchArea .searchRow:last-child {
+  margin-bottom: 0;
+}
+
+.searchArea .searchRow .checkBoxItem {
+  margin-right: 15px;
+}
+
+.searchArea .searchRow .checkBoxItem input[type="checkbox"] {
+  margin-right: 10px;
+  transform: scale(1.2);
+  -webkit-transform: scale(1.2);
+  -moz-transform: scale(1.2);
+  -ms-transform: scale(1.2);
+  -o-transform: scale(1.2);
+}
+
+.searchArea .searchRow .searchRowItem {
+  width: 100%;
+}
+
+.formControl {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.formControl .rowItem {
+  display: flex;
+  width: 100%;
+  margin-bottom: 10px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.formControl .rowItem .inputArea {
+  width: 100%;
+}
+
+.formControl .rowItem label {
+  display: flex;
+  width: 180px;
+  height: 43px;
+  margin-bottom: 0;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.formControl .rowTitle {
+  width: 100%;
+}
+
+.filterArea {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.filterArea label {
+  width: 90px;
+  margin-bottom: 0;
+}
+
+.filterArea select {
+  width: 300px;
+  margin-right: 8px;
+  height: 2.2em;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.headView {
+  padding-bottom: 5px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #000;
+}
+
+@media screen and (max-width: 991px) {
+  .filterArea select {
+    width: 200px;
+  }
+}
+
+@media screen and (max-width: 568px) {
+  .filterArea {
+    width: 100%;
+    margin-bottom: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filterArea select {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 359px) {
+  .searchArea .searchRow .checkBoxItem input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1);
+    -webkit-transform: scale(1);
+    -moz-transform: scale(1);
+    -ms-transform: scale(1);
+    -o-transform: scale(1);
+  }
+
+  .searchArea .searchRow .checkBoxItem label {
+    font-size: 0.8rem;
+  }
+}
+
+.tabItem {
+  background-color: #fff;
+  user-select: none;
+  cursor: pointer;
+}
+
+.contentItem {
+  background-color: #fff;
+}
+
+.detailTableHead th {
+  background-color: transparent !important;
+}
+
+.detailTable {
+  overflow-y: hidden;
+  user-select: none;
+  overflow-x: auto;
+}
+
+.detailTable::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.detailTable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.detailTable::-webkit-scrollbar-thumb {
+  background: #333333a8;
+  border-radius: 10px;
+}
+
+.detailTable::-webkit-scrollbar-thumb:hover {
+  background: #33333352;
+}
+
+.scrollTable {
+  overflow-y: hidden;
+  overflow-x: auto;
+}
+
+.scrollTable::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.scrollTable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.scrollTable::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.scrollTable::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.stickyActionColumn {
+  position: sticky;
+  right: 0;
+  background-color: #f8f9fa;
+  z-index: 10;
+  min-width: 80px;
+  text-align: right;
+}
+
+.stickyActionHeader {
+  position: sticky;
+  right: 0;
+  background-color: #5bc0de;
+  z-index: 11;
+  text-align: center;
+}

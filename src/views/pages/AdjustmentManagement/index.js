@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
+import { ADJUSTMENT_MANAGEMENT } from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { actionZoneCreators } from "../../../actions/ZoneListActions";
@@ -40,30 +41,38 @@ import {
 import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
-import { PRODUCTS } from "../../../helpers/constant";
 
-class Product extends Component {
+class AdjustmentManagement extends Component {
   constructor(props) {
     super(props);
 
     const dataMock = [
       {
         id: 1,
-        batchNumber: "12",
-        productId: "Giày bata",
-        status: 1,
-        quantity: 12,
-        unit: "kg",
-        requestDate: "17:31 13/11/2025",
+        time: "00:00 23/06/2025",
+        warehouse: "Kho hàng 1",
+        note: "",
+        executor: "Công ty Việt Mỹ",
+        approver: "Công ty Việt Mỹ",
+        approvalDate: "08:29 23/06/2025",
       },
       {
         id: 2,
-        batchNumber: "12",
-        productId: "Giày bata",
-        status: 1,
-        quantity: 15,
-        unit: "kg",
-        requestDate: "17:31 14/11/2025",
+        time: "00:00 23/06/2025",
+        warehouse: "Kho hàng 1",
+        note: "",
+        executor: "Công ty Việt Mỹ",
+        approver: "Công ty Việt Mỹ",
+        approvalDate: "08:29 23/06/2025",
+      },
+      {
+        id: 3,
+        time: "00:00 23/06/2025",
+        warehouse: "Kho hàng 1",
+        note: "",
+        executor: "Công ty Việt Mỹ",
+        approver: "Công ty Việt Mỹ",
+        approvalDate: "08:29 23/06/2025",
       },
     ];
 
@@ -87,7 +96,7 @@ class Product extends Component {
       province: [],
       ward: [],
       provinceIDCurrent: null,
-      headerTitle: PRODUCTS,
+      headerTitle: ADJUSTMENT_MANAGEMENT,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
@@ -108,129 +117,6 @@ class Product extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
-      STATUS_OPTIONS: [
-        { id: 0, title: "Mới tạo" },
-        { id: 1, title: "Chờ duyệt" },
-        { id: 2, title: "Đã duyệt" },
-        { id: 3, title: "Không duyệt" },
-        { id: 4, title: "Chờ duyệt lại" },
-      ],
-      DIARY_OPTIONS: [
-        {
-          id: 1,
-          title: "Nhật ký 1",
-          createdAt: "23/06/2025",
-          quantity: 50,
-          location: "Kho A",
-          product: "Phân bón NPK",
-          unit: "kg",
-        },
-        {
-          id: 2,
-          title: "Nhật ký 2",
-          createdAt: "21/06/2025",
-          quantity: 20,
-          location: "Kho B",
-          product: "Phân bón NPKS",
-          unit: "tấn",
-        },
-      ],
-      CLASSIFY_OPTIONS: [
-        {
-          id: 1,
-          title: "Phân loại 1",
-        },
-        {
-          id: 2,
-          title: "Phân loại 2",
-        },
-      ],
-      TEM_OPTIONS: [
-        {
-          id: 1,
-          title: "Dải tem 1",
-        },
-        {
-          id: 2,
-          title: "Dải tem 2",
-        },
-      ],
-      PROVINCE_OPTIONS: [
-        { id: 1, title: "Hà Nội" },
-        { id: 2, title: "Hồ Chí Minh" },
-        { id: 3, title: "Hải Phòng" },
-        { id: 4, title: "Đà Nẵng" },
-        { id: 5, title: "Cần Thơ" },
-        { id: 6, title: "Hà Giang" },
-        { id: 7, title: "Cao Bằng" },
-        { id: 8, title: "Lào Cai" },
-        { id: 9, title: "Yên Bái" },
-        { id: 10, title: "Tuyên Quang" },
-        { id: 11, title: "Lạng Sơn" },
-        { id: 12, title: "Quảng Ninh" },
-        { id: 13, title: "Thái Nguyên" },
-        { id: 14, title: "Bắc Giang" },
-        { id: 15, title: "Phú Thọ" },
-        { id: 16, title: "Vĩnh Phúc" },
-        { id: 17, title: "Bắc Ninh" },
-        { id: 18, title: "Hải Dương" },
-        { id: 19, title: "Hưng Yên" },
-        { id: 20, title: "Thái Bình" },
-        { id: 21, title: "Nam Định" },
-        { id: 22, title: "Ninh Bình" },
-        { id: 23, title: "Thanh Hóa" },
-        { id: 24, title: "Nghệ An" },
-        { id: 25, title: "Hà Tĩnh" },
-        { id: 26, title: "Quảng Bình" },
-        { id: 27, title: "Quảng Trị" },
-        { id: 28, title: "Thừa Thiên Huế" },
-        { id: 29, title: "Quảng Nam" },
-        { id: 30, title: "Quảng Ngãi" },
-        { id: 31, title: "Bình Định" },
-        { id: 32, title: "Phú Yên" },
-        { id: 33, title: "Khánh Hòa" },
-        { id: 34, title: "Đắk Lắk" },
-        { id: 35, title: "Lâm Đồng" },
-        { id: 36, title: "Đồng Nai" },
-        { id: 37, title: "Bình Dương" },
-        { id: 38, title: "Bà Rịa - Vũng Tàu" },
-        { id: 39, title: "Tây Ninh" },
-        { id: 40, title: "Long An" },
-        { id: 41, title: "Tiền Giang" },
-        { id: 42, title: "Bến Tre" },
-        { id: 43, title: "Vĩnh Long" },
-        { id: 44, title: "Đồng Tháp" },
-        { id: 45, title: "An Giang" },
-        { id: 46, title: "Kiên Giang" },
-        { id: 47, title: "Sóc Trăng" },
-        { id: 48, title: "Cà Mau" },
-      ],
-      COUNTRY_OPTIONS: [
-        { id: "VN", title: "Việt Nam" },
-        { id: "CN", title: "Trung Quốc" },
-        { id: "JP", title: "Nhật Bản" },
-        { id: "KR", title: "Hàn Quốc" },
-        { id: "SG", title: "Singapore" },
-        { id: "TH", title: "Thái Lan" },
-        { id: "ID", title: "Indonesia" },
-        { id: "MY", title: "Malaysia" },
-
-        { id: "DE", title: "Đức" },
-        { id: "FR", title: "Pháp" },
-        { id: "GB", title: "Vương quốc Anh" },
-        { id: "IT", title: "Ý" },
-        { id: "ES", title: "Tây Ban Nha" },
-
-        { id: "US", title: "Hoa Kỳ" },
-        { id: "CA", title: "Canada" },
-        { id: "BR", title: "Brazil" },
-        { id: "MX", title: "Mexico" },
-
-        { id: "AU", title: "Úc" },
-        { id: "NZ", title: "New Zealand" },
-
-        { id: "ZA", title: "Nam Phi" },
-      ],
       WAREHOUSE_OPTIONS: [
         {
           id: 1,
@@ -240,6 +126,30 @@ class Product extends Component {
           id: 2,
           title: "Kho hàng 2",
         },
+      ],
+      PRODUCTS_OPTIONS: [
+        {
+          id: 1,
+          title: "Sản phẩm 1",
+        },
+        {
+          id: 2,
+          title: "Sản phẩm 2",
+        },
+      ],
+      UNIT_OPTIONS: [
+        {
+          id: 1,
+          title: "kg",
+        },
+        {
+          id: 2,
+          title: "tấn",
+        },
+      ],
+      STATUS_OPTIONS: [
+        { id: 0, title: "Chưa duyệt" },
+        { id: 1, title: "Đã duyệt" },
       ],
     };
   }
@@ -415,12 +325,12 @@ class Product extends Component {
       return {};
     }
     const { dataInsert, data, editId, currentRow } = this.state;
-    const batchNumber = dataInsert.batchNumber;
+    const warehouse = dataInsert.warehouse;
 
     const errorInserts = {};
 
-    if (!batchNumber) {
-      errorInserts.batchNumber = "Số phiếu không được bỏ trống";
+    if (!warehouse) {
+      errorInserts.warehouse = "Số phiếu không được bỏ trống";
     }
 
     return errorInserts;
@@ -531,26 +441,6 @@ class Product extends Component {
     return line;
   };
 
-  showTitleWithStatus = (id) => {
-    const { STATUS_OPTIONS } = this.state;
-
-    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
-
-    while (queue.length > 0) {
-      const status = queue.shift();
-
-      if (status && status.id === id) {
-        return status.title;
-      }
-
-      if (status && status.children && status.children.length > 0) {
-        queue.push(...status.children);
-      }
-    }
-
-    return "";
-  };
-
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
@@ -582,26 +472,25 @@ class Product extends Component {
           >
             {autoIndex + 1}
           </td>
-          <td style={{ textAlign: "center" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.batchNumber}</span>
+          <td className="table-scale-col">
+            <span style={{ color: `${e.color}` }}>{e.time}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.productId}</span>
+            <span style={{ color: `${e.color}` }}>{e.warehouse}</span>
           </td>
-          <td style={{ textAlign: "center" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>
-              {e.quantity + " " + e.unit}
-            </span>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.note}</span>
           </td>
-          <td style={{ textAlign: "center" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.requestDate}</span>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.executor}</span>
           </td>
-          <td style={{ textAlign: "center" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>
-              {this.showTitleWithStatus(e.status)}
-            </span>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.approver}</span>
           </td>
-          <td>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
+          </td>
+          <td className={classes.stickyActionColumn}>
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
@@ -617,7 +506,7 @@ class Product extends Component {
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
                           <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
+                            Xem chi tiết
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
@@ -662,13 +551,10 @@ class Product extends Component {
       createNewModal,
       popupMessage,
       activeCreateSubmit,
-      STATUS_OPTIONS,
-      DIARY_OPTIONS,
-      CLASSIFY_OPTIONS,
-      TEM_OPTIONS,
-      COUNTRY_OPTIONS,
-      PROVINCE_OPTIONS,
       WAREHOUSE_OPTIONS,
+      PRODUCTS_OPTIONS,
+      UNIT_OPTIONS,
+      STATUS_OPTIONS,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -722,26 +608,25 @@ class Product extends Component {
                         )
                       }
                       hideSearch={true}
-                      hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
-                        isShowForEdit ? "Sửa phiếu nhập" : "Thêm phiếu nhập"
+                        isShowForEdit
+                          ? "Sửa phiếu điều chỉnh"
+                          : "Thêm phiếu điều chỉnh"
                       }
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
-                          STATUS_OPTIONS={STATUS_OPTIONS}
-                          DIARY_OPTIONS={DIARY_OPTIONS}
-                          CLASSIFY_OPTIONS={CLASSIFY_OPTIONS}
-                          TEM_OPTIONS={TEM_OPTIONS}
-                          COUNTRY_OPTIONS={COUNTRY_OPTIONS}
                           WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
-                          PROVINCE_OPTIONS={PROVINCE_OPTIONS}
+                          PRODUCTS_OPTIONS={PRODUCTS_OPTIONS}
+                          UNIT_OPTIONS={UNIT_OPTIONS}
                           isShowForEdit={isShowForEdit}
+                          STATUS_OPTIONS={STATUS_OPTIONS}
                         />
                       }
                       isShowForEdit={isShowForEdit}
+                      isReadOnly={isShowForEdit}
                       handleModal={this.handleModal}
                       onConfirm={this.onConfirm}
                       handleSubmitSearchForm={() =>
@@ -751,7 +636,12 @@ class Product extends Component {
                         <>
                           <div
                             className="div_flex"
-                            style={{ marginBottom: "10px", flex: "wrap" }}
+                            style={{
+                              marginBottom: "30px",
+                              flex: "wrap",
+                              width: "100%",
+                              flexWrap: "wrap",
+                            }}
                           >
                             <div className="mg-div-search">
                               <label className="form-control-label">
@@ -788,19 +678,20 @@ class Product extends Component {
                             </div>
                             <div className="mg-div-search">
                               <label className="form-control-label">
-                                Trạng thái
+                                Kho hàng
                               </label>
                               <div>
                                 <Select
                                   name="filter"
-                                  title="Lọc theo trạng thái"
-                                  data={STATUS_OPTIONS}
+                                  title="Lọc theo kho hàng"
+                                  data={WAREHOUSE_OPTIONS}
                                   labelName="title"
                                   val="id"
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
                             </div>
+
                             <div className="mg-btn">
                               <label className="form-control-label">
                                 &nbsp;
@@ -826,7 +717,7 @@ class Product extends Component {
                     {/* Table */}
                     <Card className="shadow">
                       <Table
-                        className="align-items-center tablecs table-css-planting-zone"
+                        className={`align-items-center tablecs table-css-planting-zone ${classes.scrollTable}`}
                         responsive
                       >
                         <HeadTitleTable
@@ -895,14 +786,11 @@ class Product extends Component {
                   id={editId}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
-                  STATUS_OPTIONS={STATUS_OPTIONS}
-                  DIARY_OPTIONS={DIARY_OPTIONS}
-                  CLASSIFY_OPTIONS={CLASSIFY_OPTIONS}
-                  TEM_OPTIONS={TEM_OPTIONS}
-                  COUNTRY_OPTIONS={COUNTRY_OPTIONS}
                   WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
-                  PROVINCE_OPTIONS={PROVINCE_OPTIONS}
+                  PRODUCTS_OPTIONS={PRODUCTS_OPTIONS}
+                  UNIT_OPTIONS={UNIT_OPTIONS}
                   isShowForEdit={isShowForEdit}
+                  STATUS_OPTIONS={STATUS_OPTIONS}
                 />
               }
               toggleModal={this.toggleModal}
@@ -944,37 +832,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  Product
+  AdjustmentManagement
 );
-
-
-
-const inventoryDataMock = [
-      {
-        stt: 1,
-        warehouse: "Kho hàng 1",
-        itemName: "Dép Cross",
-        unit: "Đôi",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
-      },
-      {
-        stt: 2,
-        warehouse: "Kho hàng 1",
-        itemName: "Giày công sở",
-        unit: "kg",
-        beginningBalance: 10500000,
-        inPeriod: 0,
-        endingBalance: 10500000,
-      },
-      {
-        stt: 3,
-        warehouse: "Kho hàng 1",
-        itemName: "Giày lười",
-        unit: "kg",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
-      },
-    ];

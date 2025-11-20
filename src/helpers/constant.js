@@ -815,6 +815,10 @@ export const NAVBAR_ITEM = {
     PRODUCT_REPORTS: 'Thống kê sản phẩm theo nhóm',
     TRACE: 'Nhật ký sản phẩm',
     PRODUCTS: 'Sản phẩm',
+    INVENTORY_MANAGEMENT: 'Quản lý tồn kho',
+    ADJUSTMENT_MANAGEMENT: 'Quản lý tồn kho - Phiếu điều chỉnh',
+    EXPORT_MANAGEMENT: 'Quản lý tồn kho - Xuất chuyển',
+    IMPORT_MANAGEMENT: 'Quản lý tồn kho - Nhập chuyển',
     PRODUCTS_VERIFY: 'Danh sách sản phẩm chờ xác thực',
     PARTNER_VERIFY: 'Danh sách nhà cung cấp chờ xác thực',
     PARTNER_MANUFACT_VERIFY: 'Danh sách nhà sản xuất chờ xác thực',
@@ -841,12 +845,44 @@ export const PLANTING_ZONE = [
     // 'GPS'
 ]
 
-export const PRODUCTS = [
+export const INVENTORY_MANAGEMENT = [
     'Stt',
-    'Số lô',
-    'Sản phẩm',
-    'Số lượng',
-    'Ngày yêu cầu',
+    'Kho',
+    'Tên hàng hóa',
+    'ĐVT',
+    'Đầu kỳ',
+    'Trong kỳ',
+    'Cuối kỳ',
+]
+export const ADJUSTMENT_MANAGEMENT = [
+    'Stt',
+    'Thời gian',
+    'Kho hàng',
+    'Ghi chú',
+    'Người thực hiện',
+    'Người duyệt',
+    'Ngày duyệt',
+]
+export const EXPORT_MANAGEMENT = [
+    'Stt',
+    'Thời gian',
+    'Từ kho',
+    'Đến kho',
+    'Ghi chú',
+    'Người thực hiện',
+    'Người duyệt',
+    'Ngày duyệt',
+    'Trạng thái',
+]
+export const IMPORT_MANAGEMENT = [
+    'Stt',
+    'Thời gian',
+    'Từ kho',
+    'Đến kho',
+    'Ghi chú',
+    'Người thực hiện',
+    'Người duyệt',
+    'Ngày duyệt',
     'Trạng thái',
 ]
 
@@ -863,6 +899,15 @@ export const EXPORT_PRODUCT = [
     'Số phiếu',
     'Thời gian',
     'Khách hàng',
+    'Trạng thái',
+]
+
+export const PRODUCTS = [
+    'Stt',
+    'Số lô',
+    'Sản phẩm',
+    'Số lượng',
+    'Ngày yêu cầu',
     'Trạng thái',
 ]
 

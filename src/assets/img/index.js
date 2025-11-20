@@ -53,6 +53,10 @@ import MaterialGroups from './icons/menus/LoaiSanPham.png';
 import ProductsGroups from './icons/menus/NhomSanPham.png';
 import Units from './icons/menus/DonViTinh.png';
 import Configs from './icons/menus/CaiDatHeThong.png';
+import InventoryManagements from './icons/menus/CaiDatHeThong.png';
+import AdjustmentManagements from './icons/menus/CaiDatHeThong.png';
+import ExportManagements from './icons/menus/CaiDatHeThong.png';
+import ImportManagements from './icons/menus/CaiDatHeThong.png';
 import ProductTrace from './icons/menus/NhatKySanPham.png';
 import Products from './icons/menus/SanPham.png';
 import VerifiedCompany from './icons/menus/donvixacthuc.jpg';
@@ -126,6 +130,10 @@ const ICON_MENUS = {
     Units,
     PlantingTypes,
     Configs,
+    InventoryManagements,
+    AdjustmentManagements,
+    ExportManagements,
+    ImportManagements,
     Users,
     ProductsGroups,
     Report8,
