@@ -854,11 +854,12 @@ export const INVENTORY_MANAGEMENT = [
 ]
 export const ADJUSTMENT_MANAGEMENT = [
     'Stt',
-    'Số lô',
-    'Sản phẩm',
-    'Số lượng',
-    'Ngày yêu cầu',
-    'Trạng thái',
+    'Thời gian',
+    'Kho hàng',
+    'Ghi chú',
+    'Người thực hiện',
+    'Người duyệt',
+    'Ngày duyệt',
 ]
 export const EXPORT_MANAGEMENT = [
     'Stt',

@@ -230,12 +230,6 @@
   overflow-x: auto;
 }
 
-.detailTable {
-  overflow-y: hidden;
-  user-select: none;
-  overflow-x: auto;
-}
-
 .detailTable::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -254,3 +248,4 @@
 .detailTable::-webkit-scrollbar-thumb:hover {
   background: #33333352;
 }
+

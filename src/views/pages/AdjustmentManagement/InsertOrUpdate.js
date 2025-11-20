@@ -3,6 +3,7 @@ import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import { Card, Table } from "reactstrap";
 import { InputGroup } from "reactstrap";
 import classes from "./index.module.css";
+import Select from "components/Select";
 
 class InsertOrUpadte extends Component {
   constructor(props) {
@@ -10,7 +11,19 @@ class InsertOrUpadte extends Component {
 
     this.state = {
       id: null,
-      batchId: null,
+      wareId: null,
+      adjustmentDateVal: "",
+      noteVal: "",
+      refuseVal: "",
+      adjustedItems: [
+        {
+          stt: 1,
+          productId: null,
+          productName: "Giày sondo",
+          unit: "kg",
+          quantity: 12,
+        },
+      ],
     };
   }
 
@@ -126,33 +139,146 @@ class InsertOrUpadte extends Component {
     return Math.round(totalAmount);
   };
 
-  renderLoggingTable = () => {
-    const { LOGGING_DATA } = this.props;
+  handleAddItem = () => {
+    this.setState(
+      (prevState) => {
+        const newStt = prevState.adjustedItems.length + 1;
+        const newItem = {
+          stt: newStt,
+          productId: null,
+          productName: "",
+          unit: "",
+          quantity: 0,
+        };
+        return {
+          adjustedItems: [...prevState.adjustedItems, newItem],
+        };
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
+  };
+
+  handleDeleteItem = (indexToDelete) => () => {
+    this.setState(
+      (prevState) => {
+        const updatedItems = prevState.adjustedItems.filter(
+          (_, index) => index !== indexToDelete
+        );
+        const reindexedItems = updatedItems.map((item, index) => ({
+          ...item,
+          stt: index + 1,
+        }));
+        return {
+          adjustedItems: reindexedItems,
+        };
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
+  };
+
+  handleItemValueChange = (index, name) => (e) => {
+    let value = e.target.value;
+
+    this.setState(
+      (prevState) => {
+        const updatedItems = [...prevState.adjustedItems];
+        updatedItems[index][name] = value;
+        return { adjustedItems: updatedItems };
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
+  };
+
+  renderAdjustmentTable = () => {
+    const { adjustedItems } = this.state;
+    const { errors, PRODUCTS_OPTIONS, UNIT_OPTIONS } = this.props;
+
     return (
       <Card className="shadow mt-4">
         <Table
-          className={`align-items-center table-flush vayt65 ${classes.detailTable}`}
+          className={`align-items-center table-flush ${classes.detailTable}`}
           responsive
         >
           <thead className="thead-light" style={{ backgroundColor: "#09b2fd" }}>
             <tr className={classes.detailTableHead}>
               <th className="header-cell">STT</th>
-              <th className="header-cell">Thời gian</th>
-              <th className="header-cell">Loại</th>
-              <th className="header-cell">Số lượng</th>
+              <th className="header-cell">Sản phẩm</th>
               <th className="header-cell">ĐVT</th>
-              <th className="header-cell">Người thực hiện</th>
+              <th className="header-cell">Số lượng (+/-)</th>
+              <th className="header-cell"></th>
             </tr>
           </thead>
           <tbody>
-            {LOGGING_DATA.map((item, index) => (
+            {adjustedItems.map((item, index) => (
               <tr key={index}>
                 <td>{item.stt}</td>
-                <td>{item.thoiGian}</td>
-                <td>{item.loai}</td>
-                <td>{item.soLuong}</td>
-                <td>{item.dvt}</td>
-                <td>{item.nguoiThucHien}</td>
+                <td>
+                  <Select
+                    value={item.productId}
+                    name="productName"
+                    data={PRODUCTS_OPTIONS}
+                    labelName="title"
+                    title="Chọn sản phẩm"
+                    val="id"
+                    handleChange={(value) =>
+                      this.handleItemValueChange(
+                        index,
+                        "productName"
+                      )({ target: { value } })
+                    }
+                    className="wrap-insert-or-update-zone-item-select"
+                  />
+                </td>
+                <td>
+                  <Select
+                    value={item.productId}
+                    name="unit"
+                    data={UNIT_OPTIONS}
+                    labelName="title"
+                    title="Chọn đơn vị"
+                    val="id"
+                    handleChange={(value) =>
+                      this.handleItemValueChange(
+                        index,
+                        "unit"
+                      )({ target: { value } })
+                    }
+                    className="wrap-insert-or-update-zone-item-select"
+                  />
+                </td>
+                <td>
+                  <InputGroup className="input-group-alternative css-border-input">
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={this.handleItemValueChange(index, "quantity")}
+                      className="wrap-insert-or-update-zone-item-input"
+                      placeholder="Số lượng (+/-)"
+                    />
+                  </InputGroup>
+                </td>
+                <td className={classes.deleteCell}>
+                  <span
+                    onClick={this.handleDeleteItem(index)}
+                    style={{ cursor: "pointer", color: "red" }}
+                    role="img"
+                    aria-label="delete"
+                  >
+                    Xóa
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -162,131 +288,139 @@ class InsertOrUpadte extends Component {
   };
 
   render() {
-    const { batchId } = this.state;
+    const { wareId, adjustmentDateVal, noteVal, refuseVal } = this.state;
 
-    const { errors, LOGGING_DATA } = this.props;
+    const { errors, WAREHOUSE_OPTIONS, isShowForEdit, STATUS_OPTIONS } = this.props;
 
     return (
       <div className="wrap-insert-or-update-zone">
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
-            Nguyên vật liệu:
+            Kho hàng&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-          </div>
-        </div>
+            <Select
+              value={wareId}
+              defaultValue={null}
+              isDisable={isShowForEdit}
+              labelMark={null}
+              className="wrap-insert-or-update-zone-item-select"
+              name="wareId"
+              title="Chọn kho hàng"
+              data={WAREHOUSE_OPTIONS}
+              labelName="title"
+              val="id"
+              handleChange={this.onChangeSelect("wareId")}
+            />
 
+            <p className="form-error-message">{errors.supplierId || ""}</p>
+          </div>
+        </div>
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
-            Đơn vị tính:
+            Ngày điều chỉnh&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
               <input
-                readOnly
-                type="text"
+                type="date"
                 className="wrap-insert-or-update-zone-item-input"
+                value={adjustmentDateVal}
+                name="adjustmentDateVal"
+                readOnly={isShowForEdit}
+                onChange={this.onChangeValue("adjustmentDateVal")}
+                required
               />
             </InputGroup>
-          </div>
-        </div>
 
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Kho hàng:
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
+            <p className="form-error-message">
+              {errors.adjustmentDateVal || ""}
+            </p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
-            Đầu kỳ:
+            Ghi chú
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
               <input
-                readOnly
+                value={noteVal}
+                onChange={this.onChangeValue("noteVal")}
+                readOnly={isShowForEdit}
                 type="text"
                 className="wrap-insert-or-update-zone-item-input"
               />
             </InputGroup>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Trong kỳ:
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Cuối kỳ:
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Từ ngày:
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Đến ngày:
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-          </div>
-        </div>
 
+            <p className="form-error-message">{errors.noteVal || ""}</p>
+          </div>
+        </div>
+        <div className="wrap-insert-or-update-zone-item">
+          <label className="wrap-insert-or-update-zone-item-label">
+            Trạng thái&nbsp;<b style={{ color: "red" }}>*</b>
+          </label>
+          <div className="wrap-insert-or-update-zone-item-box">
+            <Select
+              value={wareId}
+              defaultValue={null}
+              isDisable={isShowForEdit}
+              labelMark={null}
+              className="wrap-insert-or-update-zone-item-select"
+              name="wareId"
+              title="Chọn trạng thái"
+              data={STATUS_OPTIONS}
+              labelName="title"
+              val="id"
+              handleChange={this.onChangeSelect("wareId")}
+            />
+
+            <p className="form-error-message">{errors.supplierId || ""}</p>
+          </div>
+        </div>
+        {isShowForEdit ? (
+          <div className="wrap-insert-or-update-zone-item">
+            <label className="wrap-insert-or-update-zone-item-label">
+              Lý do không duyệt
+            </label>
+            <div className="wrap-insert-or-update-zone-item-box">
+              <InputGroup className="input-group-alternative css-border-input">
+                <input
+                  value={refuseVal}
+                  onChange={this.onChangeValue("refuseVal")}
+                  type="text"
+                  className="wrap-insert-or-update-zone-item-input"
+                />
+              </InputGroup>
+
+              <p className="form-error-message">{errors.refuseVal || ""}</p>
+            </div>
+          </div>
+        ) : null}
         <hr className="my-4" />
-
-        <h3 className="mt-4 mb-3">Danh sách Nhật ký hoạt động</h3>
-        {this.renderLoggingTable()}
+        <div className={classes.tableHeaderWithButton}>
+          <h3>Danh sách sản phẩm điều chỉnh</h3>
+          <span
+            onClick={this.handleAddItem}
+            style={{
+              backgroundColor: "#FFC107",
+              color: "white",
+              borderRadius: "50%",
+              width: "30px",
+              height: "30px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "20px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            +
+          </span>
+        </div>
+        {this.renderAdjustmentTable()}
+        <hr className="my-4" />
       </div>
     );
   }

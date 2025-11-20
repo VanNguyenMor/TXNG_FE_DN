@@ -1,11 +1,7 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import {
-  EXPORT_PRODUCT,
-  IMPORT_EXPORT_PRODUCT_STATUS,
-  INVENTORY_MANAGEMENT,
-} from "../../../helpers/constant";
+import { ADJUSTMENT_MANAGEMENT } from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { actionZoneCreators } from "../../../actions/ZoneListActions";
@@ -53,30 +49,30 @@ class AdjustmentManagement extends Component {
     const dataMock = [
       {
         id: 1,
+        time: "00:00 23/06/2025",
         warehouse: "Kho hàng 1",
-        itemName: "Dép Cross",
-        unit: "kg",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
+        note: "",
+        executor: "Công ty Việt Mỹ",
+        approver: "Công ty Việt Mỹ",
+        approvalDate: "08:29 23/06/2025",
       },
       {
         id: 2,
+        time: "00:00 23/06/2025",
         warehouse: "Kho hàng 1",
-        itemName: "Giày công sở",
-        unit: "kg",
-        beginningBalance: 10500000,
-        inPeriod: 0,
-        endingBalance: 10,
+        note: "",
+        executor: "Công ty Việt Mỹ",
+        approver: "Công ty Việt Mỹ",
+        approvalDate: "08:29 23/06/2025",
       },
       {
         id: 3,
+        time: "00:00 23/06/2025",
         warehouse: "Kho hàng 1",
-        itemName: "Giày lười",
-        unit: "kg",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
+        note: "",
+        executor: "Công ty Việt Mỹ",
+        approver: "Công ty Việt Mỹ",
+        approvalDate: "08:29 23/06/2025",
       },
     ];
 
@@ -100,7 +96,7 @@ class AdjustmentManagement extends Component {
       province: [],
       ward: [],
       provinceIDCurrent: null,
-      headerTitle: INVENTORY_MANAGEMENT,
+      headerTitle: ADJUSTMENT_MANAGEMENT,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
@@ -131,17 +127,7 @@ class AdjustmentManagement extends Component {
           title: "Kho hàng 2",
         },
       ],
-      TYPEOF_OPTIONS: [
-        {
-          id: 1,
-          title: "Sản phẩm",
-        },
-        {
-          id: 2,
-          title: "Nguyên vật liệu",
-        },
-      ],
-      PRODUCT_OPTIONS: [
+      PRODUCTS_OPTIONS: [
         {
           id: 1,
           title: "Sản phẩm 1",
@@ -151,33 +137,19 @@ class AdjustmentManagement extends Component {
           title: "Sản phẩm 2",
         },
       ],
-      INGREDIENT_OPTIONS: [
+      UNIT_OPTIONS: [
         {
           id: 1,
-          title: "Nguyên liệu 1",
+          title: "kg",
         },
         {
           id: 2,
-          title: "Nguyên liệu 2",
+          title: "tấn",
         },
       ],
-      LOGGING_DATA: [
-        {
-          stt: 1,
-          thoiGian: "2023-11-20 08:00",
-          loai: "Thiết kế tạo mẫu",
-          soLuong: 50,
-          dvt: "Sản phẩm",
-          nguoiThucHien: "Nguyễn Văn A",
-        },
-        {
-          stt: 2,
-          thoiGian: "2023-11-20 09:30",
-          loai: "Chọn nguyên liệu",
-          soLuong: 100,
-          dvt: "kg",
-          nguoiThucHien: "Trần Thị B",
-        },
+      STATUS_OPTIONS: [
+        { id: 0, title: "Chưa duyệt" },
+        { id: 1, title: "Đã duyệt" },
       ],
     };
   }
@@ -438,12 +410,12 @@ class AdjustmentManagement extends Component {
           })
         );
 
-        this.setState({ message: "Xóa vùng sản xuất thành công" });
-        toast.success("Xoá vùng sản xuất thành công!");
+        this.setState({ message: "Xóa dữ liệu thành công" });
+        toast.success("Xoá dữ liệu thành công!");
       } else {
         const message = getErrorMessageServer(res);
 
-        this.setState({ message: message || "Xóa vùng sản xuất thất bại" });
+        this.setState({ message: message || "Xóa dữ liệu thất bại" });
         this.toggleModal("popupMessage");
       }
     });
@@ -501,22 +473,22 @@ class AdjustmentManagement extends Component {
             {autoIndex + 1}
           </td>
           <td className="table-scale-col">
+            <span style={{ color: `${e.color}` }}>{e.time}</span>
+          </td>
+          <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>{e.warehouse}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.itemName}</span>
+            <span style={{ color: `${e.color}` }}>{e.note}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.unit}</span>
+            <span style={{ color: `${e.color}` }}>{e.executor}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.beginningBalance}</span>
+            <span style={{ color: `${e.color}` }}>{e.approver}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.inPeriod}</span>
-          </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.endingBalance}</span>
+            <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
           </td>
           <td>
             {collapseList
@@ -580,9 +552,9 @@ class AdjustmentManagement extends Component {
       popupMessage,
       activeCreateSubmit,
       WAREHOUSE_OPTIONS,
-      TYPEOF_OPTIONS,
-      PRODUCT_OPTIONS,
-      LOGGING_DATA,
+      PRODUCTS_OPTIONS,
+      UNIT_OPTIONS,
+      STATUS_OPTIONS,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -636,15 +608,22 @@ class AdjustmentManagement extends Component {
                         )
                       }
                       hideSearch={true}
-                      hideCreate={true}
-                      moduleTitle={isShowForEdit ? "Báo cáo tồn kho" : ""}
-                      isReadOnly={true}
+                      hideCreate={isDisableAdd == false ? false : true}
+                      moduleTitle={
+                        isShowForEdit
+                          ? "Sửa phiếu điều chỉnh"
+                          : "Thêm phiếu điều chỉnh"
+                      }
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
-                          LOGGING_DATA={LOGGING_DATA}
+                          WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
+                          PRODUCTS_OPTIONS={PRODUCTS_OPTIONS}
+                          UNIT_OPTIONS={UNIT_OPTIONS}
+                          isShowForEdit={isShowForEdit}
+                          STATUS_OPTIONS={STATUS_OPTIONS}
                         />
                       }
                       isShowForEdit={isShowForEdit}
@@ -664,51 +643,6 @@ class AdjustmentManagement extends Component {
                               flexWrap: "wrap",
                             }}
                           >
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Kho hàng
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
-                                  data={WAREHOUSE_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Loại (SP/NVL)
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
-                                  data={TYPEOF_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Nguyên liệu/sản phẩm
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
-                                  data={PRODUCT_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
                             <div className="mg-div-search">
                               <label className="form-control-label">
                                 Từ ngày
@@ -739,6 +673,21 @@ class AdjustmentManagement extends Component {
                                   onChange={(e) =>
                                     this.setState({ toDate: e.target.value })
                                   }
+                                />
+                              </div>
+                            </div>
+                            <div className="mg-div-search">
+                              <label className="form-control-label">
+                                Kho hàng
+                              </label>
+                              <div>
+                                <Select
+                                  name="filter"
+                                  title="Lọc theo kho hàng"
+                                  data={WAREHOUSE_OPTIONS}
+                                  labelName="title"
+                                  val="id"
+                                  handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
                             </div>
@@ -830,14 +779,18 @@ class AdjustmentManagement extends Component {
 
             <CreateNewPopup
               createNewModal={createNewModal}
-              moduleTitle="Thêm vùng sản xuất"
+              moduleTitle="Thêm dữ liệu"
               type100={true}
               moduleBody={
                 <InsertOrUpdate
                   id={editId}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
-                  LOGGING_DATA={LOGGING_DATA}
+                  WAREHOUSE_OPTIONS={WAREHOUSE_OPTIONS}
+                  PRODUCTS_OPTIONS={PRODUCTS_OPTIONS}
+                  UNIT_OPTIONS={UNIT_OPTIONS}
+                  isShowForEdit={isShowForEdit}
+                  STATUS_OPTIONS={STATUS_OPTIONS}
                 />
               }
               toggleModal={this.toggleModal}

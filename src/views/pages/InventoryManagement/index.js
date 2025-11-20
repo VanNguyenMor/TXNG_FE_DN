@@ -2,8 +2,6 @@ import React, { Component } from "react";
 import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
 import {
-  EXPORT_PRODUCT,
-  IMPORT_EXPORT_PRODUCT_STATUS,
   INVENTORY_MANAGEMENT,
 } from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
@@ -438,12 +436,12 @@ class InventoryManagement extends Component {
           })
         );
 
-        this.setState({ message: "Xóa vùng sản xuất thành công" });
-        toast.success("Xoá vùng sản xuất thành công!");
+        this.setState({ message: "Xóa dữ liệu thành công" });
+        toast.success("Xoá dữ liệu thành công!");
       } else {
         const message = getErrorMessageServer(res);
 
-        this.setState({ message: message || "Xóa vùng sản xuất thất bại" });
+        this.setState({ message: message || "Xóa dữ liệu thất bại" });
         this.toggleModal("popupMessage");
       }
     });
@@ -830,7 +828,7 @@ class InventoryManagement extends Component {
 
             <CreateNewPopup
               createNewModal={createNewModal}
-              moduleTitle="Thêm vùng sản xuất"
+              moduleTitle="Thêm dữ liệu"
               type100={true}
               moduleBody={
                 <InsertOrUpdate

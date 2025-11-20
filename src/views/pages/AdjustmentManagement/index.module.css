@@ -254,3 +254,35 @@
 .detailTable::-webkit-scrollbar-thumb:hover {
   background: #33333352;
 }
+
+.tableHeaderWithButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+.detailTable {
+  overflow-y: hidden;
+  user-select: none;
+  overflow-x: auto;
+}
+
+.detailTable::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.detailTable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.detailTable::-webkit-scrollbar-thumb {
+  background: #333333a8;
+  border-radius: 10px;
+}
+
+.detailTable::-webkit-scrollbar-thumb:hover {
+  background: #33333352;
+}
