@@ -339,6 +339,7 @@ th.table-scale-col {
     -moz-box-shadow: none;
     -ms-box-shadow: none;
     -o-box-shadow: none;
+    padding: 4px 8px;
 }
 
 .tablecs .btn-group .dropdown-item:hover {
@@ -352,7 +353,6 @@ th.table-scale-col {
 
 .tablecs .dropdown-menu.show {
     min-width: 100%;
-    width: 100px;
     /* padding: 15px; */
     text-align: center;
 }

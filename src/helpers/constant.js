@@ -564,6 +564,24 @@ export const STAMP_PRICE_HEADER = [
     'Bảng giá'
 ];
 
+export const QR_SYSTEM_HEADER = [
+    'Stt',
+    'Thông tin',
+];
+export const QR_SYSTEM_LIST = [
+    'Stt',
+    'Thông tin',
+    'Đã sử dụng',
+    'Còn lại',
+    'Bị hư',
+];
+export const QR_SYSTEM_ARISES= [
+    'Stt',
+    'Hình ảnh',
+    'Thông tin',
+    'Trạng thái',
+];
+
 export const DATA_TYPES = {
     hinhanh: 4,
     banDo: 5,
@@ -826,6 +844,7 @@ export const NAVBAR_ITEM = {
     COMPANY_VERIFY: 'Danh sách doanh nghiệp/HTX/cá nhân chờ xác thực',
     PARTNER: 'Đơn vị xác thực',
     PARTNER_PRINTER: 'Đơn vị in tem',
+    QRCODE_MANAGEMENT: 'Quản lí mã QR',
     STAMPREQUESTUSED: 'Danh sách yêu cầu cấp phép sử dụng tem'
 };
 
@@ -871,8 +890,8 @@ export const EXPORT_MANAGEMENT = [
     'Ghi chú',
     'Người thực hiện',
     'Người duyệt',
-    'Ngày duyệt',
     'Trạng thái',
+    'Ngày duyệt',
 ]
 export const IMPORT_MANAGEMENT = [
     'Stt',
@@ -882,8 +901,8 @@ export const IMPORT_MANAGEMENT = [
     'Ghi chú',
     'Người thực hiện',
     'Người duyệt',
-    'Ngày duyệt',
     'Trạng thái',
+    'Ngày duyệt',
 ]
 
 export const IMPORT_PRODUCT = [

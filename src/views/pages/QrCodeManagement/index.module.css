@@ -24,58 +24,53 @@
   cursor: pointer;
 }
 
+.modalButtonArea {
+  justify-content: center;
+  flex-direction: row;
+  box-shadow: 0px 0px 7px 0px #80808094;
+  -webkit-box-shadow: 0px 0px 7px 0px #80808094;
+  -moz-box-shadow: 0px 0px 7px 0px #80808094;
+  -ms-box-shadow: 0px 0px 7px 0px #80808094;
+  -o-box-shadow: 0px 0px 7px 0px #80808094;
+}
+
+.modalButtonArea button {
+  display: flex;
+  /* width: 110px; */
+  height: 40px;
+  margin: auto;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-transform: uppercase;
+  align-items: center;
+}
+
+.modalButtonArea button:first-child {
+  margin-right: 13px !important;
+}
+
 .editArea .item:last-child {
   margin-right: 0;
 }
 
-.moitao,
-.daduyet {
+.noActiveStt,
+.activeStt {
   display: block;
   width: 7.5rem;
   margin: auto;
-  color: #04bf16;
+  color: #fff;
   padding: 3px 0;
   font-weight: 600;
   border-radius: 40px;
+  font-size: 14px;
 }
 
-.khongduyet {
-  display: block;
-  width: 7.5rem;
-  margin: auto;
-  color: #d9001b;
-  padding: 3px 0;
-  font-weight: 600;
-  border-radius: 40px;
+.noActiveStt {
+  background-color: #d9001b;
 }
 
-.yeucauduyet {
-  display: block;
-  width: 7.5rem;
-  margin: auto;
-  color: #000;
-  padding: 3px 0;
-  font-weight: 600;
-  border-radius: 40px;
-}
-
-.khongduyet {
-  background-color: #fff;
-  border: 1px solid #d9001b;
-}
-
-.yeucauduyet {
-  background-color: #fff;
-  border: 1px solid #000;
-}
-
-.moitao {
-  background-color: #000;
-}
-
-.daduyet {
-  background-color: #fff;
-  border: 1px solid #04bf16;
+.activeStt {
+  background-color: #04bf16;
 }
 
 .editHeaderArea {
@@ -119,6 +114,10 @@
   width: 100%;
 }
 
+.buttonUpload {
+  width: 140px;
+}
+
 .formControl {
   display: flex;
   justify-content: center;
@@ -140,59 +139,18 @@
 
 .formControl .rowItem label {
   display: flex;
-  width: 180px;
+  width: 160px;
   height: 43px;
   margin-bottom: 0;
   align-items: center;
-  font-size: 0.8rem;
 }
 
 .formControl .rowTitle {
   width: 100%;
 }
 
-.filterArea {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-}
-
-.filterArea label {
-  width: 90px;
-  margin-bottom: 0;
-}
-
-.filterArea select {
-  width: 300px;
-  margin-right: 8px;
-  height: 2.2em;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.headView {
-  padding-bottom: 5px;
-  margin-bottom: 5px;
-  border-bottom: 1px solid #000;
-}
-
-@media screen and (max-width: 991px) {
-  .filterArea select {
-    width: 200px;
-  }
-}
-
-@media screen and (max-width: 568px) {
-  .filterArea {
-    width: 100%;
-    margin-bottom: 10px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .filterArea select {
-    width: 100%;
-  }
+.ava {
+  border: 1px solid;
 }
 
 @media screen and (max-width: 359px) {
@@ -250,7 +208,6 @@
 }
 
 .scrollTable {
-  width: 100%;
   overflow-y: hidden;
   overflow-x: auto;
 }

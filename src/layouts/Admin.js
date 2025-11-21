@@ -146,7 +146,7 @@ const Admin = (props) => {
     if (getMenu) {
       getMenu().then(res => {
 
-        if (res.data.data.length > 0) {
+        if (res?.data?.data?.length > 0) {
 
           res.data.data.map(item => {
             listMenu.push(item)

@@ -1,9 +1,16 @@
 import React, { Component } from "react";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
-import { Card, Table } from "reactstrap";
+import {
+  Card,
+  FormGroup,
+  InputGroupAddon,
+  InputGroupText,
+  Table,
+} from "reactstrap";
 import { InputGroup } from "reactstrap";
 import classes from "./index.module.css";
 import Select from "components/Select";
+import ReactDatetime from "react-datetime";
 
 class InsertOrUpadte extends Component {
   constructor(props) {
@@ -95,7 +102,7 @@ class InsertOrUpadte extends Component {
   };
 
   onChangeValue = (name) => (e) => {
-    let value = e.target.value;
+    let value = e && e.target ? e.target.value : e;
 
     if (name === "marketId" || name === "quantity") {
       value = Number(value);
@@ -309,17 +316,29 @@ class InsertOrUpadte extends Component {
             Ngày điều chỉnh&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                type="date"
-                className="wrap-insert-or-update-zone-item-input"
-                value={adjustmentDateVal}
-                name="adjustmentDateVal"
-                readOnly={isShowForEdit}
-                onChange={this.onChangeValue("adjustmentDateVal")}
-                required
-              />
-            </InputGroup>
+            <FormGroup>
+              <InputGroup className="input-group-alternative css-border-input ">
+                <InputGroupAddon addonType="prepend" style={{ height: 32 }}>
+                  <InputGroupText>
+                    <i className="ni ni-calendar-grid-58" />
+                  </InputGroupText>
+                </InputGroupAddon>
+
+                <ReactDatetime
+                  inputProps={{
+                    placeholder: "Ngày điều chỉnh",
+                    name: "adjustmentDateVal",
+                  }}
+                  value={adjustmentDateVal}
+                  timeFormat={false}
+                  dateFormat="DD-MM-YYYY"
+                  onChange={this.onChangeValue("adjustmentDateVal")}
+                />
+              </InputGroup>
+              <p className="form-error-message margin-bottom-0">
+                {errors.adjustmentDateVal || ""}
+              </p>
+            </FormGroup>
 
             <p className="form-error-message">
               {errors.adjustmentDateVal || ""}

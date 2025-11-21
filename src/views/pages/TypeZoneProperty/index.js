@@ -102,7 +102,7 @@ class TypeZoneProperty extends Component {
           dataType = typeZoneProperties.data
           // console.log(dataType)
           if (typeof (dataType) !== 'undefined') {
-            if (typeof (dataType.plantingTypes) !== 'undefined') {
+            if (typeof (dataType?.plantingTypes) !== 'undefined') {
               if (dataType.plantingTypes.length > 0) {
                 dataType.plantingTypes.map((item, key) => {
                   item['index'] = key + 1;
@@ -112,15 +112,15 @@ class TypeZoneProperty extends Component {
             }
             let totalElement = 0;
 
-            if (dataType.plantingTypes.length > limit) {
+            if (dataType?.plantingTypes?.length > limit) {
               totalElement = limit;
             } else {
-              totalElement = dataType.plantingTypes.length
+              totalElement = dataType?.plantingTypes?.length
             }
             if (refetch) {
               this.setState({
                 totalElement,
-                data: dataType.plantingTypes,
+                data: dataType?.plantingTypes,
                 dataAll: dataType.plantingTypes,
                 history: dataType.plantingTypes,
                 listLength: dataType.total,
@@ -132,12 +132,12 @@ class TypeZoneProperty extends Component {
             } else {
               this.setState({
                 totalElement,
-                data: dataType.plantingTypes,
-                dataAll: dataType.plantingTypes,
-                history: dataType.plantingTypes,
-                listLength: dataType.total,
-                totalPage: Math.ceil(dataType.plantingTypes.length / limit),
-                status: dataType.plantingTypes.status,
+                data: dataType?.plantingTypes,
+                dataAll: dataType?.plantingTypes,
+                history: dataType?.plantingTypes,
+                listLength: dataType?.total,
+                totalPage: Math.ceil(dataType?.plantingTypes.length / limit),
+                status: dataType?.plantingTypes.status,
                 refetch: false,
                 // message: PLEASE_CHECK_CONNECT(data.message)
               });
