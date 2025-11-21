@@ -1,10 +1,7 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import {
-  ADJUSTMENT_MANAGEMENT,
-  EXPORT_MANAGEMENT,
-} from "../../../helpers/constant";
+import { EXPORT_MANAGEMENT } from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { actionZoneCreators } from "../../../actions/ZoneListActions";
@@ -25,6 +22,7 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ReactDatetime from "react-datetime";
 
 // reactstrap components
 import {
@@ -81,6 +79,8 @@ class ExportManagement extends Component {
       district: [],
       districtList: [],
       province: [],
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      toDate: new Date(),
       ward: [],
       provinceIDCurrent: null,
       headerTitle: EXPORT_MANAGEMENT,
@@ -497,12 +497,14 @@ class ExportManagement extends Component {
             <span style={{ color: `${e.color}` }}>{e.approver}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
+            <span style={{ color: `${e.color}` }}>
+              {this.showTitleWithStatus(e.status)}
+            </span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{this.showTitleWithStatus(e.status)}</span>
+            <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
           </td>
-          <td className={classes.stickyActionColumn}>
+          <td>
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
@@ -561,6 +563,8 @@ class ExportManagement extends Component {
       totalPage,
       totalElement,
       createNewModal,
+      fromDate,
+      toDate,
       popupMessage,
       activeCreateSubmit,
       WAREHOUSE_OPTIONS,
@@ -658,13 +662,20 @@ class ExportManagement extends Component {
                                 Từ ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="fromDate"
-                                  className="form-control"
-                                  value={this.state.fromDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ fromDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    to: "fromDate",
+                                  }}
+                                  value={fromDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      fromDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>
@@ -675,13 +686,20 @@ class ExportManagement extends Component {
                                 Đến ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="toDate"
-                                  className="form-control"
-                                  value={this.state.toDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ toDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    name: "toDate",
+                                  }}
+                                  value={toDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      toDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>

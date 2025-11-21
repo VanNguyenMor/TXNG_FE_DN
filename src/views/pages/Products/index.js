@@ -21,6 +21,7 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ReactDatetime from "react-datetime";
 
 // reactstrap components
 import {
@@ -108,6 +109,9 @@ class Product extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      toDate: new Date(),
+
       STATUS_OPTIONS: [
         { id: 0, title: "Mới tạo" },
         { id: 1, title: "Chờ duyệt" },
@@ -669,6 +673,8 @@ class Product extends Component {
       COUNTRY_OPTIONS,
       PROVINCE_OPTIONS,
       WAREHOUSE_OPTIONS,
+      fromDate,
+      toDate,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -758,13 +764,20 @@ class Product extends Component {
                                 Từ ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="fromDate"
-                                  className="form-control"
-                                  value={this.state.fromDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ fromDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    to: "fromDate",
+                                  }}
+                                  value={fromDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      fromDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>
@@ -775,13 +788,20 @@ class Product extends Component {
                                 Đến ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="toDate"
-                                  className="form-control"
-                                  value={this.state.toDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ toDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    name: "toDate",
+                                  }}
+                                  value={toDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      toDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>
@@ -943,38 +963,34 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  Product
-);
-
-
+export default compose(connect(mapStateToProps, mapDispatchToProps))(Product);
 
 const inventoryDataMock = [
-      {
-        stt: 1,
-        warehouse: "Kho hàng 1",
-        itemName: "Dép Cross",
-        unit: "Đôi",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
-      },
-      {
-        stt: 2,
-        warehouse: "Kho hàng 1",
-        itemName: "Giày công sở",
-        unit: "kg",
-        beginningBalance: 10500000,
-        inPeriod: 0,
-        endingBalance: 10500000,
-      },
-      {
-        stt: 3,
-        warehouse: "Kho hàng 1",
-        itemName: "Giày lười",
-        unit: "kg",
-        beginningBalance: 10,
-        inPeriod: 0,
-        endingBalance: 10,
-      },
-    ];
+  {
+    stt: 1,
+    warehouse: "Kho hàng 1",
+    itemName: "Dép Cross",
+    unit: "Đôi",
+    beginningBalance: 10,
+    inPeriod: 0,
+    endingBalance: 10,
+  },
+  {
+    stt: 2,
+    warehouse: "Kho hàng 1",
+    itemName: "Giày công sở",
+    unit: "kg",
+    beginningBalance: 10500000,
+    inPeriod: 0,
+    endingBalance: 10500000,
+  },
+  {
+    stt: 3,
+    warehouse: "Kho hàng 1",
+    itemName: "Giày lười",
+    unit: "kg",
+    beginningBalance: 10,
+    inPeriod: 0,
+    endingBalance: 10,
+  },
+];

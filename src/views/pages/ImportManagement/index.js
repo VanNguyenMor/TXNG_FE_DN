@@ -25,6 +25,7 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ReactDatetime from "react-datetime";
 
 // reactstrap components
 import {
@@ -82,6 +83,8 @@ class ImportManagement extends Component {
       districtList: [],
       province: [],
       ward: [],
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      toDate: new Date(),
       provinceIDCurrent: null,
       headerTitle: IMPORT_MANAGEMENT,
       limit: LIMIT_ITEM_IN_PAGE,
@@ -497,14 +500,15 @@ class ImportManagement extends Component {
             <span style={{ color: `${e.color}` }}>{e.approver}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
-          </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>
               {this.showTitleWithStatus(e.status)}
             </span>
           </td>
-          <td className={classes.stickyActionColumn}>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
+          </td>
+
+          <td>
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
@@ -555,6 +559,8 @@ class ImportManagement extends Component {
       isShowForEdit,
       errorInserts,
       status,
+      fromDate,
+      toDate,
       headerTitle,
       data,
       message,
@@ -661,13 +667,20 @@ class ImportManagement extends Component {
                                 Từ ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="fromDate"
-                                  className="form-control"
-                                  value={this.state.fromDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ fromDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    to: "fromDate",
+                                  }}
+                                  value={fromDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      fromDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>
@@ -678,13 +691,20 @@ class ImportManagement extends Component {
                                 Đến ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="toDate"
-                                  className="form-control"
-                                  value={this.state.toDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ toDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    name: "toDate",
+                                  }}
+                                  value={toDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      toDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>

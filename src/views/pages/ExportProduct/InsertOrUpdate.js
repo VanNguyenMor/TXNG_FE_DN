@@ -4,12 +4,16 @@ import Select from "components/Select";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import classes from "./index.module.css";
 
-import { InputGroup } from "reactstrap";
-import { IMPORT_EXPORT_PRODUCT_TYPE } from "helpers/constant";
+import {
+  FormGroup,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
+} from "reactstrap";
 import { parseMoney } from "utils/formatMoney";
 import { formatMoney } from "utils/formatMoney";
-import { IMPORT_PRODUCT_TYPE } from "helpers/constant";
 import { EXPORT_PRODUCT_TYPE } from "helpers/constant";
+import ReactDatetime from "react-datetime";
 
 class InsertOrUpadte extends Component {
   constructor(props) {
@@ -120,7 +124,7 @@ class InsertOrUpadte extends Component {
   };
 
   onChangeValue = (name) => (e) => {
-    const value = e.target.value;
+    let value = e && e.target ? e.target.value : e;
     this.setState(
       (previousState) => {
         return {
@@ -242,16 +246,28 @@ class InsertOrUpadte extends Component {
             Ngày lập phiếu &nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
-            <input
-              type="date"
-              className="wrap-insert-or-update-zone-item-input form-control"
-              name="creationDate"
-              value={creationDate}
-              onChange={this.onChangeValue("creationDate")}
-            />
-            <p className="form-error-message">
-              {this.props.errors.creationDate || ""}
-            </p>
+            <FormGroup>
+              <InputGroup className="input-group-alternative css-border-input ">
+                <InputGroupAddon addonType="prepend" style={{ height: 32 }}>
+                  <InputGroupText>
+                    <i className="ni ni-calendar-grid-58" />
+                  </InputGroupText>
+                </InputGroupAddon>
+
+                <ReactDatetime
+                  inputProps={{
+                    placeholder: "Ngày lập phiếu",
+                    name: "creationDate",
+                  }}
+                  value={creationDate}
+                  timeFormat={false}
+                  dateFormat="DD-MM-YYYY"
+                  onChange={this.onChangeValue("creationDate")}
+                />
+              </InputGroup>
+            </FormGroup>
+
+            <p className="form-error-message">{errors.creationDate || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">

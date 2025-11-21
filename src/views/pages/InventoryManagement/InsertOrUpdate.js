@@ -3,6 +3,7 @@ import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import { Card, Table } from "reactstrap";
 import { InputGroup } from "reactstrap";
 import classes from "./index.module.css";
+import ModalTable from "components/ModalTable/ModalTable";
 
 class InsertOrUpadte extends Component {
   constructor(props) {
@@ -126,40 +127,34 @@ class InsertOrUpadte extends Component {
     return Math.round(totalAmount);
   };
 
-  renderLoggingTable = () => {
-    const { LOGGING_DATA } = this.props;
-    return (
-      <Card className="shadow mt-4">
-        <Table
-          className={`align-items-center table-flush vayt65 ${classes.detailTable}`}
-          responsive
-        >
-          <thead className="thead-light" style={{ backgroundColor: "#09b2fd" }}>
-            <tr className={classes.detailTableHead}>
-              <th className="header-cell">STT</th>
-              <th className="header-cell">Thời gian</th>
-              <th className="header-cell">Loại</th>
-              <th className="header-cell">Số lượng</th>
-              <th className="header-cell">ĐVT</th>
-              <th className="header-cell">Người thực hiện</th>
-            </tr>
-          </thead>
-          <tbody>
-            {LOGGING_DATA.map((item, index) => (
-              <tr key={index}>
-                <td>{item.stt}</td>
-                <td>{item.thoiGian}</td>
-                <td>{item.loai}</td>
-                <td>{item.soLuong}</td>
-                <td>{item.dvt}</td>
-                <td>{item.nguoiThucHien}</td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </Card>
-    );
-  };
+  loggingColumnsConfig = [
+    {
+      header: "STT",
+      className: "text-center",
+      style: { width: "50px" },
+      render: (item, index) => item.stt || index + 1,
+    },
+    {
+      header: "Thời gian",
+      accessor: "thoiGian",
+    },
+    {
+      header: "Loại",
+      accessor: "loai",
+    },
+    {
+      header: "Số lượng",
+      accessor: "soLuong",
+    },
+    {
+      header: "ĐVT",
+      accessor: "dvt",
+    },
+    {
+      header: "Người thực hiện",
+      accessor: "nguoiThucHien",
+    },
+  ];
 
   render() {
     const { batchId } = this.state;
@@ -286,7 +281,11 @@ class InsertOrUpadte extends Component {
         <hr className="my-4" />
 
         <h3 className="mt-4 mb-3">Danh sách Nhật ký hoạt động</h3>
-        {this.renderLoggingTable()}
+        <ModalTable
+          data={LOGGING_DATA || []}
+          columns={this.loggingColumnsConfig}
+          classes={classes}
+        />
       </div>
     );
   }

@@ -25,6 +25,7 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ReactDatetime from "react-datetime";
 
 // reactstrap components
 import {
@@ -94,6 +95,8 @@ class ImportProduct extends Component {
       endItem: LIMIT_ITEM_IN_PAGE,
       totalElement: 0,
       listLength: 0,
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      toDate: new Date(),
       currentPage: 0,
       filter: {
         search: "",
@@ -537,6 +540,8 @@ class ImportProduct extends Component {
       PRODUCT_LIST,
       WAREHOUSE_LIST,
       UNIT_LIST,
+      fromDate,
+      toDate,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -624,13 +629,20 @@ class ImportProduct extends Component {
                                 Từ ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="fromDate"
-                                  className="form-control"
-                                  value={this.state.fromDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ fromDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    to: "fromDate",
+                                  }}
+                                  value={fromDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      fromDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>
@@ -641,13 +653,20 @@ class ImportProduct extends Component {
                                 Đến ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="toDate"
-                                  className="form-control"
-                                  value={this.state.toDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ toDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    name: "toDate",
+                                  }}
+                                  value={toDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      toDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>

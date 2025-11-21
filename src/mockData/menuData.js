@@ -167,7 +167,7 @@ export const MENU_DATA = [
   },
   {
     id: "018",
-    name: "Tồn kho - Quản lí tồn kho",
+    name: "Quản lí tồn kho",
     url: "/ton_kho",
     isCompany: 0,
     sortOrder: 10,
@@ -177,7 +177,7 @@ export const MENU_DATA = [
   },
   {
     id: "019",
-    name: "Tồn kho - Phiếu điều chỉnh",
+    name: "Tồn kho phiếu điều chỉnh",
     url: "/phieu_dieu_chinh",
     isCompany: 0,
     sortOrder: 11,
@@ -187,7 +187,7 @@ export const MENU_DATA = [
   },
   {
     id: "020",
-    name: "Tồn kho - Xuất chuyển",
+    name: "Tồn kho xuất chuyển",
     url: "/xuat_chuyen",
     isCompany: 0,
     sortOrder: 11,
@@ -197,7 +197,7 @@ export const MENU_DATA = [
   },
   {
     id: "021",
-    name: "Tồn kho - Nhập chuyển",
+    name: "Tồn kho nhập chuyển",
     url: "/nhap_chuyen",
     isCompany: 0,
     sortOrder: 12,
@@ -247,7 +247,7 @@ export const MENU_DATA = [
   },
   {
     id: "026",
-    name: "Quản lí lô hàng",
+    name: "Quản lí lô hàng & gán tem",
     url: "/quan_ly_lo_hang",
     isCompany: 0,
     sortOrder: 17,
@@ -257,26 +257,16 @@ export const MENU_DATA = [
   },
   {
     id: "027",
-    name: "Gán tem cho lô hàng",
-    url: "/gan_tem_lo_hang",
-    isCompany: 0,
-    sortOrder: 18,
-    parentID: "004",
-    uniqueCode: "Access",
-    status: 1,
-  },
-  {
-    id: "028",
     name: "Quản lí mã QR",
     url: "/quan_ly_qr",
     isCompany: 0,
     sortOrder: 19,
     parentID: "004",
-    uniqueCode: "StampRequestsUsed",
+    uniqueCode: "QrCodeManagements",
     status: 1,
   },
   {
-    id: "029",
+    id: "028",
     name: "Báo cáo",
     url: "/bao_cao",
     isCompany: 0,

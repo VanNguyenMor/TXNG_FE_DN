@@ -45,8 +45,27 @@ class RoleList extends Component {
   constructor(props) {
     super(props);
 
+    const dataMock = [
+      {
+        id: 1,
+        receiptNumber: "N001",
+        creationDate: "2025-11-17",
+        supplier: "Công ty A",
+        importer: "Nguyễn A",
+        status: 1,
+      },
+      {
+        id: 2,
+        receiptNumber: "N002",
+        creationDate: "2025-11-16",
+        supplier: "Công ty B",
+        importer: "Trần B",
+        status: 1,
+      },
+    ];
+
     this.state = {
-      data: [],
+      data: dataMock,
       history: [],
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
@@ -102,7 +121,7 @@ class RoleList extends Component {
           if (typeof roleData !== "undefined") {
             if (typeof roleData.roles !== "undefined") {
               if (typeof roleData.roles.roles !== "undefined") {
-                if (roleData.roles.roles.length > 0) {
+                if (roleData?.roles?.roles?.length > 0) {
                   roleData.roles.roles.map((item, key) => {
                     item["index"] = key + 1;
                     item["collapse"] = false;
@@ -111,10 +130,10 @@ class RoleList extends Component {
               }
               let totalElement = 0;
 
-              if (roleData.roles.roles.length > limit) {
+              if (roleData?.roles?.roles?.length > limit) {
                 totalElement = limit;
               } else {
-                totalElement = roleData.roles.roles.length;
+                totalElement = roleData?.roles?.roles?.length;
               }
 
               if (refetch) {
@@ -124,7 +143,7 @@ class RoleList extends Component {
                   dataAll: roleData.roles.roles,
                   history: roleData.roles.roles,
                   listLength: roleData.roles.total,
-                  totalPage: Math.ceil(roleData.roles.roles.length / limit),
+                  totalPage: Math.ceil(roleData?.roles?.roles?.length / limit),
                   isLoaded: roleData.isLoading,
                   refetch: false,
                   status: roleData.status,
@@ -137,7 +156,7 @@ class RoleList extends Component {
                   dataAll: roleData.roles.roles,
                   history: roleData.roles.roles,
                   listLength: roleData.roles.total,
-                  totalPage: Math.ceil(roleData.roles.roles.length / limit),
+                  totalPage: Math.ceil(roleData?.roles?.roles?.length / limit),
                   isLoaded: false,
                   status: roleData.status,
                   message: PLEASE_CHECK_CONNECT(roleData.message),
@@ -314,7 +333,7 @@ class RoleList extends Component {
   handleCreateInfoData = (value, closeForm, closePopup) => {
     const { createNewRole } = this.props;
     let { dataAll } = this.state;
-    const roleTotal = this.state.data.length + 1;
+    const roleTotal = this.state?.data?.length + 1;
     const errorInsert = {};
     this.setState((previousState) => {
       return {

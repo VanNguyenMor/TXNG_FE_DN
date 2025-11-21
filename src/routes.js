@@ -65,6 +65,7 @@ import InventoryManagement from "views/pages/InventoryManagement";
 import AdjustmentManagement from "views/pages/AdjustmentManagement";
 import ExportManagement from "views/pages/ExportManagement";
 import ImportManagement from "views/pages/ImportManagement";
+import QrCodeManagement from "views/pages/QrCodeManagement";
 import CompanyListAwaitActivity from "views/pages/CompanyListAwaitActivity";
 import MaterialGroup from "views/pages/MaterialGroup";
 import ProductsGroups from "views/pages/ProductsGroups";
@@ -430,10 +431,10 @@ var routes = [
     key: 2,
   },
   {
-    path: "/donviintem",
-    name: NAVBAR_ITEM.PARTNER_PRINTER,
+    path: "/quan_ly_qr",
+    name: NAVBAR_ITEM.QRCODE_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
-    component: PartnerPrint,
+    component: QrCodeManagement,
     layout: "/trang_chu",
     key: 2,
   },
@@ -935,6 +936,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "ImportManagements",
     component: ImportManagement,
+  },
+    {
+    layout: LAYOUT_HOME,
+    key: "QrCodeManagements",
+    component: QrCodeManagement,
   },
 ];
 

@@ -23,6 +23,7 @@ import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
+import ReactDatetime from "react-datetime";
 
 // reactstrap components
 import {
@@ -95,6 +96,8 @@ class LoggingInformation extends Component {
       totalElement: 0,
       listLength: 0,
       createNewModal: false,
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      toDate: new Date(),
       currentPage: 0,
       filter: {
         search: "",
@@ -615,6 +618,8 @@ class LoggingInformation extends Component {
       status,
       headerTitle,
       data,
+      fromDate,
+      toDate,
       message,
       isLoaded,
       listLength,
@@ -747,13 +752,20 @@ class LoggingInformation extends Component {
                                 Từ ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="fromDate"
-                                  className="form-control"
-                                  value={this.state.fromDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ fromDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    to: "fromDate",
+                                  }}
+                                  value={fromDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      fromDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>
@@ -764,13 +776,20 @@ class LoggingInformation extends Component {
                                 Đến ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="toDate"
-                                  className="form-control"
-                                  value={this.state.toDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ toDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    name: "toDate",
+                                  }}
+                                  value={toDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      toDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>

@@ -22,6 +22,7 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ReactDatetime from "react-datetime";
 
 // reactstrap components
 import {
@@ -103,6 +104,8 @@ class AdjustmentManagement extends Component {
       totalElement: 0,
       listLength: 0,
       currentPage: 0,
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      toDate: new Date(),
       filter: {
         search: "",
         filter: "",
@@ -490,7 +493,7 @@ class AdjustmentManagement extends Component {
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>{e.approvalDate}</span>
           </td>
-          <td className={classes.stickyActionColumn}>
+          <td>
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
@@ -547,6 +550,8 @@ class AdjustmentManagement extends Component {
       isLoaded,
       listLength,
       totalPage,
+      fromDate,
+      toDate,
       totalElement,
       createNewModal,
       popupMessage,
@@ -648,13 +653,20 @@ class AdjustmentManagement extends Component {
                                 Từ ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="fromDate"
-                                  className="form-control"
-                                  value={this.state.fromDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ fromDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    to: "fromDate",
+                                  }}
+                                  value={fromDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      fromDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>
@@ -665,13 +677,20 @@ class AdjustmentManagement extends Component {
                                 Đến ngày
                               </label>
                               <div>
-                                <input
-                                  type="date"
-                                  name="toDate"
-                                  className="form-control"
-                                  value={this.state.toDate || ""}
-                                  onChange={(e) =>
-                                    this.setState({ toDate: e.target.value })
+                                <ReactDatetime
+                                  inputProps={{
+                                    placeholder: "dd/mm/yyyy",
+                                    name: "toDate",
+                                  }}
+                                  value={toDate || ""}
+                                  timeFormat={false}
+                                  dateFormat="DD-MM-YYYY"
+                                  onChange={(value) =>
+                                    this.setState({
+                                      toDate: value
+                                        ? value.format("DD-MM-YYYY")
+                                        : "",
+                                    })
                                   }
                                 />
                               </div>

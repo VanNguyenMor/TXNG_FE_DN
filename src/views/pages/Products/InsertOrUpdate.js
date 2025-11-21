@@ -2,8 +2,14 @@ import React, { Component } from "react";
 import PopupMessage from "../../../components/PopupMessage";
 import Select from "components/Select";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
+import ReactDatetime from "react-datetime";
 
-import { InputGroup } from "reactstrap";
+import {
+  FormGroup,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
+} from "reactstrap";
 
 class InsertOrUpadte extends Component {
   constructor(props) {
@@ -97,7 +103,7 @@ class InsertOrUpadte extends Component {
   };
 
   onChangeValue = (name) => (e) => {
-    let value = e.target.value;
+    let value = e && e.target ? e.target.value : e;
 
     if (name === "marketId" || name === "quantity") {
       value = Number(value);
@@ -228,26 +234,34 @@ class InsertOrUpadte extends Component {
             <p className="form-error-message">{errors.batchNumber || ""}</p>
           </div>
         </div>
-        <div
-          className="wrap-insert-or-update-zone-item"
-          style={{
-            pointerEvents: "none",
-            opacity: ".5",
-          }}
-        >
+        <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
             Ngày tạo&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly={isShowForEdit}
-                type="date"
-                value={batchNumber || new Date().toISOString().split("T")[0]}
-                onChange={this.onChangeValue("batchNumber")}
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
+            <FormGroup>
+              <InputGroup className="input-group-alternative css-border-input ">
+                <InputGroupAddon addonType="prepend" style={{ height: 32 }}>
+                  <InputGroupText>
+                    <i className="ni ni-calendar-grid-58" />
+                  </InputGroupText>
+                </InputGroupAddon>
+
+                <ReactDatetime
+                  inputProps={{
+                    placeholder: "Ngày tạo",
+                    name: "batchNumber",
+                  }}
+                  value={batchNumber}
+                  timeFormat={false}
+                  dateFormat="DD-MM-YYYY"
+                  onChange={this.onChangeValue("batchNumber")}
+                />
+              </InputGroup>
+              <p className="form-error-message margin-bottom-0">
+                {errors.batchNumber || ""}
+              </p>
+            </FormGroup>
 
             <p className="form-error-message">{errors.batchNumber || ""}</p>
           </div>
