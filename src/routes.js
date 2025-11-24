@@ -61,6 +61,7 @@ import PlantingZone from "views/pages/PlantingZone";
 import ConfigSystem from "views/pages/ConfigSystem";
 import ImportProduct from "views/pages/ImportProduct";
 import ProductManagement from "views/pages/ProductManagement";
+import MaterialManagement from "views/pages/MaterialManagement";
 import ExportProduct from "views/pages/ExportProduct";
 import InventoryManagement from "views/pages/InventoryManagement";
 import AdjustmentManagement from "views/pages/AdjustmentManagement";
@@ -323,6 +324,14 @@ var routes = [
     name: NAVBAR_ITEM.PLANGTINGZONE_LIST,
     icon: "ni ni-bullet-list-67 text-blue",
     component: PlantingZone,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
+    path: "/quan_ly_nguyen_vat_lieu",
+    name: NAVBAR_ITEM.MATERIAL_MANAGEMENT,
+    icon: "ni ni-bullet-list-67 text-blue",
+    component: MaterialManagement,
     layout: "/trang_chu",
     key: 2,
   },
@@ -923,6 +932,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "DeclarationInformations",
     component: DeclarationInformations,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "MaterialManagements",
+    component: MaterialManagement,
   },
   {
     layout: LAYOUT_HOME,

@@ -816,6 +816,7 @@ export const NAVBAR_ITEM = {
     PLANTINGTYPE_LIST: 'Loại vùng sản xuất',
     PLANGTINGZONE_LIST: 'vùng sản xuất',
     PRODUCT_MANAGEMENT: 'Quản lý hàng hóa',
+    MATERIAL_MANAGEMENT: 'Quản lý nguyên vật liệu',
     IMPORT_PRODUCT: 'Nhập hàng hóa',
     EXPORT_PRODUCT: 'Xuất hàng hóa',
     MATERIALGROUP: 'Nhóm sản phẩm',
@@ -933,6 +934,16 @@ export const PRODUCTS = [
 
 export const LIMIT_ITEM_IN_PAGE = 10;
 export const LOADING_TIME = 1000;
+
+export const MATERIAL_MANAGEMENT = [
+    'Stt',
+    'Hình ảnh',
+    'Thông tin',
+    'Trạng thái',
+    'Xác thực',
+    'Loại vật liệu',
+]
+
 
 export const PRODUCT_MANAGEMENT = [
     'Stt',
