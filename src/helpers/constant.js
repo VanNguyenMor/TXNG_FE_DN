@@ -815,6 +815,7 @@ export const NAVBAR_ITEM = {
     STAMP_PROVIDE: 'Quản lý cấp phát tem',
     PLANTINGTYPE_LIST: 'Loại vùng sản xuất',
     PLANGTINGZONE_LIST: 'vùng sản xuất',
+    PRODUCT_MANAGEMENT: 'Quản lý hàng hóa',
     IMPORT_PRODUCT: 'Nhập hàng hóa',
     EXPORT_PRODUCT: 'Xuất hàng hóa',
     MATERIALGROUP: 'Nhóm sản phẩm',
@@ -932,6 +933,15 @@ export const PRODUCTS = [
 
 export const LIMIT_ITEM_IN_PAGE = 10;
 export const LOADING_TIME = 1000;
+
+export const PRODUCT_MANAGEMENT = [
+    'Stt',
+    'Hình ảnh',
+    'Thông tin',
+    'Trạng thái',
+    'Xác thực',
+]
+
 
 export const LOGGING_INFORMATION = [
     'Stt',

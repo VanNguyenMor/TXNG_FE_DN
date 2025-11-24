@@ -1,10 +1,7 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import {
-  EXPORT_PRODUCT,
-  IMPORT_EXPORT_PRODUCT_STATUS,
-} from "../../../helpers/constant";
+import { PRODUCT_MANAGEMENT } from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { actionZoneCreators } from "../../../actions/ZoneListActions";
@@ -19,13 +16,11 @@ import MenuButton from "../../../assets/img/buttons/menu.png";
 import WarningPopup from "../../../components/WarningPopup";
 import PopupMessage from "../../../components/PopupMessage";
 import { handleGenTree } from "../../../helpers/trees";
-import Select from "../../../components/Select";
 import CreateNewPopup from "../../../components/CreateNewPopup";
 import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction";
-import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ReactDatetime from "react-datetime";
+import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 
 // reactstrap components
 import {
@@ -34,38 +29,38 @@ import {
   Container,
   Row,
   Spinner,
-  Input,
-  Button,
   ButtonDropdown,
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
 } from "reactstrap";
 
-import InsertOrUpdate from "./InsertOrUpdate.js";
+import ShowHistoryData from "./ShowHistoryData.js";
+import DetailLogging from "./DetailLogging.js";
+import ShowEditData from "./ShowEditData.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 
-class ExportProduct extends Component {
+class ProductManagement extends Component {
   constructor(props) {
     super(props);
 
     const dataMock = [
       {
         id: 1,
-        receiptNumber: "N001",
-        creationDate: "2025-11-17",
-        customer: "Khách hàng A",
-        importer: "Nguyễn A",
+        img: "",
+        title: "Dép Cross",
+        unit: "Kg",
         status: 1,
+        authentic: 1,
       },
       {
         id: 2,
-        receiptNumber: "N002",
-        creationDate: "2025-11-16",
-        customer: "Khách hàng B",
-        importer: "Trần B",
+        img: "",
+        title: "Sứ Emax",
+        unit: "Kg",
         status: 1,
+        authentic: 0,
       },
     ];
 
@@ -89,12 +84,13 @@ class ExportProduct extends Component {
       province: [],
       ward: [],
       provinceIDCurrent: null,
-      headerTitle: EXPORT_PRODUCT,
+      headerTitle: PRODUCT_MANAGEMENT,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
       totalElement: 0,
       listLength: 0,
+      createNewModal: false,
       currentPage: 0,
       filter: {
         search: "",
@@ -103,50 +99,106 @@ class ExportProduct extends Component {
         page: null,
         limit: null,
       },
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-      toDate: new Date(),
       dataInsert: {},
       errorInserts: {},
-      isShowForEdit: false,
+      isShowForHistoryList: false,
+      isShowForDetail: false,
       editId: null,
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
+      warningBlockProductModal: false,
+      blockProductId: null,
       STATUS_OPTIONS: [
-        { id: 0, name: "Chưa duyệt" },
-        { id: 1, name: "Đã duyệt" },
+        { id: 0, title: "Chưa khóa" },
+        { id: 1, title: "Đã khóa" },
       ],
-      SUPPLIER_LIST: [
-        { id: 1, name: "Khách hàng A" },
-        { id: 2, name: "Khách hàng B" },
+      AUTHENTIC_OPTIONS: [
+        { id: 0, title: "Chưa xác thực" },
+        { id: 1, title: "Đã xác thực" },
       ],
-      INGREDIENT_LIST: [
+      HISTORY_DATA: [
+        {
+          time: "15:02",
+          date: "02/10/2025",
+          action: "Xuất kho để sử dụng ghi nhật ký",
+          details: {
+            "Số lượng": "20 Đôi",
+            "Kho hàng": "Kho hàng 1",
+            "Người thực hiện": "Công ty Việt Mỹ",
+          },
+        },
+        {
+          time: "14:32",
+          date: "24/09/2025",
+          action: "Lưu kho từ nhật ký: TGI02001587000000012",
+          details: {
+            "Số lô": "Test24092025",
+            "Số lượng": "30.00 Đôi",
+            "Kho hàng": "Kho hàng 1",
+            "Người xuất kho": "Công ty Việt Mỹ",
+          },
+        },
+      ],
+      UNITS_DATA: [
+        { id: 1, title: "Cái" },
+        { id: 2, title: "Đôi" },
+        { id: 3, title: "Thùng" },
+        { id: 4, title: "Hộp" },
+        { id: 5, title: "Bộ" },
+      ],
+      JOB_DATA: [
+        { id: 0, title: "Ngành nghề 1" },
+        { id: 1, title: "Ngành nghề 2" },
+      ],
+      PRODUCT_GROUP_DATA: [
+        { id: 0, title: "Nhóm sản phẩm 1" },
+        { id: 1, title: "Nhóm sản phẩm 2" },
+      ],
+      PRODUCT_CATE_DATA: [
+        { id: 0, title: "Loại sản phẩm 1" },
+        { id: 1, title: "Loại sản phẩm 2" },
+      ],
+      MANUFACTURER_DATA: [
+        { id: 0, title: "Nhà sản xuất 1" },
+        { id: 1, title: "Nhà sản xuất 2" },
+      ],
+      ORIGIN_DATA: [
+        { id: 1, title: "Việt Nam" },
+        { id: 2, title: "Trung Quốc" },
+        { id: 3, title: "Hàn Quốc" },
+        { id: 4, title: "Nhật Bản" },
+        { id: 5, title: "Thái Lan" },
+        { id: 6, title: "Mỹ" },
+        { id: 7, title: "EU" },
+      ],
+      UNIT_DATA: [
         {
           id: 1,
-          name: "Lô hàng A",
-          unit: 1,
-          quantity: 20,
-          warehouseId: 1,
+          title: "kg",
         },
         {
           id: 2,
-          name: "Lô hàng B",
-          unit: 1,
-          quantity: 1,
-          warehouseId: 2,
+          title: "tấn",
         },
       ],
-      PRODUCT_LIST: [
-        { id: 1, name: "Sản phẩm A" },
-        { id: 2, name: "Sản phẩm B" },
+      DATE_DATA: [
+        {
+          id: 1,
+          title: "Năm",
+        },
+        {
+          id: 2,
+          title: "Tháng",
+        },
+        {
+          id: 3,
+          title: "Ngày",
+        },
       ],
-      WAREHOUSE_LIST: [
-        { id: 1, name: "Kho hàng A" },
-        { id: 2, name: "Kho hàng B" },
-      ],
-      UNIT_LIST: [
-        { id: 1, name: "Cái" },
-        { id: 2, name: "Chiếc" },
+      USAGE_TIME_TYPE_DATA: [
+        { id: 1, title: "Từ ngày mở bao bì" },
+        { id: 2, title: "Từ ngày sản xuất" },
       ],
     };
   }
@@ -293,21 +345,24 @@ class ExportProduct extends Component {
     );
   };
 
-  handleModal = (stutus, openModal, closeModal) => {
-    if (stutus || this.state.isShowForEdit) {
-      closeModal();
+  handleModal = (status, openModal, closeModal) => {
+    if (
+      status ||
+      this.state.isShowForHistoryList ||
+      this.state.isShowForDetail
+    ) {
+      closeModal && closeModal();
     } else {
-      openModal();
+      openModal && openModal();
     }
 
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        isShowForEdit: false,
-        editId: null,
-      };
+    this.setState({
+      isShowForHistoryList: false,
+      isShowForDetail: false,
+      editId: null,
     });
   };
+
   toggle = (el, val) => {
     let { collapseList } = this.state;
 
@@ -322,12 +377,12 @@ class ExportProduct extends Component {
       return {};
     }
     const { dataInsert, data, editId, currentRow } = this.state;
-    const receiptNumber = dataInsert.receiptNumber;
+    const title = dataInsert.title;
 
     const errorInserts = {};
 
-    if (!receiptNumber) {
-      errorInserts.receiptNumber = "Số phiếu không được bỏ trống";
+    if (!title) {
+      errorInserts.title = "Số phiếu không được bỏ trống";
     }
 
     return errorInserts;
@@ -364,10 +419,21 @@ class ExportProduct extends Component {
     );
   };
 
-  onEditData = (id) => () => {
+  onShowHistoryModal = (e) => () => {
     this.setState((previousState) => {
       return {
-        isShowForEdit: true,
+        ...previousState,
+        isShowForHistoryList: true,
+        editId: e.id,
+        currentHistoryData: this.state.HISTORY_DATA,
+      };
+    });
+  };
+
+  onShowDetail = (id) => () => {
+    this.setState((previousState) => {
+      return {
+        isShowForDetail: true,
       };
     });
   };
@@ -419,7 +485,8 @@ class ExportProduct extends Component {
   };
 
   toggleModal = (state, type) => {
-    if (this.state[state] && type == 1) {
+    if (type == 1) {
+      this.setState({ [state]: false });
       return;
     } else {
       this.setState({
@@ -436,6 +503,63 @@ class ExportProduct extends Component {
     }
 
     return line;
+  };
+
+  showTitleWithPlantingZoneId = (id) => {
+    const { PLANTINGZONE_OPTIONS } = this.state;
+
+    let queue = PLANTINGZONE_OPTIONS ? [...PLANTINGZONE_OPTIONS] : [];
+
+    while (queue.length > 0) {
+      const zone = queue.shift();
+
+      if (zone && zone.id === id) {
+        return zone.title;
+      }
+
+      if (zone && zone.children && zone.children.length > 0) {
+        queue.push(...zone.children);
+      }
+    }
+    return "Không tìm thấy vùng trồng trọt";
+  };
+  showTitleWithAuthentic = (id) => {
+    const { AUTHENTIC_OPTIONS } = this.state;
+
+    let queue = AUTHENTIC_OPTIONS ? [...AUTHENTIC_OPTIONS] : [];
+
+    while (queue.length > 0) {
+      const authentic = queue.shift();
+
+      if (authentic && authentic.id === id) {
+        return authentic.title;
+      }
+
+      if (authentic && authentic.children && authentic.children.length > 0) {
+        queue.push(...authentic.children);
+      }
+    }
+
+    return "";
+  };
+  showTitleWithStatus = (id) => {
+    const { STATUS_OPTIONS } = this.state;
+
+    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
+
+    while (queue.length > 0) {
+      const status = queue.shift();
+
+      if (status && status.id === id) {
+        return status.title;
+      }
+
+      if (status && status.children && status.children.length > 0) {
+        queue.push(...status.children);
+      }
+    }
+
+    return "";
   };
 
   renderTable = (data, isDisableEdit, isDisableDelete) => {
@@ -470,19 +594,30 @@ class ExportProduct extends Component {
             {autoIndex + 1}
           </td>
           <td className="table-scale-col">
-            <span style={{ color: `${e.color}` }}>{e.receiptNumber}</span>
+            <img
+              style={{ width: 82, height: 82 }}
+              src={e.icon ? e.icon : NoImg}
+              alt="..."
+            />
           </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.creationDate}</span>
+          <td className="table-scale-col" style={{ textAlign: "left" }}>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              Tên sản phẩm: {e.title}
+            </span>
+            <br></br>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              Đơn vị tính: {e.unit}
+            </span>
           </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.customer}</span>
-          </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
+
+          <td className={renderClass}>
             <span style={{ color: `${e.color}` }}>
-              {e.status === 1
-                ? IMPORT_EXPORT_PRODUCT_STATUS.ACTIVE
-                : IMPORT_EXPORT_PRODUCT_STATUS.DEACTIVE}
+              {this.showTitleWithStatus(e.status)}
+            </span>
+          </td>
+          <td className={renderClass}>
+            <span style={{ color: `${e.color}` }}>
+              {this.showTitleWithAuthentic(e.authentic)}
             </span>
           </td>
           <td>
@@ -500,10 +635,23 @@ class ExportProduct extends Component {
                       </DropdownToggle>
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
-                          <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
+                          <DropdownItem onClick={this.onShowDetail(e)}>
+                            Xem chi tiết
                           </DropdownItem>
                         )}
+                        {isDisableEdit == true ? null : (
+                          <DropdownItem onClick={this.onShowHistoryModal(e)}>
+                            Xem lịch sử
+                          </DropdownItem>
+                        )}
+                        {isDisableEdit == true ? null : (
+                          <DropdownItem
+                            onClick={this.onShowBlockProductModal(e)}
+                          >
+                            Khóa sản phẩm
+                          </DropdownItem>
+                        )}
+
                         {isDisableEdit == true ||
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
@@ -529,11 +677,37 @@ class ExportProduct extends Component {
     return list;
   };
 
+  onShowBlockProductModal = (product) => () => {
+    this.setState({
+      warningBlockProductModal: true,
+      blockProductId: product.id,
+      blockProductTitle: product.title,
+    });
+  };
+
+  toggleBlockProductModal = () => {
+    this.setState({
+      warningBlockProductModal: false,
+      blockProductId: null,
+      blockProductTitle: null,
+    });
+  };
+
+  handleBlockProduct = () => {
+    const { blockProductId, blockProductTitle } = this.state;
+
+    this.toggleBlockProductModal();
+
+    console.log(`Đang tiến hành khóa sản phẩm ID: ${blockProductId}`);
+    alert(`Khóa sản phẩm "${blockProductTitle}" thành công`);
+  };
+
   render() {
     const {
       warningPopupModal,
       editId,
-      isShowForEdit,
+      isShowForDetail,
+      isShowForHistoryList,
       errorInserts,
       status,
       headerTitle,
@@ -543,17 +717,20 @@ class ExportProduct extends Component {
       listLength,
       totalPage,
       totalElement,
-      fromDate,
-      toDate,
       createNewModal,
       popupMessage,
       activeCreateSubmit,
+      currentHistoryData,
       STATUS_OPTIONS,
-      SUPPLIER_LIST,
-      INGREDIENT_LIST,
-      PRODUCT_LIST,
-      WAREHOUSE_LIST,
-      UNIT_LIST,
+      UNITS_DATA,
+      JOB_DATA,
+      PRODUCT_GROUP_DATA,
+      PRODUCT_CATE_DATA,
+      MANUFACTURER_DATA,
+      ORIGIN_DATA,
+      UNIT_DATA,
+      DATE_DATA,
+      USAGE_TIME_TYPE_DATA,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -606,117 +783,67 @@ class ExportProduct extends Component {
                           })
                         )
                       }
+                      readOnly={isShowForHistoryList}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
-                        isShowForEdit ? "Sửa phiếu xuất" : "Thêm phiếu xuất"
+                        isShowForDetail
+                          ? "Chi tiết sản phẩm"
+                          : isShowForHistoryList
+                          ? "Lịch sử sản phẩm"
+                          : "Thêm mới sản phẩm"
                       }
+                      isReadOnly={isShowForHistoryList}
                       moduleBody={
-                        <InsertOrUpdate
-                          id={editId}
-                          errors={errorInserts}
-                          onHandleChangeValue={this.onHandleChangeValue}
-                          STATUS_OPTIONS={STATUS_OPTIONS}
-                          SUPPLIER_LIST={SUPPLIER_LIST}
-                          INGREDIENT_LIST={INGREDIENT_LIST}
-                          PRODUCT_LIST={PRODUCT_LIST}
-                          WAREHOUSE_LIST={WAREHOUSE_LIST}
-                          UNIT_LIST={UNIT_LIST}
-                        />
+                        <div>
+                          {isShowForDetail ? (
+                            <DetailLogging
+                              id={editId}
+                              errors={errorInserts}
+                              onHandleChangeValue={this.onHandleChangeValue}
+                              STATUS_OPTIONS={STATUS_OPTIONS}
+                              UNITS_DATA={UNITS_DATA}
+                              JOB_DATA={JOB_DATA}
+                              PRODUCT_GROUP_DATA={PRODUCT_GROUP_DATA}
+                              PRODUCT_CATE_DATA={PRODUCT_CATE_DATA}
+                              MANUFACTURER_DATA={MANUFACTURER_DATA}
+                              ORIGIN_DATA={ORIGIN_DATA}
+                              UNIT_DATA={UNIT_DATA}
+                              DATE_DATA={DATE_DATA}
+                              isShowForDetail={isShowForDetail}
+                              USAGE_TIME_TYPE_DATA={USAGE_TIME_TYPE_DATA}
+                            />
+                          ) : isShowForHistoryList ? (
+                            <ShowHistoryData
+                              id={editId}
+                              errors={errorInserts}
+                              onHandleChangeValue={this.onHandleChangeValue}
+                              STATUS_OPTIONS={STATUS_OPTIONS}
+                              historyData={currentHistoryData}
+                            />
+                          ) : (
+                            <DetailLogging
+                              errors={errorInserts}
+                              onHandleChangeValue={this.onHandleChangeValue}
+                              STATUS_OPTIONS={STATUS_OPTIONS}
+                              UNITS_DATA={UNITS_DATA}
+                              JOB_DATA={JOB_DATA}
+                              PRODUCT_GROUP_DATA={PRODUCT_GROUP_DATA}
+                              PRODUCT_CATE_DATA={PRODUCT_CATE_DATA}
+                              MANUFACTURER_DATA={MANUFACTURER_DATA}
+                              ORIGIN_DATA={ORIGIN_DATA}
+                              UNIT_DATA={UNIT_DATA}
+                              DATE_DATA={DATE_DATA}
+                              USAGE_TIME_TYPE_DATA={USAGE_TIME_TYPE_DATA}
+                            />
+                          )}
+                        </div>
                       }
-                      isShowForEdit={isShowForEdit}
+                      isShowForEdit={isShowForHistoryList || isShowForDetail}
                       handleModal={this.handleModal}
                       onConfirm={this.onConfirm}
                       handleSubmitSearchForm={() =>
                         this.handleSubmitSearchForm()
-                      }
-                      typeSearch={
-                        <>
-                          <div
-                            className="div_flex"
-                            style={{ marginBottom: "10px", flex: "wrap" }}
-                          >
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Từ ngày
-                              </label>
-                              <div>
-                                <ReactDatetime
-                                  inputProps={{
-                                    placeholder: "dd/mm/yyyy",
-                                    to: "fromDate",
-                                  }}
-                                  value={fromDate || ""}
-                                  timeFormat={false}
-                                  dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
-                                />
-                              </div>
-                            </div>
-
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Đến ngày
-                              </label>
-                              <div>
-                                <ReactDatetime
-                                  inputProps={{
-                                    placeholder: "dd/mm/yyyy",
-                                    name: "toDate",
-                                  }}
-                                  value={toDate || ""}
-                                  timeFormat={false}
-                                  dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Trạng thái
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Lọc theo trạng thái"
-                                  data={STATUS_OPTIONS}
-                                  labelName="name"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-btn">
-                              <label className="form-control-label">
-                                &nbsp;
-                              </label>
-                              <Button
-                                className="btn-warning-cs"
-                                color="default"
-                                type="button"
-                                size="md"
-                                onClick={() => {
-                                  this.handleSubmitSearchForm();
-                                }}
-                              >
-                                <img src={SearchImg} alt="Tìm kiếm" />
-                                <span>Tìm kiếm</span>
-                              </Button>
-                            </div>
-                          </div>
-                        </>
                       }
                     />
 
@@ -783,22 +910,31 @@ class ExportProduct extends Component {
               handleWarning={this.handleDeleteRow}
             />
 
+            <WarningPopup
+              moduleTitle="Xác nhận Khóa Sản phẩm"
+              moduleBody={
+                <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+                  Bạn có chắc chắn muốn **Khóa sản phẩm:{" "}
+                  {this.state.blockProductTitle}** không?
+                </p>
+              }
+              warningPopupModal={this.state.warningBlockProductModal}
+              toggleModal={this.toggleBlockProductModal}
+              handleWarning={this.handleBlockProduct}
+            />
+
             <CreateNewPopup
               createNewModal={createNewModal}
               moduleTitle="Thêm dữ liệu"
               type100={true}
               moduleBody={
-                <InsertOrUpdate
-                  id={editId}
-                  errors={errorInserts}
-                  onHandleChangeValue={this.onHandleChangeValue}
-                  STATUS_OPTIONS={STATUS_OPTIONS}
-                  SUPPLIER_LIST={SUPPLIER_LIST}
-                  INGREDIENT_LIST={INGREDIENT_LIST}
-                  PRODUCT_LIST={PRODUCT_LIST}
-                  WAREHOUSE_LIST={WAREHOUSE_LIST}
-                  UNIT_LIST={UNIT_LIST}
-                />
+                <>
+                  <ShowEditData
+                    id={editId}
+                    errors={errorInserts}
+                    onHandleChangeValue={this.onHandleChangeValue}
+                  />
+                </>
               }
               toggleModal={this.toggleModal}
               activeSubmit={activeCreateSubmit}
@@ -839,5 +975,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  ExportProduct
+  ProductManagement
 );

@@ -111,11 +111,6 @@ class InsertOrUpadte extends Component {
         return newState;
       },
       () => {
-        console.log(
-          "new state.warehouseId:",
-          this.state.warehouseId,
-          typeof this.state.warehouseId
-        );
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
         }

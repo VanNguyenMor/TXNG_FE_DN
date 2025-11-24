@@ -142,7 +142,7 @@ export const MENU_DATA = [
     isCompany: 0,
     sortOrder: 8,
     parentID: "005",
-    uniqueCode: "Configs",
+    uniqueCode: "ProductManagements",
     status: 1,
   },
   {

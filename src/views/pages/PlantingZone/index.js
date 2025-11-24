@@ -8,9 +8,6 @@ import { actionZoneCreators } from "../../../actions/ZoneListActions";
 import { platingZoneAction } from "../../../actions/PlantingZoneAction";
 import { areaDataAction } from "../../../actions/AreaDataAction";
 import classes from "./index.module.css";
-import EditIcon from "../../../assets/img/buttons/edit.svg";
-import DeleteIcon from "../../../assets/img/buttons/delete.png";
-import Pagination from "components/Pagination";
 import HeaderTable from "components/HeaderTable";
 import HeadTitleTable from "components/HeadTitleTable";
 import SearchModal from "./SearchModal";
@@ -23,7 +20,6 @@ import Select from "../../../components/Select";
 import $ from "jquery";
 import "./PlantingZone.css";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
-import Fancybox from "../../../components/FancyBox";
 import CreateNewPopup from "../../../components/CreateNewPopup";
 import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction";
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
@@ -645,54 +641,6 @@ class PlantingZone extends Component {
               Địa điểm:&nbsp;<i>{e.gpsAddress}</i>
             </span>
           </td>
-          {/* <td><span>{e.plantingTypeName}</span> </td> */}
-          {/* <td>
-            <Fancybox>
-              <p>
-                <a
-                  href={'https://maps.google.com/maps?q=' +
-                    e.gps +
-                    '&hl=es;z=14' +
-                    '&output=embed'}
-                  data-fancybox
-                  data-type="iframe"
-                  data-preload="false"
-                  data-width="640"
-                  data-height="480"
-                  arrows="false"
-                >
-                  <span>{e.gps}</span>
-                </a>
-              </p>
-            </Fancybox>
-          </td> */}
-          {/* <td>{e.gpsAddress}</td> */}
-          {/* <td>
-            {e.gpSs && e.gpSs.split(';').filter(p => p != '').map((x, key) =>
-              <>
-                <span><b>{key + 1}</b>{') ' + x}</span><br />
-                <Fancybox>
-                  <p>
-                    <a
-                      href={'https://maps.google.com/maps?q=' +
-                        x +
-                        '&hl=es;z=14' +
-                        '&output=embed'}
-                      data-fancybox
-                      data-type="iframe"
-                      data-preload="false"
-                      data-width="640"
-                      data-height="480"
-                      arrows="false"
-                    >
-                      <span><b>{key + 1}</b>{') ' + x}</span>
-                    </a>
-                  </p>
-                </Fancybox>
-              </>
-            )}
-          </td> */}
-          {/* <td>{e.gpSs}</td> */}
           <td>
             {collapseList
               .filter((item) => item.id === e.id)
@@ -748,11 +696,6 @@ class PlantingZone extends Component {
       data,
       message,
       isLoaded,
-      beginItem,
-      endItem,
-      listLength,
-      totalPage,
-      totalElement,
       filter,
       createNewModal,
       popupMessage,
@@ -910,63 +853,15 @@ class PlantingZone extends Component {
                           }}
                         />
                         <tbody>
-                          {
-                            Array.isArray(data) &&
-                              this.renderTable(
-                                data,
-                                isDisableEdit,
-                                isDisableDelete
-                              )
-                            // data
-                            // 	.filter((item, key) => key >= beginItem && key < endItem)
-                            // 	.map((item, key) => (
-                            // 		<tr key={key}>
-                            // 			<td>{item.index}</td>
-                            // 			<td style={{ textAlign: 'left' }}>{item.name}</td>
-                            // 			<td>
-                            // 				{isDisableEdit == true && isDisableDelete == true ? null : (
-                            // 					<ButtonDropdown isOpen={item.collapse} toggle={() => this.toggle(key, item.id)}>
-                            // 						<DropdownToggle>
-                            // 							<img src={MenuButton} />
-                            // 						</DropdownToggle>
-
-                            // 						<DropdownMenu>
-                            // 							{isDisableEdit == false ? (
-                            // 								<DropdownItem
-                            // 									onClick={this.onEditZone(item)}
-                            // 								>
-                            // 									Sửa
-                            // 								</DropdownItem>
-                            // 							) : null}
-                            // 							{isDisableEdit == true || isDisableDelete == true ? null : (
-                            // 								<DropdownItem divider />
-                            // 							)
-                            // 							}
-                            // 							{isDisableDelete == false ? (
-                            // 								<DropdownItem
-                            // 									onClick={this.onDeleteZone(item.id)}
-                            // 								>
-                            // 									Xoá
-                            // 								</DropdownItem>
-                            // 							) : null}
-                            // 						</DropdownMenu>
-                            // 					</ButtonDropdown>
-                            // 				)}
-                            // 			</td>
-                            // 		</tr>
-                            // 	))
-                          }
+                          {Array.isArray(data) &&
+                            this.renderTable(
+                              data,
+                              isDisableEdit,
+                              isDisableDelete
+                            )}
                         </tbody>
                       </Table>
                     </Card>
-
-                    {/* Pagination */}
-                    {/* {
-												// Page of Table
-												Array.isArray(data) > 0 && (
-													<Pagination data={data} listLength={listLength} totalPage={totalPage} totalElement={totalElement} handlePageClick={this.handlePageClick} />
-												)
-											} */}
                   </div>
                 </Row>
               )}

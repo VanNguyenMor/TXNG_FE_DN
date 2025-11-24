@@ -1,0 +1,15 @@
+.cardHeader {
+  background-color: #09b2fd;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.dateBadge {
+  color: #333;
+  font-size: 13px;
+  padding-right: 0;
+}
+
+.title {
+  color: #09b2fd;
+}
