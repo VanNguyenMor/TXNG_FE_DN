@@ -9,7 +9,7 @@ import {
 } from "reactstrap";
 import classes from "./HistoryListTable.module.css";
 
-const HistoryListTable = ({ historyData = [], productName = "Sản phẩm" }) => {
+const HistoryListTable = ({ historyData = [], tableTitle = "Sản phẩm" }) => {
   if (historyData.length === 0) {
     return (
       <Card className="mt-3">
@@ -23,7 +23,7 @@ const HistoryListTable = ({ historyData = [], productName = "Sản phẩm" }) =>
   return (
     <Card className="shadow-sm">
       <CardHeader tag="h4" className={`p-3 ${classes.cardHeader}`}>
-        Lịch sử {productName}
+        Lịch sử {tableTitle}
       </CardHeader>
       <ListGroup flush>
         {historyData.map((item, index) => (

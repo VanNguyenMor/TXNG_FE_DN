@@ -1,7 +1,10 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import { PRODUCT_MANAGEMENT } from "../../../helpers/constant";
+import {
+  MATERIAL_MANAGEMENT,
+  PRODUCT_MANAGEMENT,
+} from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { actionZoneCreators } from "../../../actions/ZoneListActions";
@@ -40,7 +43,7 @@ import ShowEditData from "./ShowEditData.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 
-class ProductManagement extends Component {
+class MaterialManagement extends Component {
   constructor(props) {
     super(props);
 
@@ -48,17 +51,23 @@ class ProductManagement extends Component {
       {
         id: 1,
         img: "",
-        title: "Dép Cross",
+        title: "Dép Crosss",
+        tradeName: "Dép Crosss 2",
+        materialGroupId: "Nhóm 2",
         unit: "Kg",
         status: 1,
+        typeId: 1,
         authentic: 1,
       },
       {
         id: 2,
         img: "",
         title: "Sứ Emax",
+        tradeName: "Dép Crosss 2",
+        materialGroupId: "Nhóm 3",
         unit: "Kg",
         status: 1,
+        typeId: 2,
         authentic: 0,
       },
     ];
@@ -70,11 +79,11 @@ class ProductManagement extends Component {
       create: [],
       delete: [],
       isLoaded: null,
-      tableTitle: "",
       status: null,
       open: false,
       openAddNew: false,
       message: "",
+      tableTitle: "",
       history: [],
       roles: [],
       zones: [],
@@ -84,7 +93,7 @@ class ProductManagement extends Component {
       province: [],
       ward: [],
       provinceIDCurrent: null,
-      headerTitle: PRODUCT_MANAGEMENT,
+      headerTitle: MATERIAL_MANAGEMENT,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
@@ -140,28 +149,34 @@ class ProductManagement extends Component {
           },
         },
       ],
+      MATERIAL_TYPE_DATA: [
+        {
+          id: 1,
+          title: "Loại thông thường",
+        },
+        {
+          id: 2,
+          title: "Loại đặc biệt",
+        },
+      ],
+      MATERIAL_GROUP_DATA: [
+        {
+          id: 1,
+          title: "Bugi",
+          unit: "cái (pcs)",
+        },
+        {
+          id: 2,
+          title: "Bao bì",
+          unit: "kg",
+        },
+      ],
       UNITS_DATA: [
         { id: 1, title: "Cái" },
         { id: 2, title: "Đôi" },
         { id: 3, title: "Thùng" },
         { id: 4, title: "Hộp" },
         { id: 5, title: "Bộ" },
-      ],
-      JOB_DATA: [
-        { id: 0, title: "Ngành nghề 1" },
-        { id: 1, title: "Ngành nghề 2" },
-      ],
-      PRODUCT_GROUP_DATA: [
-        { id: 0, title: "Nhóm sản phẩm 1" },
-        { id: 1, title: "Nhóm sản phẩm 2" },
-      ],
-      PRODUCT_CATE_DATA: [
-        { id: 0, title: "Loại sản phẩm 1" },
-        { id: 1, title: "Loại sản phẩm 2" },
-      ],
-      MANUFACTURER_DATA: [
-        { id: 0, title: "Nhà sản xuất 1" },
-        { id: 1, title: "Nhà sản xuất 2" },
       ],
       ORIGIN_DATA: [
         { id: 1, title: "Việt Nam" },
@@ -171,34 +186,6 @@ class ProductManagement extends Component {
         { id: 5, title: "Thái Lan" },
         { id: 6, title: "Mỹ" },
         { id: 7, title: "EU" },
-      ],
-      UNIT_DATA: [
-        {
-          id: 1,
-          title: "kg",
-        },
-        {
-          id: 2,
-          title: "tấn",
-        },
-      ],
-      DATE_DATA: [
-        {
-          id: 1,
-          title: "Năm",
-        },
-        {
-          id: 2,
-          title: "Tháng",
-        },
-        {
-          id: 3,
-          title: "Ngày",
-        },
-      ],
-      USAGE_TIME_TYPE_DATA: [
-        { id: 1, title: "Từ ngày mở bao bì" },
-        { id: 2, title: "Từ ngày sản xuất" },
       ],
     };
   }
@@ -425,7 +412,7 @@ class ProductManagement extends Component {
         ...previousState,
         isShowForHistoryList: true,
         editId: e.id,
-        tableTitle: "LỊCH SỬ NGUYÊN VẬT LIỆU",
+        tableTitle: "NGUYÊN VẬT LIỆU",
         currentHistoryData: this.state.HISTORY_DATA,
       };
     });
@@ -562,6 +549,25 @@ class ProductManagement extends Component {
 
     return "";
   };
+  showTitleWithType = (id) => {
+    const { MATERIAL_TYPE_DATA } = this.state;
+
+    let queue = MATERIAL_TYPE_DATA ? [...MATERIAL_TYPE_DATA] : [];
+
+    while (queue.length > 0) {
+      const type = queue.shift();
+
+      if (type && type.id === id) {
+        return type.title;
+      }
+
+      if (type && type.children && type.children.length > 0) {
+        queue.push(...type.children);
+      }
+    }
+
+    return "";
+  };
 
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
@@ -603,7 +609,15 @@ class ProductManagement extends Component {
           </td>
           <td className="table-scale-col" style={{ textAlign: "left" }}>
             <span style={{ color: `${e.color}`, fontSize: "14px" }}>
-              Tên sản phẩm: {e.title}
+              Tên nguyên vật liệu: {e.title}
+            </span>
+            <br></br>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              Tên thương phẩm: {e.tradeName}
+            </span>
+            <br></br>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              Thuộc nhóm: {e.materialGroupId}
             </span>
             <br></br>
             <span style={{ color: `${e.color}`, fontSize: "14px" }}>
@@ -619,6 +633,11 @@ class ProductManagement extends Component {
           <td className={renderClass}>
             <span style={{ color: `${e.color}` }}>
               {this.showTitleWithAuthentic(e.authentic)}
+            </span>
+          </td>
+          <td className="table-scale-col" style={{ textAlign: "left" }}>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              {this.showTitleWithType(e.typeId)}
             </span>
           </td>
           <td>
@@ -649,7 +668,7 @@ class ProductManagement extends Component {
                           <DropdownItem
                             onClick={this.onShowBlockProductModal(e)}
                           >
-                            Khóa sản phẩm
+                            Khóa vật liệu
                           </DropdownItem>
                         )}
 
@@ -699,8 +718,8 @@ class ProductManagement extends Component {
 
     this.toggleBlockProductModal();
 
-    console.log(`Đang tiến hành khóa sản phẩm ID: ${blockProductId}`);
-    alert(`Khóa sản phẩm "${blockProductTitle}" thành công`);
+    console.log(`Đang tiến hành khóa nguyên vật liệu ID: ${blockProductId}`);
+    alert(`Khóa nguyên vật liệu "${blockProductTitle}" thành công`);
   };
 
   render() {
@@ -718,20 +737,14 @@ class ProductManagement extends Component {
       listLength,
       totalPage,
       totalElement,
-      createNewModal,
       popupMessage,
-      activeCreateSubmit,
       currentHistoryData,
       STATUS_OPTIONS,
-      UNITS_DATA,
-      JOB_DATA,
-      PRODUCT_GROUP_DATA,
-      PRODUCT_CATE_DATA,
-      MANUFACTURER_DATA,
+      MATERIAL_GROUP_DATA,
       ORIGIN_DATA,
-      UNIT_DATA,
-      DATE_DATA,
-      USAGE_TIME_TYPE_DATA,
+      UNITS_DATA,
+      MATERIAL_TYPE_DATA,
+      tableTitle,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -780,7 +793,7 @@ class ProductManagement extends Component {
                             filter: "",
                             orderBy: "",
                             page: null,
-                            limit: null,
+                            limit: null
                           })
                         )
                       }
@@ -789,10 +802,10 @@ class ProductManagement extends Component {
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
                         isShowForDetail
-                          ? "Chi tiết sản phẩm"
+                          ? "Chi tiết nguyên vật liệu"
                           : isShowForHistoryList
-                          ? "Lịch sử sản phẩm"
-                          : "Thêm mới sản phẩm"
+                          ? "Lịch sử nguyên vật liệu"
+                          : "Thêm mới nguyên vật liệu"
                       }
                       isReadOnly={isShowForHistoryList}
                       moduleBody={
@@ -802,40 +815,28 @@ class ProductManagement extends Component {
                               id={editId}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              UNITS_DATA={UNITS_DATA}
-                              JOB_DATA={JOB_DATA}
-                              PRODUCT_GROUP_DATA={PRODUCT_GROUP_DATA}
-                              PRODUCT_CATE_DATA={PRODUCT_CATE_DATA}
-                              MANUFACTURER_DATA={MANUFACTURER_DATA}
-                              ORIGIN_DATA={ORIGIN_DATA}
-                              UNIT_DATA={UNIT_DATA}
-                              DATE_DATA={DATE_DATA}
                               isShowForDetail={isShowForDetail}
-                              USAGE_TIME_TYPE_DATA={USAGE_TIME_TYPE_DATA}
+                              MATERIAL_GROUP_DATA={MATERIAL_GROUP_DATA}
+                              ORIGIN_DATA={ORIGIN_DATA}
+                              UNITS_DATA={UNITS_DATA}
+                              MATERIAL_TYPE_DATA={MATERIAL_TYPE_DATA}
                             />
                           ) : isShowForHistoryList ? (
                             <ShowHistoryData
                               id={editId}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
                               historyData={currentHistoryData}
+                              tableTitle={tableTitle}
                             />
                           ) : (
                             <ShowEditData
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              UNITS_DATA={UNITS_DATA}
-                              JOB_DATA={JOB_DATA}
-                              PRODUCT_GROUP_DATA={PRODUCT_GROUP_DATA}
-                              PRODUCT_CATE_DATA={PRODUCT_CATE_DATA}
-                              MANUFACTURER_DATA={MANUFACTURER_DATA}
+                              MATERIAL_GROUP_DATA={MATERIAL_GROUP_DATA}
                               ORIGIN_DATA={ORIGIN_DATA}
-                              UNIT_DATA={UNIT_DATA}
-                              DATE_DATA={DATE_DATA}
-                              USAGE_TIME_TYPE_DATA={USAGE_TIME_TYPE_DATA}
+                              UNITS_DATA={UNITS_DATA}
+                              MATERIAL_TYPE_DATA={MATERIAL_TYPE_DATA}
                             />
                           )}
                         </div>
@@ -912,10 +913,10 @@ class ProductManagement extends Component {
             />
 
             <WarningPopup
-              moduleTitle="Xác nhận Khóa Sản phẩm"
+              moduleTitle="Xác nhận Khóa nguyên vật liệu"
               moduleBody={
                 <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
-                  Bạn có chắc chắn muốn **Khóa sản phẩm:{" "}
+                  Bạn có chắc chắn muốn **Khóa nguyên vật liệu:{" "}
                   {this.state.blockProductTitle}** không?
                 </p>
               }
@@ -956,5 +957,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  ProductManagement
+  MaterialManagement
 );
