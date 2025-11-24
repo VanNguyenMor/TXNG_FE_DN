@@ -793,7 +793,7 @@ class MaterialManagement extends Component {
                             filter: "",
                             orderBy: "",
                             page: null,
-                            limit: null,
+                            limit: null
                           })
                         )
                       }
