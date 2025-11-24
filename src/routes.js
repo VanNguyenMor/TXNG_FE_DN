@@ -60,6 +60,7 @@ import SaleRegisterReports from "views/pages/SaleRegisterReports";
 import PlantingZone from "views/pages/PlantingZone";
 import ConfigSystem from "views/pages/ConfigSystem";
 import ImportProduct from "views/pages/ImportProduct";
+import ProductManagement from "views/pages/ProductManagement";
 import ExportProduct from "views/pages/ExportProduct";
 import InventoryManagement from "views/pages/InventoryManagement";
 import AdjustmentManagement from "views/pages/AdjustmentManagement";
@@ -322,6 +323,14 @@ var routes = [
     name: NAVBAR_ITEM.PLANGTINGZONE_LIST,
     icon: "ni ni-bullet-list-67 text-blue",
     component: PlantingZone,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
+    path: "/quan_ly_hang_hoa",
+    name: NAVBAR_ITEM.PRODUCT_MANAGEMENT,
+    icon: "ni ni-bullet-list-67 text-blue",
+    component: ProductManagement,
     layout: "/trang_chu",
     key: 2,
   },
@@ -915,6 +924,11 @@ const routeComponents = [
     key: "DeclarationInformations",
     component: DeclarationInformations,
   },
+  {
+    layout: LAYOUT_HOME,
+    key: "ProductManagements",
+    component: ProductManagement,
+  },
   { layout: LAYOUT_HOME, key: "ImportProducts", component: ImportProduct },
   { layout: LAYOUT_HOME, key: "ExportProducts", component: ExportProduct },
   {
@@ -937,7 +951,7 @@ const routeComponents = [
     key: "ImportManagements",
     component: ImportManagement,
   },
-    {
+  {
     layout: LAYOUT_HOME,
     key: "QrCodeManagements",
     component: QrCodeManagement,

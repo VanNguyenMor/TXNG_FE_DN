@@ -1,0 +1,23 @@
+.scrollTable {
+  overflow-y: hidden;
+  overflow-x: auto;
+}
+
+.scrollTable::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.scrollTable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.scrollTable::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.scrollTable::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
