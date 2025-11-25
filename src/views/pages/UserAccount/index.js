@@ -169,24 +169,6 @@ class UserAccount extends Component {
           });
         }
 
-        // Set State - After Update
-        // if (typeof (data.update) !== 'undefined') {
-        // 	if (data.status) {
-        // 		this.setState({ update: data.update, isLoaded: data.isLoading, status: data.status, message: PLEASE_CHECK_CONNECT(data.message) });
-
-        // 		requestUserListStore(JSON.stringify({ "status": null, "roleIDs": "", "userName": "", "fullName": "", "phone": "", "email": "", "position": "", "orderBy": "", "page": null, "limit": null }));
-        // 	}
-        // }
-
-        // Set State - After Create
-        // if (typeof (data.create) !== 'undefined') {
-        // 	this.setState({ update: data.create, isLoaded: data.isLoading, status: data.status, message: PLEASE_CHECK_CONNECT(data.message) });
-
-        // 	if (data.status) {
-        // 		this.setState({ data: [] });
-        // 		requestUserListStore(JSON.stringify({ "status": null, "roleIDs": "", "userName": "", "fullName": "", "phone": "", "email": "", "position": "", "orderBy": "", "page": null, "limit": null }));
-        // 	}
-        // }
       }
     }
   }
@@ -203,7 +185,6 @@ class UserAccount extends Component {
 
   fetchSummary = (data) => {
     const { requestUserListStore, getAllRoleList } = this.props;
-
     requestUserListStore(data);
     getAllRoleList(data);
   }

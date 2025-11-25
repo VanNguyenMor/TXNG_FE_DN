@@ -4,6 +4,7 @@ import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
 import {
   DECLARATION_INFORMATION,
   LOGGING_INFORMATION,
+  RETRIEVE_INFORMATION,
 } from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
@@ -25,7 +26,6 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 
 // reactstrap components
 import {
@@ -45,7 +45,7 @@ import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 
-class DeclarationInformations extends Component {
+class RetrieveInformation extends Component {
   constructor(props) {
     super(props);
 
@@ -56,6 +56,7 @@ class DeclarationInformations extends Component {
         title: "Dùng da bò thật",
         loggingStatus: 1,
         qrStatus: 1,
+        htFeedback: 1,
       },
       {
         id: 2,
@@ -63,6 +64,7 @@ class DeclarationInformations extends Component {
         title: "Dùng kéo cắt da, kéo đã được vệ sinh sạch sẽ",
         loggingStatus: 1,
         qrStatus: 1,
+        htFeedback: 1,
       },
     ];
 
@@ -86,7 +88,7 @@ class DeclarationInformations extends Component {
       province: [],
       ward: [],
       provinceIDCurrent: null,
-      headerTitle: DECLARATION_INFORMATION,
+      headerTitle: RETRIEVE_INFORMATION,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
@@ -145,54 +147,6 @@ class DeclarationInformations extends Component {
           id: 1,
           title: "Chọn nguyên liệu",
         },
-      ],
-      REFERENCE_LIST: [
-        {
-          id: 0,
-          title: "Danh sách tham chiếu 1",
-        },
-        {
-          id: 1,
-          title: "Danh sách tham chiếu 2",
-        },
-      ],
-      LOGGING_DATA_TYPES: [
-        {
-          id: "text_options",
-          title: "Văn bản",
-          childInputs: [
-            {
-              name: "reference_select",
-              label: "Danh sách tham chiếu",
-              type: "select_input",
-              required: true,
-              dataSource: "REFERENCE_LIST",
-              placeholder: "Chọn danh sách tham chiếu...",
-            },
-          ],
-        },
-        {
-          id: "yes_no_options",
-          title: "Có/Không",
-          childInputs: [
-            {
-              name: "case_yes",
-              label: "Trường hợp Có",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "case_no",
-              label: "Trường hợp Không",
-              type: "text",
-              required: true,
-            },
-          ],
-        },
-        { id: "number", title: "Nhập số", childInputs: [] },
-        { id: "time", title: "Chọn thời gian", childInputs: [] },
-        { id: "image", title: "Hình ảnh", childInputs: [] },
-        { id: "location", title: "Định vị", childInputs: [] },
       ],
     };
   }
@@ -564,9 +518,7 @@ class DeclarationInformations extends Component {
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>{e.retrieve}</span>
           </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.title}</span>
-          </td>
+
           <td
             style={{ textAlign: "center", cursor: "pointer" }}
             onClick={() => this.handleClickStatus(e, "loggingStatus")}
@@ -593,6 +545,19 @@ class DeclarationInformations extends Component {
               {e.qrStatus ? "Đã Quét" : "Chưa Quét"}
             </span>
           </td>
+          <td
+            style={{ textAlign: "center", cursor: "pointer" }}
+            onClick={() => this.handleClickStatus(e, "qrStatus")}
+          >
+            <span
+              className={
+                e.htFeedback ? "badge badge-success" : "badge badge-danger"
+              }
+              style={{ minWidth: "50px" }}
+            >
+              {e.htFeedback ? "Có đánh giá" : "Không đánh giá"}
+            </span>
+          </td>
           <td>
             {collapseList
               .filter((item) => item.id === e.id)
@@ -609,7 +574,7 @@ class DeclarationInformations extends Component {
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
                           <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
+                            Xem chi tiết
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
@@ -720,12 +685,12 @@ class DeclarationInformations extends Component {
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
                         isShowForDetail
-                          ? "Chi tiết nhật ký truy xuất"
+                          ? "Chi tiết truy xuất thông tin"
                           : isShowForEdit
-                          ? "Cập nhật nhật ký truy xuất"
+                          ? "Cập nhật truy xuất thông tin"
                           : isShowForWrite
                           ? "Ghi nhật ký truy cập"
-                          : "Thêm/Cập nhật nhật ký truy xuất"
+                          : "Thêm/Cập nhật truy xuất thông tin"
                       }
                       moduleBody={
                         <InsertOrUpdate
@@ -923,5 +888,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  DeclarationInformations
+  RetrieveInformation
 );

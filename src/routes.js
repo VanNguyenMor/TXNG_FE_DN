@@ -96,6 +96,7 @@ import ReportProductByProvice from "views/pages/ReportProductByProvice";
 import ReportListCompany from "views/pages/ReportListCompany";
 import LoggingInformation from "views/pages/LoggingInformation";
 import DeclarationInformations from "views/pages/DeclarationInformations";
+import RetrieveInformation from "views/pages/RetrieveInformation";
 
 import { NAVBAR_ITEM } from "./helpers/constant";
 
@@ -671,6 +672,14 @@ var routes = [
     key: 12,
   },
   {
+    path: "/truy_xuat_thong_tin",
+    name: NAVBAR_ITEM.RETRIEVE_INFORMATION,
+    icon: "ni ni-settings-gear-65",
+    component: RetrieveInformation,
+    layout: "/trang_chu",
+    key: 12,
+  },
+  {
     path: "/ke_khai_thong_tin",
     name: NAVBAR_ITEM.DECLARE_INFORMATION,
     icon: "ni ni-settings-gear-65",
@@ -936,6 +945,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "LoggingInformations",
     component: LoggingInformation,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "RetrieveInformations",
+    component: RetrieveInformation,
   },
   {
     layout: LAYOUT_HOME,
