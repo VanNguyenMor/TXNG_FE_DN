@@ -853,6 +853,7 @@ export const NAVBAR_ITEM = {
     MENU_LIST: 'Menu',
     LOGGING_INFORMATION: 'Nhật ký truy xuất',
     DECLARE_INFORMATION: 'Kê khai thông tin',
+    RETRIEVE_INFORMATION: 'Truy xuất thông tin',
     CONTENT_WEBSITE: 'Cấu hình',
     STAMP_LIST: 'Quản lý dải tem',
     STAMP_PROVIDE: 'Quản lý cấp phát tem',
@@ -1013,6 +1014,14 @@ export const DECLARATION_INFORMATION = [
     'Tên kê khai',
     'Nhật ký',
     'Quét mã',
+]
+
+export const RETRIEVE_INFORMATION = [
+    'Stt',
+    'Tên truy xuất',
+    'Nhật ký',
+    'Quét mã',
+    'HT đánh giá',
 ]
 
 export const UNITS = [
