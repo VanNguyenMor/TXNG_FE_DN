@@ -62,6 +62,7 @@ import ConfigSystem from "views/pages/ConfigSystem";
 import ImportProduct from "views/pages/ImportProduct";
 import ProductManagement from "views/pages/ProductManagement";
 import MaterialManagement from "views/pages/MaterialManagement";
+import SummaryReport from "views/pages/SummaryReport";
 import ExportProduct from "views/pages/ExportProduct";
 import InventoryManagement from "views/pages/InventoryManagement";
 import AdjustmentManagement from "views/pages/AdjustmentManagement";
@@ -332,6 +333,14 @@ var routes = [
     name: NAVBAR_ITEM.MATERIAL_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
     component: MaterialManagement,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
+    path: "/bao_cao_tong_hop",
+    name: NAVBAR_ITEM.SUMMARY_REPORTS,
+    icon: "ni ni-bullet-list-67 text-blue",
+    component: SummaryReport,
     layout: "/trang_chu",
     key: 2,
   },
@@ -932,6 +941,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "DeclarationInformations",
     component: DeclarationInformations,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "SummaryReports",
+    component: SummaryReport,
   },
   {
     layout: LAYOUT_HOME,
