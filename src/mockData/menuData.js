@@ -57,11 +57,11 @@ export const MENU_DATA = [
   {
     id: "007",
     name: "BÁO CÁO",
-    url: "/bao_cao",
+    url: "/bao_cao_tong_hop",
     isCompany: 0,
     sortOrder: 7,
     parentID: null,
-    uniqueCode: "Report",
+    uniqueCode: "SummaryReports",
     status: 1,
     isCategory: true,
   },
@@ -268,11 +268,11 @@ export const MENU_DATA = [
   {
     id: "028",
     name: "Báo cáo",
-    url: "/bao_cao",
+    url: "/bao_cao_tong_hop",
     isCompany: 0,
     sortOrder: 20,
     parentID: "007",
-    uniqueCode: "Report2",
+    uniqueCode: "SummaryReport",
     status: 1,
   },
 ];

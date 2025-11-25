@@ -582,6 +582,49 @@ export const QR_SYSTEM_ARISES= [
     'Trạng thái',
 ];
 
+export const SUMMARY_REPORT_TEM_USE = [
+    'Stt',
+    'Ngày',
+    'SP',
+    'Thuộc dải tem',
+    'Dùng',
+    'Dải tem dùng'
+]
+
+export const SUMMARY_REPORT_SHIPMENT = [
+    'Stt',
+    'Ngày',
+    'Mã lô',
+    'SL tem',
+]
+
+export const SUMMARY_REPORT_PRODUCT_OUTPUT = [
+    'Stt',
+    'Sản phẩm',
+    'ĐVT',
+    'Sản lượng',
+]
+
+export const SUMMARY_REPORT_PRODUCT_REGION = [
+    'Stt',
+    'Vùng',
+    'Sản phẩm',
+    'ĐVT',
+    'Sản lượng',
+]
+
+export const SUMMARY_REPORT_PRODUCT_SELL = [
+    'Stt',
+    'Khách hàng',
+    'Sản phẩm',
+    'ĐVT',
+    'SL',
+    'ĐG',
+    'VAT(%)',
+    'TT',
+    'Người thực hiện',
+]
+
 export const DATA_TYPES = {
     hinhanh: 4,
     banDo: 5,
@@ -817,6 +860,7 @@ export const NAVBAR_ITEM = {
     PLANGTINGZONE_LIST: 'vùng sản xuất',
     PRODUCT_MANAGEMENT: 'Quản lý hàng hóa',
     MATERIAL_MANAGEMENT: 'Quản lý nguyên vật liệu',
+    SUMMARY_REPORTS: 'Báo cáo tổng hợp',
     IMPORT_PRODUCT: 'Nhập hàng hóa',
     EXPORT_PRODUCT: 'Xuất hàng hóa',
     MATERIALGROUP: 'Nhóm sản phẩm',
