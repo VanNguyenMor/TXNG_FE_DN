@@ -69,6 +69,7 @@ import AdjustmentManagement from "views/pages/AdjustmentManagement";
 import ExportManagement from "views/pages/ExportManagement";
 import ImportManagement from "views/pages/ImportManagement";
 import QrCodeManagement from "views/pages/QrCodeManagement";
+import BusinessInformation from "views/pages/BusinessInformation";
 import StampRequestUsed from "views/pages/StampRequestUsed";
 import CompanyListAwaitActivity from "views/pages/CompanyListAwaitActivity";
 import MaterialGroup from "views/pages/MaterialGroup";
@@ -474,6 +475,14 @@ var routes = [
     layout: "/trang_chu",
     key: 2,
   },
+  {
+    path: "/quan_ly_thong_tin_dn",
+    name: NAVBAR_ITEM.BUSINESS_INFORMATION,
+    icon: "ni ni-bullet-list-67 text-blue",
+    component: BusinessInformation,
+    layout: "/trang_chu",
+    key: 2,
+  },
 
   // Admin Fee
   {
@@ -542,7 +551,7 @@ var routes = [
     layout: "/trang_chu",
     key: 5,
   },
- 
+
   // Admin Report
   {
     path: "/bao_cao_tang_truong_doanh_nghiep",
@@ -988,6 +997,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "ImportManagements",
     component: ImportManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "BusinessInformations",
+    component: BusinessInformation,
   },
   {
     layout: LAYOUT_HOME,
