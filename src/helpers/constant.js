@@ -165,11 +165,7 @@ export const PERMISSION_AWAIT_HEADER = [
     'Xoá',
     'Duyệt',
     'Không duyệt',
-    'Xác thực',
-    'Gia hạn',
     'Khoá',
-    'Mở khoá',
-    'Upload hồ sơ'
 ];
 
 export const COMPANY_NOT_COMFIRM_HEADER_SEARCH = 'Tìm kiếm danh sách không duyệt';
