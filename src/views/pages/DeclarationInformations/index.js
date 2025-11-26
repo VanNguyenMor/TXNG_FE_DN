@@ -44,6 +44,10 @@ import {
 import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { getUrlCompanyAPI } from "utils/service.js";
+import axios from "axios";
+import { getCookie } from "helpers/cookie.js";
+import { actionRoleCreatorsNew } from "actions/RoleNewActions.js";
 
 class DeclarationInformations extends Component {
   constructor(props) {
@@ -72,13 +76,13 @@ class DeclarationInformations extends Component {
       update: [],
       create: [],
       delete: [],
+      roles: [],
       isLoaded: null,
       status: null,
       open: false,
       openAddNew: false,
       message: "",
       history: [],
-      roles: [],
       zones: [],
       editStatus: true,
       district: [],
@@ -197,8 +201,10 @@ class DeclarationInformations extends Component {
     };
   }
 
+  componentDidMount() {}
+
   componentWillMount() {
-    const { getListTypeZoneProperty } = this.props;
+    const { getListTypeZoneProperty, getAllRoleListNew } = this.props;
     /* Fetch Summary */
     this.fetchSummary(
       JSON.stringify({
@@ -223,6 +229,23 @@ class DeclarationInformations extends Component {
           dataTypeZone: ((res.data || {}).data || {}).plantingTypes || [],
         };
       });
+    });
+
+    const rolePayload = {
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    };
+
+    getAllRoleListNew(rolePayload).then((res) => {
+      if (res.status) {
+        console.log("✅ Dữ liệu Roles mới (RESOLVE):", res.data);
+        this.setState({ roles: res.data.data || [] });
+      } else {
+        console.error("❌ Lỗi lấy Roles mới:", res.error || res.data.message);
+      }
     });
   }
 
@@ -910,6 +933,7 @@ const mapStateToProps = (state) => {
     zone: state.ZoneStore,
     PlantingZoneStore: state.PlantingZoneStore,
     TypeZoneProperty: state.TypeZonePropertyStore,
+    rolesNewState: state.roleStateNew,
   };
 };
 
@@ -919,6 +943,7 @@ const mapDispatchToProps = (dispatch) => {
     ...bindActionCreators(typeZonePropertyAction, dispatch),
     ...bindActionCreators(areaDataAction, dispatch),
     ...bindActionCreators(platingZoneAction, dispatch),
+    ...bindActionCreators(actionRoleCreatorsNew, dispatch),
   };
 };
 
