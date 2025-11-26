@@ -25,13 +25,7 @@ export function setCookie(cname, cvalue, exdays) {
   var ccvalue = JSON.parse(cvalue);
 
   localStorage.setItem("AUTHEN_INFO", ccvalue ? ccvalue : null);
-  // localStorage.setItem('TOKEN', ccvalue ? 'Bearer ' + ccvalue.token : null)
-  localStorage.setItem(
-    "TOKEN",
-    ccvalue
-      ? "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjNGOTIwMEUwMDZGMzVERTRBNEE1OEI2QkU3NUQxQzQzIiwidHlwIjoiYXQrand0In0.eyJuYmYiOjE3NjQwNjY5OTgsImV4cCI6MTc2NDE1MzM5OCwiaXNzIjoiaHR0cHM6Ly90cnV5eHVhdG5ndW9uZ29jLnRpZW5naWFuZy5nb3Yudm46OTkwMyIsImF1ZCI6IlR4bmdfQ2VudGVyX2FwaSIsImNsaWVudF9pZCI6IkFkbWluQ2xpZW50SWQiLCJzdWIiOiIxIiwiYXV0aF90aW1lIjoxNzY0MDY2OTk4LCJpZHAiOiJsb2NhbCIsImlhdCI6MTc2NDA2Njk5OCwic2NvcGUiOlsib3BlbmlkIiwicHJvZmlsZSIsInJvbGVzIiwiVHhuZ19DZW50ZXJfYXBpIiwib2ZmbGluZV9hY2Nlc3MiXSwiYW1yIjpbInB3ZCJdfQ.WGM28iJmm3ZcRu3bAj43kv-nWPTurqkkZWKJD0T5773w7b2WQP3ol0JPf426PlpFksF_K7V1Ef04yTV07UwXQ-u3FsIfZEHP9jypd5jQvvgXyjIOmcstk1cpyAWB0BBeLVq_fG658CHtomQ1EELaXWdAUMkC6MpSehAN-BShimCIPUdultht5LtOQUsgDeVQY-06iEfCHHlUWy6P_FOz9aDVBCiHv9qq5AM3QC7VBbMBXSfJXQTXs5VVk8xpfKl6P8cw4x_PDyUQnn6UQ1jBbYigJ1m_d9DAMvO8arN9jgciZBqFBorLc835lwkcV5wswBu4Xx-wcgoQkBXLFoju6A"
-      : null
-  );
+  localStorage.setItem('TOKEN', ccvalue ? 'Bearer ' + ccvalue.token : null)
   localStorage.setItem("ACCOUNT_ID", ccvalue ? ccvalue.id : null);
   localStorage.setItem("IS_ADMIN", ccvalue ? ccvalue.isAdmin : null);
   localStorage.setItem("ACCOUNT_NAME", ccvalue ? ccvalue.fullName : null);
