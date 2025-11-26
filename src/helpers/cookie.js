@@ -31,8 +31,6 @@ export function setCookie(cname, cvalue, exdays) {
   localStorage.setItem("ACCOUNT_NAME", ccvalue ? ccvalue.fullName : null);
   localStorage.setItem("ACCOUNT_AVA", ccvalue ? ccvalue.avatar : null);
   localStorage.setItem("ACCOUNT_CLAIM", ccvalue ? ccvalue.claims : []);
-
-  // localStorage.setItem('ACCOUNT_CLAIM_FF', ccvalue ? (splitMulti(ccvalue.claims, [',', '[', ']', '"']).filter(x => x != "") || []) : [])
 }
 
 export function deleteCookie(cname) {
