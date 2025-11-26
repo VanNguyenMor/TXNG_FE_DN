@@ -242,7 +242,7 @@ export const MENU_DATA = [
     isCompany: 0,
     sortOrder: 16,
     parentID: "004",
-    uniqueCode: "StampRequestsUsed",
+    uniqueCode: "StampRequestUseds",
     status: 1,
   },
   {

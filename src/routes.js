@@ -69,6 +69,7 @@ import AdjustmentManagement from "views/pages/AdjustmentManagement";
 import ExportManagement from "views/pages/ExportManagement";
 import ImportManagement from "views/pages/ImportManagement";
 import QrCodeManagement from "views/pages/QrCodeManagement";
+import StampRequestUsed from "views/pages/StampRequestUsed";
 import CompanyListAwaitActivity from "views/pages/CompanyListAwaitActivity";
 import MaterialGroup from "views/pages/MaterialGroup";
 import ProductsGroups from "views/pages/ProductsGroups";
@@ -84,7 +85,6 @@ import PartnerManufactVerify from "views/pages/PartnerManufactVerify";
 import PartnerTranformVerify from "views/pages/PartnerTranformVerify";
 import CompanyVerify from "views/pages/CompanyVerify";
 import PartnerPrint from "views/pages/PartnerPrint";
-import StampRequetsUsed from "views/pages/StampRequetsUsed";
 import ReportMananger from "views/pages/ReportMananger";
 import ReportView from "views/pages/ReportView";
 import ReportZoningProduct from "views/pages/ReportZoningProduct";
@@ -459,6 +459,14 @@ var routes = [
     key: 2,
   },
   {
+    path: "/xin_cap_tem",
+    name: NAVBAR_ITEM.QRCODE_USED,
+    icon: "ni ni-bullet-list-67 text-blue",
+    component: StampRequestUsed,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
     path: "/quan_ly_qr",
     name: NAVBAR_ITEM.QRCODE_MANAGEMENT,
     icon: "ni ni-bullet-list-67 text-blue",
@@ -534,14 +542,7 @@ var routes = [
     layout: "/trang_chu",
     key: 5,
   },
-  {
-    path: "/quan_ly_cap_phat_phep",
-    name: NAVBAR_ITEM.STAMPREQUESTUSED,
-    icon: "ni ni-calendar-grid-58 text-blue",
-    component: StampRequetsUsed,
-    layout: "/trang_chu",
-    key: 5,
-  },
+ 
   // Admin Report
   {
     path: "/bao_cao_tang_truong_doanh_nghiep",
@@ -899,11 +900,6 @@ const routeComponents = [
   },
   { layout: LAYOUT_HOME, key: "CompanyVerify", component: CompanyVerify },
   { layout: LAYOUT_HOME, key: "Printer", component: PartnerPrint },
-  {
-    layout: LAYOUT_HOME,
-    key: "StampRequestsUsed",
-    component: StampRequetsUsed,
-  },
   { layout: LAYOUT_HOME, key: "ReportMananger", component: ReportMananger },
   { layout: LAYOUT_HOME, key: "ReportView", component: ReportView },
   {
@@ -997,6 +993,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "QrCodeManagements",
     component: QrCodeManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "StampRequestUseds",
+    component: StampRequestUsed,
   },
 ];
 
