@@ -880,6 +880,7 @@ export const NAVBAR_ITEM = {
     ADJUSTMENT_MANAGEMENT: 'Quản lý tồn kho - Phiếu điều chỉnh',
     EXPORT_MANAGEMENT: 'Quản lý tồn kho - Xuất chuyển',
     IMPORT_MANAGEMENT: 'Quản lý tồn kho - Nhập chuyển',
+    QRCODE_USED: 'Xin cấp tem, in tem',
     PRODUCTS_VERIFY: 'Danh sách sản phẩm chờ xác thực',
     PARTNER_VERIFY: 'Danh sách nhà cung cấp chờ xác thực',
     PARTNER_MANUFACT_VERIFY: 'Danh sách nhà sản xuất chờ xác thực',
@@ -992,6 +993,16 @@ export const PRODUCT_MANAGEMENT = [
     'Thông tin',
     'Trạng thái',
     'Xác thực',
+]
+
+export const QRCODE_USED = [
+    'Stt',
+    'Ngày yêu cầu',
+    'SL yêu cầu',
+    'Dải tem',
+    'Hình thức',
+    'Trạng thái',
+    'Hiệu lực',
 ]
 
 

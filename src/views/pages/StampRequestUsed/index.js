@@ -1,0 +1,883 @@
+import React, { Component } from "react";
+import compose from "recompose/compose";
+import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
+import { PRODUCT_MANAGEMENT, QRCODE_USED } from "../../../helpers/constant";
+import { bindActionCreators } from "redux";
+import { connect } from "react-redux";
+import { actionZoneCreators } from "../../../actions/ZoneListActions";
+import { platingZoneAction } from "../../../actions/PlantingZoneAction";
+import { areaDataAction } from "../../../actions/AreaDataAction";
+import classes from "./index.module.css";
+import Pagination from "components/Pagination";
+import HeaderTable from "components/HeaderTable";
+import HeadTitleTable from "components/HeadTitleTable";
+import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
+import MenuButton from "../../../assets/img/buttons/menu.png";
+import WarningPopup from "../../../components/WarningPopup";
+import SearchImg from "../../../assets/img/buttons/searchig.svg";
+import PopupMessage from "../../../components/PopupMessage";
+import { handleGenTree } from "../../../helpers/trees";
+import CreateNewPopup from "../../../components/CreateNewPopup";
+import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
+
+// reactstrap components
+import {
+  Card,
+  Table,
+  Container,
+  Row,
+  Spinner,
+  ButtonDropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  Button,
+} from "reactstrap";
+
+import ShowHistoryData from "./ShowHistoryData.js";
+import ShowEditData from "./ShowEditData.js";
+
+import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import Select from "components/Select/index.js";
+
+class StampRequestUsed extends Component {
+  constructor(props) {
+    super(props);
+
+    const dataMock = [
+      {
+        id: 1,
+        requestDate: "2025-10-04",
+        totalRequestedQuantity: 20,
+        stampRange: null,
+        printMethod: "Yêu cầu in",
+        effect: 1,
+        currentStatus: 1,
+      },
+      {
+        id: 2,
+        requestDate: "2025-10-03",
+        totalRequestedQuantity: 30,
+        stampRange: "4341 - 4370",
+        printMethod: "Tự in",
+        effect: 1,
+        currentStatus: 1,
+      },
+    ];
+
+    this.state = {
+      data: dataMock,
+      detail: [],
+      update: [],
+      create: [],
+      delete: [],
+      isLoaded: null,
+      tableTitle: "",
+      status: null,
+      open: false,
+      openAddNew: false,
+      message: "",
+      history: [],
+      roles: [],
+      zones: [],
+      editStatus: true,
+      district: [],
+      districtList: [],
+      province: [],
+      ward: [],
+      provinceIDCurrent: null,
+      headerTitle: QRCODE_USED,
+      limit: LIMIT_ITEM_IN_PAGE,
+      beginItem: 0,
+      endItem: LIMIT_ITEM_IN_PAGE,
+      totalElement: 0,
+      listLength: 0,
+      createNewModal: false,
+      currentPage: 0,
+      filter: {
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      },
+      dataInsert: {},
+      errorInserts: {},
+      isShowForHistoryList: false,
+      isShowForDetail: false,
+      editId: null,
+      warningPopupModal: false,
+      deleteId: null,
+      popupMessage: null,
+      warningBlockProductModal: false,
+      blockProductId: null,
+      STATUS_OPTIONS: [
+        { id: 0, title: "Chờ duyệt" },
+        { id: 1, title: "Đã duyệt" },
+      ],
+      EFFECT_OPTIONS: [
+        { id: 0, title: "Chưa hiệu lực" },
+        { id: 1, title: "Có hiệu lực" },
+      ],
+    };
+  }
+
+  componentWillMount() {
+    const { getListTypeZoneProperty } = this.props;
+    /* Fetch Summary */
+    this.fetchSummary(
+      JSON.stringify({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      })
+    );
+
+    getListTypeZoneProperty({
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    }).then((res) => {
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          dataTypeZone: ((res.data || {}).data || {}).plantingTypes || [],
+        };
+      });
+    });
+  }
+
+  fetchSummary = (data) => {
+    const { getListPlantingZone } = this.props;
+
+    this.setState({ isLoaded: true });
+
+    getListPlantingZone(data).then((res) => {
+      const { limit } = this.state;
+      let collapseList = [];
+      const data = (res.data || {}).data || {};
+
+      let newData = [...this.state.data];
+
+      newData.forEach((item, key) => {
+        collapseList.push({ id: item.id, collapse: false });
+        item["parentID"] = item.parentID === null ? "" : item.parentID;
+      });
+
+      newData = handleGenTree(newData, "name");
+
+      newData.forEach((item, key) => {
+        item["index"] = key + 1;
+      });
+
+      const total = newData.length | 0;
+
+      const length = newData.length;
+
+      this.setState({
+        data: newData,
+        listLength: total,
+        totalPage: Math.ceil(length / limit),
+        isLoaded: false,
+        collapseList: collapseList,
+      });
+    });
+  };
+
+  closeStatusModal = () => {
+    const { status } = this.state;
+
+    if (status || !status) {
+      setTimeout(() => {
+        this.setState({ status: null, isLoaded: false });
+      }, LOADING_TIME);
+    }
+  };
+
+  handlePageClick = (data) => {
+    let { limit, beginItem, endItem } = this.state;
+    let selected = data.selected;
+    let offset = Math.ceil(selected * limit);
+    let total = 0;
+
+    beginItem = offset;
+    endItem = offset + limit;
+
+    this.state.data.map(
+      (item, key) => key >= beginItem && key < endItem && total++
+    );
+
+    if (selected > 0) {
+      total = selected * limit + total;
+    } else total = total;
+
+    this.setState({
+      beginItem: beginItem,
+      endItem: endItem,
+      currentPage: selected + 1,
+      totalElement: total,
+    });
+  };
+
+  handleChangeFilter = (event) => {
+    let { filter } = this.state;
+    const ev = event.target;
+
+    filter[ev["name"]] = ev["value"];
+    this.setState({ filter });
+  };
+
+  clearFilter = () => {
+    let clearFilter = {
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    };
+    this.setState({ filter: clearFilter });
+  };
+
+  handleChangeSelectFilter = (value, name) => {
+    let { filter } = this.state;
+
+    filter[name] = value;
+    this.setState({ filter });
+  };
+
+  handleSubmitSearchForm = () => {
+    const { fromDate, toDate, filter } = this.state;
+    this.fetchSummary(
+      JSON.stringify({
+        search: "",
+        filter,
+        fromDate,
+        toDate,
+        orderBy: "",
+        page: null,
+        limit: null,
+      })
+    );
+  };
+
+  handleModal = (status, openModal, closeModal) => {
+    if (
+      status ||
+      this.state.isShowForHistoryList ||
+      this.state.isShowForDetail
+    ) {
+      closeModal && closeModal();
+    } else {
+      openModal && openModal();
+    }
+
+    this.setState({
+      isShowForHistoryList: false,
+      isShowForDetail: false,
+      editId: null,
+    });
+  };
+
+  toggle = (el, val) => {
+    let { collapseList } = this.state;
+
+    collapseList
+      .filter((item) => item.id === val)
+      .map((item) => (item.collapse = !item.collapse));
+
+    this.setState({ collapseList });
+  };
+  checkDataInsert = (isCheck) => {
+    if (!isCheck) {
+      return {};
+    }
+    const { dataInsert, data, editId, currentRow } = this.state;
+    const title = dataInsert.title;
+
+    const errorInserts = {};
+
+    if (!title) {
+      errorInserts.title = "Số phiếu không được bỏ trống";
+    }
+
+    return errorInserts;
+  };
+
+  onConfirm = (toggleModal, closePopup) => {
+    const { dataInsert } = this.state;
+    const formData = new FormData();
+    console.log(dataInsert);
+    alert("Thao tác thành công");
+    if (toggleModal) {
+      toggleModal();
+    }
+  };
+
+  onHandleChangeValue = (data) => {
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          dataInsert: data,
+        };
+      },
+      () => {
+        const errorInserts = this.checkDataInsert();
+
+        this.setState((previousState) => {
+          return {
+            ...previousState,
+            errorInserts,
+          };
+        });
+      }
+    );
+  };
+
+  onShowHistoryModal = (e) => () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        isShowForHistoryList: true,
+        editId: e.id,
+        tableTitle: "LỊCH SỬ NGUYÊN VẬT LIỆU",
+        currentHistoryData: this.state.HISTORY_DATA,
+      };
+    });
+  };
+
+  onShowDetail = (id) => () => {
+    this.setState((previousState) => {
+      return {
+        isShowForDetail: true,
+      };
+    });
+  };
+
+  onDeleteData = (id) => () => {
+    alert("Xóa thành công");
+  };
+
+  toggleModalPopupDelete = () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        warningPopupModal: false,
+      };
+    });
+  };
+
+  handleDeleteRow = () => {
+    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          warningPopupModal: false,
+        };
+      });
+
+      const data = res.data;
+
+      if (data.status == 200) {
+        this.fetchSummary(
+          JSON.stringify({
+            search: "",
+            filter: "",
+            orderBy: "",
+            page: null,
+            limit: null,
+          })
+        );
+
+        this.setState({ message: "Xóa dữ liệu thành công" });
+        toast.success("Xoá dữ liệu thành công!");
+      } else {
+        const message = getErrorMessageServer(res);
+
+        this.setState({ message: message || "Xóa dữ liệu thất bại" });
+        this.toggleModal("popupMessage");
+      }
+    });
+  };
+
+  toggleModal = (state, type) => {
+    if (type == 1) {
+      this.setState({ [state]: false });
+      return;
+    } else {
+      this.setState({
+        [state]: !this.state[state],
+      });
+    }
+  };
+
+  renderTreeLine = (nodelv) => {
+    let line = "";
+
+    for (let i = 0; i < nodelv; i++) {
+      line += "-";
+    }
+
+    return line;
+  };
+
+  showTitleWithEffect = (id) => {
+    const { EFFECT_OPTIONS } = this.state;
+
+    let queue = EFFECT_OPTIONS ? [...EFFECT_OPTIONS] : [];
+
+    while (queue.length > 0) {
+      const authentic = queue.shift();
+
+      if (authentic && authentic.id === id) {
+        return authentic.title;
+      }
+
+      if (authentic && authentic.children && authentic.children.length > 0) {
+        queue.push(...authentic.children);
+      }
+    }
+
+    return "";
+  };
+
+  showTitleWithStatus = (id) => {
+    const { STATUS_OPTIONS } = this.state;
+
+    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
+
+    while (queue.length > 0) {
+      const status = queue.shift();
+
+      if (status && status.id === id) {
+        return status.title;
+      }
+
+      if (status && status.children && status.children.length > 0) {
+        queue.push(...status.children);
+      }
+    }
+
+    return "";
+  };
+
+  renderTable = (data, isDisableEdit, isDisableDelete) => {
+    const { beginItem, endItem, collapseList } = this.state;
+    let list = [];
+    let parentid = [];
+    let autoIndex = 0;
+
+    data.filter((item, key) => key >= beginItem && key < endItem);
+    data.forEach((e) => parentid.push(e.id));
+
+    const cb = (e, key, array) => {
+      const renderClass =
+        e.parentID.length === 0
+          ? `${classes.treeParent}`
+          : `${classes.treeChild}${
+              parentid.includes(e.parentID)
+                ? ` ${classes.childs}`
+                : ` ${classes.childsItem}`
+            }`;
+      list.push(
+        <tr
+          key={autoIndex}
+          parentid={e.parentID}
+          currentid={e.id}
+          index={autoIndex}
+          className="table-hover-css"
+        >
+          <td
+            className={`className='table-scale-col table-user-col-1' ${renderClass}`}
+          >
+            {autoIndex + 1}
+          </td>
+          <td className="table-scale-col" style={{ textAlign: "left" }}>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              {e.requestDate}
+            </span>
+          </td>
+
+          <td className="table-scale-col" style={{ textAlign: "left" }}>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              {e.totalRequestedQuantity}
+            </span>
+          </td>
+
+          <td className={renderClass}>
+            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+              {e.stampRange ?? "-"}
+            </span>
+          </td>
+          <td className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.printMethod}</span>
+          </td>
+          <td className={renderClass}>
+            <span style={{ color: `${e.color}` }}>
+              {this.showTitleWithStatus(e.currentStatus)}
+            </span>
+          </td>
+          <td className={renderClass}>
+            <span style={{ color: `${e.color}` }}>
+              {this.showTitleWithEffect(e.effect)}
+            </span>
+          </td>
+          <td>
+            {collapseList
+              .filter((item) => item.id === e.id)
+              .map((ele, key) => (
+                <div key={key}>
+                  {isDisableEdit == true && isDisableDelete == true ? null : (
+                    <ButtonDropdown
+                      isOpen={ele.collapse}
+                      toggle={() => this.toggle(key, e.id)}
+                    >
+                      <DropdownToggle>
+                        <img src={MenuButton} />
+                      </DropdownToggle>
+                      <DropdownMenu>
+                        {isDisableEdit == true ? null : (
+                          <DropdownItem onClick={this.onShowDetail(e)}>
+                            Xem chi tiết
+                          </DropdownItem>
+                        )}
+
+                        {isDisableEdit == true ||
+                        isDisableDelete == true ? null : (
+                          <DropdownItem divider />
+                        )}
+                        {isDisableDelete == true ? null : (
+                          <DropdownItem onClick={this.onDeleteData(e.id)}>
+                            Xoá
+                          </DropdownItem>
+                        )}
+                      </DropdownMenu>
+                    </ButtonDropdown>
+                  )}
+                </div>
+              ))}
+          </td>
+        </tr>
+      );
+      autoIndex++;
+      e.children && e.children.forEach(cb);
+    };
+
+    data.forEach(cb);
+    return list;
+  };
+
+  onShowBlockProductModal = (product) => () => {
+    this.setState({
+      warningBlockProductModal: true,
+      blockProductId: product.id,
+      blockProductTitle: product.title,
+    });
+  };
+
+  toggleBlockProductModal = () => {
+    this.setState({
+      warningBlockProductModal: false,
+      blockProductId: null,
+      blockProductTitle: null,
+    });
+  };
+
+  render() {
+    const {
+      warningPopupModal,
+      editId,
+      isShowForDetail,
+      isShowForHistoryList,
+      errorInserts,
+      status,
+      headerTitle,
+      data,
+      message,
+      isLoaded,
+      listLength,
+      totalPage,
+      totalElement,
+      createNewModal,
+      popupMessage,
+      activeCreateSubmit,
+      currentHistoryData,
+      STATUS_OPTIONS,
+      EFFECT_OPTIONS,
+    } = this.state;
+
+    const statusPopup = { status: status, message: message };
+    let isDisableAdd = true;
+    let isDisableEdit = true;
+    let isDisableDelete = true;
+    let ACCOUNT_CLAIM_FF = [];
+    if (JSON.parse(localStorage.getItem("IS_ADMIN"))) {
+      isDisableAdd = false;
+      isDisableEdit = false;
+      isDisableDelete = false;
+    } else {
+      ACCOUNT_CLAIM_FF = localStorage
+        .getItem("ACCOUNT_CLAIM_FF")
+        .split(",")
+        .filter((x) => x != "");
+      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Add").map(
+        (y) => (isDisableAdd = false)
+      );
+      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Edit").map(
+        (y) => (isDisableEdit = false)
+      );
+      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Delete").map(
+        (y) => (isDisableDelete = false)
+      );
+    }
+
+    return (
+      <>
+        {
+          <div className={classes.wrapper}>
+            <Container fluid>
+              {isLoaded ? (
+                <div style={{ display: "table", margin: "auto" }}>
+                  <Spinner style={{ width: "3rem", height: "3rem" }} />
+                </div>
+              ) : (
+                <Row>
+                  <div className="col">
+                    <HeaderTable
+                      dataReload={() =>
+                        this.fetchSummary(
+                          JSON.stringify({
+                            search: "",
+                            filter: "",
+                            orderBy: "",
+                            page: null,
+                            limit: null,
+                          })
+                        )
+                      }
+                      readOnly={isShowForHistoryList}
+                      hideSearch={true}
+                      hideCreate={isDisableAdd == false ? false : true}
+                      moduleTitle={
+                        isShowForDetail
+                          ? "Chi tiết sản phẩm"
+                          : isShowForHistoryList
+                          ? "Lịch sử sản phẩm"
+                          : "Quản lý tem"
+                      }
+                      typeSearch={
+                        <>
+                          <div
+                            className="div_flex"
+                            style={{
+                              marginBottom: "30px",
+                              flex: "wrap",
+                              width: "100%",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <div className="mg-div-search">
+                              <label className="form-control-label">
+                                Trạng thái duyệt
+                              </label>
+                              <div>
+                                <Select
+                                  name="filter"
+                                  title="Lọc theo trạng thái"
+                                  data={STATUS_OPTIONS}
+                                  labelName="title"
+                                  val="id"
+                                  handleChange={this.handleChangeSelectFilter}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mg-div-search">
+                              <label className="form-control-label">
+                                Trạng thái cấp phép
+                              </label>
+                              <div>
+                                <Select
+                                  name="filter"
+                                  title="Lọc theo cấp phép"
+                                  data={EFFECT_OPTIONS}
+                                  labelName="title"
+                                  val="id"
+                                  handleChange={this.handleChangeSelectFilter}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mg-btn">
+                              <label className="form-control-label">
+                                &nbsp;
+                              </label>
+                              <Button
+                                className="btn-warning-cs"
+                                color="default"
+                                type="button"
+                                size="md"
+                                onClick={() => {
+                                  this.handleSubmitSearchForm();
+                                }}
+                              >
+                                <img src={SearchImg} alt="Tìm kiếm" />
+                                <span>Tìm kiếm</span>
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      }
+                      isReadOnly={isShowForHistoryList}
+                      moduleBody={
+                        <div>
+                          {isShowForDetail ? (
+                            <ShowEditData
+                              id={editId}
+                              errors={errorInserts}
+                              onHandleChangeValue={this.onHandleChangeValue}
+                              STATUS_OPTIONS={STATUS_OPTIONS}
+                              EFFECT_OPTIONS={EFFECT_OPTIONS}
+                            />
+                          ) : isShowForHistoryList ? (
+                            <ShowHistoryData
+                              id={editId}
+                              errors={errorInserts}
+                              onHandleChangeValue={this.onHandleChangeValue}
+                              STATUS_OPTIONS={STATUS_OPTIONS}
+                              EFFECT_OPTIONS={EFFECT_OPTIONS}
+                              historyData={currentHistoryData}
+                            />
+                          ) : (
+                            <ShowEditData
+                              errors={errorInserts}
+                              onHandleChangeValue={this.onHandleChangeValue}
+                              STATUS_OPTIONS={STATUS_OPTIONS}
+                              EFFECT_OPTIONS={EFFECT_OPTIONS}
+                            />
+                          )}
+                        </div>
+                      }
+                      isShowForEdit={isShowForHistoryList || isShowForDetail}
+                      handleModal={this.handleModal}
+                      onConfirm={this.onConfirm}
+                      handleSubmitSearchForm={() =>
+                        this.handleSubmitSearchForm()
+                      }
+                    />
+
+                    {/* Table */}
+                    <Card className="shadow">
+                      <Table
+                        className={`align-items-center tablecs table-css-planting-zone ${classes.scrollTable}`}
+                        responsive
+                      >
+                        <HeadTitleTable
+                          headerTitle={headerTitle}
+                          classHeaderColumns={{
+                            0: "table-scale-col table-user-col-1",
+                          }}
+                        />
+                        <tbody>
+                          {Array.isArray(data) &&
+                            this.renderTable(
+                              data,
+                              isDisableEdit,
+                              isDisableDelete
+                            )}
+                        </tbody>
+                      </Table>
+                    </Card>
+
+                    {/* Pagination */}
+                    {
+                      // Page of Table
+                      Array.isArray(data) > 0 && (
+                        <Pagination
+                          data={data}
+                          listLength={listLength}
+                          totalPage={totalPage}
+                          totalElement={totalElement}
+                          handlePageClick={this.handlePageClick}
+                        />
+                      )
+                    }
+                    {/* <WarningPopup
+                      moduleTitle="Thông báo"
+                      moduleBody={
+                        <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+                          Bạn đồng ý xoá thông tin này?
+                        </p>
+                      }
+                      warningPopupModal={warningPopupDelQR}
+                      toggleModal={this.toggleModalPopupDeleteQR}
+                      handleWarning={this.handleDeleteQRSystem}
+                    /> */}
+                  </div>
+                </Row>
+              )}
+
+              {
+                //Set Alert Context
+                setAlertContext(statusPopup)
+              }
+
+              {
+                //Open Alert Context
+                openAlertContext(statusPopup)
+              }
+            </Container>
+
+            <WarningPopup
+              moduleTitle="Thông báo"
+              moduleBody={
+                <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+                  Bạn đồng ý xóa thông tin này?
+                </p>
+              }
+              warningPopupModal={warningPopupModal}
+              toggleModal={this.toggleModalPopupDelete}
+              handleWarning={this.handleDeleteRow}
+            />
+
+            <PopupMessage
+              popupMessage={popupMessage}
+              moduleTitle={"Thông báo"}
+              moduleBody={message}
+              toggleModal={this.toggleModal}
+            />
+            <ToastContainer position="top-center" autoClose={3000} />
+          </div>
+        }
+      </>
+    );
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    zone: state.ZoneStore,
+    PlantingZoneStore: state.PlantingZoneStore,
+    TypeZoneProperty: state.TypeZonePropertyStore,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    ...bindActionCreators(actionZoneCreators, dispatch),
+    ...bindActionCreators(typeZonePropertyAction, dispatch),
+    ...bindActionCreators(areaDataAction, dispatch),
+    ...bindActionCreators(platingZoneAction, dispatch),
+  };
+};
+
+export default compose(connect(mapStateToProps, mapDispatchToProps))(
+  StampRequestUsed
+);
