@@ -889,6 +889,7 @@ export const NAVBAR_ITEM = {
     PARTNER: 'Đơn vị xác thực',
     PARTNER_PRINTER: 'Đơn vị in tem',
     QRCODE_MANAGEMENT: 'Quản lí mã QR',
+    BUSINESS_INFORMATION: 'Thông tin doanh nghiệp',
     STAMPREQUESTUSED: 'Danh sách yêu cầu cấp phép sử dụng tem'
 };
 

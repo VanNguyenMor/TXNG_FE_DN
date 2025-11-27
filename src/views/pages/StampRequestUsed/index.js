@@ -43,7 +43,7 @@ import ShowEditData from "./ShowEditData.js";
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import Select from "components/Select/index.js";
 
-class StampRequestUsed extends Component {
+class BusinessInformation extends Component {
   constructor(props) {
     super(props);
 
@@ -879,5 +879,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  StampRequestUsed
+  BusinessInformation
 );

@@ -82,7 +82,7 @@ class ImageGalleryUploader extends Component {
   };
 
   render() {
-    const { title } = this.props;
+    const { title, mdVal } = this.props;
     const { images } = this.state;
 
     const displayImages =
@@ -126,7 +126,11 @@ class ImageGalleryUploader extends Component {
 
           <Row className="mb-3">
             {displayImages.map((imageObject, index) => (
-              <Col md="6" key={imageObject.id} className="text-center">
+              <Col
+                md={mdVal ? mdVal : 6}
+                key={imageObject.id}
+                className="text-center"
+              >
                 <div style={imageContainerStyle}>
                   <ImageUploader
                     initialImageUrl={imageObject.url}
