@@ -93,7 +93,7 @@ class SearchModal extends Component {
           </div>
         </div>
 
-        <div className={classes.searchRow}>
+        {/* <div className={classes.searchRow}>
           <div className={classes.searchRowItem}>
             <label>Điện thoại</label>
             <Validate
@@ -116,7 +116,7 @@ class SearchModal extends Component {
               )}
             </Validate>
           </div>
-        </div>
+        </div> */}
 
         {/* <div className={classes.searchRow}>
           <div className={classes.searchRowItem}>

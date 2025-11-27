@@ -44,6 +44,9 @@ import {
 import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { getUrlCompanyAPI } from "utils/service.js";
+import axios from "axios";
+import { getCookie } from "helpers/cookie.js";
 
 class DeclarationInformations extends Component {
   constructor(props) {
@@ -72,13 +75,13 @@ class DeclarationInformations extends Component {
       update: [],
       create: [],
       delete: [],
+      roles: [],
       isLoaded: null,
       status: null,
       open: false,
       openAddNew: false,
       message: "",
       history: [],
-      roles: [],
       zones: [],
       editStatus: true,
       district: [],
@@ -197,6 +200,8 @@ class DeclarationInformations extends Component {
     };
   }
 
+  componentDidMount() {}
+
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
@@ -224,6 +229,14 @@ class DeclarationInformations extends Component {
         };
       });
     });
+
+    const rolePayload = {
+      search: "",
+      filter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    };
   }
 
   fetchSummary = (data) => {
