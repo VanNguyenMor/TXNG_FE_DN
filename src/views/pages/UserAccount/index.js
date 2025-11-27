@@ -24,7 +24,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
 
-// reactstrap components
 import {
   Card,
   Table,
@@ -37,12 +36,10 @@ import {
   DropdownItem,
 } from "reactstrap";
 
-import { generateStyleTableCol } from "../../../bases/helper";
 import "../../../assets/css/global/index.css";
 import "../../../assets/css/page/user.css";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
-import { CSVLink } from "react-csv";
 
 class UserAccount extends Component {
   constructor(props) {
@@ -94,7 +91,18 @@ class UserAccount extends Component {
 
     this.tableBody = null;
   }
-
+  getDefaultFilter = () => ({
+    status: 1,
+    roleIDs: "",
+    userName: "",
+    fullName: "",
+    phone: "",
+    email: "",
+    position: "",
+    orderBy: "",
+    page: null,
+    limit: null,
+  });
   componentWillReceiveProps(nextProp) {
     let { data } = nextProp.account;
     const { role } = nextProp;
@@ -152,20 +160,7 @@ class UserAccount extends Component {
   }
 
   componentWillMount() {
-    this.fetchSummary(
-      JSON.stringify({
-        status: 1,
-        roleIDs: "",
-        userName: "",
-        fullName: "",
-        phone: "",
-        email: "",
-        position: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary(JSON.stringify(this.getDefaultFilter()));
   }
 
   componentDidUpdate() {
@@ -447,20 +442,7 @@ class UserAccount extends Component {
 
       if (res?.data?.status == 200) {
         toast.success("Thêm mới tài khoản thành công!");
-        this.fetchSummary(
-          JSON.stringify({
-            status: 1,
-            roleIDs: "",
-            userName: "",
-            fullName: "",
-            phone: "",
-            email: "",
-            position: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
+        this.fetchSummary(JSON.stringify(this.getDefaultFilter()));
         if (closePopup !== "closePopup") {
           this.toggleModal("createNewModal");
         }
@@ -527,20 +509,7 @@ class UserAccount extends Component {
 
       if (res?.data?.status == 200) {
         toast.success("Cập nhật tài khoản thành công!");
-        this.fetchSummary(
-          JSON.stringify({
-            status: 1,
-            roleIDs: "",
-            userName: "",
-            fullName: "",
-            phone: "",
-            email: "",
-            position: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
+        this.fetchSummary(JSON.stringify(this.getDefaultFilter()));
       }
     } catch (err) {
       this.setState({
@@ -579,20 +548,7 @@ class UserAccount extends Component {
 
     deleteUserInfo(deleteItem).then((res) => {
       if (res.data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            status: 1,
-            roleIDs: "",
-            userName: "",
-            fullName: "",
-            phone: "",
-            email: "",
-            position: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
+        this.fetchSummary(JSON.stringify(this.getDefaultFilter()));
         toast.success("Xoá tài khoản thành công!");
       }
     });
@@ -654,15 +610,76 @@ class UserAccount extends Component {
     this.setState({ dataExport: itemDataExport });
   };
 
+  renderTable = () => {
+    const { data, beginItem, endItem, isDisableEdit, isDisableDelete, headerTitle } =
+      this.state;
+
+    return (
+      <Card className="shadow">
+        <Table
+          className="align-items-center tablecs table-class-css"
+          responsive
+        >
+          <HeadTitleTable headerTitle={headerTitle} />
+          <tbody ref={(ref) => (this.tableBody = ref)}>
+            {Array.isArray(data) &&
+              data.slice(beginItem, endItem).map((item, key) => (
+                <tr key={key} className="table-hover-css">
+                  <td>{item.index}</td>
+                  <td>{item.roleName}</td>
+                  <td>{item.fullName}</td>
+                  <td>{item.userName}</td>
+                  <td>
+                    {(!isDisableEdit || !isDisableDelete) && (
+                      <ButtonDropdown
+                        isOpen={item.collapse}
+                        toggle={() => this.toggle(key, item.id)}
+                      >
+                        <DropdownToggle>
+                          <img src={MenuButton} />
+                        </DropdownToggle>
+                        <DropdownMenu>
+                          {!isDisableEdit && (
+                            <DropdownItem
+                              onClick={() => {
+                                this.toggleModal("updateModal");
+                                this.handleOpenEdit(item.id);
+                              }}
+                            >
+                              Sửa
+                            </DropdownItem>
+                          )}
+                          {!isDisableDelete && item.status !== 0 && (
+                            <>
+                              <DropdownItem divider />
+                              <DropdownItem
+                                onClick={() => {
+                                  this.toggleModal("warningPopupModal");
+                                  this.setState({ deleteItem: item.id });
+                                }}
+                              >
+                                Xoá
+                              </DropdownItem>
+                            </>
+                          )}
+                        </DropdownMenu>
+                      </ButtonDropdown>
+                    )}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </Table>
+      </Card>
+    );
+  };
+
   render() {
     const {
       status,
-      headerTitle,
       data,
       message,
       isLoaded,
-      beginItem,
-      endItem,
       listLength,
       totalPage,
       totalElement,
@@ -677,7 +694,6 @@ class UserAccount extends Component {
       errorUpdate,
       popupMessage,
       createNewModal,
-      dataExport,
     } = this.state;
     const statusPopup = { status: status, message: message };
 
@@ -729,18 +745,7 @@ class UserAccount extends Component {
                         });
 
                         this.fetchSummary(
-                          JSON.stringify({
-                            status: 1,
-                            roleIDs: "",
-                            userName: "",
-                            fullName: "",
-                            phone: "",
-                            email: "",
-                            position: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
+                          JSON.stringify(this.getDefaultFilter())
                         );
                       }}
                       hideCreate={isDisableAdd == false ? false : true}
@@ -765,116 +770,7 @@ class UserAccount extends Component {
                       closeForm={this.closeForm}
                     />
 
-                    <Card className="shadow">
-                      <Table
-                        className="align-items-center tablecs table-class-css"
-                        responsive
-                      >
-                        {dataExport && (
-                          <CSVLink data={dataExport} filename={"AX"}>
-                            Export XX
-                          </CSVLink>
-                        )}
-                        <HeadTitleTable
-                          headerTitle={headerTitle}
-                          classHeaderColumns={{
-                            0: "table-scale-col table-user-col-1",
-                          }}
-                        />
-                        <tbody ref={(ref) => (this.tableBody = ref)}>
-                          {Array.isArray(data) &&
-                            data
-                              .filter(
-                                (item, key) => key >= beginItem && key < endItem
-                              )
-                              .map((item, key) => (
-                                <tr
-                                  key={key}
-                                  style={{
-                                    ...generateStyleTableCol(
-                                      this.tableBody,
-                                      (data || []).length
-                                    ),
-                                  }}
-                                  className="table-hover-css"
-                                >
-                                  <td className="table-scale-col table-user-col-1">
-                                    {item.index}
-                                  </td>
-                                  <td
-                                    style={{ textAlign: "left" }}
-                                    className="table-scale-col color-black"
-                                  >
-                                    {item.roleName}
-                                  </td>
-                                  <td
-                                    style={{ textAlign: "left" }}
-                                    className="table-scale-col color-black"
-                                  >
-                                    {item.fullName}
-                                  </td>
-                                  <td
-                                    style={{ textAlign: "left" }}
-                                    className="table-scale-col color-black"
-                                  >
-                                    {item.userName}
-                                  </td>
-                                  <td>
-                                    {isDisableEdit == true &&
-                                    isDisableDelete == true ? null : (
-                                      <ButtonDropdown
-                                        isOpen={item.collapse}
-                                        toggle={() => this.toggle(key, item.id)}
-                                      >
-                                        <DropdownToggle>
-                                          <img src={MenuButton} />
-                                        </DropdownToggle>
-                                        <DropdownMenu>
-                                          {isDisableEdit == false ? (
-                                            <DropdownItem
-                                              onClick={() => {
-                                                this.toggleModal("updateModal");
-                                                this.handleOpenEdit(item.id);
-                                              }}
-                                            >
-                                              Sửa
-                                            </DropdownItem>
-                                          ) : null}
-                                          {isDisableEdit == true ||
-                                          isDisableDelete == true ? null : (
-                                            <div>
-                                              {item.status == 0 ? null : (
-                                                <DropdownItem divider />
-                                              )}
-                                            </div>
-                                          )}
-                                          {isDisableDelete == false ? (
-                                            <div>
-                                              {item.status == 0 ? null : (
-                                                <DropdownItem
-                                                  onClick={() => {
-                                                    this.toggleModal(
-                                                      "warningPopupModal"
-                                                    );
-                                                    this.setState({
-                                                      deleteItem: item.id,
-                                                    });
-                                                  }}
-                                                >
-                                                  Xoá
-                                                </DropdownItem>
-                                              )}
-                                            </div>
-                                          ) : null}
-                                        </DropdownMenu>
-                                      </ButtonDropdown>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                        </tbody>
-                      </Table>
-                    </Card>
+                    {this.renderTable()}
 
                     {Array.isArray(data) && (
                       <Pagination

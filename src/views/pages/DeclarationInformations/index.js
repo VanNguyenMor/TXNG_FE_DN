@@ -47,7 +47,6 @@ import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { getUrlCompanyAPI } from "utils/service.js";
 import axios from "axios";
 import { getCookie } from "helpers/cookie.js";
-import { actionRoleCreatorsNew } from "actions/RoleNewActions.js";
 
 class DeclarationInformations extends Component {
   constructor(props) {
@@ -204,7 +203,7 @@ class DeclarationInformations extends Component {
   componentDidMount() {}
 
   componentWillMount() {
-    const { getListTypeZoneProperty, getAllRoleListNew } = this.props;
+    const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
     this.fetchSummary(
       JSON.stringify({
@@ -238,15 +237,6 @@ class DeclarationInformations extends Component {
       page: null,
       limit: null,
     };
-
-    getAllRoleListNew(rolePayload).then((res) => {
-      if (res.status) {
-        console.log("✅ Dữ liệu Roles mới (RESOLVE):", res.data);
-        this.setState({ roles: res.data.data || [] });
-      } else {
-        console.error("❌ Lỗi lấy Roles mới:", res.error || res.data.message);
-      }
-    });
   }
 
   fetchSummary = (data) => {
@@ -933,7 +923,6 @@ const mapStateToProps = (state) => {
     zone: state.ZoneStore,
     PlantingZoneStore: state.PlantingZoneStore,
     TypeZoneProperty: state.TypeZonePropertyStore,
-    rolesNewState: state.roleStateNew,
   };
 };
 
@@ -943,7 +932,6 @@ const mapDispatchToProps = (dispatch) => {
     ...bindActionCreators(typeZonePropertyAction, dispatch),
     ...bindActionCreators(areaDataAction, dispatch),
     ...bindActionCreators(platingZoneAction, dispatch),
-    ...bindActionCreators(actionRoleCreatorsNew, dispatch),
   };
 };
 

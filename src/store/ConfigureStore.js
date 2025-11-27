@@ -58,10 +58,6 @@ import * as FieldTypeStore from "./FieldTypeStore";
 import * as ReportSPStore from "./ReportSPStore";
 import * as ReportSPManangerStore from "./ReportSPManangerStore";
 
-// new
-import * as RoleNewStore from "./RoleNewStore";
-import * as AccountNewStore from "./AccountNewStore";
-
 import signalRMiddleware from "../utils/signalr";
 
 export default function ConfigureStore(history, initialState) {
@@ -122,10 +118,6 @@ export default function ConfigureStore(history, initialState) {
     FieldTypeStore: FieldTypeStore.reducer,
     ReportSPStore: ReportSPStore.reducer,
     ReportSPManangerStore: ReportSPManangerStore.reducer,
-
-    // new
-    RoleNewStore: RoleNewStore.reducer,
-    AccountNewStore: AccountNewStore.reducer,
   };
 
   const middleware = [thunk, routerMiddleware(history), signalRMiddleware];
