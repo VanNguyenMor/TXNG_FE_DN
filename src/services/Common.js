@@ -47,7 +47,7 @@ export const CLIENT_ID = 'CompanyClient_Mobile';
 export const CLIENT_SECRET = '2f61f98c-49b2-a9f1-1538-f474e3abed01';
 // export const CLIENT_ID = 'AdminClientId';
 // export const CLIENT_SECRET = '4884db16-0d52-a069-457d-727db99ab673';
-export const DOMAIN = 'https://truyxuatnguongoc.tiengiang.gov.vn:9801/';// dm ca1i api chinh1 ne2
+export const DOMAIN = 'https://truyxuatnguongoc.tiengiang.gov.vn:9803/';// dm ca1i api chinh1 ne2
 export const BASE_URL = 'https://truyxuatnguongoc.tiengiang.gov.vn:9903/';
 export const SCOPE = 'openid profile ClientHub Company_api offline_access';
 

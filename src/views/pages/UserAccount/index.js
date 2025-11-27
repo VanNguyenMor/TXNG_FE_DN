@@ -18,11 +18,8 @@ import SearchModal from "./SearchModal";
 import UpdatePopup from "../../../components/UpdatePopup";
 import WarningPopup from "../../../components/WarningPopup";
 import PopupMessage from "../../../components/PopupMessage";
-import Noimg from "../../../assets/img/NoImg/NoImg.jpg";
 import CreateNewPopup from "../../../components/CreateNewPopup";
 import "./table.css";
-import PlusImg from "../../../assets/img/buttons/plus.svg";
-import ExcelJS from "exceljs";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
@@ -38,16 +35,14 @@ import {
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
-  Button,
 } from "reactstrap";
 
-import { generateStyleTableCol, isUpper } from "../../../bases/helper";
+import { generateStyleTableCol } from "../../../bases/helper";
 import "../../../assets/css/global/index.css";
 import "../../../assets/css/page/user.css";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { CSVLink } from "react-csv";
-import { actionAccountCreatorsNew } from "actions/AccountNewActions.js";
 
 class UserAccount extends Component {
   constructor(props) {
@@ -101,13 +96,10 @@ class UserAccount extends Component {
   }
 
   componentWillReceiveProps(nextProp) {
-    const { requestUserListStore } = this.props;
     let { data } = nextProp.account;
     const { role } = nextProp;
     const { limit } = this.state;
     let roleData = null;
-    // let dataExport = [];
-    // let itemDataExport = {}
     if (role !== this.state.role) {
       if (typeof role !== "undefined") {
         if (typeof role.data !== "undefined") {
@@ -134,19 +126,6 @@ class UserAccount extends Component {
                 item["collapse"] = false;
               });
 
-              // data.data.users.map((item, key) => {
-              //   itemDataExport = {
-              //     'STT': key,
-              //     'Tên': item.fullName,
-              //     'Tên đăng nhập': item.userName,
-              //     'Địa chỉ': item.address,
-              //     'Số điện thoại': item.phone,
-              //     'Nhóm quyền': item.roleName,
-              //     'Chi tiết nhóm quyền': item.roleDescription
-              //   }
-              //   dataExport.push(itemDataExport)
-              // })
-
               this.setState({
                 data: data.data.users,
                 listLength: data.data.total,
@@ -159,7 +138,6 @@ class UserAccount extends Component {
           }
         }
 
-        // Set State - After Open Detail
         if (typeof data.detail !== "undefined") {
           this.setState({
             detail: data.detail,
@@ -174,26 +152,6 @@ class UserAccount extends Component {
   }
 
   componentWillMount() {
-    const { getAllAccountListNew } = this.props;
-    const accountPayload = {
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    };
-    getAllAccountListNew(accountPayload).then((res) => {
-      if (res.status) {
-        console.log("✅ Dữ liệu Accounts mới (RESOLVE):", res.data);
-        this.setState({ accounts: res.data.data || [] });
-      } else {
-        console.error(
-          "❌ Lỗi lấy Accounts mới:",
-          res.error || res.data.message
-        );
-      }
-    });
-    /* Fetch Summary */
     this.fetchSummary(
       JSON.stringify({
         status: 1,
@@ -254,11 +212,6 @@ class UserAccount extends Component {
     });
   };
 
-  /**
-   * handleSelect: Handle Select
-   * @param {*} value: value
-   * @param {*} name: name of value
-   */
   handleSelect = (value, name) => {
     let { filter } = this.state;
 
@@ -324,373 +277,256 @@ class UserAccount extends Component {
     });
   };
 
-  /**
-   * handleCreateInfoData: Handle Create Info Data
-   * @param {*} value
-   */
-  handleCreateInfoData = (value, closeForm, closePopup) => {
-    const { createUserInfo } = this.props;
-
-    const formData = new FormData();
-    const { updateData } = this.state;
-    const errorInsert = {};
-
-    // this.setState(previousState => {
-    // 	return {
-    // 		...previousState,
-    // 		errorInsert
-    // 	}
-    // });
-
-    if (!updateData.fullName) {
-      errorInsert["fullName"] = "Họ và tên không được bỏ trống";
+  getField = (obj, name) => {
+    if (!obj) return undefined;
+    if (obj[name] !== undefined) return obj[name];
+    const lower = name.toLowerCase();
+    for (const k of Object.keys(obj)) {
+      if (k.toLowerCase() === lower) return obj[k];
     }
-
-    if ((updateData.fullName || "").length > 255) {
-      errorInsert["fullName"] = "Họ và tên nhập tối đa 255 ký tự";
-    }
-
-    if (!updateData.roleID) {
-      errorInsert["roleID"] = "Chưa chọn Nhóm quyền";
-    }
-
-    if (!updateData.userName) {
-      errorInsert["userName"] = "Tên đăng nhập không được bỏ trống";
-    }
-
-    if ((updateData.userName || "").length > 255) {
-      errorInsert["userName"] = "Tên đăng nhập nhập tối đa 255 ký tự";
-    }
-
-    if (updateData.userName && (updateData.userName || "").length < 6) {
-      errorInsert["userName"] = "Tên đăng nhập phải có ít nhất 6 kí tự";
-    }
-
-    if (!updateData.passwordHash) {
-      errorInsert["passwordHash"] = "Mật khẩu không được bỏ trống";
-    }
-
-    if (
-      updateData.passwordHash &&
-      ((updateData.passwordHash || "").length < 6 ||
-        !isUpper(updateData.passwordHash))
-    ) {
-      errorInsert["passwordHash"] =
-        "Mật khẩu phải có ít nhất 6 kí tự và 1 kí tự viết hoa";
-    }
-
-    if (updateData.passwordHash) {
-      var strongRegex = new RegExp(
-        "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$"
-      );
-      var test = strongRegex.test(updateData.passwordHash);
-      if (test) {
-      } else {
-        errorInsert["passwordHash"] =
-          "Mật khẩu tối thiểu 8 ký tự, ít nhất một chữ cái viết hoa, viết thường và một số";
-      }
-
-      if (updateData.passwordConfirm != updateData.passwordHash) {
-        errorInsert["passwordConfirm"] = "Mật khẩu không trùng";
-      }
-    }
-
-    // if (!updateData.phoneNumber) {
-    // 	errorInsert['phoneNumber'] = 'Điện thoại không được bỏ trống';
-    // }
-
-    // if ((updateData.phoneNumber || '').length > 255) {
-    // 	errorInsert['phoneNumber'] = 'Điện thoại không được nhập quá 255 ký tự';
-    // }
-
-    // if (updateData.phoneNumber && !validPhone(updateData.phoneNumber)) {
-    // 	errorInsert['phoneNumber'] = 'Điện thoại không đúng định dạng';
-    // }
-
-    // if (!updateData.email) {
-    // 	errorInsert['email'] = 'Email không được bỏ trống';
-    // }
-
-    // if ((updateData.email || '').length > 255) {
-    // 	errorInsert['email'] = 'Email không được nhập quá 255 ký tự';
-    // }
-
-    // if (updateData.email && !validEmail(updateData.email)) {
-    // 	errorInsert['email'] = 'Email không đúng định dạng';
-    //}
-
-    if (updateData.position && (updateData.position || "").length > 255) {
-      errorInsert["position"] = "Chức vụ nhập tối đa 255 ký tự";
-    }
-
-    if (updateData.department && (updateData.department || "").length > 255) {
-      errorInsert["department"] = "Phòng ban nhập tối đa 255 ký tự";
-    }
-
-    if (Object.keys(errorInsert).length > 0) {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          errorInsert,
-        };
-      });
-
-      return;
-    }
-
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        errorInsert: {},
-      };
-    });
-
-    formData.append("ID", updateData.id ? updateData.id : "");
-    formData.append("FullName", updateData.fullName ? updateData.fullName : "");
-    formData.append(
-      "PhoneNumber",
-      updateData.phoneNumber ? updateData.phoneNumber : ""
-    );
-    formData.append("Position", updateData.position ? updateData.position : "");
-    formData.append(
-      "Department",
-      updateData.department ? updateData.department : ""
-    );
-    formData.append("RoleID", updateData.roleID ? updateData.roleID : "");
-    formData.append("UserName", updateData.userName ? updateData.userName : "");
-    formData.append("Email", updateData.email ? updateData.email : "");
-    formData.append(
-      "PasswordHash",
-      updateData.passwordHash ? updateData.passwordHash : ""
-    );
-    formData.append(
-      "PasswordConfirm",
-      updateData.passwordConfirm ? updateData.passwordConfirm : ""
-    );
-    formData.append(
-      "AvatarFile",
-      updateData.avatarFile ? updateData.avatarFile : ""
-    );
-
-    if (closeForm) {
-      closeForm();
-    }
-    // console.log(updateData.avatarFile);
-    createUserInfo(formData).then((res) => {
-      this.setState({ isLoaded: true });
-      if (res.data.status == 404) {
-        const message = getErrorMessageServer(res);
-
-        if (message) {
-          this.setState((previousState) => {
-            return {
-              ...previousState,
-              errorInsert: {
-                global: message,
-              },
-            };
-          });
-        }
-
-        this.setState({
-          errNoti: res.data.message || "Thêm tài khoản thất bại",
-          isLoaded: false,
-        });
-
-        this.toggleModal("popupMessage");
-        this.setState({ isLoaded: false });
-        return;
-      } else if (res.data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            status: 1,
-            roleIDs: "",
-            userName: "",
-            fullName: "",
-            phone: "",
-            email: "",
-            position: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
-        if (closePopup != "closePopup") {
-          this.toggleModal("createNewModal");
-        }
-        this.setState({ isLoaded: false });
-      }
-    });
+    return undefined;
   };
 
-  // Handle Update User Account
-  handleUpdateInfoData = (value) => {
-    const { updateUserInfo } = this.props;
-    const updateData = { ...value };
-    const formData = new FormData();
+  strongPasswordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/;
 
-    let aacc = updateData.RoleID ? updateData.RoleID.split(",") : "";
-    let bbb = aacc.filter((x) => x != "");
+  normalize = (raw) => {
+    return {
+      id: this.getField(raw, "ID") ?? this.getField(raw, "id") ?? "",
+      fullName:
+        this.getField(raw, "FullName") ?? this.getField(raw, "fullName") ?? "",
+      phoneNumber:
+        this.getField(raw, "PhoneNumber") ??
+        this.getField(raw, "phoneNumber") ??
+        "",
+      position:
+        this.getField(raw, "Position") ?? this.getField(raw, "position") ?? "",
+      department:
+        this.getField(raw, "Department") ??
+        this.getField(raw, "department") ??
+        "",
+      roleID:
+        this.getField(raw, "RoleID") ?? this.getField(raw, "roleID") ?? "",
+      userName:
+        this.getField(raw, "UserName") ?? this.getField(raw, "userName") ?? "",
+      email: this.getField(raw, "Email") ?? this.getField(raw, "email") ?? "",
+      passwordHash:
+        this.getField(raw, "PasswordHash") ??
+        this.getField(raw, "passwordHash") ??
+        "",
+      passwordConfirm:
+        this.getField(raw, "PasswordConfirm") ??
+        this.getField(raw, "passwordConfirm") ??
+        undefined,
+      avatarFile:
+        this.getField(raw, "AvatarFile") ?? this.getField(raw, "avatarFile"),
+      avatar:
+        this.getField(raw, "Avatar") ?? this.getField(raw, "avatar") ?? "",
+      raw,
+    };
+  };
 
-    const errorUpdate = {};
+  validateUserData = ({ data, isUpdate = false, dfPasswordHash = "" }) => {
+    const err = {};
+    if (!data.fullName) err.fullName = "Họ và tên không được bỏ trống";
+    else if (data.fullName.length > 255)
+      err.fullName = "Họ và tên nhập tối đa 255 ký tự";
 
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        errorUpdate,
-      };
-    });
+    if (!data.roleID) err.roleID = "Chưa chọn Nhóm quyền";
 
-    if (!updateData.FullName) {
-      errorUpdate["fullName"] = "Họ và tên không được bỏ trống";
-    }
+    if (!data.userName) err.userName = "Tên đăng nhập không được bỏ trống";
+    else if (data.userName.length < 6)
+      err.userName = "Tên đăng nhập phải có ít nhất 6 kí tự";
+    else if (data.userName.length > 255)
+      err.userName = "Tên đăng nhập nhập tối đa 255 ký tự";
+    if (data.position && data.position.length > 255)
+      err.position = "Chức vụ nhập tối đa 255 ký tự";
+    if (data.department && data.department.length > 255)
+      err.department = "Phòng ban nhập tối đa 255 ký tự";
 
-    if ((updateData.FullName || "").length > 255) {
-      errorUpdate["fullName"] = "Họ và tên nhập tối đa 255 ký tự";
-    }
-
-    if (!updateData.RoleID) {
-      errorUpdate["roleID"] = "Chưa chọn Nhóm quyền";
-    }
-
-    if (!updateData.UserName) {
-      errorUpdate["userName"] = "Tên đăng nhập không được bỏ trống";
-    }
-
-    if (updateData.UserName && (updateData.UserName || "").length < 6) {
-      errorUpdate["userName"] = "Tên đăng nhập phải có ít nhất 6 kí tự";
-    }
-
-    if ((updateData.UserName || "").length > 255) {
-      errorUpdate["userName"] = "Tên đăng nhập nhập tối đa 255 ký tự ";
-    }
-
-    // if (!updateData.PasswordHash) {
-    // 	errorUpdate['passwordHash'] = 'Mật khẩu không được bỏ trống';
-    // }
-
-    if (updateData.PasswordHash) {
+    if (!isUpdate) {
+      if (!data.passwordHash) {
+        err.passwordHash = "Mật khẩu không được bỏ trống";
+      } else if (!this.strongPasswordRegex.test(data.passwordHash)) {
+        err.passwordHash =
+          "Mật khẩu tối thiểu 8 ký tự, ít nhất một chữ cái viết hoa, viết thường và một số";
+      }
+      if (data.passwordHash && data.passwordConfirm !== data.passwordHash) {
+        err.passwordConfirm = "Mật khẩu không trùng";
+      }
+    } else {
+      const newPass = data.passwordHash;
       if (
-        (updateData.PasswordHash || "").trim().toUpperCase() !=
-        (this.state.dfPasswordHash || "").trim().toUpperCase()
+        newPass &&
+        newPass.trim().toUpperCase() !==
+          (dfPasswordHash || "").trim().toUpperCase()
       ) {
-        var strongRegex = new RegExp(
-          "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$"
-        );
-        var test = strongRegex.test(updateData.PasswordHash);
-        if (test) {
-        } else {
-          errorUpdate["passwordHash"] =
+        if (!this.strongPasswordRegex.test(newPass)) {
+          err.passwordHash =
             "Mật khẩu tối thiểu 8 ký tự, ít nhất một chữ cái viết hoa, viết thường và một số";
         }
-
-        if (updateData.passwordConfirm != updateData.PasswordHash) {
-          errorUpdate["passwordConfirm"] = "Mật khẩu không trùng";
+        if (data.passwordConfirm !== newPass) {
+          err.passwordConfirm = "Mật khẩu không trùng";
         }
       }
     }
 
-    // if (!updateData.PhoneNumber) {
-    // 	errorUpdate['phoneNumber'] = 'Điện thoại không được bỏ trống';
-    // }
+    return err;
+  };
 
-    // if ((updateData.PhoneNumber || '').length > 255) {
-    // 	errorUpdate['phoneNumber'] = 'Điện thoại không được nhập quá 255 ký tự';
-    // }
-
-    // if (updateData.PhoneNumber && !validPhone(updateData.PhoneNumber)) {
-    // 	errorUpdate['phoneNumber'] = 'Điện thoại không đúng định dạng';
-    // }
-
-    // if (!updateData.Email) {
-    // 	errorUpdate['email'] = 'Email không được bỏ trống';
-    // }
-
-    // if ((updateData.Email || '').length > 255) {
-    // 	errorUpdate['email'] = 'Email không được nhập quá 255 ký tự';
-    // }
-
-    // if (updateData.Email && !validEmail(updateData.Email)) {
-    // 	errorUpdate['email'] = 'Email không đúng định dạng';
-    // }
-
-    if (updateData.Position && (updateData.Position || "").length > 255) {
-      errorUpdate["position"] = "Chức vụ nhập tối đa 255 ký tự";
+  buildFormData = ({ data, isUpdate = false, processedRoleID = null }) => {
+    const fd = new FormData();
+    fd.append("ID", data.id || "");
+    fd.append("FullName", data.fullName || "");
+    fd.append("PhoneNumber", data.phoneNumber || "");
+    fd.append("Position", data.position || "");
+    fd.append("Department", data.department || "");
+    fd.append(
+      "RoleID",
+      processedRoleID !== null ? processedRoleID : data.roleID || ""
+    );
+    fd.append("UserName", data.userName || "");
+    fd.append("Email", data.email ?? "");
+    fd.append("PasswordHash", data.passwordHash || "");
+    fd.append(
+      "PasswordConfirm",
+      typeof data.passwordConfirm !== "undefined"
+        ? data.passwordConfirm || ""
+        : ""
+    );
+    if (
+      typeof data.avatarFile !== "undefined" &&
+      data.avatarFile !== null &&
+      data.avatarFile !== ""
+    ) {
+      fd.append("AvatarFile", data.avatarFile);
+    } else if (isUpdate) {
+      fd.append("Avatar", data.avatar || "");
+    } else {
+      fd.append("AvatarFile", "");
     }
+    return fd;
+  };
 
-    if (updateData.Department && (updateData.Department || "").length > 255) {
-      errorUpdate["department"] = "Phòng ban nhập tối đa 255 ký tự";
-    }
+  handleCreateInfoData = async (value, closeForm, closePopup) => {
+    const { createUserInfo } = this.props;
+    const raw = this.state.updateData || value || {};
+    const data = this.normalize(raw);
 
-    if (Object.keys(errorUpdate).length > 0) {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          errorUpdate,
-        };
-      });
+    const errorInsert = this.validateUserData({ data, isUpdate: false });
 
+    if (Object.keys(errorInsert).length > 0) {
+      this.setState((prev) => ({ ...prev, errorInsert }));
       return;
     }
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        errorUpdate: {},
-        detail: null,
-        updateModal: false,
-      };
-    });
 
-    formData.append("ID", updateData.ID ? updateData.ID : "");
-    formData.append("FullName", updateData.FullName ? updateData.FullName : "");
-    formData.append(
-      "PhoneNumber",
-      updateData.PhoneNumber ? updateData.PhoneNumber : ""
-    );
-    formData.append("Position", updateData.Position ? updateData.Position : "");
-    formData.append(
-      "Department",
-      updateData.Department ? updateData.Department : ""
-    );
-    formData.append("RoleID", bbb.join());
-    formData.append("UserName", updateData.UserName ? updateData.UserName : "");
-    formData.append(
-      "Email",
-      updateData.Email == null || updateData.Email == "null"
-        ? ""
-        : updateData.Email
-    );
-    formData.append(
-      "PasswordHash",
-      updateData.PasswordHash ? updateData.PasswordHash : ""
-    );
-    if (typeof updateData.passwordConfirm !== "undefined") {
-      // console.log('TH1')
-      formData.append(
-        "PasswordConfirm",
-        updateData.passwordConfirm ? updateData.passwordConfirm : ""
-      );
-    } else {
-      // console.log('TH2')
-      formData.append("PasswordConfirm", "");
-    }
+    this.setState((prev) => ({ ...prev, errorInsert: {} }));
 
-    if (typeof updateData.avatarFile !== "undefined") {
-      formData.append("AvatarFile", updateData.avatarFile);
-    } else {
-      formData.append("Avatar", updateData.Avatar ?? "");
-    }
+    const formData = this.buildFormData({ data, isUpdate: false });
 
-    // Call update
-    updateUserInfo(formData).then((res) => {
+    if (closeForm) closeForm();
+
+    try {
       this.setState({ isLoaded: true });
-      if (res.data.status == 404) {
-        this.setState({ isLoaded: false });
-        this.setState({ errNoti: res.data.message, isLoaded: false });
+      const res = await createUserInfo(formData);
+      this.setState({ isLoaded: false });
+
+      if (res?.data?.status == 404) {
+        const message = getErrorMessageServer(res);
+        if (message) {
+          this.setState((prev) => ({
+            ...prev,
+            errorInsert: { global: message },
+          }));
+        }
+        this.setState({
+          errNoti: res.data.message || "Thêm tài khoản thất bại",
+        });
         this.toggleModal("popupMessage");
         return;
-      } else if (res.data.status == 200) {
-        this.setState({ isLoaded: false });
+      }
+
+      if (res?.data?.status == 200) {
+        toast.success("Thêm mới tài khoản thành công!");
+        this.fetchSummary(
+          JSON.stringify({
+            status: 1,
+            roleIDs: "",
+            userName: "",
+            fullName: "",
+            phone: "",
+            email: "",
+            position: "",
+            orderBy: "",
+            page: null,
+            limit: null,
+          })
+        );
+        if (closePopup !== "closePopup") {
+          this.toggleModal("createNewModal");
+        }
+      }
+    } catch (err) {
+      this.setState({
+        isLoaded: false,
+        errNoti: err.message || "Thêm tài khoản thất bại",
+      });
+      this.toggleModal("popupMessage");
+    }
+  };
+
+  handleUpdateInfoData = async (value) => {
+    const { updateUserInfo } = this.props;
+    const updateDataRaw = { ...value };
+    const data = this.normalize(updateDataRaw);
+
+    let roleIDs = data.roleID;
+    if (typeof roleIDs === "string") {
+      roleIDs = roleIDs
+        .split(",")
+        .map((x) => x.trim())
+        .filter((x) => x !== "")
+        .join(",");
+    }
+
+    const dfPasswordHash = this.state.dfPasswordHash || "";
+
+    const errorUpdate = this.validateUserData({
+      data,
+      isUpdate: true,
+      dfPasswordHash,
+    });
+
+    if (Object.keys(errorUpdate).length > 0) {
+      this.setState((prev) => ({ ...prev, errorUpdate }));
+      return;
+    }
+
+    this.setState((prev) => ({
+      ...prev,
+      errorUpdate: {},
+      detail: null,
+      updateModal: false,
+    }));
+
+    const formData = this.buildFormData({
+      data,
+      isUpdate: true,
+      processedRoleID: roleIDs,
+    });
+
+    try {
+      this.setState({ isLoaded: true });
+      const res = await updateUserInfo(formData);
+      this.setState({ isLoaded: false });
+
+      if (res?.data?.status == 404) {
+        this.setState({ errNoti: res.data.message || "Cập nhật thất bại" });
+        this.toggleModal("popupMessage");
+        return;
+      }
+
+      if (res?.data?.status == 200) {
+        toast.success("Cập nhật tài khoản thành công!");
         this.fetchSummary(
           JSON.stringify({
             status: 1,
@@ -706,7 +542,13 @@ class UserAccount extends Component {
           })
         );
       }
-    });
+    } catch (err) {
+      this.setState({
+        isLoaded: false,
+        errNoti: err.message || "Cập nhật thất bại",
+      });
+      this.toggleModal("popupMessage");
+    }
   };
 
   toggleModal = (state, type) => {
@@ -809,8 +651,6 @@ class UserAccount extends Component {
       item["collapse"] = false;
     });
 
-    // dataExport.push(itemDataExport)
-
     this.setState({ dataExport: itemDataExport });
   };
 
@@ -878,7 +718,6 @@ class UserAccount extends Component {
               ) : (
                 <Row>
                   <div className="col">
-                    {/* Header */}
                     <HeaderTable
                       screen="account"
                       dataReload={() => {
@@ -926,7 +765,6 @@ class UserAccount extends Component {
                       closeForm={this.closeForm}
                     />
 
-                    {/* Table */}
                     <Card className="shadow">
                       <Table
                         className="align-items-center tablecs table-class-css"
@@ -962,24 +800,6 @@ class UserAccount extends Component {
                                 >
                                   <td className="table-scale-col table-user-col-1">
                                     {item.index}
-                                  </td>
-                                  {/* <td style={{ textAlign: 'center' }} className={`table-scale-col cursor-unset`}>
-																				<span className={`${item.status === 0 || item.status === null ? classes.noActiveStt : classes.activeStt}`}>{item.strStatus}</span>
-																			</td> */}
-                                  <td>
-                                    {item.avatar !== null ? (
-                                      <div
-                                        style={{
-                                          background: `url(${item.avatar})`,
-                                        }}
-                                        className={classes.ava}
-                                      />
-                                    ) : (
-                                      <div
-                                        style={{ background: `url(${Noimg})` }}
-                                        className={classes.ava}
-                                      />
-                                    )}
                                   </td>
                                   <td
                                     style={{ textAlign: "left" }}
@@ -1056,24 +876,19 @@ class UserAccount extends Component {
                       </Table>
                     </Card>
 
-                    {/* Pagination */}
-                    {
-                      // Page of Table
-                      Array.isArray(data) && (
-                        <Pagination
-                          data={data}
-                          listLength={listLength}
-                          totalPage={totalPage}
-                          totalElement={totalElement}
-                          handlePageClick={this.handlePageClick}
-                        />
-                      )
-                    }
+                    {Array.isArray(data) && (
+                      <Pagination
+                        data={data}
+                        listLength={listLength}
+                        totalPage={totalPage}
+                        totalElement={totalElement}
+                        handlePageClick={this.handlePageClick}
+                      />
+                    )}
                   </div>
                 </Row>
               )}
 
-              {/* Update */}
               {detail !== null && (
                 <UpdatePopup
                   moduleTitle="Cập nhật thông tin"
@@ -1144,15 +959,9 @@ class UserAccount extends Component {
 
               <ToastContainer position="top-center" autoClose={3000} />
 
-              {
-                //Set Alert Context
-                setAlertContext(statusPopup)
-              }
+              {setAlertContext(statusPopup)}
 
-              {
-                //Open Alert Context
-                openAlertContext(statusPopup)
-              }
+              {openAlertContext(statusPopup)}
             </Container>
           </div>
         }
@@ -1165,7 +974,6 @@ const mapStateToProps = (state) => {
   return {
     account: state.UserListStore,
     role: state.RoleStore,
-    accountNewState: state.accountStateNew,
   };
 };
 
@@ -1173,7 +981,6 @@ const mapDispatchToProps = (dispatch) => {
   return {
     ...bindActionCreators(actionRoleCreators, dispatch),
     ...bindActionCreators(actionCreators, dispatch),
-    ...bindActionCreators(actionAccountCreatorsNew, dispatch),
   };
 };
 

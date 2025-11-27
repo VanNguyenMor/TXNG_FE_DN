@@ -139,7 +139,7 @@ class UpdateModal extends Component {
 						</Validate>
 					</div>
 
-					<div className={`${classes.rowItem} mr-b-0 `}>
+					{/* <div className={`${classes.rowItem} mr-b-0 `}>
 						<label
 							className="form-control-label"
 						>
@@ -164,13 +164,12 @@ class UpdateModal extends Component {
 										/>
 									</InputGroup>
 									<p className={classes.error}>{errorMessages.PhoneNumber}</p>
-									{/* <p className='form-error-message margin-bottom-0'>{errorUpdate['phoneNumber'] || ''}</p> */}
 								</div>
 							)}
 						</Validate>
-					</div>
+					</div> */}
 
-					<div className={`${classes.rowItem} mr-b-0 `}>
+					{/* <div className={`${classes.rowItem} mr-b-0 `}>
 						<label
 							className="form-control-label"
 						>
@@ -195,7 +194,6 @@ class UpdateModal extends Component {
 										/>
 									</InputGroup>
 									<p className={classes.error}>{errorMessages.Email}</p>
-									{/* <p className='form-error-message margin-bottom-0'>{errorUpdate['email'] || ''}</p> */}
 								</div>
 							)}
 						</Validate>
@@ -225,7 +223,6 @@ class UpdateModal extends Component {
 										/>
 									</InputGroup>
 									<p className={classes.error}>{errorMessages.Position}</p>
-									{/* <p className='form-error-message margin-bottom-0'>{errorUpdate['position'] || ''}</p> */}
 								</div>
 							)}
 						</Validate>
@@ -256,13 +253,12 @@ class UpdateModal extends Component {
 										/>
 									</InputGroup>
 									<p className={classes.error}>{errorMessages.Department}</p>
-									{/* <p className='form-error-message margin-bottom-0'>{errorUpdate['department'] || ''}</p> */}
 								</div>
 							)}
 						</Validate>
-					</div>
+					</div> */}
 
-					<div className={`${classes.rowItem} mr-b-0 `}>
+					<div className={`${classes.rowItem} `}>
 						<label
 							className="form-control-label"
 						>
@@ -389,7 +385,7 @@ class UpdateModal extends Component {
 						</Validate>
 					</div>
 
-					<div className={`${classes.rowItem} mr-b-0 `}>
+					{/* <div className={`${classes.rowItem} mr-b-0 `}>
 						<label
 							className="form-control-label"
 							style={{ height: 30 }}
@@ -408,7 +404,7 @@ class UpdateModal extends Component {
 								<input type="file" accept="image/*" onChange={(event) => this.handleUploadFile(event)} />
 							</div>
 						</div>
-					</div>
+					</div> */}
 
 					{
 						<div className={classes.rowItem}>

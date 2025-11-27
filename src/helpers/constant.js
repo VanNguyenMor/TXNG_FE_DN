@@ -3,7 +3,7 @@ import { getCurrentDatetimeStringForFile } from "./common";
 export const USER_ACCOUNT_HEADER = [
     'Stt',
     // 'Trạng thái',
-    'Hình đại diện',
+    // 'Hình đại diện',
     'Nhóm quyền',
     'Họ và tên',
     'Tên đăng nhập',
