@@ -339,7 +339,7 @@ class PlantingZone extends Component {
   };
 
   onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
+    const { dataInsert, editId } = this.state;
     const {
       name,
       plantingTypeId,
@@ -365,7 +365,7 @@ class PlantingZone extends Component {
 
     const gpsString = gps?.lat && gps?.long ? `${gps.lat},${gps.long}` : "";
     const payload = {
-      ID: id,
+      ID: editId || id,
       Name: name,
       FileView: "",
       PlantingTypeId: plantingTypeId,
@@ -388,7 +388,7 @@ class PlantingZone extends Component {
     if (Object.keys(errorInserts).length > 0) {
       return;
     }
-    if (id) {
+    if (editId) {
       this.updateZone(payload);
     } else {
       this.createZone(payload);
@@ -411,8 +411,8 @@ class PlantingZone extends Component {
         })
       );
     } else {
-      console.error("Tạo vùng trồng thất bại");
-      this.setState({ message: "Tạo vùng sản xuất thất bại" });
+      console.error("Cập nhật vùng trồng thất bại");
+      this.setState({ message: "Cập nhật vùng sản xuất thất bại" });
       this.toggleModal("popupMessage");
     }
   };
