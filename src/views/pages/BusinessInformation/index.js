@@ -25,6 +25,9 @@ import locationIcon from "../../../assets/img/locationIcon/location.png";
 import GoogleAutoCompleteInput from "../../../components/GoogleAutoCompleteInput";
 import ImageUploader from "components/ImageUploader/ImageUploader";
 import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUploader";
+import { fetchData } from "helpers/fetchData";
+import getDataFormLocalStorage from "helpers/getDataFormLocalStorage";
+import Select from "components/Select";
 
 const AnyReactComponent = ({ text }) => (
   <div>
@@ -37,27 +40,36 @@ class BusinessInformation extends Component {
 
     this.state = {
       currentTab: 0,
+      listFields: null,
+      provinces: null,
+      districts: null,
+      wards: null,
+
       configSetting: {
+        verifiedImage: null,
         businessImageFile: null,
         businessImageUrlVal: Noimg,
         businessAvatar: "",
-        businessName: "",
-        taxCode: "",
+        companyName: "",
+        companyCode: "",
         industryId: null,
         introduce: "",
         isShowMapViewLocation: false,
         address: "",
-        provinceId: null,
-        districtId: null,
-        wardId: null,
+        provinceID: null,
+        pRovinceName: "",
+        districtID: null,
+        districtName: "",
+        wardID: null,
+        wardName: "",
         phoneNumber: "",
         faxText: "",
         email: "",
         website: "",
-        contactPersonName: "",
-        contactPersonPhone: "",
-        contactPersonEmail: "",
-        isCheckPlanning: false,
+        contactName: "",
+        contactPhone: "",
+        contactEmail: "",
+        isCheckZone: false,
         location: "",
         businessLicenseImages: [Noimg],
         registrationPaperImages: [Noimg],
@@ -102,28 +114,30 @@ class BusinessInformation extends Component {
     });
   };
 
-  onChangeValue = (name) => (e) => {
+  onChangeValue = (name) => (eOrValue) => {
     let value;
 
-    if (e.target.type === "checkbox") {
-      value = e.target.checked;
-    } else {
-      value = e.target.value;
+    if (eOrValue && eOrValue.target) {
+      if (eOrValue.target.type === "checkbox") {
+        value = eOrValue.target.checked;
+      } else {
+        value = eOrValue.target.value;
 
-      if (name === "price") {
-        value = replaceCommaDot(value, "");
+        if (name === "price") {
+          value = replaceCommaDot(value, "");
+        }
       }
+    } else {
+      value = eOrValue;
     }
 
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        configSetting: {
-          ...previousState.configSetting,
-          [name]: value,
-        },
-      };
-    });
+    this.setState((previousState) => ({
+      ...previousState,
+      configSetting: {
+        ...previousState.configSetting,
+        [name]: value,
+      },
+    }));
   };
   handleMapLocation = (gps) => {
     if (gps.length === 0) return LOCATION_DEFAULT;
@@ -137,6 +151,137 @@ class BusinessInformation extends Component {
       return mapLocation;
     }
   };
+  async loadData() {
+    try {
+      // Lấy danh sách ngành nghề
+      const resFieldCompany = await fetchData.infoCompany.getField();
+
+      if (resFieldCompany) {
+        this.setState((prevState) => ({
+          ...prevState,
+          listFields: resFieldCompany,
+        }));
+      }
+
+      // Lấy ra tất cả tỉnh thành
+      const resProvinceAll = await fetchData.infoCompany.getProvinceAll();
+
+      if (resProvinceAll) {
+        this.setState((prevState) => ({
+          ...prevState,
+          provinces: resProvinceAll,
+        }));
+      }
+
+      // Lấy thông tin công ty theo account id
+      const resCurrentCompany = await fetchData.account.getCurrentCompany();
+
+      const id = resCurrentCompany?.company?.id;
+      if (!id) {
+        console.warn("Không lấy được companyId");
+        return;
+      }
+      await this.loadDetailData(id);
+    } catch (error) {
+      console.error("Lỗi khi load detailData:", error);
+    }
+  }
+  async loadDetailData(id) {
+    if (!id) return;
+
+    try {
+      const res = await fetchData.infoCompany.detail(id);
+      console.log(res);
+      const {
+        companyName,
+        companyCode,
+        id: companyId,
+        fieldName,
+        address,
+        provinceID,
+        pRovinceName,
+        districtID,
+        districtName,
+        wardID,
+        wardName,
+        phoneNumber,
+        email,
+        fax,
+        website,
+        contactName,
+        contactPhone,
+        contactEmail,
+        isCheckZone,
+        zoneIDs,
+        certifications,
+        businessLicenses,
+        verifiedImage,
+      } = res;
+
+      this.setState(
+        (prevState) => ({
+          ...prevState,
+          configSetting: {
+            ...prevState.configSetting,
+            companyName,
+            companyCode,
+            id: companyId,
+            address,
+            provinceID,
+            pRovinceName,
+            districtID,
+            districtName,
+            wardID,
+            wardName,
+            phoneNumber,
+            fax,
+            email,
+            website,
+            contactName,
+            contactPhone,
+            contactEmail,
+            isCheckZone,
+            verifiedImage,
+            zoneIDs,
+          },
+        }),
+
+        // Lấy ra danh sách quận/huyện theo id tỉnh/thành
+        () => {
+          this.onLoadListDistrictByProvinceId(provinceID);
+          this.onLoadListWardByDistrictId(districtID);
+        }
+      );
+    } catch (error) {
+      console.error("Lỗi khi load detailData:", error);
+    }
+  }
+
+  async onLoadListDistrictByProvinceId(provinceID) {
+    try {
+      const resDistrictCompanyBox =
+        await fetchData.infoCompany.getListDistrictByProvinceId(provinceID);
+      this.setState({ districts: resDistrictCompanyBox });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async onLoadListWardByDistrictId(districtID) {
+    try {
+      const resWardCompanyBox =
+        await fetchData.infoCompany.getListWardByDistrictId(districtID);
+      this.setState({ wards: resWardCompanyBox });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  componentDidMount() {
+    // this.loadDetailData(companyId);
+    this.loadData();
+  }
+
   onSaveConfigSystem = () => {
     const { configSetting } = this.state;
     console.log(configSetting);
@@ -245,7 +390,7 @@ class BusinessInformation extends Component {
           isShowMapViewLocation: false,
           configSetting: {
             ...previousState.configSetting,
-            location: gps,
+            zoneIDs: gps,
           },
         };
       });
@@ -324,12 +469,12 @@ class BusinessInformation extends Component {
     });
   };
   handleImageUploadSuccess = (file, previewUrl) => {
+    const fileResult = file?.name;
     this.setState(
       (previousState) => ({
         configSetting: {
           ...previousState.configSetting,
-          businessImageFile: file,
-          businessImageUrlVal: previewUrl,
+          verifiedImage: fileResult,
         },
       }),
       () => {
@@ -387,6 +532,10 @@ class BusinessInformation extends Component {
   };
   render() {
     const {
+      // state list
+      provinces,
+      districts,
+
       configSetting,
       errorsConfigSystem,
       currentTab,
@@ -394,6 +543,8 @@ class BusinessInformation extends Component {
       isShowMapViewLocation,
       position,
       positionChange,
+      listFields,
+      industryId,
     } = this.state;
 
     options.map((option) => {
@@ -428,7 +579,7 @@ class BusinessInformation extends Component {
               <div>
                 <label className="form-control-label">Hình đại diện</label>
                 <ImageUploader
-                  initialImageUrl={Noimg}
+                  initialImageUrl={configSetting.verifiedImage || Noimg}
                   onFileSelected={this.handleImageUploadSuccess}
                 />
               </div>
@@ -440,14 +591,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("businessName")}
-                      value={configSetting.businessName}
+                      onChange={this.onChangeValue("companyName")}
+                      value={configSetting.companyName}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.businessName}
+                      {errorsConfigSystem.companyName}
                     </p>
                   </div>
                 </div>
@@ -458,14 +609,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("taxCode")}
-                      value={configSetting.taxCode}
+                      onChange={this.onChangeValue("companyCode")}
+                      value={configSetting.companyCode}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.taxCode}
+                      {errorsConfigSystem.companyCode}
                     </p>
                   </div>
                 </div>
@@ -477,16 +628,18 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("industryId")}
-                      value={configSetting.industryId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn ngành nghề</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={industryId}
+                      name="listFields"
+                      title="Chọn ngành nghề"
+                      data={listFields?.fields}
+                      labelName="fieldName"
+                      defaultValue={null}
+                      isMulti={true}
+                      val="id"
+                      handleChange={this.onChangeValue("industryId")}
+                    />
+
                     <p className="form-error-message">
                       {errorsConfigSystem.industryId}
                     </p>
@@ -606,18 +759,18 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("provinceId")}
-                      value={configSetting.provinceId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn Tỉnh/Thành</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={configSetting?.pRovinceName}
+                      name="provinceID"
+                      title="Chọn tỉnh/thành"
+                      data={provinces}
+                      labelName="provinceName"
+                      defaultValue={configSetting?.provinceID}
+                      val="id"
+                      handleChange={this.onChangeValue("provinceID")}
+                    />
                     <p className="form-error-message">
-                      {errorsConfigSystem.provinceId}
+                      {errorsConfigSystem.provinceID}
                     </p>
                   </div>
                 </div>
@@ -627,18 +780,18 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("districtId")}
-                      value={configSetting.districtId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn Quận/Huyện</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={configSetting?.districtName}
+                      name="districtID"
+                      title="Chọn Quận/Huyện"
+                      data={districts}
+                      labelName="districtName"
+                      defaultValue={configSetting?.districtID}
+                      val="id"
+                      handleChange={this.onChangeValue("districtID")}
+                    />
                     <p className="form-error-message">
-                      {errorsConfigSystem.districtId}
+                      {errorsConfigSystem.districtID}
                     </p>
                   </div>
                 </div>
@@ -648,18 +801,18 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("wardId")}
-                      value={configSetting.wardId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn Phường/Xã</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={configSetting?.wardName}
+                      name="wardID"
+                      title="Chọn Phường/Xã"
+                      data={districts}
+                      labelName="wardName"
+                      defaultValue={configSetting?.wardID}
+                      val="id"
+                      handleChange={this.onChangeValue("wardID")}
+                    />
                     <p className="form-error-message">
-                      {errorsConfigSystem.wardId}
+                      {errorsConfigSystem.wardID}
                     </p>
                   </div>
                 </div>
@@ -689,14 +842,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("faxText")}
-                      value={configSetting.faxText}
+                      onChange={this.onChangeValue("fax")}
+                      value={configSetting.fax}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.faxText}
+                      {errorsConfigSystem.fax}
                     </p>
                   </div>
                 </div>
@@ -745,14 +898,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("contactPersonName")}
-                      value={configSetting.contactPersonName}
+                      onChange={this.onChangeValue("contactName")}
+                      value={configSetting.contactName}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.contactPersonName}
+                      {errorsConfigSystem.contactName}
                     </p>
                   </div>
                 </div>
@@ -763,14 +916,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("contactPersonPhone")}
-                      value={configSetting.contactPersonPhone}
+                      onChange={this.onChangeValue("contactPhone")}
+                      value={configSetting.contactPhone}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.contactPersonPhone}
+                      {errorsConfigSystem.contactPhone}
                     </p>
                   </div>
                 </div>
@@ -781,14 +934,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("contactPersonEmail")}
-                      value={configSetting.contactPersonEmail}
+                      onChange={this.onChangeValue("contactEmail")}
+                      value={configSetting.contactEmail}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.contactPersonEmail}
+                      {errorsConfigSystem.contactEmail}
                     </p>
                   </div>
                 </div>
@@ -811,8 +964,8 @@ class BusinessInformation extends Component {
                   </label>
                   <input
                     id="is-check-planning-input"
-                    onChange={this.onChangeValue("isCheckPlanning")}
-                    checked={configSetting.isCheckPlanning}
+                    onChange={this.onChangeValue("isCheckZone")}
+                    checked={configSetting.isCheckZone}
                     type="checkbox"
                     className="config-system-content-config-system-item-input"
                     style={{ width: "fit-content", marginLeft: "5px" }}
@@ -839,8 +992,8 @@ class BusinessInformation extends Component {
                       className="config-system-content-config-system-item-box"
                     >
                       <input
-                        onChange={this.onChangeValue("location")}
-                        value={configSetting.location}
+                        onChange={this.onChangeValue("zoneIDs")}
+                        value={configSetting.zoneIDs}
                         type="text"
                         readOnly
                         className="config-system-content-config-system-item-input"
@@ -857,7 +1010,7 @@ class BusinessInformation extends Component {
                         />
                       </button>
                       <p className="form-error-message">
-                        {errorsConfigSystem.location}
+                        {errorsConfigSystem.zoneIDs}
                       </p>
                     </div>
                   </div>

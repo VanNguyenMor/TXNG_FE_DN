@@ -124,6 +124,8 @@ class InsertOrUpadte extends Component {
     this.refFileImage = null;
     this.refFileImages = null;
   }
+
+  
   async loadDetailData(id) {
     if (!id) return;
 

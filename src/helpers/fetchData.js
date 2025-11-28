@@ -6,6 +6,8 @@ import {
   PROVINCE,
   WARD,
   PLANTING_ZONE,
+  INFO_COMPANY,
+  ACCOUNT,
 } from "./endpoint";
 
 export const fetchData = {
@@ -44,20 +46,6 @@ export const fetchData = {
         PAYLOAD.defaultPayLoad
       );
       return result?.data || [];
-    },
-    create: async (data) => {
-      try {
-        const result = await callApi(
-          "post",
-          PLANTING_ZONE.createPlantingZone,
-          data,
-          false
-        );
-        return result?.data || null;
-      } catch (error) {
-        console.error("Lỗi khi tạo Planting Zone:", error);
-        return null;
-      }
     },
   },
 
@@ -118,6 +106,93 @@ export const fetchData = {
         return result?.data || null;
       } catch (error) {
         console.error("Lỗi khi xóa Planting Zone:", error);
+        return null;
+      }
+    },
+  },
+  account: {
+    getCurrentCompany: async () => {
+      try {
+        const result = await callApi("get", ACCOUNT.getCurrentCompany);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin công ty hiện tại:", error);
+        return null;
+      }
+    },
+  },
+
+  infoCompany: {
+    detail: async (id) => {
+      try {
+        const result = await callApi(
+          "get",
+          `${INFO_COMPANY.detailInfoCompany.replace("{id}", id)}`
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin:", error);
+        return null;
+      }
+    },
+    getField: async () => {
+      try {
+        const result = await callApi("post", INFO_COMPANY.getFieldComboBox, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin:", error);
+        return null;
+      }
+    },
+    getProvinceComboBox: async () => {
+      try {
+        const result = await callApi(
+          "get",
+          INFO_COMPANY.getListProvinceComboBox
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin getProvinceComboBox:", error);
+        return null;
+      }
+    },
+    getProvinceAll: async () => {
+      try {
+        const result = await callApi("get", INFO_COMPANY.getListProvinceAll);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin getListProvinceAll:", error);
+        return null;
+      }
+    },
+    getListDistrictByProvinceId: async (id) => {
+      try {
+        const result = await callApi(
+          "get",
+          `${INFO_COMPANY.getListDistrictByProvinceId.replace("{id}", id)}`,
+          {}
+        );
+
+        return result?.data || null;
+      } catch (error) {
+        console.error(
+          "Lỗi khi lấy thông tin getListDistrictByProvinceId:",
+          error
+        );
+        return null;
+      }
+    },
+    getListWardByDistrictId: async (id) => {
+      try {
+        const result = await callApi(
+          "get",
+          `${INFO_COMPANY.getListWardByDistrictId.replace("{id}", id)}`,
+          {}
+        );
+
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin getListWardByDistrictId:", error);
         return null;
       }
     },
