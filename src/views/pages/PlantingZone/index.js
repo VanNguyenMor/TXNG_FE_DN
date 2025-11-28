@@ -44,6 +44,7 @@ import {
 import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { fetchData } from "helpers/fetchData.js";
 
 class PlantingZone extends Component {
   constructor(props) {
@@ -64,10 +65,6 @@ class PlantingZone extends Component {
       roles: [],
       zones: [],
       editStatus: true,
-      district: [],
-      districtList: [],
-      province: [],
-      ward: [],
       provinceIDCurrent: null,
       headerTitle: PLANTING_ZONE,
       limit: LIMIT_ITEM_IN_PAGE,
@@ -95,7 +92,6 @@ class PlantingZone extends Component {
 
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
-    /* Fetch Summary */
     this.fetchSummary(
       JSON.stringify({
         search: "",
@@ -121,11 +117,6 @@ class PlantingZone extends Component {
       });
     });
   }
-
-  // componentDidUpdate() {
-  // 	// This method is called when the route parameters change
-  // 	this.closeStatusModal();
-  // }
 
   fetchSummary = (data) => {
     const { getListPlantingZone } = this.props;
@@ -268,6 +259,7 @@ class PlantingZone extends Component {
     const plantingTypeId = dataInsert.plantingTypeId;
     const plantingZoneId = dataInsert.plantingZoneId;
     const gps = dataInsert.gps;
+    const provinceId = dataInsert.provinceId;
     const districtId = dataInsert.districtId;
     const wardId = dataInsert.wardId;
     const gpsNew = dataInsert.gpsNew;
@@ -280,18 +272,18 @@ class PlantingZone extends Component {
 
     if (plantingZoneId) {
     } else {
+      if (!provinceId) {
+        errorInserts.provinceId = "Tỉnh/thành không được bỏ trống";
+      }
       if (!districtId) {
         errorInserts.districtId = "Quận/Huyện không được bỏ trống";
       }
       if (!wardId) {
         errorInserts.wardId = "Phường/Xã không được bỏ trống";
       }
-      // if (!gps) {
-      //   errorInserts.gps = 'GPS không được bỏ trống';
-      // }
     }
 
-    if (gpsNew.length < 3) {
+    if (gpsNew?.length < 3) {
       errorInserts.gps = "Nhập tối thiểu 3 GPS";
     }
 
@@ -339,74 +331,52 @@ class PlantingZone extends Component {
       errorInserts.plantingTypeId = "Loại vùng sản xuất không được bỏ trống";
     }
 
-    // if (!gps && !plantingZoneId) {
-    // 	errorInserts.gps = 'GPS không được bỏ trống';
-    // }
-
-    // if (!round) {
-    //   errorInserts.round = 'Phạm vi (Bán kính) không được bỏ trống';
-    // }
-
-    // if (!unitIdRound) {
-    //   errorInserts.unitIdRound = 'Đơn vị đo Bán kính không được bỏ trống';
-    // }
-
-    // if (!bad) {
-    //   errorInserts.bad = 'Dung sai không được bỏ trống';
-    // }
-
-    // if (!unitIdBad) {
-    //   console.log(this.state);
-    //   errorInserts.unitIdBad = 'Đơn vị Dung sai không được bỏ trống';
-    // }
-
     return errorInserts;
   };
 
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
-    const name = dataInsert.name;
-    const plantingTypeId = dataInsert.plantingTypeId;
-    const plantingZoneId = dataInsert.plantingZoneId;
-    const gps = dataInsert.gps;
-    const round = dataInsert.round;
-    const districtId = dataInsert.districtId;
-    const wardId = dataInsert.wardId;
-    const bad = dataInsert.bad;
-    const unitIdRound = dataInsert.unitIdRound;
-    const unitIdBad = dataInsert.unitIdBad;
-    const id = dataInsert.id;
-    const gpsNew = dataInsert.gpsNew;
-    const icon = dataInsert.icon;
-    const iconFile = dataInsert.iconFile;
-    const errorInserts = this.checkDataInsert(true);
-    const color = dataInsert.color;
-    const imagesFile = dataInsert.mfileImg;
-    const images = dataInsert.fileImage;
+  handleLoadDetailData = (dataInsertFromChild) => {
+    this.setState({ dataInsert: dataInsertFromChild });
+  };
 
-    formData.append("ID", id);
-    formData.append("Name", name);
-    formData.append("PlantingTypeID", plantingTypeId);
-    formData.append("DistrictID", districtId);
-    formData.append("WardID", wardId);
-    formData.append("Color", color ? color : "");
-    formData.append("Images", images ? images : "");
-    if (imagesFile) {
-      for (let i = 0; i < imagesFile.length; i++) {
-        formData.append(`ImagesFile`, imagesFile ? imagesFile[i] : null);
-      }
-    }
-    if (iconFile) {
-      formData.append("IconFile", iconFile);
-    } else {
-      formData.append("Icon", icon ? icon : "");
-    }
-    if (gpsNew) {
-      for (let i = 0; i < gpsNew.length; i++) {
-        formData.append(`GPSNew`, gpsNew[i].content);
-      }
-    }
+  onConfirm = (toggleModal, closePopup) => {
+    const { dataInsert, editId } = this.state;
+    const {
+      name,
+      plantingTypeId,
+      plantingTypeAttribute,
+      provinceId,
+      districtId,
+      wardId,
+      gps,
+      plantingZoneId,
+      gpsNew,
+      fileView,
+      id,
+    } = dataInsert;
+
+    const errorInserts = this.checkDataInsert(true);
+    const gpsNewArray = (gpsNew || [])
+      .map((p) =>
+        p.lat !== undefined && p.long !== undefined
+          ? `${p.lat},${p.long}`
+          : p.content
+      )
+      .filter(Boolean);
+
+    const gpsString = gps?.lat && gps?.long ? `${gps.lat},${gps.long}` : "";
+    const payload = {
+      ID: editId || id,
+      Name: name,
+      FileView: "",
+      PlantingTypeId: plantingTypeId,
+      Attributes: JSON.stringify(plantingTypeAttribute),
+      ProvinceId: "82",
+      DistrictId: "823",
+      WardId: "28654",
+      GpsNew: gpsNewArray,
+      Gps: gpsString,
+      PlantingZoneId: plantingZoneId,
+    };
 
     this.setState((previousState) => {
       return {
@@ -418,74 +388,79 @@ class PlantingZone extends Component {
     if (Object.keys(errorInserts).length > 0) {
       return;
     }
-
-    if (id) {
-      this.props.editPlantingZone(formData).then((res) => {
-        const data = (res || {}).data || {};
-
-        if (data.status == 200) {
-          this.fetchSummary(
-            JSON.stringify({
-              search: "",
-              filter: "",
-              orderBy: "",
-              page: null,
-              limit: null,
-            })
-          );
-
-          if (toggleModal) {
-            toggleModal();
-          }
-
-          this.setState((previousState) => {
-            return {
-              ...previousState,
-              isShowForEdit: false,
-              editId: null,
-              message: "Sửa vùng sản xuất thành công",
-            };
-          });
-        } else {
-          const message = getErrorMessageServer(res);
-
-          this.setState({ message: message || "Sửa vùng sản xuất thất bại" });
-
-          this.toggleModal("popupMessage");
-        }
-      });
+    if (editId) {
+      this.updateZone(payload);
     } else {
-      this.props.addPlantingZone(formData).then((res) => {
-        const data = (res || {}).data || {};
+      this.createZone(payload);
+    }
+  };
+  updateZone = async (payload) => {
+    const result = await fetchData.plantingZone.update(payload);
 
-        if (data.status == 200) {
-          this.fetchSummary(
-            JSON.stringify({
-              search: "",
-              filter: "",
-              orderBy: "",
-              page: null,
-              limit: null,
-            })
-          );
+    if (result) {
+      console.log("Cập nhật thành công vùng trồng:", result);
+      this.setState({ message: "Cập nhật vùng sản xuất thành công" });
+      this.toggleModal("popupMessage");
+      this.fetchSummary(
+        JSON.stringify({
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+    } else {
+      console.error("Cập nhật vùng trồng thất bại");
+      this.setState({ message: "Cập nhật vùng sản xuất thất bại" });
+      this.toggleModal("popupMessage");
+    }
+  };
+  createZone = async (payload) => {
+    const result = await fetchData.plantingZone.create(payload);
 
-          if (toggleModal) {
-            toggleModal();
-          }
-          if (closePopup != "closePopup") {
-            this.toggleModal("createNewModal");
-          }
-          this.setState({ message: "Thêm vùng sản xuất thành công" });
-          // Message.show(TYPES.SUCCESS, 'Thông báo', 'Thêm vùng sản xuất thành công');
-          // this.toggleModal('popupMessage');
-        } else {
-          const message = getErrorMessageServer(res);
+    if (result) {
+      console.log("Tạo thành công vùng trồng:", result);
+      this.setState({ message: "Tạo vùng sản xuất thành công" });
+      this.toggleModal("popupMessage");
+      this.fetchSummary(
+        JSON.stringify({
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+    } else {
+      console.error("Tạo vùng trồng thất bại");
+      this.setState({ message: "Tạo vùng sản xuất thất bại" });
+      this.toggleModal("popupMessage");
+    }
+  };
 
-          // Message.show(TYPES.ERROR, 'Thông báo', message || 'Thêm vùng sản xuất thất bại');
-          this.setState({ message: message || "Thêm vùng sản xuất thất bại" });
-          this.toggleModal("popupMessage");
-        }
-      });
+  deleteZone = async (id = this.state.deleteId) => {
+    if (!id) return;
+
+    const result = await fetchData.plantingZone.delete(id);
+
+    if (result && result.status === 200) {
+      this.fetchSummary(
+        JSON.stringify({
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+      this.setState({ message: "Xóa vùng sản xuất thành công" });
+      toast.success("Xoá vùng sản xuất thành công!");
+      this.toggleModalPopupDelete();
+    } else {
+      const errorMessage = result?.message || "Xóa vùng sản xuất thất bại";
+      this.setState({ message: errorMessage });
+      this.toggleModal("popupMessage");
     }
   };
 
@@ -537,39 +512,6 @@ class PlantingZone extends Component {
         ...previousState,
         warningPopupModal: false,
       };
-    });
-  };
-
-  handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          warningPopupModal: false,
-        };
-      });
-
-      const data = res.data;
-
-      if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
-
-        this.setState({ message: "Xóa vùng sản xuất thành công" });
-        toast.success("Xoá vùng sản xuất thành công!");
-      } else {
-        const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa vùng sản xuất thất bại" });
-        this.toggleModal("popupMessage");
-      }
     });
   };
 
@@ -657,7 +599,7 @@ class PlantingZone extends Component {
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
                           <DropdownItem onClick={this.onEditZone(e)}>
-                            Sửa
+                            Xem chi tiết
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
@@ -701,6 +643,7 @@ class PlantingZone extends Component {
       popupMessage,
       activeCreateSubmit,
       dataTypeZone,
+      provinces,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -775,6 +718,8 @@ class PlantingZone extends Component {
                           id={editId}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
+                          provinces={provinces}
+                          onLoadDetailData={this.handleLoadDetailData}
                         />
                       }
                       isShowForEdit={isShowForEdit}
@@ -876,7 +821,6 @@ class PlantingZone extends Component {
                 openAlertContext(statusPopup)
               }
             </Container>
-
             <WarningPopup
               moduleTitle="Thông báo"
               moduleBody={
@@ -886,25 +830,7 @@ class PlantingZone extends Component {
               }
               warningPopupModal={warningPopupModal}
               toggleModal={this.toggleModalPopupDelete}
-              handleWarning={this.handleDeleteRow}
-            />
-
-            <CreateNewPopup
-              createNewModal={createNewModal}
-              moduleTitle="Thêm vùng sản xuất"
-              type100={true}
-              moduleBody={
-                <InsertOrUpdate
-                  id={editId}
-                  errors={errorInserts}
-                  onHandleChangeValue={this.onHandleChangeValue}
-                />
-              }
-              toggleModal={this.toggleModal}
-              activeSubmit={activeCreateSubmit}
-              onConfirm={(data, close) => {
-                this.onConfirm(data, close);
-              }}
+              handleWarning={this.deleteZone}
             />
 
             <PopupMessage

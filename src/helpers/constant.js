@@ -48,7 +48,6 @@ export const TYPE_ZONE_PROPERTY_HEADER = [
     'Stt',
     'Biểu tượng',
     'Tên loại & thuộc tính',
-    'Loại sản phẩm'
 ]
 
 export const HISTORY_HEADER_SEARCH = 'Tìm kiếm lịch sử';

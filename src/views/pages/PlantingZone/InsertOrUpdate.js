@@ -18,22 +18,18 @@ import locationIcon from "../../../assets/img/locationIcon/location.png";
 import { MAP_KEY } from "../../../services/Common";
 import { currentPosition } from "utils/geo";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
-import delImg from "../../../assets/img/buttons/xoahinh.svg";
 import Imgbt from "../../../assets/img/buttons/chonhinh.svg";
 import IconAdd from "../../../assets/img/buttons/add.svg";
 import IconDelete from "../../../assets/img/buttons/delete.png";
 import { Guid } from "guid-typescript";
-import PlusImg from "../../../assets/img/buttons/chonhinh.svg";
-import CloseIcon from "../../../assets/img/buttons/xoahinh.svg";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { SketchPicker } from "react-color";
 import { validExtensionFileImage } from "bases/helper";
 import { validSize } from "bases/helper";
 import { MAX_FILE_IMAGE_SIZE } from "bases/helper";
 import { EXTENSION_FILE_IMAGE } from "bases/helper";
 
-// const AnyReactComponent = ({ text }) => <div>{text}</div>
-import { Input, Button, InputGroup, Textarea } from "reactstrap";
+import { Button, InputGroup } from "reactstrap";
+import { fetchData } from "helpers/fetchData";
 
 const getItems = (count) =>
   Array.from({ length: count }, (v, k) => k).map((k) => ({
@@ -41,7 +37,6 @@ const getItems = (count) =>
     content: `item ${k}`,
   }));
 
-// a little function to help us with reordering the result
 const reorder = (list, startIndex, endIndex) => {
   const result = Array.from(list);
   const [removed] = result.splice(startIndex, 1);
@@ -53,15 +48,12 @@ const reorder = (list, startIndex, endIndex) => {
 const grid = 8;
 
 const getItemStyle = (isDragging, draggableStyle) => ({
-  // some basic styles to make the items look a bit nicer
   userSelect: "none",
   padding: grid * 2,
   margin: `0 0 ${grid}px 0`,
 
-  // change background colour if dragging
   background: isDragging ? "lightgreen" : "#11C7EF",
 
-  // styles we need to apply on draggables
   ...draggableStyle,
 });
 
@@ -81,29 +73,25 @@ class InsertOrUpadte extends Component {
     super(props);
 
     this.state = {
-      dataWard: null,
-      dataDistrict: null,
-      dataPermission: [
-        { id: "1", name: "Quyền 1 (MockData)" },
-        { id: "2", name: "Quyền 2 (MockData)" },
-        { id: "3", name: "Quyền 3 (MockData)" },
-      ],
-      id: null,
+      // state use
+      provinces: null,
+      districts: null,
+      wards: null,
+      plantingTypes: null,
+      gpsNew: [],
+      detailData: null,
+
       plantingTypeName: null,
       plantingZoneName: null,
       unitRoundName: null,
       unitBadName: null,
       name: "",
       gps: "",
-      // sortOrder: null,
       round: "",
       bad: "",
-      gpsNew: [],
       isShowArea: true,
-      plantingTypeId: null,
       plantingZoneId: null,
-      wardId: null,
-      districtId: null,
+
       unitIdBad: null,
       unitIdRound: null,
       icon: null,
@@ -122,12 +110,121 @@ class InsertOrUpadte extends Component {
       ArrayFileAdd: "",
       fileImage: "",
       color: "#000000",
+
+      // form data
+      provinceId: null,
+      wardId: null,
+      districtId: null,
+      plantingTypeId: null,
+      area: 0,
     };
     this.onDragEnd = this.onDragEnd.bind(this);
     this.redSelect = null;
     this.refInputName = null;
     this.refFileImage = null;
     this.refFileImages = null;
+  }
+  async loadDetailData(id) {
+    if (!id) return;
+
+    try {
+      const res = await fetchData.plantingZone.detail(id);
+      if (res && res.plantingZone) {
+        const plantingZone = res.plantingZone;
+        const gpsList =
+          res.plantingZoneGPSs?.map((item) => ({
+            id: item.id,
+            content: item.gps,
+          })) || [];
+
+        const parsedAttributes = (() => {
+          try {
+            return JSON.parse(plantingZone.attributes) || {};
+          } catch {
+            return {};
+          }
+        })();
+
+        const newDataInsert = {
+          id: plantingZone.id || null,
+          name: plantingZone.name || "",
+          plantingTypeId: plantingZone.plantingTypeID || "",
+          provinceId: plantingZone.provinceID || "",
+          districtId: plantingZone.districtID || "",
+          wardId: plantingZone.wardID || "",
+          gps: plantingZone.gps || {},
+          gpsNew: gpsList,
+          plantingTypeAttribute: parsedAttributes,
+          plantingZoneId: plantingZone.id || null,
+          fileView: plantingZone.images || plantingZone.icon || "",
+        };
+
+        this.setState({
+          detailData: plantingZone,
+          dataInsert: newDataInsert,
+          name: newDataInsert.name,
+          plantingTypeId: newDataInsert.plantingTypeId,
+          provinceId: newDataInsert.provinceId,
+          districtId: newDataInsert.districtId,
+          wardId: newDataInsert.wardId,
+          gps: newDataInsert.gps,
+          gpsNew: newDataInsert.gpsNew,
+          area: this.calculateArea(newDataInsert.gpsNew),
+          plantingTypeAttribute: newDataInsert.plantingTypeAttribute,
+          plantingZoneId: newDataInsert.plantingZoneId,
+          fileView: newDataInsert.fileView,
+        });
+
+        if (this.props.onLoadDetailData) {
+          this.props.onLoadDetailData(newDataInsert);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi load detailData:", error);
+    }
+  }
+
+  async handleGetData() {
+    try {
+      const [provinces, plantingTypes] = await Promise.all([
+        fetchData.province.getAll(),
+        fetchData.plantingType.getAll(),
+      ]);
+
+      this.setState((prevState) => ({
+        ...prevState,
+        provinces,
+        plantingTypes: plantingTypes.plantingTypes || [],
+      }));
+    } catch (error) {
+      console.error("Lỗi fetch dữ liệu:", error);
+    }
+  }
+
+  async handleGetDistrictData() {
+    this.setState({
+      districts: await fetchData.district.getByProvinceId(
+        this.state.provinceId
+      ),
+    });
+  }
+  async handleGetWardData() {
+    this.setState({
+      wards: await fetchData.ward.getByDistrictId(this.state.provinceId),
+    });
+  }
+
+  componentWillMount() {
+    this.handleGetData();
+
+    if (this.props.id !== null && this.props.id !== undefined) {
+      this.loadDetailData(this.props.id);
+    }
+  }
+  componentDidUpdate(prevProps) {
+    if (this.props.id && this.props.id !== prevProps.id) {
+      this.loadDetailData(this.props.id);
+    }
   }
 
   componentWillUnmount() {
@@ -151,244 +248,6 @@ class InsertOrUpadte extends Component {
     });
   }
 
-  async componentDidMount() {
-    const {
-      getDetailPlantingZone,
-      getListPlantingType,
-      onHandleChangeValue,
-      getListPlantingZoneForComboBox,
-      getDistrictList,
-      getWardList,
-      id,
-    } = this.props;
-
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
-    }
-
-    let plantingTypeId = null;
-    let plantingZoneId = null;
-    let wardId = null;
-    let districtId = null;
-    let dataGPSSub = null;
-    let dataGPSSubConvert = [];
-    let chilGPSSubConvert = {};
-    let dataGPS = null;
-    let dataLat = null;
-    let dataLng = null;
-    let wardtListData = {};
-    let dataWard = null;
-
-    const districtListData = await getDistrictList();
-    const dataDistrict = ((districtListData || {}).data || {}).data || null;
-
-    if (id) {
-      const result = await getDetailPlantingZone({ id });
-
-      const data = ((result || {}).data || {}).data || null;
-
-      if (!data) {
-        alert("Không tìm thấy vùng sản xuất này");
-        return;
-      }
-
-      if (data.images) {
-        const pIm = data.images;
-        const spl = pIm.split(";");
-        this.setState((previousState) => {
-          return {
-            ...previousState,
-            pathImageDefaul: spl,
-          };
-        });
-      }
-
-      plantingTypeId = data.plantingTypeID;
-      plantingZoneId = data.parentID;
-      districtId = data.districtID;
-      wardId = data.wardID;
-      dataGPSSub = data.gpsNew.split(";");
-      dataGPSSub.map((x) => {
-        chilGPSSubConvert = {
-          id: Guid.create().toString(),
-          content: x,
-        };
-        dataGPSSubConvert.push(chilGPSSubConvert);
-      });
-
-      dataGPS = dataGPSSub[0].split(",");
-      dataLat = parseInt(dataGPS[0]);
-      dataLng = parseInt(dataGPS[1]);
-
-      wardtListData = await getWardList(districtId);
-      dataWard = ((wardtListData || {}).data || {}).data || null;
-
-      this.setState({
-        position: {
-          latitude: dataLat,
-          longitude: dataLng,
-        },
-        positionChange: {
-          latitude: dataLat,
-          longitude: dataLng,
-        },
-      });
-
-      let districtName = "";
-      let wardName = "";
-      if (districtId) {
-        districtName = (dataDistrict.find((p) => p.id == districtId) || {})
-          .districtName;
-      }
-
-      if (wardId) {
-        wardName = (dataWard.find((p) => p.id == wardId) || {}).wardName;
-      }
-
-      this.setState(
-        (previousState) => {
-          return {
-            ...previousState,
-            districtName,
-            wardName,
-            dataWard,
-            gpsNew: dataGPSSubConvert,
-            dataLat,
-            dataLng,
-            id: data.id,
-            name: data.name,
-            plantingTypeId,
-            districtId,
-            wardId,
-            fileImage: data.images,
-            plantingZoneId,
-            gps: data.gps,
-            color: data.color ? data.color : "",
-            round: data.radius,
-            icon: data.icon,
-            fileView: data.icon,
-            bad: data.tolerance,
-            unitIdBad: data.toleranceUnit,
-            unitIdRound: data.unit,
-            unitBadName:
-              (UNITS.find((p) => p.value == data.toleranceUnit) || {}).label ||
-              "",
-            unitRoundName:
-              (UNITS.find((p) => p.value == data.unit) || {}).label || "",
-          };
-        },
-        () => {
-          if (onHandleChangeValue) {
-            onHandleChangeValue(this.state);
-          }
-        }
-      );
-    }
-
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          dataDistrict,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
-      }
-    );
-
-    getListPlantingType({
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    }).then((res) => {
-      const data = res.data;
-
-      if (data.status == 200) {
-        const plantingTypes = (data.data || {}).plantingTypes || [];
-
-        if (plantingTypes.length > 0) {
-          const plantingType = plantingTypes[0];
-
-          let plantingTypeName = "";
-
-          if (plantingTypeId) {
-            plantingTypeName = (
-              plantingTypes.find((p) => p.id == plantingTypeId) || {}
-            ).name;
-          } else {
-            plantingTypeName = plantingType.name;
-          }
-
-          if (plantingType) {
-            this.setState(
-              (previousState) => {
-                return {
-                  ...previousState,
-                  plantingTypeId: plantingTypeId || null,
-                  plantingTypeName,
-                };
-              },
-              () => {
-                if (this.props.onHandleChangeValue) {
-                  this.props.onHandleChangeValue(this.state);
-                }
-              }
-            );
-          }
-        }
-      }
-    });
-
-    getListPlantingZoneForComboBox({
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    }).then((res) => {
-      const data = res.data;
-
-      if (data.status == 200) {
-        const plantingZones = (data.data || {}).plantingZones || [];
-        let plantingZoneName = "";
-        if (plantingZones.length > 0) {
-          if (id) {
-            plantingZoneName = (
-              plantingZones.find((p) => p.id == plantingZoneId) || {}
-            ).name;
-          } else {
-            const plantingZone = plantingZones[0];
-            if (plantingZone) {
-              plantingZoneId = plantingZone.id;
-              plantingZoneName = plantingZone.name;
-            }
-          }
-          this.setState(
-            (previousState) => {
-              return {
-                ...previousState,
-                // plantingZoneId,
-                plantingZoneName,
-              };
-            },
-            () => {
-              if (this.props.onHandleChangeValue) {
-                this.props.onHandleChangeValue(this.state);
-              }
-            }
-          );
-        }
-      }
-    });
-
-    this.focusInput();
-  }
-
   focusInput = () => {
     if (this.refInputName) {
       const timeOut = setTimeout(() => {
@@ -400,115 +259,42 @@ class InsertOrUpadte extends Component {
   };
 
   onChangeSelect = (name) => (value) => {
-    const { getWardList, onHandleChangeValue, PlantingZoneStore } = this.props;
-
-    let districtName = this.state.districtName;
-    let wardName = this.state.wardName;
-    if (name === "districtId") {
-      this.redSelect.resetValue();
-      districtName = "";
-      wardName = "";
-      getWardList(value).then((res) => {
-        if (res.data.status == 200) {
-          this.setState(
-            (previousState) => {
-              return {
-                ...previousState,
-                dataWard: res.data.data,
-              };
-            },
-            () => {
-              if (onHandleChangeValue) {
-                onHandleChangeValue(this.state);
-              }
-            }
-          );
-        }
-      });
-    }
-
     if (name === "plantingTypeId") {
-      const plantingTypes = PlantingZoneStore.platingTypes || [];
-
-      let _color = plantingTypes.filter((p) => p.id == value);
-
-      if (_color) {
-        this.setState(
-          {
-            color: (_color[0] || {}).color || "",
-            icon: (_color[0] || {}).icon || "",
-            fileView: (_color[0] || {}).icon || "",
-          },
-          () => {
-            if (onHandleChangeValue) {
-              onHandleChangeValue(this.state);
-            }
-          }
-        );
-      }
-    }
-
-    if (name === "wardId") {
-      wardName = "";
-    }
-    let plantingTypeName = this.state.plantingTypeName;
-
-    let plantingZoneName = this.state.plantingZoneName;
-
-    if (name === "plantingZoneId") {
-      plantingZoneName = "";
-    }
-
-    let unitBadName = this.state.unitBadName;
-
-    if (name === "unitIdBad") {
-      unitBadName = "";
-    }
-
-    let unitRoundName = this.state.unitRoundName;
-
-    if (name === "unitIdRound") {
-      unitRoundName = "";
-    }
-
-    if (name === "plantingTypeId") {
-      plantingTypeName = "";
-    }
-
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          [name]: value,
-          plantingTypeName,
-          plantingZoneName,
-          unitBadName,
-          unitRoundName,
-          districtName,
-          wardName,
-        };
-      },
-      () => {
+      this.setState({ [name]: value, plantingTypeAttribute: {} }, () => {
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
         }
-      }
-    );
+      });
+    } else {
+      this.setState({ [name]: value }, () => {
+        if (name === "provinceId") {
+          this.handleGetDistrictData();
+        }
+        if (name === "districtId") {
+          this.handleGetWardData();
+        }
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      });
+    }
   };
 
   onChangeValue = (name) => (e) => {
     const value = e.target.value;
 
     this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
+      (prev) => ({
+        ...prev,
+        dataInsert: {
+          ...prev.dataInsert,
           [name]: value,
-        };
-      },
+        },
+        [name]: value,
+      }),
       () => {
         if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
+          this.props.onHandleChangeValue(this.state.dataInsert);
         }
       }
     );
@@ -516,30 +302,8 @@ class InsertOrUpadte extends Component {
 
   onChangeValueGPS = (name) => (e) => {
     const value = e.target.value.replace(/[^0-9., ]/gi, "");
-
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          [name]: value,
-        };
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
+    this.setState({ [name]: value });
   };
-
-  // onChangeRadio = event => {
-  //   this.state[event.target.name] = Number(event.target.value);
-  //   this.setState({ [event.target.name]: Number(event.target.value) });
-
-  //   if (this.props.onHandleChangeValue) {
-  //     this.props.onHandleChangeValue(this.state);
-  //   }
-  // }
 
   handleMapLocation = (gps) => {
     if (gps.length === 0) return LOCATION_DEFAULT;
@@ -565,10 +329,6 @@ class InsertOrUpadte extends Component {
         return zoom;
       } else return ZOOM_DEFAULT;
     }
-  };
-
-  handleApiLoaded = (map, maps) => {
-    // use map and maps objects
   };
 
   onCloseMapViewLocation = () => {
@@ -730,119 +490,85 @@ class InsertOrUpadte extends Component {
   };
 
   onAddArea = () => {
-    const { gps, gpsNew: gpsDetails } = this.state;
+    const { gps, gpsNew } = this.state;
     const { onHandleChangeValue } = this.props;
 
-    const gpsNew = [...this.state.gpsNew];
-
     if (!gps) {
-      // alert('Bạn vui lòng chọn vùng');
-
-      this.setState({
-        errMessage: "Bạn vui lòng chọn GPS",
-      });
-      //this.toggleModal('popupMessage')
+      this.setState({ errMessage: "Bạn vui lòng chọn GPS" });
       return;
     }
 
-    // if (!sortOrder) {
-    //   // alert('Bạn vui lòng chọn vùng');
-
-    //   this.setState({
-    //     errMessage: 'Bạn vui lòng nhập thứ tự'
-    //   })
-    //   //this.toggleModal('popupMessage')
-    //   return;
-    // }
-
-    const gpsDetail = gpsDetails.find(
-      (p) => p.content.trim().toUpperCase() == gps.trim().toUpperCase()
-    );
-
-    if (gpsDetail) {
-      // alert('Bạn đã chọn vùng này');
-
-      this.setState({
-        errMessage: "Bạn đã chọn GPS này",
-      });
-      //this.toggleModal('popupMessage')
+    if (
+      gpsNew.find(
+        (p) => p.content.trim().toUpperCase() === gps.trim().toUpperCase()
+      )
+    ) {
+      this.setState({ errMessage: "Bạn đã chọn GPS này" });
       return;
     }
 
-    gpsDetails.map((gps) => {});
-
-    // const sortDetail = gpsDetails.find(p => parseInt(p.sortOrder) == parseInt(sortOrder));
-    // if (sortDetail) {
-    //   // alert('Bạn đã chọn vùng này');
-
-    //   this.setState({
-    //     errMessage: 'Bạn đã chọn thứ tự này'
-    //   })
-    //   //this.toggleModal('popupMessage')
-    //   return;
-    // }
-
-    gpsNew.push({
-      id: Guid.create().toString(),
-      content: gps || "",
-      // sortOrder: sortOrder || null
-    });
-
+    const newGps = [...gpsNew, { id: Guid.create().toString(), content: gps }];
     this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          errMessage: "",
-          gpsNew,
-        };
+      {
+        gpsNew: newGps,
+        gps: "",
+        errMessage: "",
+        area: this.calculateArea(newGps),
       },
       () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
+        if (onHandleChangeValue) onHandleChangeValue(this.state);
       }
     );
+  };
 
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        gps: "",
-      };
+  onChangeGPSItem = (id) => (e) => {
+    const value = e.target.value;
+    this.setState(
+      (prevState) => {
+        const gpsNew = prevState.gpsNew.map((p) =>
+          p.id === id ? { ...p, content: value } : p
+        );
+        return { gpsNew, area: this.calculateArea(gpsNew) };
+      },
+      () => {
+        if (this.props.onHandleChangeValue)
+          this.props.onHandleChangeValue(this.state);
+      }
+    );
+  };
+
+  latLngToXY = (lat, lng) => {
+    const R = 6371000;
+    const x = R * ((lng * Math.PI) / 180) * Math.cos((lat * Math.PI) / 180);
+    const y = R * ((lat * Math.PI) / 180);
+    return { x, y };
+  };
+
+  calculateArea = (gpsNewInput) => {
+    const gpsNew = gpsNewInput || this.state.gpsNew;
+    if (gpsNew.length < 3) return 0;
+    const points = gpsNew.map((p) => {
+      const [lat, lng] = p.content.split(",").map(Number);
+      return this.latLngToXY(lat, lng);
     });
+    let area = 0;
+    const n = points.length;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      area += points[i].x * points[j].y - points[j].x * points[i].y;
+    }
+    return Math.abs(area / 2);
   };
 
   onDeleteArea = (id) => () => {
-    const gpsNew = [...this.state.gpsNew];
-
-    const zone = gpsNew.find((p) => p.id == id);
-
-    if (zone) {
-      const zoneNews = gpsNew.filter((p) => p.id != id);
-
-      this.setState(
-        (previousState) => {
-          return {
-            ...previousState,
-            gpsNew: zoneNews,
-          };
-        },
-        () => {
-          if (this.props.onHandleChangeValue) {
-            this.props.onHandleChangeValue(this.state);
-          }
-        }
-      );
-    } else {
-      // alert('Không tìm thấy vùng này');
-      this.setState({
-        errMessage: "Không tìm thấy vùng này",
-      });
-      //this.toggleModal('popupMessage')
-    }
+    const gpsNew = this.state.gpsNew.filter((p) => p.id !== id);
+    this.setState({ gpsNew, area: this.calculateArea(gpsNew) }, () => {
+      if (this.props.onHandleChangeValue)
+        this.props.onHandleChangeValue(this.state);
+    });
   };
 
   onDragEnd(result) {
-    // dropped outside the list
     if (!result.destination) {
       return;
     }
@@ -965,14 +691,6 @@ class InsertOrUpadte extends Component {
             };
           });
         }
-        // } else {
-        //     this.setState(previousState => {
-        //         return {
-        //             ...previousState,
-        //             pathImageDefaul: pathImage
-        //         }
-        //     });
-        // }
       }
     }
   };
@@ -1056,54 +774,37 @@ class InsertOrUpadte extends Component {
 
   render() {
     const {
+      // state use
+      provinces,
+      districts,
+      wards,
+      plantingTypes,
+
       positionChange,
       position,
-      unitIdRound,
-      unitIdBad,
       gps,
-      round,
-      bad,
       plantingZoneId,
-      plantingTypeId,
-      unitBadName,
-      unitRoundName,
-      plantingZoneName,
       plantingTypeName,
       name,
       isShowMapViewLocation,
-      locationChange,
-      dataLat,
-      dataLng,
-      districtName,
-      wardName,
+
       dataWard,
       dataDistrict,
-      dataPermission,
-      districtId,
-      wardId,
-      isShowArea,
       gpsNew,
       errMessage,
       popupMessage,
-      items,
-      pathImageDefaul,
+
+      // form data
+      provinceId,
+      wardId,
+      districtId,
+      provinceName,
+      districtName,
+      wardName,
+      plantingTypeId,
+      area,
     } = this.state;
-    const { errors, PlantingZoneStore, id, message } = this.props;
-
-    const plantingTypes = PlantingZoneStore.platingTypes || [];
-
-    let plantingZoneForComboBoxs;
-    let _plantingZoneForComboBoxs;
-    if (id) {
-      _plantingZoneForComboBoxs =
-        PlantingZoneStore.plantingZoneForComboBoxs || [];
-      plantingZoneForComboBoxs = _plantingZoneForComboBoxs.filter(
-        (x) => x.id != id
-      );
-    } else {
-      plantingZoneForComboBoxs =
-        PlantingZoneStore.plantingZoneForComboBoxs || [];
-    }
+    const { errors, id } = this.props;
 
     return (
       <div className="wrap-insert-or-update-zone">
@@ -1131,13 +832,17 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
-              value={id ? plantingTypeId : null}
-              defaultValue={id ? plantingTypeId : null}
-              labelMark={id ? plantingTypeName : null}
+              value={plantingTypeId}
+              labelMark={
+                Array.isArray(plantingTypes)
+                  ? plantingTypes.find((pt) => pt.id === plantingTypeId)
+                      ?.name || null
+                  : null
+              }
               className="wrap-insert-or-update-zone-item-select"
               name="plantingTypeId"
               title="Chọn loại vùng sản xuất"
-              data={plantingTypes}
+              data={plantingTypes || []}
               labelName="name"
               val="id"
               handleChange={this.onChangeSelect("plantingTypeId")}
@@ -1146,26 +851,58 @@ class InsertOrUpadte extends Component {
           </div>
         </div>
 
-        {/* <div className='wrap-insert-or-update-zone-item'>
-                    <label className='wrap-insert-or-update-zone-item-label'>
-                        Thuộc vùng sản xuất{districtId ? null : <>&nbsp;<b style={{ color: 'red' }}>*</b></>}</label>
-                    <div className='wrap-insert-or-update-zone-item-box'>
-                        <Select
-                            value={id ? plantingZoneId : null}
-                            defaultValue={id ? plantingZoneId : null}
-                            labelMark={id ? plantingZoneName : null}
-                            className='wrap-insert-or-update-zone-item-select'
-                            name="plantingZoneId"
-                            title='Chọn vùng sản xuất'
-                            data={plantingZoneForComboBoxs}
-                            isDisable={districtId ? true : false}
-                            labelName='name'
-                            val='id'
-                            handleChange={this.onChangeSelect('plantingZoneId')}
-                        />
-                        <p className='form-error-message'>{errors.plantingZoneId || ''}</p>
-                    </div>
-                </div> */}
+        {plantingTypeId &&
+          plantingTypes &&
+          plantingTypes.length > 0 &&
+          (() => {
+            const selectedType = plantingTypes.find(
+              (pt) => pt.id === plantingTypeId
+            );
+            if (!selectedType) return null;
+
+            let attributes = [];
+            try {
+              attributes = JSON.parse(selectedType.attributes);
+            } catch (error) {
+              console.error("Lỗi parse attributes:", error);
+            }
+
+            return attributes.map((attr, index) => (
+              <div key={index} className="wrap-insert-or-update-zone-item">
+                <label className="wrap-insert-or-update-zone-item-label">
+                  {attr.name}
+                </label>
+                <div className="wrap-insert-or-update-zone-item-box">
+                  <InputGroup className="input-group-alternative css-border-input">
+                    <input
+                      type={attr.dataType === 2 ? "number" : "text"}
+                      className="wrap-insert-or-update-zone-item-input"
+                      value={
+                        this.state.plantingTypeAttribute?.[attr.name] || ""
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        this.setState(
+                          (prev) => ({
+                            plantingTypeAttribute: {
+                              ...prev.plantingTypeAttribute,
+                              [attr.name]: value,
+                            },
+                          }),
+                          () => {
+                            if (this.props.onHandleChangeValue) {
+                              this.props.onHandleChangeValue(this.state);
+                            }
+                          }
+                        );
+                      }}
+                    />
+                  </InputGroup>
+                </div>
+              </div>
+            ));
+          })()}
+
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
             Tỉnh/thành
@@ -1177,18 +914,21 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
-              value={null}
-              defaultValue={null}
-              labelMark={null}
+              value={provinceId}
+              labelMark={
+                provinces?.find((p) => p.id === provinceId)?.provinceName ||
+                null
+              }
               className="wrap-insert-or-update-zone-item-select"
-              name="districtId"
+              name="provinceId"
               title="Chọn Tỉnh/thành"
-              data={[]}
-              labelName="districtName"
+              data={provinces || []}
+              labelName="provinceName"
               val="id"
-              handleChange={this.onChangeSelect("districtId")}
+              handleChange={this.onChangeSelect("provinceId")}
             />
-            <p className="form-error-message">{errors.districtId || ""}</p>
+
+            <p className="form-error-message">{errors.provinceId || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
@@ -1202,18 +942,21 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
-              value={id ? districtId : null}
-              defaultValue={id ? districtId : null}
-              labelMark={id ? districtName : null}
+              value={districtId || null}
+              labelMark={
+                districts?.find((d) => d.id === districtId)?.districtName ||
+                null
+              }
               className="wrap-insert-or-update-zone-item-select"
               name="districtId"
               title="Chọn Quận/Huyện"
-              data={dataDistrict}
-              //isDisable={plantingZoneId ? true : false}
+              data={districts || []}
+              isDisable={!provinceId}
               labelName="districtName"
               val="id"
               handleChange={this.onChangeSelect("districtId")}
             />
+
             <p className="form-error-message">{errors.districtId || ""}</p>
           </div>
         </div>
@@ -1228,55 +971,20 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
-              ref={(ref) => (this.redSelect = ref)}
-              value={id ? wardId : null}
-              defaultValue={id ? wardId : null}
-              labelMark={id ? wardName : null}
+              value={wardId || null}
+              labelMark={
+                wards?.find((w) => w.id === wardId)?.nameSearch || null
+              }
               className="wrap-insert-or-update-zone-item-select"
               name="wardId"
               title="Chọn Phường/Xã"
-              data={dataWard}
-              isDisable={districtId ? false : true}
-              labelName="wardName"
+              data={wards || []}
+              isDisable={!districtId}
+              labelName="nameSearch"
               val="id"
               handleChange={this.onChangeSelect("wardId")}
             />
             <p className="form-error-message">{errors.wardId || ""}</p>
-          </div>
-        </div>
-        <div className={`${classes.rowItem} mr-b-0 `}>
-          <label className="wrap-insert-or-update-zone-item-label">
-            Nhóm quyền&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
-
-          <div className={`${classes.inputArea} `}>
-            <Select
-              className="css-select-border"
-              name="roleID"
-              title="Chọn nhóm quyền"
-              data={dataPermission}
-              labelName="name"
-              val="id"
-              isHideSelectAll={true}
-              isMulti={true}
-              handleChange={this.handleSelect}
-            />
-          </div>
-        </div>
-        <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Nhiệt độ
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-
-            <p className="form-error-message">{errors.name || ""}</p>
           </div>
         </div>
         <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
@@ -1317,33 +1025,6 @@ class InsertOrUpadte extends Component {
             />
           </button>
         </div>
-        {/* <div className='wrap-insert-or-update-zone-item map-area'>
-                    {
-                        gps.length > 0 && (
-                            <GoogleMapReact 
-                                bootstrapURLKeys={{ key: 'AIzaSyAz1kbpa6CB_NQh5vQNJHfqTCSH_xGZFIU' }}
-                                center={this.handleMapLocation(gps)}
-                                defaultZoom={this.handleZoomMap(gps)} 
-                                onGoogleApiLoaded={({ map, maps }) => {
-                                    const marker = new maps.Marker({
-                                        position: this.handleMapLocation(gps),
-                                        map
-                                    });
-
-                                    const circle = new maps.Circle({
-                                        map: map,
-                                        radius: round * 1000,    // 1000 = 1km
-                                        fillColor: '#09b2fd',
-                                        strokeColor: '#09b2fd'
-                                    });
-
-                                    circle.bindTo('center', marker, 'position');
-                                }}
-                            >
-                            </GoogleMapReact>
-                        )
-                    }
-                </div> */}
         {isShowMapViewLocation && (
           <div className="wrap-manage-company-location">
             <GoogleMapReact
@@ -1401,17 +1082,6 @@ class InsertOrUpadte extends Component {
           </div>
         )}
 
-        {/* <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>Thứ tự</label>
-          <div className='wrap-insert-or-update-zone-item-box'>
-            <input value={sortOrder} onChange={this.onChangeValue('sortOrder')} type='text' className='wrap-insert-or-update-zone-item-input' />
-            <p className='form-error-message'>{errors.sortOrder || ''}</p>
-            {errMessage != '' ? (
-              <p className='form-error-message'>{errMessage}</p>
-            ) : null
-            }
-          </div>
-        </div> */}
         <div className="wrap-insert-or-update-zone-add">
           <button
             type="button"
@@ -1445,31 +1115,26 @@ class InsertOrUpadte extends Component {
                       index={index}
                     >
                       {(provided, snapshot) => (
-                        <>
-                          <div className="wrap-css-planting-zone">
-                            <div
-                              className="wrap-width-plating-zone"
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              style={getItemStyle(
-                                snapshot.isDragging,
-                                provided.draggableProps.style
-                              )}
-                            >
-                              {item.content}
-                            </div>
-                            <button
-                              onClick={this.onDeleteArea(item.id)}
-                              className="wrap-insert-or-update-zone-area-list-item-delete margin-left-button-planting-zone"
-                            >
-                              <img
-                                className="wrap-insert-or-update-zone-area-list-item-delete-icon"
-                                src={IconDelete}
-                              />
-                            </button>
-                          </div>
-                        </>
+                        <div
+                          className="wrap-css-planting-zone"
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={getItemStyle(
+                            snapshot.isDragging,
+                            provided.draggableProps.style
+                          )}
+                        >
+                          <input
+                            type="text"
+                            value={item.content}
+                            onChange={this.onChangeGPSItem(item.id)}
+                            style={{ width: "80%" }}
+                          />
+                          <button onClick={this.onDeleteArea(item.id)}>
+                            Xóa
+                          </button>
+                        </div>
                       )}
                     </Draggable>
                   ))}
@@ -1481,27 +1146,24 @@ class InsertOrUpadte extends Component {
           <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
           <div className="wrap-insert-or-update-zone-item">
             <label className="wrap-insert-or-update-zone-item-label">
-              Diện tích
+              Diện tích (m²)
             </label>
-            <div className="wrap-insert-or-update-zone-item-box">
-              <InputGroup className="input-group-alternative css-border-input">
-                <input
-                  type="text"
-                  className="wrap-insert-or-update-zone-item-input"
-                  readOnly
-                />
-              </InputGroup>
-
-              <p className="form-error-message">{errors.name || ""}</p>
-            </div>
+            <InputGroup className="input-group-alternative css-border-input">
+              <input
+                type="text"
+                readOnly
+                value={area.toFixed(2)}
+                className="wrap-insert-or-update-zone-item-input"
+              />
+            </InputGroup>
           </div>
-          <button
+          {/* <button
             type="button"
             onClick={() => alert()}
             className="wrap-insert-or-update-zone-add-button"
           >
             Kiểm tra
-          </button>
+          </button> */}
         </div>
         <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
         <div className="wrap-insert-or-update-zone-item">
@@ -1514,12 +1176,10 @@ class InsertOrUpadte extends Component {
                 type="file"
                 name="files"
                 style={{ display: "none" }}
-                //value={data.ThumbnailFile}
                 required
                 ref={(ref) => (this.refFileImage = ref)}
                 onChange={this.handleChangeIMG}
                 accept="image/*"
-                //onKeyUp={(event) => this.handleChangeIMG(event)}
               />
               <img
                 src={this.state.fileView ? this.state.fileView : NoImg}
@@ -1541,7 +1201,6 @@ class InsertOrUpadte extends Component {
                     className={`css-icon-button-type-Zone-planting`}
                     onClick={this.onDeleImg}
                   >
-                    {/* <img src={delImg} alt='Thoát ra' /> */}
                     <span>x</span>
                   </Button>
                 </div>
@@ -1569,105 +1228,6 @@ class InsertOrUpadte extends Component {
           </div>
         </div>
 
-        {/* {isShowMapViewLocation &&
-                    <div className='wrap-manage-company-location'>
-                        <Map
-                            google={this.props.google}
-                            center={{ lat: 13.104140180993811, lng: 109.31284359689911 }}
-                            height='300px'
-                            zoom={15}
-                        />
-                    </div>
-                } */}
-
-        {/* <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>Phạm vi (Bán kính)&nbsp;<b style={{ color: 'red' }}>*</b></label>
-          <div className='wrap-insert-or-update-zone-item-box'>
-            <input value={round} onChange={this.onChangeValue('round')} type='text' className='wrap-insert-or-update-zone-item-input' />
-          </div>
-          <div className='wrap-insert-or-update-zone-item-box-2'>
-            <div className={classes.radioBox}>
-              {
-                UNITS.map((item, key) => (
-                  <div key={key}>
-                    <input
-                      checked={unitIdRound === item.value ? true : false}
-                      type="radio"
-                      name="unitIdRound"
-                      id={`unitround-${key}`}
-                      value={item.value}
-                      onChange={(event) => this.onChangeRadio(event)}
-                    />
-                    <label htmlFor={`unitround-${key}`}>{item.label}</label>
-                  </div>
-                ))
-              }
-            </div>
-
-            {/* <Select
-                            value={unitIdRound}
-                            defaultValue={unitIdRound}
-                            labelMark={unitRoundName}
-                            className='wrap-insert-or-update-zone-item-select'
-                            name="unitIdRound"
-                            title='Chọn đơn vị'
-                            data={UNITS}
-                            labelName='label'
-                            val='value'
-                            handleChange={this.onChangeSelect('unitIdRound')}
-                        /> */}
-        {/* </div> */}
-        {/* </div>  */}
-
-        {/* <div className={classes.defaultLeftSpacing}>
-          <p className='form-error-message'>{errors.round || ''}</p>
-          <p className='form-error-message'>{errors.unitIdRound || ''}</p>
-        </div> */}
-
-        {/* <div className='wrap-insert-or-update-zone-item'>
-          <label className='wrap-insert-or-update-zone-item-label'>Dung sai&nbsp;<b style={{ color: 'red' }}>*</b></label>
-          <div className='wrap-insert-or-update-zone-item-box'>
-            <input value={bad} onChange={this.onChangeValue('bad')} type='text' className='wrap-insert-or-update-zone-item-input' />
-          </div>
-          <div className='wrap-insert-or-update-zone-item-box-2'>
-            <div className={classes.radioBox}>
-              {
-                UNITS.map((item, key) => (
-                  <div key={key}>
-                    <input
-                      checked={unitIdBad === item.value ? true : false}
-                      type="radio"
-                      name="unitIdBad"
-                      id={`unitbad-${key}`}
-                      value={item.value}
-                      onChange={(event) => this.onChangeRadio(event)}
-                    />
-                    <label htmlFor={`unitbad-${key}`}>{item.label}</label>
-                  </div>
-                ))
-              }
-            </div>
-
-            {/* <Select
-                            value={unitIdBad}
-                            defaultValue={unitIdBad}
-                            labelMark={unitBadName}
-                            className='wrap-insert-or-update-zone-item-select'
-                            name="unitIdBad"
-                            title='Chọn đơn vị'
-                            data={UNITS}
-                            labelName='label'
-                            val='value'
-                            handleChange={this.onChangeSelect('unitIdBad')}
-                        /> */}
-        {/* <p className='form-error-message'>{errors.unitIdBad || ''}</p> */}
-        {/* </div> */}
-        {/* </div> */}
-
-        {/* <div className={classes.defaultLeftSpacing}>
-          <p className='form-error-message'>{errors.bad || ''}</p>
-          <p className='form-error-message'>{errors.unitIdBad || ''}</p>
-        </div> */}
         <PopupMessage
           popupMessage={popupMessage}
           moduleTitle={"Thông báo"}
@@ -1679,21 +1239,4 @@ class InsertOrUpadte extends Component {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    PlantingZoneStore: state.PlantingZoneStore,
-    location: state.LocationStore,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    ...bindActionCreators(areaDataAction, dispatch),
-    ...bindActionCreators(platingZoneAction, dispatch),
-    ...bindActionCreators(actionLocationCreators, dispatch),
-  };
-};
-
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  InsertOrUpadte
-);
+export default InsertOrUpadte;
