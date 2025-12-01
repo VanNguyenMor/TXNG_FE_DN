@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Table, Button, Input, InputGroup, InputGroupText } from "reactstrap";
+import { Table, Button, Input, InputGroup } from "reactstrap";
 import classes from "./ConversionManagerTable.module.css";
 
 class ConversionManagerTable extends Component {
@@ -26,7 +26,7 @@ class ConversionManagerTable extends Component {
   };
 
   handleUnitSelect = (e) => {
-    this.setState({ currentUnitId: Number(e.target.value) });
+    this.setState({ currentUnitId: Number(e.target.value) }); 
   };
 
   handleRateChange = (e) => {
@@ -56,7 +56,7 @@ class ConversionManagerTable extends Component {
 
     const newUnit = {
       id: currentUnitId,
-      unitName: selectedUnitObj.title,
+      unitName: selectedUnitObj.title, 
       conversionRate: Number(currentUnitRate) || 1,
       isPrimary: selectedUnits.length === 0,
     };
@@ -130,7 +130,7 @@ class ConversionManagerTable extends Component {
             <option value="">Chọn đơn vị</option>
             {availableUnits.map((unit) => (
               <option key={unit.id} value={unit.id}>
-                {unit.title}
+                {unit.title && unit.title.toLowerCase()}
               </option>
             ))}
           </Input>
@@ -191,7 +191,7 @@ class ConversionManagerTable extends Component {
             {selectedUnits.map((unit, index) => (
               <tr key={unit.id}>
                 <td>{index + 1}</td>
-                <td>{unit.unitName}</td>
+                <td>{unit.unitName && unit.unitName.toLowerCase()}</td> 
                 <td>{unit.conversionRate}</td>
                 <td className="text-center">
                   <Input

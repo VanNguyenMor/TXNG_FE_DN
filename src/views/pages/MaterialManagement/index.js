@@ -1,9 +1,6 @@
 import React, { Component } from "react";
-import compose from "recompose/compose";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
 import { MATERIAL_MANAGEMENT } from "../../../helpers/constant";
-import { bindActionCreators } from "redux";
-import { connect } from "react-redux";
 import classes from "./index.module.css";
 import Pagination from "components/Pagination";
 import HeaderTable from "components/HeaderTable";
@@ -12,7 +9,7 @@ import { LIMIT_ITEM_IN_PAGE } from "../../../helpers/constant";
 import MenuButton from "../../../assets/img/buttons/menu.png";
 import ShowHistoryData from "./ShowHistoryData.js";
 import ShowEditData from "./ShowEditData.js";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 import {
@@ -82,7 +79,47 @@ class MaterialManagement extends Component {
     this.fetchSummary();
     this.onFetchMaterialGroup();
     this.onFetchNationGroup();
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    if (id) {
+      this.openDetailById(id);
+    }
   }
+
+  openDetailById = async (id) => {
+    try {
+      this.setState({ isLoaded: true });
+      const allMaterials = await fetchData.materialManagement.getAll();
+      const material = allMaterials.materials.find((m) => m.id === id);
+
+      if (material) {
+        this.setState({
+          editId: material.id,
+          isShowForDetail: true,
+          isShowForHistoryList: false,
+          dataInsert: {
+            ...material,
+            title: material.materialName,
+            unit: material.unitName,
+            islocked: material.islocked ? true : false,
+            authentic: material.isProduct ? 1 : 0,
+            typeId: material.materialType,
+            parentID: material.parentID || "",
+          },
+          isModalOpen: true,
+          isLoaded: false,
+        });
+      } else {
+        openAlertContext("Nguyên vật liệu không tồn tại");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error(error);
+      openAlertContext("Lỗi khi lấy dữ liệu chi tiết");
+      this.setState({ isLoaded: false });
+    }
+  };
 
   onFetchMaterialGroup = async () => {
     const result = await fetchData.materialManagement.getGroupList();
@@ -108,14 +145,13 @@ class MaterialManagement extends Component {
       const result = await fetchData.materialManagement.getAll();
       const dataFromApi = result.materials || [];
       console.log(dataFromApi, "data real");
-      // Map API fields sang state field chuẩn
       const mappedData = dataFromApi.map((item) => ({
         ...item,
         title: item.materialName,
         unit: item.unitName,
-        status: item.islocked ? 1 : 0,
+        islocked: item.islocked ? true : false,
         authentic: item.isProduct ? 1 : 0,
-        typeId: Number(item.materialType),
+        typeId: item.materialType,
         parentID: item.parentID || "",
       }));
 
@@ -165,15 +201,120 @@ class MaterialManagement extends Component {
   };
 
   onHandleChangeValue = (data) => {
-    this.setState({ dataInsert: data }, () => {
-      const errorInserts = this.checkDataInsert();
-      this.setState({ errorInserts });
-    });
+    this.setState(
+      (prevState) => ({
+        dataInsert: {
+          ...prevState.dataInsert,
+          ...data,
+        },
+      }),
+      () => {
+        const errorInserts = this.checkDataInsert();
+        this.setState({ errorInserts });
+      }
+    );
   };
 
-  onConfirm = (toggleModal) => {
-    alert("Thao tác thành công");
-    toggleModal && toggleModal();
+  onConfirm = async (toggleModal) => {
+    const { dataInsert } = this.state;
+    console.log("Data insert trước khi gửi:", dataInsert);
+
+    if (!dataInsert.materialNameVal) {
+      openAlertContext("Tên vật liệu không được để trống");
+      return;
+    }
+    if (!dataInsert.materialTypeId) {
+      openAlertContext("Loại vật liệu không được để trống");
+      return;
+    }
+    if (!dataInsert.materialGroupTypeId) {
+      openAlertContext("Nhóm vật liệu không được để trống");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+
+      if (dataInsert.id) {
+        formData.append("Id", dataInsert.id);
+      }
+
+      formData.append("MaterialCode", dataInsert.materialCodeVal || "");
+      formData.append("MaterialName", dataInsert.materialNameVal || "");
+      formData.append("TradeName", dataInsert.tradeNameVal || "");
+
+      formData.append("MaterialType", dataInsert.materialTypeId);
+
+      formData.append("MaterialGroupID", dataInsert.materialGroupTypeId || "");
+
+      if (dataInsert.originId) {
+        formData.append("OriginID", dataInsert.originId);
+      }
+
+      formData.append("UnitID", dataInsert.unitVal || "");
+      formData.append("UnitName", dataInsert.unitName || "");
+      formData.append("Recommended", dataInsert.recommendedVal || "");
+
+      if (dataInsert.file && dataInsert.file instanceof File) {
+        formData.append("Images", dataInsert.file);
+      }
+
+      if (
+        dataInsert.productConversionUnits &&
+        dataInsert.productConversionUnits.length > 0
+      ) {
+        dataInsert.productConversionUnits.forEach((unit, index) => {
+          formData.append(
+            `ProductConversionUnits[${index}][Id]`,
+            unit.id || unit.unitID || ""
+          );
+          formData.append(
+            `ProductConversionUnits[${index}][UnitName]`,
+            unit.unitName || ""
+          );
+          formData.append(
+            `ProductConversionUnits[${index}][Value]`,
+            unit.conversionRate || 0
+          );
+          formData.append(
+            `ProductConversionUnits[${index}][IsMain]`,
+            unit.isPrimary || false
+          );
+        });
+      }
+
+      for (var pair of formData.entries()) {
+        console.log(pair[0] + ", " + pair[1]);
+      }
+
+      let result;
+      if (dataInsert.id) {
+        if (dataInsert.islocked) {
+          toast.error("Nguyên vật liệu đã khóa");
+        } else {
+          result = await fetchData.materialManagement.update(formData);
+        }
+      } else {
+        result = await fetchData.materialManagement.create(formData);
+      }
+
+      if (result.success) {
+        setAlertContext("Thao tác thành công");
+        this.fetchSummary();
+        toggleModal && toggleModal();
+        this.onCloseModal();
+      } else {
+        let msg = result.message || "Có lỗi xảy ra";
+        if (result.errors) {
+          const firstErrorKey = Object.keys(result.errors)[0];
+          if (firstErrorKey) msg = result.errors[firstErrorKey][0];
+        }
+        openAlertContext(msg);
+      }
+    } catch (error) {
+      console.error(error);
+      openAlertContext("Lỗi hệ thống, vui lòng thử lại!");
+    }
   };
 
   toggle = (el, val) => {
@@ -227,21 +368,23 @@ class MaterialManagement extends Component {
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
-    let autoIndex = 0;
+
+    let sttBase = beginItem;
 
     const cb = (e) => {
       const renderClass =
         e.parentID.length === 0
           ? `${classes.treeParent}`
           : `${classes.treeChild}`;
+
       list.push(
         <tr
-          key={autoIndex}
+          key={e.id}
           parentid={e.parentID}
           currentid={e.id}
           className="table-hover-css"
         >
-          <td className={renderClass}>{autoIndex + 1}</td>
+          <td className={renderClass}>{sttBase + 1}</td>
           <td className="table-scale-col">
             <img
               src={e.images || NoImg}
@@ -258,7 +401,7 @@ class MaterialManagement extends Component {
             <br />
             <span style={{ fontSize: "14px" }}>Đơn vị: {e.unit}</span>
           </td>
-          <td>{this.showTitleWithStatus(e.status)}</td>
+          <td>{this.showLockButton(e)}</td>
           <td>{this.showTitleWithAuthentic(e.authentic)}</td>
           <td>{this.showTitleWithType(e.typeId)}</td>
           <td>
@@ -297,7 +440,7 @@ class MaterialManagement extends Component {
           </td>
         </tr>
       );
-      autoIndex++;
+      sttBase++;
       e.children && e.children.forEach(cb);
     };
 
@@ -305,10 +448,44 @@ class MaterialManagement extends Component {
     return list;
   };
 
-  showTitleWithStatus = (id) => {
-    const { STATUS_OPTIONS } = this.state;
-    const item = STATUS_OPTIONS.find((x) => x.id === Number(id));
-    return item ? item.title : "";
+  showLockButton = (item) => {
+    const isLocked = item.islocked === true;
+    const btnClass = isLocked
+      ? "btn btn-danger btn-sm"
+      : "btn btn-success btn-sm";
+    const btnText = isLocked ? "Đã khóa" : "Chưa khóa";
+
+    return (
+      <button className={btnClass} onClick={() => this.toggleLock(item)}>
+        {btnText}
+      </button>
+    );
+  };
+
+  toggleLock = async (item) => {
+    if (item.islocked) {
+      openAlertContext("Nguyên vật liệu đã khóa, không thể chỉnh sửa");
+      return;
+    }
+
+    const confirmLock = window.confirm(
+      `Bạn có chắc muốn khóa nguyên vật liệu "${item.title}" không?`
+    );
+    if (!confirmLock) return;
+
+    try {
+      const result = await fetchData.materialManagement.updateLock(item.id);
+
+      if (result.success) {
+        setAlertContext("Khóa nguyên vật liệu thành công");
+        this.fetchSummary();
+      } else {
+        openAlertContext(result.message || "Có lỗi xảy ra");
+      }
+    } catch (error) {
+      console.error(error);
+      openAlertContext("Lỗi hệ thống, vui lòng thử lại!");
+    }
   };
 
   showTitleWithAuthentic = (id) => {
@@ -362,6 +539,7 @@ class MaterialManagement extends Component {
                 isShowForEdit={
                   isShowForDetail || isShowForHistoryList || isModalOpen
                 }
+                isReadOnly={this.state.dataInsert?.islocked === true}
                 closeForm={this.onCloseModal}
                 moduleBody={
                   <div>

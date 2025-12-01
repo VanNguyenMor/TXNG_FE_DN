@@ -3,7 +3,6 @@ import PopupMessage from "../../../components/PopupMessage";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import classes from "./index.module.css";
 import Noimg from "../../../assets/img/NoImg/NoImg.jpg";
-import Validate from "react-validate-form";
 
 import {
   Button,

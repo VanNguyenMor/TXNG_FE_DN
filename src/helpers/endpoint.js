@@ -28,6 +28,22 @@ export const MATERIAL_MANAGEMENT = {
   getMaterialGroupList: "materialgroupnext/getall",
   getDetailMaterial: "material/get?id={id}",
   getNationGroupList: "location/nation",
+  editMaterial: "material/update",
+  addMaterial: "material/create",
+  updateLock: "material/lock?id={id}",
+};
+
+export const PRODUCT_MANAGEMENT = {
+  getListProductManagement: "product/getall",
+};
+
+export const QR_MANAGEMENT = {
+  getListManageQRStamp:
+    "requestprovidestamp/qrcodestampunused?page={0}&limit={1}&productID={2}",
+  getListManageQRSystem: "qrmanager/getallqrcodessystem",
+  getListManageQRUsed:
+    "requestprovidestamp/getstampused?page={0}&limit={1}&productId={2}",
+  getListManageQRIncurred: "qrmanager/getallqrcodesincurred",
 };
 
 export const PAYLOAD = {
