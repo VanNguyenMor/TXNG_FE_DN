@@ -8,6 +8,7 @@ import { Col, Input, InputGroup, Label, Row } from "reactstrap";
 import Select from "components/Select";
 import ImageUploader from "components/ImageUploader/ImageUploader";
 import ConversionManagerTable from "components/ConversionManagerTable/ConversionManagerTable";
+import { fetchData } from "helpers/fetchData";
 
 class ShowEditData extends Component {
   constructor(props) {
@@ -207,6 +208,66 @@ class ShowEditData extends Component {
     this.setState({ filter });
   };
 
+  async loadDetailData(id) {
+    if (!id) return;
+
+    try {
+      const res = await fetchData.materialManagement.getDetail(id);
+      console.log(res);
+      if (res && res.material) {
+        const material = res.material;
+        const materialUnits = res.materialUnits;
+
+        const newDataInsert = {
+          id: material.id || null,
+          name: material.name || "",
+          plantingTypeId: material.plantingTypeID || "",
+          provinceId: material.provinceID || "",
+          districtId: material.districtID || "",
+          wardId: material.wardID || "",
+          gps: material.gps || {},
+          gpsNew: gpsList,
+          plantingTypeAttribute: parsedAttributes,
+          plantingZoneId: material.id || null,
+          fileView: material.images || material.icon || "",
+        };
+
+        this.setState({
+          detailData: material,
+          dataInsert: newDataInsert,
+          name: newDataInsert.name,
+          plantingTypeId: newDataInsert.plantingTypeId,
+          provinceId: newDataInsert.provinceId,
+          districtId: newDataInsert.districtId,
+          wardId: newDataInsert.wardId,
+          gps: newDataInsert.gps,
+          gpsNew: newDataInsert.gpsNew,
+          area: this.calculateArea(newDataInsert.gpsNew),
+          plantingTypeAttribute: newDataInsert.plantingTypeAttribute,
+          plantingZoneId: newDataInsert.plantingZoneId,
+          fileView: newDataInsert.fileView,
+        });
+
+        if (this.props.onLoadDetailData) {
+          this.props.onLoadDetailData(newDataInsert);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi load detailData:", error);
+    }
+  }
+
+  componentWillMount() {
+    if (this.props.id !== null && this.props.id !== undefined) {
+      this.loadDetailData(this.props.id);
+    }
+  }
+  componentDidUpdate(prevProps) {
+    if (this.props.id && this.props.id !== prevProps.id) {
+      this.loadDetailData(this.props.id);
+    }
+  }
+
   render() {
     const {
       errMessage,
@@ -223,10 +284,11 @@ class ShowEditData extends Component {
     const {
       errors,
       isShowForDetail,
-      MATERIAL_GROUP_DATA,
+      materialGroup,
       ORIGIN_DATA,
       UNITS_DATA,
       MATERIAL_TYPE_DATA,
+      nations,
     } = this.props;
 
     return (
@@ -356,8 +418,8 @@ class ShowEditData extends Component {
                 name="materialGroupTypeId"
                 isDisable={isShowForDetail}
                 title="Chọn nhóm"
-                data={MATERIAL_GROUP_DATA}
-                labelName="title"
+                data={materialGroup}
+                labelName="name"
                 val="id"
                 handleChange={this.onChangeValue("materialGroupTypeId")}
               />
@@ -402,8 +464,8 @@ class ShowEditData extends Component {
                 className="wrap-insert-or-update-zone-item-select"
                 name="originId"
                 title="Chọn xuất xứ"
-                data={ORIGIN_DATA}
-                labelName="title"
+                data={nations}
+                labelName="nationName"
                 val="id"
                 handleChange={this.onChangeValue("originId")}
               />

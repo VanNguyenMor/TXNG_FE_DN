@@ -6,6 +6,7 @@ import {
   PROVINCE,
   WARD,
   PLANTING_ZONE,
+  MATERIAL_MANAGEMENT,
 } from "./endpoint";
 
 export const fetchData = {
@@ -120,6 +121,39 @@ export const fetchData = {
         console.error("Lỗi khi xóa Planting Zone:", error);
         return null;
       }
+    },
+  },
+
+  materialManagement: {
+    getAll: async () => {
+      const result = await callApi(
+        "post",
+        MATERIAL_MANAGEMENT.getListMaterialManagement,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+
+    getDetail: async (id) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_MANAGEMENT.getDetailMaterial.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+    getGroupList: async () => {
+      const result = await callApi(
+        "post",
+        MATERIAL_MANAGEMENT.getMaterialGroupList
+      );
+      return result?.data || [];
+    },
+    getNationList: async () => {
+      const result = await callApi(
+        "get",
+        MATERIAL_MANAGEMENT.getNationGroupList
+      );
+      return result?.data || [];
     },
   },
 };

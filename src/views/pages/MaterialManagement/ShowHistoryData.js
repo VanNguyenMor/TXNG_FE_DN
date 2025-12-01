@@ -147,7 +147,7 @@ class ShowHistoryData extends Component {
   render() {
     const { errMessage, popupMessage, jobId, productId } = this.state;
     const { errors, historyData, tableTitle } = this.props;
-    console.log(tableTitle)
+    console.log(tableTitle);
     return (
       <div className="wrap-insert-or-update-zone">
         <HistoryListTable historyData={historyData} tableTitle={tableTitle} />

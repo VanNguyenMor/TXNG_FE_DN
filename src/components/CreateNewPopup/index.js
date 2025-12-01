@@ -1,21 +1,17 @@
 import React, { Component } from "react";
-import classes from './index.module.css';
+import classes from "./index.module.css";
 import SaveIcon from "../../assets/img/buttons/apply.svg";
 import CloseIcon from "../../assets/img/buttons/DONG.png";
 import SaveIcon1 from "../../assets/img/buttons/save.svg";
 
 // reactstrap components
-import {
-	Button,
-	Modal,
-} from "reactstrap";
+import { Button, Modal } from "reactstrap";
 
 class CreateNewPopup extends Component {
   constructor(props) {
     super(props);
 
-		this.state = {
-		}
+    this.state = {};
   }
 
   render() {
@@ -30,7 +26,7 @@ class CreateNewPopup extends Component {
       newData,
       handleCreateInfoData,
       onConfirm,
-      isShowForEdit
+      isShowForEdit,
     } = this.props;
 
     return (
@@ -53,68 +49,66 @@ class CreateNewPopup extends Component {
               <>
                 {isShowForEdit ? (
                   <Button
-								color={activeSubmit ? "default" : ''}
+                    color={activeSubmit ? "default" : ""}
                     type="button"
-								// className={`btn-primary-cs ${!activeSubmit && 'disbale-btn-cs'}`}
+                    // className={`btn-primary-cs ${!activeSubmit && 'disbale-btn-cs'}`}
                     className={`btn-success-cs`}
-								data-dismiss="modal"
+                    data-dismiss="modal"
                     onClick={() => {
                       if (onConfirm) {
                         onConfirm(() => {
-											toggleModal('createNewModal');
-										}, 'closePopup');
+                          toggleModal("createNewModal");
+                        }, "closePopup");
                       } else {
-										handleCreateInfoData(newData, 'a', 'closePopup');
+                        handleCreateInfoData(newData, "a", "closePopup");
                       }
                     }}
-							// disabled={activeSubmit ? false : true}
+                    // disabled={activeSubmit ? false : true}
                   >
-								<img src={SaveIcon1} alt='Lưu lại' />
+                    <img src={SaveIcon1} alt="Lưu lại" />
                     <span>Lưu lại</span>
                   </Button>
                 ) : (
                   <>
                     <Button
-									color={activeSubmit ? "default" : ''}
+                      color={activeSubmit ? "default" : ""}
                       type="button"
-									// className={`btn-primary-cs ${!activeSubmit && 'disbale-btn-cs'}`}
+                      // className={`btn-primary-cs ${!activeSubmit && 'disbale-btn-cs'}`}
                       className={`btn-success-cs`}
                       onClick={() => {
                         if (onConfirm) {
                           onConfirm(() => {
-												toggleModal('createNewModal');
+                            toggleModal("createNewModal");
                           });
                         } else {
-											// toggleModal('createNewModal');
+                          // toggleModal('createNewModal');
                           handleCreateInfoData(newData);
                         }
                       }}
-								// disabled={activeSubmit ? false : true}
+                      // disabled={activeSubmit ? false : true}
                     >
-									<img src={SaveIcon1} alt='Lưu & Thêm' />
+                      <img src={SaveIcon1} alt="Lưu & Thêm" />
                       <span>Lưu & Thêm</span>
                     </Button>
 
                     <Button
-									color={activeSubmit ? "default" : ''}
+                      color={activeSubmit ? "default" : ""}
                       type="button"
-									// className={`btn-primary-cs ${!activeSubmit && 'disbale-btn-cs'}`}
+                      // className={`btn-primary-cs ${!activeSubmit && 'disbale-btn-cs'}`}
                       className={`btn-primary-cs`}
-									data-dismiss="modal"
+                      data-dismiss="modal"
                       onClick={() => {
                         if (onConfirm) {
                           onConfirm(() => {
-												
-												toggleModal('createNewModal');
-											}, 'closePopup');
+                            toggleModal("createNewModal");
+                          }, "closePopup");
                         } else {
-											
-											handleCreateInfoData(newData, 'a', 'closePopup');
+                          handleCreateInfoData(newData, "a", "closePopup");
                         }
                       }}
-								// disabled={activeSubmit ? false : true}
+                      // disabled={activeSubmit ? false : true}
                     >
-									<img src={SaveIcon1} alt='Lưu & Đóng' />
+                      <img src={SaveIcon1} alt="Lưu & Đóng" />
                       <span>Lưu & Đóng</span>
                     </Button>
                   </>
@@ -122,23 +116,21 @@ class CreateNewPopup extends Component {
               </>
             )}
 
-
             <Button
               color="default"
               data-dismiss="modal"
               type="button"
               className={`btn-danger-cs`}
-							onClick={() => toggleModal('createNewModal', type100 ? 100 : 1)}
+              onClick={() => toggleModal("createNewModal", type100 ? 100 : 1)}
             >
-							<img src={CloseIcon} alt='Thoát ra' />
+              <img src={CloseIcon} alt="Thoát ra" />
               <span>Thoát ra</span>
             </Button>
           </div>
         </Modal>
-
       </>
     );
   }
-};
+}
 
 export default CreateNewPopup;

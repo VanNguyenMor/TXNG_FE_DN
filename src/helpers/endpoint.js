@@ -23,6 +23,13 @@ export const WARD = {
   getListWardByDistrictId: "location/getward?districtID={id}",
 };
 
+export const MATERIAL_MANAGEMENT = {
+  getListMaterialManagement: "material/getall",
+  getMaterialGroupList: "materialgroupnext/getall",
+  getDetailMaterial: "material/get?id={id}",
+  getNationGroupList: "location/nation",
+};
+
 export const PAYLOAD = {
   defaultPayLoad: {
     search: "",
