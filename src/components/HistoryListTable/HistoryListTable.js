@@ -10,7 +10,7 @@ import {
 import classes from "./HistoryListTable.module.css";
 
 const HistoryListTable = ({ historyData = [], tableTitle = "Sản phẩm" }) => {
-  if (historyData.length === 0) {
+  if (!historyData || historyData.length === 0) {
     return (
       <Card className="mt-3">
         <CardBody>
@@ -26,34 +26,44 @@ const HistoryListTable = ({ historyData = [], tableTitle = "Sản phẩm" }) => 
         Lịch sử {tableTitle}
       </CardHeader>
       <ListGroup flush>
-        {historyData.map((item, index) => (
-          <ListGroupItem
-            key={index}
-            className="d-flex justify-content-between align-items-start"
-          >
-            <div style={{ flexGrow: 1 }}>
-              <h4 className={`mb-1 ${classes.title}`}>{item.action}</h4>
+        {historyData.map((item, index) => {
+          // Parse description từ string JSON
+          let details = [];
+          try {
+            details = JSON.parse(item.description || "[]");
+          } catch (err) {
+            console.error("Error parsing description:", err);
+          }
 
-              <ul className="list-unstyled mb-0 small">
-                {Object.keys(item.details).map((key, detailIndex) => (
-                  <li key={detailIndex}>
-                    <strong>{key}</strong>: {item.details[key]}
-                  </li>
-                ))}
-              </ul>
-            </div>
+          return (
+            <ListGroupItem
+              key={index}
+              className="d-flex justify-content-between align-items-start"
+            >
+              <div style={{ flexGrow: 1 }}>
+                <h4 className={`mb-1 ${classes.title}`}># {item.id}</h4>
 
-            <div className="text-right ml-3">
-              <Badge color="info" pill className="mb-1">
-                {item.time}
-              </Badge>
-              <br />
-              <Badge pill className={classes.dateBadge}>
-                {item.date}
-              </Badge>
-            </div>
-          </ListGroupItem>
-        ))}
+                <ul className="list-unstyled mb-0 small">
+                  {details.map((d, detailIndex) => (
+                    <li key={detailIndex}>
+                      <strong>{d.Label}</strong>: {d.Value}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="text-right ml-3">
+                <Badge color="info" pill className="mb-1">
+                  {new Date(item.createdDate).toLocaleTimeString()}
+                </Badge>
+                <br />
+                <Badge pill className={classes.dateBadge}>
+                  {new Date(item.createdDate).toLocaleDateString()}
+                </Badge>
+              </div>
+            </ListGroupItem>
+          );
+        })}
       </ListGroup>
     </Card>
   );

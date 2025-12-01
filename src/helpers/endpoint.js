@@ -33,6 +33,11 @@ export const MATERIAL_MANAGEMENT = {
   updateLock: "material/lock?id={id}",
 };
 
+export const MATERIAL_HISTORIES = {
+  getListMaterialHistory:
+    "materialhistory/getlisthistory?materialId={0}&page={1}&limit={2}",
+};
+
 export const PRODUCT_MANAGEMENT = {
   getListProductManagement: "product/getall",
 };

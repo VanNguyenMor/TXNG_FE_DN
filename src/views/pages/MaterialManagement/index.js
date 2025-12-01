@@ -427,9 +427,9 @@ class MaterialManagement extends Component {
                         Xem lịch sử
                       </DropdownItem>
                     )}
-                    {isDisableEdit ? null : (
+                    {e.islocked ? null : (
                       <DropdownItem
-                        onClick={() => this.onShowBlockProductModal(e)}
+                        onClick={() => this.showLockButton(e)}
                       >
                         Khóa vật liệu
                       </DropdownItem>
@@ -539,7 +539,7 @@ class MaterialManagement extends Component {
                 isShowForEdit={
                   isShowForDetail || isShowForHistoryList || isModalOpen
                 }
-                isReadOnly={this.state.dataInsert?.islocked === true}
+                isReadOnly={this.state.dataInsert?.islocked === true || isShowForHistoryList}
                 closeForm={this.onCloseModal}
                 moduleBody={
                   <div>

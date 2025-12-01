@@ -9,6 +9,7 @@ import {
   MATERIAL_MANAGEMENT,
   PRODUCT_MANAGEMENT,
   QR_MANAGEMENT,
+  MATERIAL_HISTORIES,
 } from "./endpoint";
 
 export const fetchData = {
@@ -190,6 +191,19 @@ export const fetchData = {
       const result = await callApi(
         "get",
         MATERIAL_MANAGEMENT.getNationGroupList
+      );
+      return result?.data || [];
+    },
+  },
+
+  materialHistories: {
+    getListMaterialHistory: async (id, page, limit) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_HISTORIES.getListMaterialHistory
+          .replace("{0}", id)
+          .replace("{1}", page)
+          .replace("{2}", limit)}`
       );
       return result?.data || [];
     },
