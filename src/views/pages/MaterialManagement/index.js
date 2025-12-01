@@ -219,18 +219,18 @@ class MaterialManagement extends Component {
     const { dataInsert } = this.state;
     console.log("Data insert trước khi gửi:", dataInsert);
 
-    if (!dataInsert.materialNameVal) {
-      openAlertContext("Tên vật liệu không được để trống");
-      return;
-    }
-    if (!dataInsert.materialTypeId) {
-      openAlertContext("Loại vật liệu không được để trống");
-      return;
-    }
-    if (!dataInsert.materialGroupTypeId) {
-      openAlertContext("Nhóm vật liệu không được để trống");
-      return;
-    }
+    // if (!dataInsert.materialNameVal) {
+    //   openAlertContext("Tên vật liệu không được để trống");
+    //   return;
+    // }
+    // if (!dataInsert.materialTypeId) {
+    //   openAlertContext("Loại vật liệu không được để trống");
+    //   return;
+    // }
+    // if (!dataInsert.materialGroupTypeId) {
+    //   openAlertContext("Nhóm vật liệu không được để trống");
+    //   return;
+    // }
 
     try {
       const formData = new FormData();
@@ -243,7 +243,10 @@ class MaterialManagement extends Component {
       formData.append("MaterialName", dataInsert.materialNameVal || "");
       formData.append("TradeName", dataInsert.tradeNameVal || "");
 
-      formData.append("MaterialType", dataInsert.materialTypeId);
+      formData.append(
+        "MaterialType",
+        dataInsert.materialType || dataInsert.materialTypeId
+      );
 
       formData.append("MaterialGroupID", dataInsert.materialGroupTypeId || "");
 
@@ -428,9 +431,7 @@ class MaterialManagement extends Component {
                       </DropdownItem>
                     )}
                     {e.islocked ? null : (
-                      <DropdownItem
-                        onClick={() => this.showLockButton(e)}
-                      >
+                      <DropdownItem onClick={() => this.showLockButton(e)}>
                         Khóa vật liệu
                       </DropdownItem>
                     )}
@@ -539,7 +540,10 @@ class MaterialManagement extends Component {
                 isShowForEdit={
                   isShowForDetail || isShowForHistoryList || isModalOpen
                 }
-                isReadOnly={this.state.dataInsert?.islocked === true || isShowForHistoryList}
+                isReadOnly={
+                  this.state.dataInsert?.islocked === true ||
+                  isShowForHistoryList
+                }
                 closeForm={this.onCloseModal}
                 moduleBody={
                   <div>

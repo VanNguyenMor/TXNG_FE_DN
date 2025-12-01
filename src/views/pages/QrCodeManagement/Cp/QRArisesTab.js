@@ -8,7 +8,6 @@ import {
   Button,
   Table,
 } from "reactstrap";
-import SearchImg from "../../../../assets/img/buttons/searchig.svg";
 import ReactDatetime from "react-datetime";
 import AddNewQRArises from "../AddNewQRArises";
 import Select from "components/Select";
@@ -19,6 +18,7 @@ import MenuButton from "../../../../assets/img/buttons/menu.png";
 import Pagination from "components/Pagination";
 import CreateNewPopup from "components/CreateNewPopup";
 import WarningPopup from "components/WarningPopup";
+import SearchImg from "../../../../assets/img/buttons/searchig.svg";
 
 const QRArisesTab = ({
   isShowForEdit,
@@ -27,14 +27,11 @@ const QRArisesTab = ({
   dataQRArises,
   beginItemQRArises,
   endItemQRArises,
-  listLengthQRArises,
-  totalPageQRArises,
-  totalElementQRArises,
   currentPageQRArises,
+  limitQRArises,
 
   fromDate,
   toDate,
-  PRODUCT_OPTIONS,
 
   insertQRArises,
   errorInserts,
@@ -47,39 +44,21 @@ const QRArisesTab = ({
   toggleQRArises,
   handleDeleteQRArises,
   handlePageClickQRArises,
-  handleModal,
   toggleModal,
-  toggleModalPopupDeleteArises,
   onHandleChangeValueQRArises,
   onConfimQRArises,
   handleChangeSelectFilter,
   handleSubmitSearchForm,
   showTitleWithStatus,
   setDeleteItem,
+  PRODUCT_OPTIONS,
   setState,
 }) => {
-  // ------------------ Filter theo từ ngày -> đến ngày ------------------
-  const filteredData = Array.isArray(dataQRArises)
-    ? dataQRArises.filter((item) => {
-        if (!fromDate && !toDate) return true;
-        const itemDate = new Date(item.createdDate);
-        const from = fromDate ? new Date(fromDate) : null;
-        const to = toDate ? new Date(toDate) : null;
-        if (from && to) return itemDate >= from && itemDate <= to;
-        if (from) return itemDate >= from;
-        if (to) return itemDate <= to;
-        return true;
-      })
-    : [];
-
-  const paginatedData = Array.isArray(dataQRArises)
-    ? dataQRArises.slice(beginItemQRArises, endItemQRArises)
-    : [];
-
-  const totalFilteredElements = filteredData.length;
-  const totalPageFiltered = Math.ceil(
-    totalFilteredElements / (endItemQRArises - beginItemQRArises || 1)
-  );
+  const sourceData = Array.isArray(dataQRArises) ? dataQRArises : [];
+  const pageSize = Number(limitQRArises) > 0 ? Number(limitQRArises) : 10;
+  const paginatedData = sourceData.slice(beginItemQRArises, endItemQRArises);
+  const totalFilteredElements = sourceData.length;
+  const totalPageFiltered = Math.ceil(totalFilteredElements / pageSize);
 
   return (
     <div className="config-system-content-config-qr-generate">
@@ -99,7 +78,7 @@ const QRArisesTab = ({
             data={insertQRArises}
           />
         }
-        handleModal={handleModal}
+        handleModal={() => {}}
         onConfirm={onConfimQRArises}
         typeSearch={
           <>
@@ -178,7 +157,6 @@ const QRArisesTab = ({
             {paginatedData.map((item, idx) => (
               <tr key={idx}>
                 <td>{item.index}</td>
-
                 <td>
                   <img
                     style={{ width: 82, height: 82 }}
@@ -186,7 +164,6 @@ const QRArisesTab = ({
                     alt="..."
                   />
                 </td>
-
                 <td style={{ textAlign: "left" }}>
                   <span
                     style={{
@@ -204,9 +181,7 @@ const QRArisesTab = ({
                   <br />
                   <span>Người kiểm duyệt: {item.confirmedByName}</span>
                 </td>
-
                 <td>{showTitleWithStatus(item.status)}</td>
-
                 <td>
                   <ButtonDropdown
                     isOpen={item.collapse}
@@ -225,9 +200,7 @@ const QRArisesTab = ({
                       >
                         Chi tiết nhật ký truy xuất
                       </DropdownItem>
-
                       <DropdownItem divider />
-
                       <DropdownItem
                         onClick={() => {
                           toggleModal("warningPopupDelArises");
@@ -247,7 +220,7 @@ const QRArisesTab = ({
 
       {totalFilteredElements > 0 && (
         <Pagination
-          data={filteredData}
+          data={sourceData}
           listLength={totalFilteredElements}
           totalPage={totalPageFiltered}
           totalElement={totalFilteredElements}
@@ -280,7 +253,7 @@ const QRArisesTab = ({
           </p>
         }
         warningPopupModal={warningPopupDelArises}
-        toggleModal={toggleModalPopupDeleteArises}
+        toggleModal={toggleModal}
         handleWarning={handleDeleteQRArises}
       />
     </div>

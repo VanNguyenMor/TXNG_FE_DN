@@ -39,21 +39,24 @@ class QrCodeManagement extends Component {
       isLoadedQRSystem: false,
 
       // Tab 1 - QR Arises
-      dataQRArisesOriginal: [], 
+      dataQRArisesOriginal: [],
       dataQRArisesFiltered: [],
+      dataQRArises: [],
       limitQRArises,
       beginItemQRArises: 0,
       endItemQRArises: limitQRArises,
       totalElementQRArises: 0,
       listLengthQRArises: 0,
       currentPageQRArises: 0,
-      dataQRArises: [],
       insertQRArises: {},
       idQRArises: null,
       warningPopupDelArises: false,
       deleteItemQRArises: null,
       headerQRArises: QR_SYSTEM_ARISES,
       isLoadedQRArises: false,
+      fromDate: null,
+      toDate: null,
+      selectedProductId: null, // thêm để filter theo sản phẩm
 
       // Tab 2 - QR List
       limitQRList,
@@ -76,12 +79,34 @@ class QrCodeManagement extends Component {
       isShowForEdit: false,
       isShowForListHistory: false,
       createNewModal: false,
+      PRODUCT_OPTIONS: [],
     };
   }
 
   componentDidMount() {
     this.fetchQRSystem();
+    this.fetchProducts();
   }
+
+  fetchProducts = async () => {
+    try {
+      const result = await fetchData.productManagement.getAll();
+      if (result && Array.isArray(result.products)) {
+        const mappedProducts = result.products.map((item) => ({
+          id: item.id,
+          title: item.productName,
+          code: item.productCode,
+          unit: item.unitNameReport || item.unitName,
+          avatar: item.avatar || null,
+          isLocked: item.islocked,
+          verifiedStatus: item.verifiedStatus,
+        }));
+        this.setState({ PRODUCT_OPTIONS: mappedProducts });
+      }
+    } catch (error) {
+      console.error("Fetch Products error:", error);
+    }
+  };
 
   /** FETCH QR SYSTEM */
   fetchQRSystem = async () => {
@@ -120,7 +145,6 @@ class QrCodeManagement extends Component {
     try {
       const { currentPageQRArises, limitQRArises } = this.state;
       const result = await fetchData.qrManagement.getListManageQRIncurred();
-      console.log(result);
 
       const qrData = result && result.batches;
       const totalElements = result && result.total;
@@ -130,21 +154,25 @@ class QrCodeManagement extends Component {
           ...item,
           collapse: false,
           code: item.batchCode || item.batchNum,
-
           index: currentPageQRArises * limitQRArises + idx + 1,
         }));
 
         this.setState({
+          dataQRArisesOriginal: mappedData,
+          dataQRArisesFiltered: mappedData,
           dataQRArises: mappedData,
           listLengthQRArises: mappedData.length,
           totalElementQRArises:
             totalElements !== undefined ? totalElements : mappedData.length,
           endItemQRArises:
-            currentPageQRArises * limitQRArises + mappedData.length,
+            currentPageQRArises * limitQRArises +
+            Math.min(mappedData.length, limitQRArises),
           isLoadedQRArises: false,
         });
       } else {
         this.setState({
+          dataQRArisesOriginal: [],
+          dataQRArisesFiltered: [],
           dataQRArises: [],
           listLengthQRArises: 0,
           totalElementQRArises: 0,
@@ -175,7 +203,6 @@ class QrCodeManagement extends Component {
         errorInserts: {},
       },
       () => {
-        // Khi chọn tab 1 (QR Phát sinh) thì fetch dữ liệu
         if (tab === 1 && this.state.dataQRArises.length === 0) {
           this.fetchQRArises();
         }
@@ -183,7 +210,6 @@ class QrCodeManagement extends Component {
     );
   };
 
-  /** Pagination tab QR System */
   handlePageClickQRSystem = (data) => {
     const { limitQRSystem, dataQRSystem } = this.state;
     const selected = data.selected;
@@ -200,14 +226,13 @@ class QrCodeManagement extends Component {
     });
   };
 
-  /** Pagination tab QR Arises */
   handlePageClickQRArises = (data) => {
-    const { limitQRArises, dataQRArises } = this.state;
+    const { limitQRArises, dataQRArisesFiltered } = this.state;
     const selected = data.selected;
     const beginItemQRArises = selected * limitQRArises;
     const endItemQRArises = Math.min(
       beginItemQRArises + limitQRArises,
-      dataQRArises.length
+      dataQRArisesFiltered.length
     );
     this.setState({
       beginItemQRArises,
@@ -244,10 +269,20 @@ class QrCodeManagement extends Component {
     }
   };
 
-  handleSubmitSearchForm = () => {
-    const { fromDate, toDate, dataQRArises } = this.state;
+  handleChangeSelectFilter = (value) => {
+    this.setState({ selectedProductId: value });
+  };
 
-    const filtered = dataQRArises.filter((item) => {
+  handleSubmitSearchForm = () => {
+    const {
+      fromDate,
+      toDate,
+      dataQRArisesOriginal,
+      limitQRArises,
+      selectedProductId,
+    } = this.state;
+
+    const filtered = (dataQRArisesOriginal || []).filter((item) => {
       const created = item.createdDate ? new Date(item.createdDate) : null;
       const from = fromDate ? new Date(fromDate) : null;
       const to = toDate ? new Date(toDate) : null;
@@ -255,14 +290,20 @@ class QrCodeManagement extends Component {
       if (!created) return false;
       if (from && created < from) return false;
       if (to && created > to) return false;
+
+      if (selectedProductId && item.productId !== selectedProductId)
+        return false;
+
       return true;
     });
 
     this.setState({
-      dataQRArises: filtered,
+      dataQRArisesFiltered: filtered,
       beginItemQRArises: 0,
-      endItemQRArises: filtered.length,
+      endItemQRArises: Math.min(filtered.length, limitQRArises),
+      currentPageQRArises: 0,
       listLengthQRArises: filtered.length,
+      totalElementQRArises: Math.min(filtered.length, limitQRArises),
     });
   };
 
@@ -279,7 +320,7 @@ class QrCodeManagement extends Component {
       insertQRSystem,
       idQRSystem,
       headerQRSystem,
-      dataQRArises,
+      dataQRArisesFiltered,
       beginItemQRArises,
       endItemQRArises,
       listLengthQRArises,
@@ -295,6 +336,7 @@ class QrCodeManagement extends Component {
       createNewModal,
       warningPopupDelQR,
       isShowForListHistory,
+      PRODUCT_OPTIONS,
     } = this.state;
 
     const totalPageQRSystem = Math.ceil(listLengthQRSystem / limitQRSystem);
@@ -320,19 +362,22 @@ class QrCodeManagement extends Component {
 
     const propsForQRArises = {
       headerQRArises,
-      dataQRArises,
+      dataQRArises: dataQRArisesFiltered,
       isShowForEdit,
       beginItemQRArises,
       endItemQRArises,
       listLengthQRArises,
+      limitQRArises,
       totalPageQRArises,
       totalElementQRArises,
+      PRODUCT_OPTIONS,
       currentPageQRArises,
       handlePageClickQRArises: this.handlePageClickQRArises,
       showTitleWithStatus: this.showTitleWithStatus,
       setDeleteItem: (id) => this.setState({ deleteItemQRArises: id }),
       setState: (newState) => this.setState(newState),
       handleSubmitSearchForm: this.handleSubmitSearchForm,
+      handleChangeSelectFilter: this.handleChangeSelectFilter,
     };
 
     const propsForQRList = {

@@ -92,7 +92,10 @@ class ShowEditData extends Component {
               },
               () => {
                 this.props.onHandleChangeValue &&
-                  this.props.onHandleChangeValue(this.state);
+                  this.props.onHandleChangeValue({
+                    ...this.state,
+                    materialTypeId: this.state.materialType,
+                  });
               }
             );
           }
