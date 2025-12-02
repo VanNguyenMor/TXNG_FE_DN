@@ -118,44 +118,40 @@ class PlantingZone extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
-
+  fetchSummary = async () => {
     this.setState({ isLoaded: true });
+    try {
+      const result = await fetchData.materialManagement.getAll();
+      const dataFromApi = result.data || [];
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
+      let newData = [...dataFromApi];
+
       let collapseList = [];
-      const data = (res.data || {}).data || {};
-      const _plantingZones = data.plantingZones || [];
-
-      let newData = _plantingZones;
-
-      newData.map((item) =>
-        collapseList.push({ id: item.id, collapse: false })
-      );
-
-      newData.map((item, key) => {
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
+      newData.forEach((item, key) => {
+        collapseList.push({ id: item.id, collapse: false });
+        item["parentID"] = item.parentID ?? "";
       });
 
-      newData = handleGenTree(_plantingZones, "name");
+      newData = handleGenTree(newData, "name");
 
-      newData.map((item, key) => {
+      newData.forEach((item, key) => {
         item["index"] = key + 1;
       });
 
-      const total = data.total || 0;
-      const length = newData.length;
+      const total = newData.length;
+      const limit = this.state.limit;
 
       this.setState({
         data: newData,
         listLength: total,
-        totalPage: Math.ceil(length / limit),
+        totalPage: Math.ceil(total / limit),
         isLoaded: false,
         collapseList: collapseList,
       });
-    });
+    } catch (error) {
+      console.error("Fetch MaterialManagement error:", error);
+      this.setState({ isLoaded: false });
+    }
   };
 
   closeStatusModal = () => {
@@ -847,23 +843,4 @@ class PlantingZone extends Component {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    zone: state.ZoneStore,
-    PlantingZoneStore: state.PlantingZoneStore,
-    TypeZoneProperty: state.TypeZonePropertyStore,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    ...bindActionCreators(actionZoneCreators, dispatch),
-    ...bindActionCreators(typeZonePropertyAction, dispatch),
-    ...bindActionCreators(areaDataAction, dispatch),
-    ...bindActionCreators(platingZoneAction, dispatch),
-  };
-};
-
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  PlantingZone
-);
+export default PlantingZone;

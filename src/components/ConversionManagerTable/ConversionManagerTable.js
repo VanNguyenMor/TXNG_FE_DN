@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Table, Button, Input, InputGroup, InputGroupText } from "reactstrap";
+import { Table, Button, Input, InputGroup } from "reactstrap";
 import classes from "./ConversionManagerTable.module.css";
 
 class ConversionManagerTable extends Component {
@@ -26,38 +26,51 @@ class ConversionManagerTable extends Component {
   };
 
   handleUnitSelect = (e) => {
-    this.setState({ currentUnitId: Number(e.target.value) });
+    this.setState({ currentUnitId: e.target.value });
   };
 
   handleRateChange = (e) => {
     const value = e.target.value;
-    if (value === "" || Number(value) > 0) {
+    if (value === "" || value > 0) {
       this.setState({ currentUnitRate: value });
     }
   };
 
   handleAddUnit = () => {
     const { currentUnitId, currentUnitRate, selectedUnits } = this.state;
-    const { allAvailableUnits } = this.props;
+    const { allAvailableUnits, defaultUnitId } = this.props;
 
     if (!currentUnitId) {
       alert("Vui lòng chọn đơn vị.");
       return;
     }
 
-    const selectedUnitObj = allAvailableUnits.find(
-      (u) => u.id === currentUnitId
-    );
-
-    if (selectedUnits.some((u) => u.id === currentUnitId)) {
-      alert("Đơn vị này đã tồn tại trong danh sách.");
+    if (String(currentUnitId) === String(this.props.defaultUnitId || "")) {
+      alert("Đơn vị quy đổi không được trùng với đơn vị chính.");
       return;
     }
 
+    const selectedUnitObj = allAvailableUnits.find(
+      (u) => String(u.id) === String(currentUnitId)
+    );
+    if (!selectedUnitObj) {
+      alert("Đơn vị không hợp lệ.");
+      return;
+    }
+
+    if (selectedUnits.some((u) => String(u.id) === String(currentUnitId))) {
+      alert("Đơn vị này đã tồn tại trong danh sách.");
+      return;
+    }
+    const rate = Number(currentUnitRate) || 1;
+    if (rate <= 0) {
+      alert("Tỷ lệ phải lớn hơn 0.");
+      return;
+    }
     const newUnit = {
       id: currentUnitId,
       unitName: selectedUnitObj.title,
-      conversionRate: Number(currentUnitRate) || 1,
+      conversionRate: rate,
       isPrimary: selectedUnits.length === 0,
     };
 
@@ -109,7 +122,7 @@ class ConversionManagerTable extends Component {
     );
 
     const isAddDisabled =
-      !currentUnitId || !currentUnitRate || Number(currentUnitRate) <= 0;
+      !currentUnitId || !currentUnitRate || currentUnitRate <= 0;
 
     return (
       <div
@@ -130,7 +143,7 @@ class ConversionManagerTable extends Component {
             <option value="">Chọn đơn vị</option>
             {availableUnits.map((unit) => (
               <option key={unit.id} value={unit.id}>
-                {unit.title}
+                {unit.title && unit.title.toLowerCase()}
               </option>
             ))}
           </Input>
@@ -191,7 +204,7 @@ class ConversionManagerTable extends Component {
             {selectedUnits.map((unit, index) => (
               <tr key={unit.id}>
                 <td>{index + 1}</td>
-                <td>{unit.unitName}</td>
+                <td>{unit.unitName && unit.unitName.toLowerCase()}</td>
                 <td>{unit.conversionRate}</td>
                 <td className="text-center">
                   <Input

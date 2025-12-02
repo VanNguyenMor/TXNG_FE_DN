@@ -6,6 +6,10 @@ import {
   PROVINCE,
   WARD,
   PLANTING_ZONE,
+  MATERIAL_MANAGEMENT,
+  PRODUCT_MANAGEMENT,
+  QR_MANAGEMENT,
+  MATERIAL_HISTORIES,
 } from "./endpoint";
 
 export const fetchData = {
@@ -120,6 +124,181 @@ export const fetchData = {
         console.error("Lỗi khi xóa Planting Zone:", error);
         return null;
       }
+    },
+  },
+
+  materialManagement: {
+    getAll: async () => {
+      const result = await callApi(
+        "post",
+        MATERIAL_MANAGEMENT.getListMaterialManagement,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+
+    getUnitAll: async () => {
+      const result = await callApi("post", MATERIAL_MANAGEMENT.getUnitAll, {});
+      return result?.data || [];
+    },
+
+    create: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          MATERIAL_MANAGEMENT.addMaterial,
+          payload,
+          false
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi tạo nguyên vật liệu:", error);
+        return null;
+      }
+    },
+    update: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          MATERIAL_MANAGEMENT.editMaterial,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật nguyên vật liệu:", error);
+        return null;
+      }
+    },
+
+    updateLock: async (id) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_MANAGEMENT.updateLock.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+
+    getDetail: async (id) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_MANAGEMENT.getDetailMaterial.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+    getGroupList: async () => {
+      const result = await callApi(
+        "post",
+        MATERIAL_MANAGEMENT.getMaterialGroupList
+      );
+      return result?.data || [];
+    },
+    getNationList: async () => {
+      const result = await callApi(
+        "get",
+        MATERIAL_MANAGEMENT.getNationGroupList
+      );
+      return result?.data || [];
+    },
+  },
+
+  materialHistories: {
+    getListMaterialHistory: async (id, page, limit) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_HISTORIES.getListMaterialHistory
+          .replace("{0}", id)
+          .replace("{1}", page)
+          .replace("{2}", limit)}`
+      );
+      return result?.data || [];
+    },
+  },
+
+  productManagement: {
+    getAll: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListProductManagement,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+
+    create: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          MATERIAL_MANAGEMENT.addMaterial,
+          payload,
+          false
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi tạo nguyên vật liệu:", error);
+        return null;
+      }
+    },
+    update: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          MATERIAL_MANAGEMENT.editMaterial,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật nguyên vật liệu:", error);
+        return null;
+      }
+    },
+
+    updateLock: async (id) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_MANAGEMENT.updateLock.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+
+    getDetail: async (id) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_MANAGEMENT.getDetailMaterial.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+    getGroupList: async () => {
+      const result = await callApi(
+        "post",
+        MATERIAL_MANAGEMENT.getMaterialGroupList
+      );
+      return result?.data || [];
+    },
+    getNationList: async () => {
+      const result = await callApi(
+        "get",
+        MATERIAL_MANAGEMENT.getNationGroupList
+      );
+      return result?.data || [];
+    },
+  },
+
+  qrManagement: {
+    getListManageQRSystem: async () => {
+      const result = await callApi(
+        "post",
+        QR_MANAGEMENT.getListManageQRSystem,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListManageQRIncurred: async () => {
+      const result = await callApi(
+        "post",
+        QR_MANAGEMENT.getListManageQRIncurred,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
     },
   },
 };
