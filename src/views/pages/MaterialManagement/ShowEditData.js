@@ -33,7 +33,8 @@ class ShowEditData extends Component {
       unitName: "",
       islocked: null,
       recommendedVal: "",
-      nationId: null,
+      quarantineOld: null,
+      originId: null,
       nationName: "",
       productConversionUnits: [],
       fileView: null,
@@ -126,13 +127,14 @@ class ShowEditData extends Component {
             islocked: initialData.islocked,
             unitName: initialData.unitName || "",
             recommendedVal: initialData.recommendedVal || "",
-            nationId: initialData.nationId
-              ? String(initialData.nationId)
+            originId: initialData.originId
+              ? String(initialData.originId)
               : null,
             nationName: initialData.nationName || "",
             productConversionUnits: initialData.productConversionUnits || [],
             file: initialData.file || null,
             fileView: initialData.fileView || null,
+            quarantineOld: initialData.quarantineOld || null,
             id: initialData.id || null,
           },
         }),
@@ -182,9 +184,9 @@ class ShowEditData extends Component {
           : material.unitName || "",
         recommendedVal: material.recommended || "",
         islocked: material.islocked || false,
-        nationId: material.nation ? String(material.nation) : null,
-        nationName: material.nationName || "",
+        originId: material.nation ? String(material.nation) : null,
         fileView: material.images || null,
+        quarantineOld: material.quarantineOld || null,
         productConversionUnits: materialUnits.map((u) => ({
           id: u.unitID,
           unitName: u.unitName,
@@ -219,6 +221,20 @@ class ShowEditData extends Component {
       return;
     }
 
+    if (name === "producerId") {
+      const selected = this.props.partners?.find(
+        (p) => String(p.id) === selectValue
+      );
+      this.setState(
+        { producerId: selectValue, producerName: selected?.partnerName || "" },
+        () => {
+          this.props.onHandleChangeValue &&
+            this.props.onHandleChangeValue(this.state);
+        }
+      );
+      return;
+    }
+
     if (name === "materialGroupTypeId") {
       const selected = this.props.materialGroup?.find(
         (g) => String(g.id || g.Id) === selectValue
@@ -238,14 +254,14 @@ class ShowEditData extends Component {
       return;
     }
 
-    if (name === "nationId") {
+    if (name === "originId") {
       const selected = this.props.nations?.find(
         (n) => String(n.id) === selectValue
       );
 
       this.setState(
         {
-          nationId: selectValue,
+          originId: selectValue,
           nationName: selected?.nationName || "",
         },
         () => {
@@ -310,7 +326,7 @@ class ShowEditData extends Component {
       unitVal,
       unitName,
       recommendedVal,
-      nationId,
+      originId,
       productConversionUnits,
       fileView,
       errMessage,
@@ -432,6 +448,23 @@ class ShowEditData extends Component {
             </div>
           </Col>
         </Row>
+        {materialType !== "1" && (
+          <Row className="mt-3">
+            <Col md="12">
+              <div className={classes.rowItem}>
+                <Label className="form-control-label">Số ngày cách ly</Label>
+                <InputGroup className="input-group-alternative css-border-input">
+                  <Input
+                    type="number"
+                    readOnly={islocked}
+                    value={this.state.quarantineOld || ""}
+                    onChange={this.onChangeValue("quarantineOld")}
+                  />
+                </InputGroup>
+              </div>
+            </Col>
+          </Row>
+        )}
 
         <Row className="mt-3">
           <Col md="6">
@@ -470,22 +503,37 @@ class ShowEditData extends Component {
         </Row>
 
         <Row className="mt-3">
+          {/* <Col md="6">
+            <div className={classes.rowItem}>
+              <Label className="form-control-label">Nhà cung cấp</Label>
+              <Select
+                name="producerId"
+                title="Chọn nhà cung cấp"
+                data={this.props.partners || []}
+                isDisable={islocked}
+                labelName="partnerName"
+                val="id"
+                handleChange={this.onChangeSelect("producerId")}
+                defaultValue={this.state.producerId || null}
+              />
+            </div>
+          </Col> */}
           <Col md="12">
             <div className={classes.rowItem}>
               <Label className="form-control-label">
                 Xuất xứ<b style={{ color: "red" }}>*</b>
               </Label>
               <Select
-                name="nationId"
+                name="originId"
                 title="Chọn xuất xứ"
                 data={nations || []}
                 isDisable={islocked}
                 labelName="nationName"
                 val="id"
-                handleChange={this.onChangeSelect("nationId")}
-                value={nationId || null}
+                handleChange={this.onChangeSelect("originId")}
+                value={originId || null}
               />
-              <p className="form-error-message">{errors.nationId}</p>
+              <p className="form-error-message">{errors.originId}</p>
             </div>
           </Col>
         </Row>
@@ -497,6 +545,7 @@ class ShowEditData extends Component {
           allAvailableUnits={UNITS_DATA || []}
           initialSelectedUnits={productConversionUnits}
           onChange={this.onConversionChange}
+          defaultUnitId={unitVal || unitName}
         />
 
         <Row className="mt-3">

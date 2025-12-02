@@ -88,7 +88,7 @@ class MaterialManagement extends Component {
       if (result) {
         console.log(result);
         const units = result.units.map((u) => ({
-          id: Number(u.id),
+          id: u.id,
           title: u.unitName,
           isLocked: u.isLocked,
         }));
@@ -210,8 +210,30 @@ class MaterialManagement extends Component {
   checkDataInsert = () => {
     const { dataInsert } = this.state;
     const errorInserts = {};
-    if (!dataInsert.title)
+
+    if (!dataInsert.materialNameVal && !dataInsert.title)
       errorInserts.title = "Tên vật liệu không được bỏ trống";
+
+    if (!dataInsert.materialGroupTypeId && !dataInsert.materialGroupID)
+      errorInserts.materialGroupTypeId = "Bạn vui lòng chọn nhóm nguyên liệu";
+
+    if (!dataInsert.unitVal && !dataInsert.unit)
+      errorInserts.unitVal = "Bạn vui lòng chọn đơn vị tính mặc định";
+
+    if (!dataInsert.originId && !dataInsert.originId)
+      errorInserts.originId = "Bạn vui lòng chọn xuất xứ";
+
+    const unitVal = dataInsert.unitVal || dataInsert.unit;
+    const conv = dataInsert.productConversionUnits || [];
+    if (conv.some((u) => String(u.id) === String(unitVal))) {
+      errorInserts.productConversionUnits =
+        "Đơn vị quy đổi không được trùng với đơn vị chính";
+    }
+
+    if ((conv.filter((u) => u.isPrimary).length || 0) > 1) {
+      errorInserts.productConversionUnits = "Chỉ chọn 1 đơn vị làm báo cáo";
+    }
+
     return errorInserts;
   };
 
@@ -233,52 +255,54 @@ class MaterialManagement extends Component {
   onConfirm = async (toggleModal) => {
     const { dataInsert } = this.state;
 
-    const materialPayload = {
-      id: dataInsert.id,
-      materialName: dataInsert.materialNameVal,
-      materialType: dataInsert.materialType,
-      materialGroupID: dataInsert.materialGroupTypeId,
-      unitID: dataInsert.unitVal,
-      unitName: dataInsert.unitName,
-      tradeName: dataInsert.tradeNameVal,
-      nationName: dataInsert.nationName,
-      recommended: dataInsert.recommendedVal,
-      code: dataInsert.materialCodeVal,
-    };
-
-    const materialUnitsPayload = (dataInsert.productConversionUnits || []).map(
-      (unit) => ({
-        id: unit.id,
-        unitName: unit.unitName,
-        value: unit.conversionRate,
-        isMain: unit.isPrimary,
-      })
-    );
-
-    const payload = {
-      material: materialPayload,
-      materialUnits: materialUnitsPayload,
-    };
-
     try {
-      let result;
-      if (materialPayload.id) {
-        if (dataInsert.islocked) {
-          toast.error("Nguyên vật liệu đã khóa");
-        } else {
-          result = await fetchData.materialManagement.update(payload);
-        }
-      } else {
-        result = await fetchData.materialManagement.create(payload);
+      const formData = new FormData();
+      console.log(dataInsert);
+      if (dataInsert.id) formData.append("Id", dataInsert.id);
+      formData.append("MaterialCode", dataInsert.materialCodeVal || "");
+      formData.append("MaterialName", dataInsert.materialNameVal || "");
+      formData.append("TradeName", dataInsert.tradeNameVal || "");
+      formData.append("MaterialType", dataInsert.materialType || "");
+      formData.append("MaterialGroupID", dataInsert.materialGroupTypeId || "");
+      formData.append("UnitID", dataInsert.unitVal || "");
+      formData.append("UnitName", dataInsert.unitName || "");
+      formData.append("Producer", dataInsert.producerId || "");
+      if (dataInsert.quarantineOld)
+        formData.append("QuarantineOld", dataInsert.quarantineOld);
+
+      formData.append("Recommended", dataInsert.recommendedVal || "");
+      if (dataInsert.producerId)
+        formData.append("ProducerID", dataInsert.producerId);
+
+      formData.append("OriginID", dataInsert.originId);
+
+      if (dataInsert.file && dataInsert.file instanceof File) {
+        formData.append("Images", dataInsert.file);
       }
 
-      toast.success("Thao tác thành công");
-      this.fetchSummary();
+      (dataInsert.productConversionUnits || []).forEach((unit, index) => {
+        formData.append(`materialUnits[${index}][unitId]`, unit.id || "");
+        formData.append(`materialUnits[${index}][name]`, unit.unitName || "");
+        formData.append(
+          `materialUnits[${index}][value]`,
+          unit.conversionRate
+            ? unit.conversionRate.toString().replace(".", ",")
+            : "1"
+        );
+        formData.append(
+          `materialUnits[${index}][isReport]`,
+          unit.isPrimary ? true : false
+        );
+      });
+
+      const result = dataInsert.id
+        ? await fetchData.materialManagement.update(formData)
+        : await fetchData.materialManagement.create(formData);
+
       toggleModal && toggleModal();
-      this.onCloseModal();
+      this.fetchSummary();
     } catch (error) {
-      console.error(error);
-      openAlertContext("Lỗi hệ thống, vui lòng thử lại!");
+      console.error("Lỗi gửi dữ liệu:", error);
     }
   };
 
@@ -499,6 +523,7 @@ class MaterialManagement extends Component {
                     ? "Lịch sử nguyên vật liệu"
                     : "Thêm mới nguyên vật liệu"
                 }
+                dataReload={this.fetchSummary}
                 hideSearch={true}
                 isShowForEdit={
                   isShowForDetail || isShowForHistoryList || isModalOpen
