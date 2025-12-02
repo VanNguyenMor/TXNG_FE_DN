@@ -1,11 +1,5 @@
 import React, { Component } from "react";
 import { Editor } from "@tinymce/tinymce-react";
-import { bindActionCreators } from "redux";
-import compose from "recompose/compose";
-import { connect } from "react-redux";
-import { configSystemAction } from "../../../actions/ConfigSystemAction";
-import { actionCompanyListRegistered } from "../../../actions/CompanyListRegisteredActions";
-import { actionStampPlate } from "../../../actions/StampTemplateActions";
 import "../../../assets/css/page/config_system.css";
 import { replaceCommaDot } from "bases/helper";
 import SaveIcon1 from "../../../assets/img/buttons/save.svg";
@@ -13,7 +7,7 @@ import "./select-search.css";
 import Noimg from "../../../assets/img/NoImg/NoImg.jpg";
 import axios from "axios";
 import { CONFIG_UPDATE_IMG } from "../../../apis";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import GoogleMapReact from "google-map-react";
 import { currentPosition } from "utils/geo";
@@ -26,8 +20,8 @@ import GoogleAutoCompleteInput from "../../../components/GoogleAutoCompleteInput
 import ImageUploader from "components/ImageUploader/ImageUploader";
 import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUploader";
 import { fetchData } from "helpers/fetchData";
-import getDataFormLocalStorage from "helpers/getDataFormLocalStorage";
 import Select from "components/Select";
+import { parseImageUrls } from "utils/parseImageUrls";
 
 const AnyReactComponent = ({ text }) => (
   <div>
@@ -63,7 +57,7 @@ class BusinessInformation extends Component {
         wardID: null,
         wardName: "",
         phoneNumber: "",
-        faxText: "",
+        fax: "",
         email: "",
         website: "",
         contactName: "",
@@ -212,9 +206,10 @@ class BusinessInformation extends Component {
         contactPhone,
         contactEmail,
         isCheckZone,
-        zoneIDs,
+        location,
         certifications,
         businessLicenses,
+        images,
         verifiedImage,
       } = res;
 
@@ -242,7 +237,10 @@ class BusinessInformation extends Component {
             contactEmail,
             isCheckZone,
             verifiedImage,
-            zoneIDs,
+            location,
+            businessLicenseImages: parseImageUrls(businessLicenses, Noimg),
+            registrationPaperImages: parseImageUrls(certifications, Noimg),
+            workImages: parseImageUrls(images, Noimg),
           },
         }),
 
@@ -282,90 +280,64 @@ class BusinessInformation extends Component {
     this.loadData();
   }
 
-  onSaveConfigSystem = () => {
+  onSaveConfigSystem = async () => {
     const { configSetting } = this.state;
-    console.log(configSetting);
-    // const errorsConfigSystem = this.checkValidateFormConfigSystem();
+    console.log(configSetting, "configSetting");
+    try {
+      const formData = new FormData();
 
-    // this.setState((previousState) => {
-    //   return {
-    //     ...previousState,
-    //     errorsConfigSystem,
-    //   };
-    // });
+      formData.append("ID", configSetting.id || "");
+      formData.append("WardID", configSetting.wardID || "");
+      formData.append("Address", configSetting.address || "");
+      formData.append("TaxCode", configSetting.companyCode || "");
+      formData.append("DistrictID", configSetting.districtID || "");
+      formData.append("ProvinceID", configSetting.provinceID || "");
+      formData.append("CompanyName", configSetting.companyName || "");
+      formData.append("PhoneNumber", configSetting.phoneNumber || "");
+      formData.append("Fax", configSetting.fax || "");
 
-    // if (Object.keys(errorsConfigSystem).length > 0) {
-    //   return;
-    // }
+      if (configSetting.industryId) {
+        formData.append("FieldIDs", configSetting.industryId);
+      } else {
+        formData.append("FieldIDs", "");
+      }
 
-    // const { configSetting } = this.state;
+      // optional
+      formData.append("Introduce", configSetting.introduce || "");
+      formData.append("Email", configSetting.email || "");
+      formData.append("Fax", configSetting.fax || "");
+      formData.append("Website", configSetting.website || "");
+      formData.append("ContactName", configSetting.contactName || "");
+      formData.append("ContactPhone", configSetting.contactPhone || "");
+      formData.append("ContactEmail", configSetting.contactEmail || "");
+      formData.append("Location", configSetting.location || "");
 
-    // const contentEmailChangePassword =
-    //   this.refEditorContentSendEmailChangePassword.getContent();
-    // const contentEmailSendToPrinter =
-    //   this.refcontentEmailSendToPrinter.getContent();
-    // const attachmentUsed = this.refAttachmentUsed.getContent();
-    // const attachmentStamps = this.refAttachmentStamps.getContent();
-    // const attachments = this.refAttachments.getContent();
-    // const contentEmailRegister = this.refcontentEmailRegister.getContent();
-    // const formData = new FormData();
+      // images
+      configSetting.verifiedImage?.split(";").forEach((url) => {
+        formData.append("VerifiedImage", url);
+      });
+      configSetting.businessLicenseImages?.forEach((url) => {
+        formData.append("BusinessLicenseImages", url);
+      });
+      configSetting.registrationPaperImages?.forEach((url) => {
+        formData.append("RegistrationPaperImages", url);
+      });
+      configSetting.workImages?.forEach((url) => {
+        formData.append("WorkImages", url);
+      });
 
-    // formData.append("Email", configSetting.email ? configSetting.email : "");
-    // formData.append(
-    //   "EmailMask",
-    //   configSetting.emailMask ? configSetting.emailMask : ""
-    // );
-    // formData.append(
-    //   "PassEmail",
-    //   configSetting.passEmail ? configSetting.passEmail : ""
-    // );
-    // formData.append(
-    //   "PhoneNumber",
-    //   configSetting.phoneNumber ? configSetting.phoneNumber : ""
-    // );
-    // formData.append("Attachments", attachments ? attachments : "");
-    // formData.append(
-    //   "AttachmentStamps",
-    //   attachmentStamps ? attachmentStamps : ""
-    // );
-    // formData.append("AttachmentUsed", attachmentUsed ? attachmentUsed : "");
-
-    // formData.append("Templates[0].id", "1");
-    // formData.append("Templates[0].description", contentEmailRegister);
-
-    // formData.append("Templates[1].id", "2");
-    // formData.append("Templates[1].description", contentEmailChangePassword);
-
-    // formData.append("Templates[2].id", "3");
-    // formData.append("Templates[2].description", contentEmailChangePassword);
-
-    // formData.append("Templates[3].id", "4");
-    // formData.append("Templates[3].description", contentEmailChangePassword);
-
-    // formData.append("Templates[4].id", "5");
-    // formData.append("Templates[4].description", contentEmailChangePassword);
-
-    // formData.append("Templates[5].id", "6");
-    // formData.append("Templates[5].description", contentEmailChangePassword);
-
-    // formData.append("Templates[6].id", "7");
-    // formData.append("Templates[6].description", contentEmailSendToPrinter);
-
-    // Loading.show();
-
-    // this.props.updateConfigSystem(formData).then((res) => {
-    //   Loading.close();
-
-    //   const data = res.data || {};
-
-    //   if (data.status == 200) {
-    //     toast.success("Lưu thông tin thành công!");
-    //   } else {
-    //     const message = getErrorMessageServer(res);
-    //     this.setState({ messageErr: message });
-    //     this.toggleModal("popupMessage");
-    //   }
-    // });
+      const response = await fetchData.infoCompany.update(formData);
+      console.log(response, "response");
+      try {
+        toast.success("Cập nhật thành công!");
+        await this.loadDetailData(configSetting.id);
+      } catch {
+        toast.error("Cập nhật thất bại!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Có lỗi xảy ra khi lưu dữ liệu");
+    }
   };
 
   onOpenMaps = () => {
@@ -390,7 +362,7 @@ class BusinessInformation extends Component {
           isShowMapViewLocation: false,
           configSetting: {
             ...previousState.configSetting,
-            zoneIDs: gps,
+            location: gps,
           },
         };
       });
@@ -546,6 +518,9 @@ class BusinessInformation extends Component {
       listFields,
       industryId,
     } = this.state;
+
+    const { businessLicenseImages, registrationPaperImages, workImages } =
+      configSetting;
 
     options.map((option) => {
       option.name = option.companyName;
@@ -992,8 +967,8 @@ class BusinessInformation extends Component {
                       className="config-system-content-config-system-item-box"
                     >
                       <input
-                        onChange={this.onChangeValue("zoneIDs")}
-                        value={configSetting.zoneIDs}
+                        onChange={this.onChangeValue("location")}
+                        value={configSetting.location}
                         type="text"
                         readOnly
                         className="config-system-content-config-system-item-input"
@@ -1010,7 +985,7 @@ class BusinessInformation extends Component {
                         />
                       </button>
                       <p className="form-error-message">
-                        {errorsConfigSystem.zoneIDs}
+                        {errorsConfigSystem.location}
                       </p>
                     </div>
                   </div>
@@ -1025,7 +1000,7 @@ class BusinessInformation extends Component {
                     <ImageGalleryUploader
                       mdVal={3}
                       title="Giấy phép kinh doanh"
-                      // initialImages={businessLicenseImages}
+                      initialImages={businessLicenseImages}
                       onImagesChange={this.handleBusinessLicenseImagesChange}
                     />
                   </div>
@@ -1041,6 +1016,7 @@ class BusinessInformation extends Component {
                     <ImageGalleryUploader
                       mdVal={3}
                       title="Giấy đăng ký/ chứng nhận có liên quan"
+                      initialImages={registrationPaperImages}
                       onImagesChange={
                         this.handleRegistrationPaperImagesImagesChange
                       }
@@ -1057,6 +1033,7 @@ class BusinessInformation extends Component {
                     <ImageGalleryUploader
                       mdVal={3}
                       title="Một số hình ảnh hoạt động"
+                      initialImages={workImages}
                       onImagesChange={this.handleWorkImagesImagesChange}
                     />
                   </div>
@@ -1137,22 +1114,4 @@ class BusinessInformation extends Component {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    ConfigSystemStore: state.ConfigSystemStore,
-    dataCompany: state.CompanyListRegisteredStore,
-    stampTemplate: state.StampPlateStore,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    ...bindActionCreators(configSystemAction, dispatch),
-    ...bindActionCreators(actionCompanyListRegistered, dispatch),
-    ...bindActionCreators(actionStampPlate, dispatch),
-  };
-};
-
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  BusinessInformation
-);
+export default BusinessInformation;

@@ -123,6 +123,19 @@ export const fetchData = {
   },
 
   infoCompany: {
+    update: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          INFO_COMPANY.updateInfoCompany,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật InfoCompany:", error);
+        return null;
+      }
+    },
     detail: async (id) => {
       try {
         const result = await callApi(

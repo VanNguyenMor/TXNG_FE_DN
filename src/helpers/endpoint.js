@@ -33,6 +33,8 @@ export const INFO_COMPANY = {
   getListProvinceAll: "location/getallprovince",
   getListDistrictByProvinceId: "location/getdistrict?provinceID={id}",
   getListWardByDistrictId: "location/getward?districtID={id}",
+  updateInfoCompany: "company/update",
+  uploadFile: "company/upload",
 };
 
 export const FIELD_COMPANY = {
