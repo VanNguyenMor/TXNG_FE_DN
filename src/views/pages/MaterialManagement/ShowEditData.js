@@ -33,8 +33,8 @@ class ShowEditData extends Component {
       unitName: "",
       islocked: null,
       recommendedVal: "",
-      quarantineOld: null,
-      originId: null,
+      quarantine: null,
+      origin: null,
       nationName: "",
       productConversionUnits: [],
       fileView: null,
@@ -127,14 +127,14 @@ class ShowEditData extends Component {
             islocked: initialData.islocked,
             unitName: initialData.unitName || "",
             recommendedVal: initialData.recommendedVal || "",
-            originId: initialData.originId
-              ? String(initialData.originId)
+            origin: initialData.origin
+              ? String(initialData.origin)
               : null,
             nationName: initialData.nationName || "",
             productConversionUnits: initialData.productConversionUnits || [],
             file: initialData.file || null,
             fileView: initialData.fileView || null,
-            quarantineOld: initialData.quarantineOld || null,
+            quarantine: initialData.quarantine || null,
             id: initialData.id || null,
           },
         }),
@@ -184,15 +184,17 @@ class ShowEditData extends Component {
           : material.unitName || "",
         recommendedVal: material.recommended || "",
         islocked: material.islocked || false,
-        originId: material.nation ? String(material.nation) : null,
+        origin: material.nation ? String(material.nation) : null,
         fileView: material.images || null,
-        quarantineOld: material.quarantineOld || null,
-        productConversionUnits: materialUnits.map((u) => ({
-          id: u.unitID,
-          unitName: u.unitName,
-          conversionRate: u.value || 1,
-          isPrimary: u.isMain || false,
-        })),
+        quarantine: material.quarantine || null,
+        productConversionUnits: materialUnits
+          .filter((u) => !u.isMain)
+          .map((u) => ({
+            id: u.unitID,
+            unitName: u.unitName,
+            conversionRate: u.value || 1,
+            isPrimary: u.isReport || false,
+          })),
       };
 
       this.setState({ ...newData, loading: false }, () => {
@@ -254,14 +256,14 @@ class ShowEditData extends Component {
       return;
     }
 
-    if (name === "originId") {
+    if (name === "origin") {
       const selected = this.props.nations?.find(
         (n) => String(n.id) === selectValue
       );
 
       this.setState(
         {
-          originId: selectValue,
+          origin: selectValue,
           nationName: selected?.nationName || "",
         },
         () => {
@@ -326,7 +328,7 @@ class ShowEditData extends Component {
       unitVal,
       unitName,
       recommendedVal,
-      originId,
+      origin,
       productConversionUnits,
       fileView,
       errMessage,
@@ -457,8 +459,8 @@ class ShowEditData extends Component {
                   <Input
                     type="number"
                     readOnly={islocked}
-                    value={this.state.quarantineOld || ""}
-                    onChange={this.onChangeValue("quarantineOld")}
+                    value={this.state.quarantine || ""}
+                    onChange={this.onChangeValue("quarantine")}
                   />
                 </InputGroup>
               </div>
@@ -524,16 +526,16 @@ class ShowEditData extends Component {
                 Xuất xứ<b style={{ color: "red" }}>*</b>
               </Label>
               <Select
-                name="originId"
+                name="origin"
                 title="Chọn xuất xứ"
                 data={nations || []}
                 isDisable={islocked}
                 labelName="nationName"
                 val="id"
-                handleChange={this.onChangeSelect("originId")}
-                value={originId || null}
+                handleChange={this.onChangeSelect("origin")}
+                defaultValue={origin || null}
               />
-              <p className="form-error-message">{errors.originId}</p>
+              <p className="form-error-message">{errors.origin}</p>
             </div>
           </Col>
         </Row>

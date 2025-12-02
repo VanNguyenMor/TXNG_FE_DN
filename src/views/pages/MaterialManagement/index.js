@@ -267,14 +267,13 @@ class MaterialManagement extends Component {
       formData.append("UnitID", dataInsert.unitVal || "");
       formData.append("UnitName", dataInsert.unitName || "");
       formData.append("Producer", dataInsert.producerId || "");
-      if (dataInsert.quarantineOld)
-        formData.append("QuarantineOld", dataInsert.quarantineOld);
+      formData.append("Quarantine", dataInsert.quarantine);
 
       formData.append("Recommended", dataInsert.recommendedVal || "");
       if (dataInsert.producerId)
         formData.append("ProducerID", dataInsert.producerId);
 
-      formData.append("OriginID", dataInsert.originId);
+      formData.append("Origin", dataInsert.origin);
 
       if (dataInsert.file && dataInsert.file instanceof File) {
         formData.append("Images", dataInsert.file);
