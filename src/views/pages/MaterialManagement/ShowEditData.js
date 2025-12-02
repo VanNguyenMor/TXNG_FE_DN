@@ -57,14 +57,11 @@ class ShowEditData extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (
-      prevProps.id !== this.props.id ||
-      prevProps.initialData !== this.props.initialData
-    ) {
-      this.initStateFromProps();
+    if (prevProps.id !== this.props.id) {
       if (this.props.id) {
         this.loadDetailData(this.props.id);
       }
+      return;
     }
 
     if (prevProps.materialGroup !== this.props.materialGroup) {
@@ -127,9 +124,7 @@ class ShowEditData extends Component {
             islocked: initialData.islocked,
             unitName: initialData.unitName || "",
             recommendedVal: initialData.recommendedVal || "",
-            origin: initialData.origin
-              ? String(initialData.origin)
-              : null,
+            origin: initialData.origin ? String(initialData.origin) : null,
             nationName: initialData.nationName || "",
             productConversionUnits: initialData.productConversionUnits || [],
             file: initialData.file || null,
@@ -149,7 +144,7 @@ class ShowEditData extends Component {
   loadDetailData = async (id) => {
     if (!id) return;
 
-    this.setState({ loading: true });
+    this.setState((prev) => ({ ...prev, loading: true }));
 
     try {
       const res = await fetchData.materialManagement.getDetail(id);
@@ -160,7 +155,9 @@ class ShowEditData extends Component {
       const selectedGroup = this.props.materialGroup?.find(
         (g) => String(g.id || g.Id) === String(materialGroupID)
       );
-
+      const selectedNation = this.props.nations?.find(
+        (n) => String(n.id) === String(material.origin)
+      );
       const newData = {
         id: id,
         materialCodeVal: material.code || "",
@@ -184,9 +181,10 @@ class ShowEditData extends Component {
           : material.unitName || "",
         recommendedVal: material.recommended || "",
         islocked: material.islocked || false,
-        origin: material.nation ? String(material.nation) : null,
+        origin: material.origin ? String(material.origin) : null,
+        nationName: selectedNation?.nationName || "",
         fileView: material.images || null,
-        quarantine: material.quarantine || null,
+        quarantine: material.quarantine || "",
         productConversionUnits: materialUnits
           .filter((u) => !u.isMain)
           .map((u) => ({
@@ -334,6 +332,7 @@ class ShowEditData extends Component {
       errMessage,
       popupMessage,
       islocked,
+      quarantine,
     } = this.state;
 
     const errors = this.props.errors || {};
@@ -459,7 +458,7 @@ class ShowEditData extends Component {
                   <Input
                     type="number"
                     readOnly={islocked}
-                    value={this.state.quarantine || ""}
+                    value={quarantine || ""}
                     onChange={this.onChangeValue("quarantine")}
                   />
                 </InputGroup>

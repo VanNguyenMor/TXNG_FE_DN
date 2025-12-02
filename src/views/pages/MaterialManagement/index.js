@@ -254,7 +254,7 @@ class MaterialManagement extends Component {
 
   onConfirm = async (toggleModal) => {
     const { dataInsert } = this.state;
-
+    console.log(dataInsert, "dataInsert");
     try {
       const formData = new FormData();
       console.log(dataInsert);
@@ -416,7 +416,7 @@ class MaterialManagement extends Component {
                       </DropdownItem>
                     )}
                     {e.islocked ? null : (
-                      <DropdownItem onClick={() => this.showLockButton(e)}>
+                      <DropdownItem onClick={() => this.toggleLock(e)}>
                         Khóa vật liệu
                       </DropdownItem>
                     )}
@@ -462,9 +462,10 @@ class MaterialManagement extends Component {
     try {
       const result = await fetchData.materialManagement.updateLock(item.id);
 
-      if (result.success) {
-        setAlertContext("Khóa nguyên vật liệu thành công");
-        this.fetchSummary();
+      if (result) {
+        toast.success("Khóa nguyên vật liệu thành công");
+        await this.fetchSummary();
+        this.setState({});
       } else {
         openAlertContext(result.message || "Có lỗi xảy ra");
       }
