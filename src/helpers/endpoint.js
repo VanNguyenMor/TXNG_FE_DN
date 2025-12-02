@@ -31,6 +31,7 @@ export const MATERIAL_MANAGEMENT = {
   editMaterial: "material/update",
   addMaterial: "material/create",
   updateLock: "material/lock?id={id}",
+  getUnitAll: "unit/getall",
 };
 
 export const MATERIAL_HISTORIES = {

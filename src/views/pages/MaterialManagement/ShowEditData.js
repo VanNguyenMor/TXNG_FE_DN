@@ -33,7 +33,8 @@ class ShowEditData extends Component {
       unitName: "",
       islocked: null,
       recommendedVal: "",
-      originId: null,
+      nationId: null,
+      nationName: "",
       productConversionUnits: [],
       fileView: null,
       file: null,
@@ -125,9 +126,10 @@ class ShowEditData extends Component {
             islocked: initialData.islocked,
             unitName: initialData.unitName || "",
             recommendedVal: initialData.recommendedVal || "",
-            originId: initialData.originId
-              ? String(initialData.originId)
+            nationId: initialData.nationId
+              ? String(initialData.nationId)
               : null,
+            nationName: initialData.nationName || "",
             productConversionUnits: initialData.productConversionUnits || [],
             file: initialData.file || null,
             fileView: initialData.fileView || null,
@@ -180,7 +182,8 @@ class ShowEditData extends Component {
           : material.unitName || "",
         recommendedVal: material.recommended || "",
         islocked: material.islocked || false,
-        originId: material.origin ? String(material.origin) : null,
+        nationId: material.nation ? String(material.nation) : null,
+        nationName: material.nationName || "",
         fileView: material.images || null,
         productConversionUnits: materialUnits.map((u) => ({
           id: u.unitID,
@@ -235,11 +238,21 @@ class ShowEditData extends Component {
       return;
     }
 
-    if (name === "originId") {
-      this.setState({ originId: selectValue }, () => {
-        this.props.onHandleChangeValue &&
-          this.props.onHandleChangeValue(this.state);
-      });
+    if (name === "nationId") {
+      const selected = this.props.nations?.find(
+        (n) => String(n.id) === selectValue
+      );
+
+      this.setState(
+        {
+          nationId: selectValue,
+          nationName: selected?.nationName || "",
+        },
+        () => {
+          this.props.onHandleChangeValue &&
+            this.props.onHandleChangeValue(this.state);
+        }
+      );
       return;
     }
   };
@@ -297,7 +310,7 @@ class ShowEditData extends Component {
       unitVal,
       unitName,
       recommendedVal,
-      originId,
+      nationId,
       productConversionUnits,
       fileView,
       errMessage,
@@ -463,17 +476,16 @@ class ShowEditData extends Component {
                 Xuất xứ<b style={{ color: "red" }}>*</b>
               </Label>
               <Select
-                className="wrap-insert-or-update-zone-item-select"
-                name="originId"
+                name="nationId"
                 title="Chọn xuất xứ"
                 data={nations || []}
                 isDisable={islocked}
                 labelName="nationName"
                 val="id"
-                handleChange={this.onChangeSelect("originId")}
-                value={originId || null}
+                handleChange={this.onChangeSelect("nationId")}
+                value={nationId || null}
               />
-              <p className="form-error-message">{errors.originId}</p>
+              <p className="form-error-message">{errors.nationId}</p>
             </div>
           </Col>
         </Row>

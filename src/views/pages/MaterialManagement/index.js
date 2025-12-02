@@ -65,13 +65,7 @@ class MaterialManagement extends Component {
         { id: 2, title: "Loại đặc biệt" },
       ],
 
-      UNITS_DATA: [
-        { id: 1, title: "Cái" },
-        { id: 2, title: "Đôi" },
-        { id: 3, title: "Thùng" },
-        { id: 4, title: "Hộp" },
-        { id: 5, title: "Bộ" },
-      ],
+      UNITS_DATA: [],
     };
   }
 
@@ -79,6 +73,7 @@ class MaterialManagement extends Component {
     this.fetchSummary();
     this.onFetchMaterialGroup();
     this.onFetchNationGroup();
+    this.onFetchUnits();
 
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
@@ -86,6 +81,26 @@ class MaterialManagement extends Component {
       this.openDetailById(id);
     }
   }
+
+  onFetchUnits = async () => {
+    try {
+      const result = await fetchData.materialManagement.getUnitAll();
+      if (result) {
+        console.log(result);
+        const units = result.units.map((u) => ({
+          id: Number(u.id),
+          title: u.unitName,
+          isLocked: u.isLocked,
+        }));
+        this.setState({ UNITS_DATA: units });
+      } else {
+        this.setState({ UNITS_DATA: [] });
+      }
+    } catch (error) {
+      console.error("Fetch units error:", error);
+      this.setState({ UNITS_DATA: [] });
+    }
+  };
 
   openDetailById = async (id) => {
     try {
@@ -217,103 +232,50 @@ class MaterialManagement extends Component {
 
   onConfirm = async (toggleModal) => {
     const { dataInsert } = this.state;
-    console.log("Data insert trước khi gửi:", dataInsert);
 
-    // if (!dataInsert.materialNameVal) {
-    //   openAlertContext("Tên vật liệu không được để trống");
-    //   return;
-    // }
-    // if (!dataInsert.materialTypeId) {
-    //   openAlertContext("Loại vật liệu không được để trống");
-    //   return;
-    // }
-    // if (!dataInsert.materialGroupTypeId) {
-    //   openAlertContext("Nhóm vật liệu không được để trống");
-    //   return;
-    // }
+    const materialPayload = {
+      id: dataInsert.id,
+      materialName: dataInsert.materialNameVal,
+      materialType: dataInsert.materialType,
+      materialGroupID: dataInsert.materialGroupTypeId,
+      unitID: dataInsert.unitVal,
+      unitName: dataInsert.unitName,
+      tradeName: dataInsert.tradeNameVal,
+      nationName: dataInsert.nationName,
+      recommended: dataInsert.recommendedVal,
+      code: dataInsert.materialCodeVal,
+    };
+
+    const materialUnitsPayload = (dataInsert.productConversionUnits || []).map(
+      (unit) => ({
+        id: unit.id,
+        unitName: unit.unitName,
+        value: unit.conversionRate,
+        isMain: unit.isPrimary,
+      })
+    );
+
+    const payload = {
+      material: materialPayload,
+      materialUnits: materialUnitsPayload,
+    };
 
     try {
-      const formData = new FormData();
-
-      if (dataInsert.id) {
-        formData.append("Id", dataInsert.id);
-      }
-
-      formData.append("MaterialCode", dataInsert.materialCodeVal || "");
-      formData.append("MaterialName", dataInsert.materialNameVal || "");
-      formData.append("TradeName", dataInsert.tradeNameVal || "");
-
-      formData.append(
-        "MaterialType",
-        dataInsert.materialType || dataInsert.materialTypeId
-      );
-
-      formData.append("MaterialGroupID", dataInsert.materialGroupTypeId || "");
-
-      if (dataInsert.originId) {
-        formData.append("OriginID", dataInsert.originId);
-      }
-
-      formData.append("UnitID", dataInsert.unitVal || "");
-      formData.append("UnitName", dataInsert.unitName || "");
-      formData.append("Recommended", dataInsert.recommendedVal || "");
-
-      if (dataInsert.file && dataInsert.file instanceof File) {
-        formData.append("Images", dataInsert.file);
-      }
-
-      if (
-        dataInsert.productConversionUnits &&
-        dataInsert.productConversionUnits.length > 0
-      ) {
-        dataInsert.productConversionUnits.forEach((unit, index) => {
-          formData.append(
-            `ProductConversionUnits[${index}][Id]`,
-            unit.id || unit.unitID || ""
-          );
-          formData.append(
-            `ProductConversionUnits[${index}][UnitName]`,
-            unit.unitName || ""
-          );
-          formData.append(
-            `ProductConversionUnits[${index}][Value]`,
-            unit.conversionRate || 0
-          );
-          formData.append(
-            `ProductConversionUnits[${index}][IsMain]`,
-            unit.isPrimary || false
-          );
-        });
-      }
-
-      for (var pair of formData.entries()) {
-        console.log(pair[0] + ", " + pair[1]);
-      }
-
       let result;
-      if (dataInsert.id) {
+      if (materialPayload.id) {
         if (dataInsert.islocked) {
           toast.error("Nguyên vật liệu đã khóa");
         } else {
-          result = await fetchData.materialManagement.update(formData);
+          result = await fetchData.materialManagement.update(payload);
         }
       } else {
-        result = await fetchData.materialManagement.create(formData);
+        result = await fetchData.materialManagement.create(payload);
       }
 
-      if (result.success) {
-        setAlertContext("Thao tác thành công");
-        this.fetchSummary();
-        toggleModal && toggleModal();
-        this.onCloseModal();
-      } else {
-        let msg = result.message || "Có lỗi xảy ra";
-        if (result.errors) {
-          const firstErrorKey = Object.keys(result.errors)[0];
-          if (firstErrorKey) msg = result.errors[firstErrorKey][0];
-        }
-        openAlertContext(msg);
-      }
+      toast.success("Thao tác thành công");
+      this.fetchSummary();
+      toggleModal && toggleModal();
+      this.onCloseModal();
     } catch (error) {
       console.error(error);
       openAlertContext("Lỗi hệ thống, vui lòng thử lại!");
@@ -512,6 +474,7 @@ class MaterialManagement extends Component {
       isModalOpen,
       materialGroup,
       nations,
+      UNITS_DATA,
     } = this.state;
 
     return (
@@ -555,7 +518,7 @@ class MaterialManagement extends Component {
                         isShowForDetail={isShowForDetail}
                         materialGroup={materialGroup}
                         nations={nations}
-                        UNITS_DATA={this.state.UNITS_DATA}
+                        UNITS_DATA={UNITS_DATA}
                         MATERIAL_TYPE_DATA={this.state.MATERIAL_TYPE_DATA}
                         onLoadDetailData={this.handleLoadDetailData}
                       />

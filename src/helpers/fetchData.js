@@ -137,6 +137,11 @@ export const fetchData = {
       return result?.data || [];
     },
 
+    getUnitAll: async () => {
+      const result = await callApi("post", MATERIAL_MANAGEMENT.getUnitAll, {});
+      return result?.data || [];
+    },
+
     create: async (payload) => {
       try {
         const result = await callApi(
