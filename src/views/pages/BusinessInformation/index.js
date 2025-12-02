@@ -283,6 +283,7 @@ class BusinessInformation extends Component {
   onSaveConfigSystem = async () => {
     const { configSetting } = this.state;
     console.log(configSetting, "configSetting");
+
     try {
       const formData = new FormData();
 
@@ -295,39 +296,43 @@ class BusinessInformation extends Component {
       formData.append("CompanyName", configSetting.companyName || "");
       formData.append("PhoneNumber", configSetting.phoneNumber || "");
       formData.append("Fax", configSetting.fax || "");
+      formData.append("FieldIDs", configSetting.industryId || "");
 
-      if (configSetting.industryId) {
-        formData.append("FieldIDs", configSetting.industryId);
-      } else {
-        formData.append("FieldIDs", "");
-      }
-
-      // optional
       formData.append("Introduce", configSetting.introduce || "");
       formData.append("Email", configSetting.email || "");
-      formData.append("Fax", configSetting.fax || "");
       formData.append("Website", configSetting.website || "");
       formData.append("ContactName", configSetting.contactName || "");
       formData.append("ContactPhone", configSetting.contactPhone || "");
       formData.append("ContactEmail", configSetting.contactEmail || "");
       formData.append("Location", configSetting.location || "");
 
-      // images
-      configSetting.verifiedImage?.split(";").forEach((url) => {
-        formData.append("VerifiedImage", url);
-      });
-      configSetting.businessLicenseImages?.forEach((url) => {
-        formData.append("BusinessLicenseImages", url);
-      });
-      configSetting.registrationPaperImages?.forEach((url) => {
-        formData.append("RegistrationPaperImages", url);
-      });
-      configSetting.workImages?.forEach((url) => {
-        formData.append("WorkImages", url);
-      });
+      if (configSetting.verifiedImage) {
+        formData.append("VerifiedImage", configSetting.verifiedImage);
+      }
+
+      if (configSetting.businessLicenseImages?.length) {
+        const businessLicenseStr = configSetting.businessLicenseImages
+          .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
+          .join(";");
+        formData.append("BusinessLicenseImages", businessLicenseStr);
+      }
+
+      if (configSetting.registrationPaperImages?.length) {
+        const registrationPaperStr = configSetting.registrationPaperImages
+          .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
+          .join(";");
+        formData.append("RegistrationPaperImages", registrationPaperStr);
+      }
+
+      if (configSetting.workImages?.length) {
+        const workImagesStr = configSetting.workImages
+          .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
+          .join(";");
+        formData.append("WorkImages", workImagesStr);
+      }
 
       const response = await fetchData.infoCompany.update(formData);
-      console.log(response, "response");
+
       try {
         toast.success("Cập nhật thành công!");
         await this.loadDetailData(configSetting.id);
