@@ -1,11 +1,5 @@
 import React, { Component } from "react";
 import { Editor } from "@tinymce/tinymce-react";
-import { bindActionCreators } from "redux";
-import compose from "recompose/compose";
-import { connect } from "react-redux";
-import { configSystemAction } from "../../../actions/ConfigSystemAction";
-import { actionCompanyListRegistered } from "../../../actions/CompanyListRegisteredActions";
-import { actionStampPlate } from "../../../actions/StampTemplateActions";
 import "../../../assets/css/page/config_system.css";
 import { replaceCommaDot } from "bases/helper";
 import SaveIcon1 from "../../../assets/img/buttons/save.svg";
@@ -13,7 +7,7 @@ import "./select-search.css";
 import Noimg from "../../../assets/img/NoImg/NoImg.jpg";
 import axios from "axios";
 import { CONFIG_UPDATE_IMG } from "../../../apis";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import GoogleMapReact from "google-map-react";
 import { currentPosition } from "utils/geo";
@@ -25,6 +19,10 @@ import locationIcon from "../../../assets/img/locationIcon/location.png";
 import GoogleAutoCompleteInput from "../../../components/GoogleAutoCompleteInput";
 import ImageUploader from "components/ImageUploader/ImageUploader";
 import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUploader";
+import { fetchData } from "helpers/fetchData";
+import Select from "components/Select";
+import { parseImageUrls } from "utils/parseImageUrls";
+import formatFieldsForSelect from "utils/formatFieldsForSelect";
 
 const AnyReactComponent = ({ text }) => (
   <div>
@@ -37,27 +35,36 @@ class BusinessInformation extends Component {
 
     this.state = {
       currentTab: 0,
+      listFields: null,
+      provinces: null,
+      districts: null,
+      wards: null,
+
       configSetting: {
+        verifiedImage: null,
         businessImageFile: null,
         businessImageUrlVal: Noimg,
         businessAvatar: "",
-        businessName: "",
-        taxCode: "",
+        companyName: "",
+        companyCode: "",
         industryId: null,
         introduce: "",
         isShowMapViewLocation: false,
         address: "",
-        provinceId: null,
-        districtId: null,
-        wardId: null,
+        provinceID: null,
+        pRovinceName: "",
+        districtID: null,
+        districtName: "",
+        wardID: null,
+        wardName: "",
         phoneNumber: "",
-        faxText: "",
+        fax: "",
         email: "",
         website: "",
-        contactPersonName: "",
-        contactPersonPhone: "",
-        contactPersonEmail: "",
-        isCheckPlanning: false,
+        contactName: "",
+        contactPhone: "",
+        contactEmail: "",
+        isCheckZone: false,
         location: "",
         businessLicenseImages: [Noimg],
         registrationPaperImages: [Noimg],
@@ -102,28 +109,30 @@ class BusinessInformation extends Component {
     });
   };
 
-  onChangeValue = (name) => (e) => {
+  onChangeValue = (name) => (eOrValue) => {
     let value;
 
-    if (e.target.type === "checkbox") {
-      value = e.target.checked;
-    } else {
-      value = e.target.value;
+    if (eOrValue && eOrValue.target) {
+      if (eOrValue.target.type === "checkbox") {
+        value = eOrValue.target.checked;
+      } else {
+        value = eOrValue.target.value;
 
-      if (name === "price") {
-        value = replaceCommaDot(value, "");
+        if (name === "price") {
+          value = replaceCommaDot(value, "");
+        }
       }
+    } else {
+      value = eOrValue;
     }
 
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        configSetting: {
-          ...previousState.configSetting,
-          [name]: value,
-        },
-      };
-    });
+    this.setState((previousState) => ({
+      ...previousState,
+      configSetting: {
+        ...previousState.configSetting,
+        [name]: value,
+      },
+    }));
   };
   handleMapLocation = (gps) => {
     if (gps.length === 0) return LOCATION_DEFAULT;
@@ -137,90 +146,287 @@ class BusinessInformation extends Component {
       return mapLocation;
     }
   };
-  onSaveConfigSystem = () => {
+  async loadData() {
+    try {
+      // Lấy danh sách ngành nghề
+      const resFieldCompany = await fetchData.infoCompany.getField();
+
+      if (resFieldCompany) {
+        this.setState((prevState) => ({
+          ...prevState,
+          listFields: resFieldCompany,
+        }));
+      }
+
+      // Lấy ra tất cả tỉnh thành
+      const resProvinceAll = await fetchData.infoCompany.getProvinceAll();
+
+      if (resProvinceAll) {
+        this.setState((prevState) => ({
+          ...prevState,
+          provinces: resProvinceAll,
+        }));
+      }
+
+      // Lấy thông tin công ty theo account id
+      const resCurrentCompany = await fetchData.account.getCurrentCompany();
+
+      const id = resCurrentCompany?.company?.id;
+      if (!id) {
+        console.warn("Không lấy được companyId");
+        return;
+      }
+      await this.loadDetailData(id);
+    } catch (error) {
+      console.error("Lỗi khi load detailData:", error);
+    }
+  }
+  async loadDetailData(id) {
+    if (!id) return;
+
+    try {
+      const res = await fetchData.infoCompany.detail(id);
+
+      const {
+        companyName,
+        companyCode,
+        id: companyId,
+        fieldID,
+        fieldName,
+        address,
+        provinceID,
+        pRovinceName,
+        districtID,
+        districtName,
+        wardID,
+        wardName,
+        phoneNumber,
+        email,
+        fax,
+        website,
+        contactName,
+        contactPhone,
+        contactEmail,
+        isCheckZone,
+        location,
+        certifications,
+        businessLicenses,
+        images,
+        verifiedImage,
+        verifiedStatus,
+      } = res;
+      const listFieldsData = formatFieldsForSelect(fieldID, fieldName);
+      this.setState(
+        (prevState) => {
+          const selectedIndustry = listFieldsData.filter((f) =>
+            fieldID?.split(",").includes(f.id)
+          );
+
+          return {
+            ...prevState,
+            configSetting: {
+              ...prevState.configSetting,
+              companyName,
+              companyCode,
+              id: companyId,
+              address,
+              provinceID,
+              pRovinceName,
+              districtID,
+              districtName,
+              wardID,
+              wardName,
+              phoneNumber,
+              fax,
+              email,
+              website,
+              contactName,
+              verifiedStatus,
+              contactPhone,
+              contactEmail,
+              isCheckZone,
+              verifiedImage,
+              location,
+              businessLicenseImages: parseImageUrls(businessLicenses, Noimg),
+              registrationPaperImages: parseImageUrls(certifications, Noimg),
+              workImages: parseImageUrls(images, Noimg),
+              industryId: selectedIndustry,
+            },
+          };
+        },
+        () => {
+          this.onLoadListDistrictByProvinceId(provinceID);
+          this.onLoadListWardByDistrictId(districtID);
+        }
+      );
+    } catch (error) {
+      console.error("Lỗi khi load detailData:", error);
+    }
+  }
+
+  async onLoadListDistrictByProvinceId(provinceID) {
+    try {
+      const resDistrictCompanyBox =
+        await fetchData.infoCompany.getListDistrictByProvinceId(provinceID);
+      this.setState({ districts: resDistrictCompanyBox });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async onLoadListWardByDistrictId(districtID) {
+    try {
+      const resWardCompanyBox =
+        await fetchData.infoCompany.getListWardByDistrictId(districtID);
+      this.setState({ wards: resWardCompanyBox });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  componentDidMount() {
+    // this.loadDetailData(companyId);
+    this.loadData();
+  }
+
+  async uploadSingleFile(file, type = "verifiedImage") {
+    if (!file) return null;
+
+    const uploadFormData = new FormData();
+
+    switch (type) {
+      case "verifiedImage":
+        uploadFormData.append("VerifiedImageFile", file, file.name);
+        break;
+      case "businessLicense":
+        uploadFormData.append("BusinessLicensesFile", file, file.name);
+        break;
+      case "registrationPaper":
+        uploadFormData.append("RegistrationPapersFile", file, file.name);
+        break;
+      case "workImages":
+        uploadFormData.append("WorkImagesFile", file, file.name);
+        break;
+      default:
+        uploadFormData.append("file", file, file.name);
+    }
+
+    try {
+      const res = await fetchData.infoCompany.uploadFile(uploadFormData);
+
+      if (res && res.data && res.data.uploadKey) {
+        return res.data.uploadKey;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error during file upload:", error);
+      return null;
+    }
+  }
+
+  async uploadAndFormatImages(imagesList) {
+    if (!imagesList?.length) return "";
+
+    const processedImages = await Promise.all(
+      imagesList.map(async (img) => {
+        if (typeof img === "string" && img !== Noimg) {
+          return img;
+        }
+
+        if (img?.file) {
+          return await this.uploadSingleFile(img.file);
+        }
+
+        return "";
+      })
+    );
+
+    return processedImages.filter((name) => name).join(";");
+  }
+
+  onSaveConfigSystem = async () => {
     const { configSetting } = this.state;
-    console.log(configSetting);
-    // const errorsConfigSystem = this.checkValidateFormConfigSystem();
 
-    // this.setState((previousState) => {
-    //   return {
-    //     ...previousState,
-    //     errorsConfigSystem,
-    //   };
-    // });
+    try {
+      const formData = new FormData();
 
-    // if (Object.keys(errorsConfigSystem).length > 0) {
-    //   return;
-    // }
+      formData.append("ID", configSetting.id || "");
+      formData.append("WardID", configSetting.wardID || "");
+      formData.append("Address", configSetting.address || "");
+      formData.append("TaxCode", configSetting.companyCode || "");
+      formData.append("DistrictID", configSetting.districtID || "");
+      formData.append("ProvinceID", configSetting.provinceID || "");
+      formData.append("CompanyName", configSetting.companyName || "");
+      formData.append("IsCheckZone", configSetting.isCheckZone || "");
+      formData.append("PhoneNumber", configSetting.phoneNumber || "");
+      formData.append("Fax", configSetting.fax || "");
+      const industryData = configSetting.industryId;
+      let selectedIDs = [];
+      if (industryData) {
+        if (Array.isArray(industryData)) {
+          selectedIDs = industryData
+            .map((item) => (item && item.id ? item.id : null))
+            .filter((id) => id !== null);
+        } else if (typeof industryData === "object" && industryData.id) {
+          selectedIDs = [industryData.id];
+        }
+      }
+      selectedIDs.forEach((id) => {
+        formData.append("fieldIDs", id);
+      });
 
-    // const { configSetting } = this.state;
+      formData.append("Introduce", configSetting.introduce || "");
+      formData.append("Email", configSetting.email || "");
+      formData.append("Website", configSetting.website || "");
+      formData.append("ContactName", configSetting.contactName || "");
+      formData.append("ContactPhone", configSetting.contactPhone || "");
+      formData.append("ContactEmail", configSetting.contactEmail || "");
+      formData.append("Location", configSetting.location || "");
 
-    // const contentEmailChangePassword =
-    //   this.refEditorContentSendEmailChangePassword.getContent();
-    // const contentEmailSendToPrinter =
-    //   this.refcontentEmailSendToPrinter.getContent();
-    // const attachmentUsed = this.refAttachmentUsed.getContent();
-    // const attachmentStamps = this.refAttachmentStamps.getContent();
-    // const attachments = this.refAttachments.getContent();
-    // const contentEmailRegister = this.refcontentEmailRegister.getContent();
-    // const formData = new FormData();
+      if (configSetting.verifiedImage) {
+        formData.append(
+          "VerifiedImage",
+          Array.isArray(configSetting.verifiedImage)
+            ? configSetting.verifiedImage[0] || ""
+            : configSetting.verifiedImage || ""
+        );
+      }
 
-    // formData.append("Email", configSetting.email ? configSetting.email : "");
-    // formData.append(
-    //   "EmailMask",
-    //   configSetting.emailMask ? configSetting.emailMask : ""
-    // );
-    // formData.append(
-    //   "PassEmail",
-    //   configSetting.passEmail ? configSetting.passEmail : ""
-    // );
-    // formData.append(
-    //   "PhoneNumber",
-    //   configSetting.phoneNumber ? configSetting.phoneNumber : ""
-    // );
-    // formData.append("Attachments", attachments ? attachments : "");
-    // formData.append(
-    //   "AttachmentStamps",
-    //   attachmentStamps ? attachmentStamps : ""
-    // );
-    // formData.append("AttachmentUsed", attachmentUsed ? attachmentUsed : "");
+      const formatImageUrls = (imageArray) => {
+        if (!Array.isArray(imageArray) || imageArray.length === 0) {
+          return "";
+        }
+        const cleanUrls = imageArray.filter(
+          (url) => url && url.startsWith("http")
+        );
+        return cleanUrls.join(";");
+      };
 
-    // formData.append("Templates[0].id", "1");
-    // formData.append("Templates[0].description", contentEmailRegister);
+      const businessLicenseStr = formatImageUrls(
+        configSetting.businessLicenseImages
+      );
+      formData.append("BusinessLicenses", businessLicenseStr);
 
-    // formData.append("Templates[1].id", "2");
-    // formData.append("Templates[1].description", contentEmailChangePassword);
+      const registrationPaperStr = formatImageUrls(
+        configSetting.registrationPaperImages
+      );
+      formData.append("Certifications", registrationPaperStr);
 
-    // formData.append("Templates[2].id", "3");
-    // formData.append("Templates[2].description", contentEmailChangePassword);
+      const workImagesStr = formatImageUrls(configSetting.workImages);
+      formData.append("Images", workImagesStr);
 
-    // formData.append("Templates[3].id", "4");
-    // formData.append("Templates[3].description", contentEmailChangePassword);
+      const response = await fetchData.infoCompany.update(formData);
 
-    // formData.append("Templates[4].id", "5");
-    // formData.append("Templates[4].description", contentEmailChangePassword);
-
-    // formData.append("Templates[5].id", "6");
-    // formData.append("Templates[5].description", contentEmailChangePassword);
-
-    // formData.append("Templates[6].id", "7");
-    // formData.append("Templates[6].description", contentEmailSendToPrinter);
-
-    // Loading.show();
-
-    // this.props.updateConfigSystem(formData).then((res) => {
-    //   Loading.close();
-
-    //   const data = res.data || {};
-
-    //   if (data.status == 200) {
-    //     toast.success("Lưu thông tin thành công!");
-    //   } else {
-    //     const message = getErrorMessageServer(res);
-    //     this.setState({ messageErr: message });
-    //     this.toggleModal("popupMessage");
-    //   }
-    // });
+      try {
+        toast.success("Cập nhật thành công!");
+        await this.loadDetailData(configSetting.id);
+      } catch {
+        toast.error("Cập nhật thất bại!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Có lỗi xảy ra khi lưu dữ liệu");
+    }
   };
 
   onOpenMaps = () => {
@@ -323,24 +529,37 @@ class BusinessInformation extends Component {
       };
     });
   };
-  handleImageUploadSuccess = (file, previewUrl) => {
-    this.setState(
-      (previousState) => ({
-        configSetting: {
-          ...previousState.configSetting,
-          businessImageFile: file,
-          businessImageUrlVal: previewUrl,
-        },
-      }),
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
+  handleImageUploadSuccess = async (file, previewUrl) => {
+    if (file) {
+      const uploadKey = await this.uploadSingleFile(file, "verifiedImage");
+
+      if (!uploadKey) return;
+
+      this.setState(
+        (prev) => ({
+          configSetting: {
+            ...prev.configSetting,
+            verifiedImage: uploadKey, 
+          },
+        }),
+        () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
         }
-      }
-    );
+      );
+    } else if (!previewUrl) {
+      this.setState((prev) => ({
+        configSetting: {
+          ...prev.configSetting,
+          verifiedImage: null,
+        },
+      }));
+    }
   };
 
   handleBusinessLicenseImagesChange = (imagesList) => {
+    console.log(imagesList)
     this.setState(
       (previousState) => ({
         configSetting: {
@@ -387,6 +606,10 @@ class BusinessInformation extends Component {
   };
   render() {
     const {
+      // state list
+      provinces,
+      districts,
+
       configSetting,
       errorsConfigSystem,
       currentTab,
@@ -394,12 +617,31 @@ class BusinessInformation extends Component {
       isShowMapViewLocation,
       position,
       positionChange,
+      listFields,
+      industryId,
+      verifiedStatus,
     } = this.state;
+
+    const { businessLicenseImages, registrationPaperImages, workImages } =
+      configSetting;
 
     options.map((option) => {
       option.name = option.companyName;
       option.value = option.id;
     });
+
+    const allFields =
+      listFields && listFields.fields
+        ? listFields.fields
+        : Array.isArray(listFields)
+        ? listFields
+        : [];
+    const industryDefaultValue =
+      configSetting.industryId &&
+      Array.isArray(configSetting.industryId) &&
+      configSetting.industryId.length
+        ? configSetting.industryId.map((f) => f.id).join(",")
+        : null;
 
     return (
       <div className="config-system">
@@ -424,11 +666,20 @@ class BusinessInformation extends Component {
         <div className="config-system-content">
           {currentTab == 0 ? (
             <div className="config-system-content-config-system">
-              <h2>Thông tin chưa được kiểm chứng và xác thực</h2>
+              <h2
+                style={{
+                  color: verifiedStatus === 0 ? "red" : "green",
+                  fontWeight: "bold",
+                }}
+              >
+                {verifiedStatus === 0
+                  ? "Thông tin chưa được kiểm chứng và xác thực"
+                  : "Thông tin đã được kiểm chứng và xác thực"}
+              </h2>
               <div>
                 <label className="form-control-label">Hình đại diện</label>
                 <ImageUploader
-                  initialImageUrl={Noimg}
+                  initialImageUrl={configSetting.logo || Noimg}
                   onFileSelected={this.handleImageUploadSuccess}
                 />
               </div>
@@ -440,14 +691,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("businessName")}
-                      value={configSetting.businessName}
+                      onChange={this.onChangeValue("companyName")}
+                      value={configSetting.companyName}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.businessName}
+                      {errorsConfigSystem.companyName}
                     </p>
                   </div>
                 </div>
@@ -458,14 +709,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("taxCode")}
-                      value={configSetting.taxCode}
+                      onChange={this.onChangeValue("companyCode")}
+                      value={configSetting.companyCode}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.taxCode}
+                      {errorsConfigSystem.companyCode}
                     </p>
                   </div>
                 </div>
@@ -477,16 +728,41 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("industryId")}
-                      value={configSetting.industryId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn ngành nghề</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={
+                        configSetting.industryId
+                          ? configSetting.industryId.map(
+                              (f) => f.fieldName || f.label || f.name
+                            )
+                          : null
+                      }
+                      name="listFields"
+                      title="Chọn ngành nghề"
+                      data={listFields?.fields || []}
+                      labelName="fieldName"
+                      defaultValue={
+                        configSetting.industryId
+                          ? configSetting.industryId.map((f) => f.id).join(",")
+                          : null
+                      }
+                      isMulti={true}
+                      val="id"
+                      handleChange={(value) => {
+                        if (!value) {
+                          this.onChangeValue("industryId")([]);
+                          return;
+                        }
+                        const ids = value
+                          .toString()
+                          .split(",")
+                          .filter((v) => v);
+                        const selected = (listFields?.fields || []).filter(
+                          (f) => ids.includes(String(f.id))
+                        );
+                        this.onChangeValue("industryId")(selected);
+                      }}
+                    />
+
                     <p className="form-error-message">
                       {errorsConfigSystem.industryId}
                     </p>
@@ -606,18 +882,18 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("provinceId")}
-                      value={configSetting.provinceId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn Tỉnh/Thành</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={configSetting?.pRovinceName}
+                      name="provinceID"
+                      title="Chọn tỉnh/thành"
+                      data={provinces}
+                      labelName="provinceName"
+                      defaultValue={configSetting?.provinceID}
+                      val="id"
+                      handleChange={this.onChangeValue("provinceID")}
+                    />
                     <p className="form-error-message">
-                      {errorsConfigSystem.provinceId}
+                      {errorsConfigSystem.provinceID}
                     </p>
                   </div>
                 </div>
@@ -627,18 +903,18 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("districtId")}
-                      value={configSetting.districtId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn Quận/Huyện</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={configSetting?.districtName}
+                      name="districtID"
+                      title="Chọn Quận/Huyện"
+                      data={districts}
+                      labelName="districtName"
+                      defaultValue={configSetting?.districtID}
+                      val="id"
+                      handleChange={this.onChangeValue("districtID")}
+                    />
                     <p className="form-error-message">
-                      {errorsConfigSystem.districtId}
+                      {errorsConfigSystem.districtID}
                     </p>
                   </div>
                 </div>
@@ -648,18 +924,18 @@ class BusinessInformation extends Component {
                     <b style={{ color: "red" }}>*</b>
                   </label>
                   <div className="config-system-content-config-system-item-box">
-                    <select
-                      onChange={this.onChangeValue("wardId")}
-                      value={configSetting.wardId}
-                      className="config-system-content-config-system-item-input"
-                    >
-                      <option value="">Chọn Phường/Xã</option>
-                      <option value="1">Công nghệ thông tin</option>
-                      <option value="2">Kinh doanh</option>
-                      <option value="3">Marketing</option>
-                    </select>
+                    <Select
+                      labelMark={configSetting?.wardName}
+                      name="wardID"
+                      title="Chọn Phường/Xã"
+                      data={districts}
+                      labelName="wardName"
+                      defaultValue={configSetting?.wardID}
+                      val="id"
+                      handleChange={this.onChangeValue("wardID")}
+                    />
                     <p className="form-error-message">
-                      {errorsConfigSystem.wardId}
+                      {errorsConfigSystem.wardID}
                     </p>
                   </div>
                 </div>
@@ -689,14 +965,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("faxText")}
-                      value={configSetting.faxText}
+                      onChange={this.onChangeValue("fax")}
+                      value={configSetting.fax}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.faxText}
+                      {errorsConfigSystem.fax}
                     </p>
                   </div>
                 </div>
@@ -745,14 +1021,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("contactPersonName")}
-                      value={configSetting.contactPersonName}
+                      onChange={this.onChangeValue("contactName")}
+                      value={configSetting.contactName}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.contactPersonName}
+                      {errorsConfigSystem.contactName}
                     </p>
                   </div>
                 </div>
@@ -763,14 +1039,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("contactPersonPhone")}
-                      value={configSetting.contactPersonPhone}
+                      onChange={this.onChangeValue("contactPhone")}
+                      value={configSetting.contactPhone}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.contactPersonPhone}
+                      {errorsConfigSystem.contactPhone}
                     </p>
                   </div>
                 </div>
@@ -781,14 +1057,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("contactPersonEmail")}
-                      value={configSetting.contactPersonEmail}
+                      onChange={this.onChangeValue("contactEmail")}
+                      value={configSetting.contactEmail}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.contactPersonEmail}
+                      {errorsConfigSystem.contactEmail}
                     </p>
                   </div>
                 </div>
@@ -811,8 +1087,8 @@ class BusinessInformation extends Component {
                   </label>
                   <input
                     id="is-check-planning-input"
-                    onChange={this.onChangeValue("isCheckPlanning")}
-                    checked={configSetting.isCheckPlanning}
+                    onChange={this.onChangeValue("isCheckZone")}
+                    checked={configSetting.isCheckZone}
                     type="checkbox"
                     className="config-system-content-config-system-item-input"
                     style={{ width: "fit-content", marginLeft: "5px" }}
@@ -872,7 +1148,8 @@ class BusinessInformation extends Component {
                     <ImageGalleryUploader
                       mdVal={3}
                       title="Giấy phép kinh doanh"
-                      // initialImages={businessLicenseImages}
+                      initialImages={businessLicenseImages}
+                      uploadKey="files"
                       onImagesChange={this.handleBusinessLicenseImagesChange}
                     />
                   </div>
@@ -888,6 +1165,8 @@ class BusinessInformation extends Component {
                     <ImageGalleryUploader
                       mdVal={3}
                       title="Giấy đăng ký/ chứng nhận có liên quan"
+                      initialImages={registrationPaperImages}
+                      uploadKey="files"
                       onImagesChange={
                         this.handleRegistrationPaperImagesImagesChange
                       }
@@ -904,6 +1183,8 @@ class BusinessInformation extends Component {
                     <ImageGalleryUploader
                       mdVal={3}
                       title="Một số hình ảnh hoạt động"
+                      initialImages={workImages}
+                      uploadKey="files"
                       onImagesChange={this.handleWorkImagesImagesChange}
                     />
                   </div>
@@ -984,22 +1265,4 @@ class BusinessInformation extends Component {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    ConfigSystemStore: state.ConfigSystemStore,
-    dataCompany: state.CompanyListRegisteredStore,
-    stampTemplate: state.StampPlateStore,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    ...bindActionCreators(configSystemAction, dispatch),
-    ...bindActionCreators(actionCompanyListRegistered, dispatch),
-    ...bindActionCreators(actionStampPlate, dispatch),
-  };
-};
-
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  BusinessInformation
-);
+export default BusinessInformation;

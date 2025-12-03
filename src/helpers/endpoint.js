@@ -8,7 +8,6 @@ export const PLANTING_ZONE = {
 
 export const PLANTING_TYPE = {
   getListPlantingType: "plantingtype/getall",
-  detailPlantingType: "plantingtype/get?id={id}",
 };
 
 export const PROVINCE = {
@@ -21,6 +20,22 @@ export const DISTRICT = {
 
 export const WARD = {
   getListWardByDistrictId: "location/getward?districtID={id}",
+};
+export const ACCOUNT = {
+  getCurrentCompany: "company/getcurrent",
+};
+export const INFO_COMPANY = {
+  detailInfoCompany: "company/get?id={id}",
+  getFieldComboBox: "field/getalllevel4",
+  getListProvinceComboBox: "location/getprovince",
+  getListProvinceAll: "location/getallprovince",
+  getListDistrictByProvinceId: "location/getdistrict?provinceID={id}",
+  getListWardByDistrictId: "location/getward?districtID={id}",
+  updateInfoCompany: "company/update",
+  uploadFile: "company/upload",
+};
+export const FIELD_COMPANY = {
+  detailInfoCompany: "field/getallbycompanyhaveaccess",
 };
 
 export const MATERIAL_MANAGEMENT = {
