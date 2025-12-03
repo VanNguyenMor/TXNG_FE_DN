@@ -136,6 +136,15 @@ export const fetchData = {
         return null;
       }
     },
+    uploadFile: async () => {
+      try {
+        const result = await callApi("post", INFO_COMPANY.uploadFile);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật uploadFile:", error);
+        return null;
+      }
+    },
     detail: async (id) => {
       try {
         const result = await callApi(

@@ -22,6 +22,7 @@ import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUp
 import { fetchData } from "helpers/fetchData";
 import Select from "components/Select";
 import { parseImageUrls } from "utils/parseImageUrls";
+import formatFieldsForSelect from "utils/formatFieldsForSelect";
 
 const AnyReactComponent = ({ text }) => (
   <div>
@@ -185,11 +186,12 @@ class BusinessInformation extends Component {
 
     try {
       const res = await fetchData.infoCompany.detail(id);
-      console.log(res);
+
       const {
         companyName,
         companyCode,
         id: companyId,
+        fieldID,
         fieldName,
         address,
         provinceID,
@@ -211,40 +213,47 @@ class BusinessInformation extends Component {
         businessLicenses,
         images,
         verifiedImage,
+        verifiedStatus,
       } = res;
-
+      const listFieldsData = formatFieldsForSelect(fieldID, fieldName);
       this.setState(
-        (prevState) => ({
-          ...prevState,
-          configSetting: {
-            ...prevState.configSetting,
-            companyName,
-            companyCode,
-            id: companyId,
-            address,
-            provinceID,
-            pRovinceName,
-            districtID,
-            districtName,
-            wardID,
-            wardName,
-            phoneNumber,
-            fax,
-            email,
-            website,
-            contactName,
-            contactPhone,
-            contactEmail,
-            isCheckZone,
-            verifiedImage,
-            location,
-            businessLicenseImages: parseImageUrls(businessLicenses, Noimg),
-            registrationPaperImages: parseImageUrls(certifications, Noimg),
-            workImages: parseImageUrls(images, Noimg),
-          },
-        }),
+        (prevState) => {
+          const selectedIndustry = listFieldsData.filter((f) =>
+            fieldID?.split(",").includes(f.id)
+          );
 
-        // Lấy ra danh sách quận/huyện theo id tỉnh/thành
+          return {
+            ...prevState,
+            configSetting: {
+              ...prevState.configSetting,
+              companyName,
+              companyCode,
+              id: companyId,
+              address,
+              provinceID,
+              pRovinceName,
+              districtID,
+              districtName,
+              wardID,
+              wardName,
+              phoneNumber,
+              fax,
+              email,
+              website,
+              contactName,
+              verifiedStatus,
+              contactPhone,
+              contactEmail,
+              isCheckZone,
+              verifiedImage,
+              location,
+              businessLicenseImages: parseImageUrls(businessLicenses, Noimg),
+              registrationPaperImages: parseImageUrls(certifications, Noimg),
+              workImages: parseImageUrls(images, Noimg),
+              industryId: selectedIndustry,
+            },
+          };
+        },
         () => {
           this.onLoadListDistrictByProvinceId(provinceID);
           this.onLoadListWardByDistrictId(districtID);
@@ -280,6 +289,54 @@ class BusinessInformation extends Component {
     this.loadData();
   }
 
+  async uploadSingleFile(file) {
+    if (!file) return "";
+
+    const uploadFormData = new FormData();
+    uploadFormData.append("files", file);
+
+    try {
+      const data = await axios({
+        method: "post",
+        url: CONFIG_UPDATE_IMG,
+        headers: {
+          authorization: localStorage.getItem("TOKEN"),
+        },
+        data: uploadFormData,
+      });
+
+      if (data.data.status === 200) {
+        return data.data.data;
+      } else {
+        console.error("Upload failed for file:", file.name);
+        return "";
+      }
+    } catch (error) {
+      console.error("Error during file upload:", error);
+      return "";
+    }
+  }
+
+  async uploadAndFormatImages(imagesList) {
+    if (!imagesList?.length) return "";
+
+    const processedImages = await Promise.all(
+      imagesList.map(async (img) => {
+        if (typeof img === "string" && img !== Noimg) {
+          return img;
+        }
+
+        if (img?.file) {
+          return await this.uploadSingleFile(img.file);
+        }
+
+        return "";
+      })
+    );
+
+    return processedImages.filter((name) => name).join(";");
+  }
+
   onSaveConfigSystem = async () => {
     const { configSetting } = this.state;
     console.log(configSetting, "configSetting");
@@ -296,7 +353,10 @@ class BusinessInformation extends Component {
       formData.append("CompanyName", configSetting.companyName || "");
       formData.append("PhoneNumber", configSetting.phoneNumber || "");
       formData.append("Fax", configSetting.fax || "");
-      formData.append("FieldIDs", configSetting.industryId || "");
+      formData.append(
+        "FieldIDs",
+        configSetting.industryId?.map((f) => f.id).join(",") || ""
+      );
 
       formData.append("Introduce", configSetting.introduce || "");
       formData.append("Email", configSetting.email || "");
@@ -445,21 +505,31 @@ class BusinessInformation extends Component {
       };
     });
   };
-  handleImageUploadSuccess = (file, previewUrl) => {
-    const fileResult = file?.name;
-    this.setState(
-      (previousState) => ({
+  handleImageUploadSuccess = async (file, previewUrl) => {
+    if (file) {
+      const fileLink = await this.uploadSingleFile(file);
+
+      this.setState(
+        (previousState) => ({
+          configSetting: {
+            ...previousState.configSetting,
+            verifiedImage: fileLink,
+          },
+        }),
+        () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
+        }
+      );
+    } else if (!previewUrl) {
+      this.setState((previousState) => ({
         configSetting: {
           ...previousState.configSetting,
-          verifiedImage: fileResult,
+          verifiedImage: null,
         },
-      }),
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
+      }));
+    }
   };
 
   handleBusinessLicenseImagesChange = (imagesList) => {
@@ -522,6 +592,7 @@ class BusinessInformation extends Component {
       positionChange,
       listFields,
       industryId,
+      verifiedStatus,
     } = this.state;
 
     const { businessLicenseImages, registrationPaperImages, workImages } =
@@ -531,6 +602,19 @@ class BusinessInformation extends Component {
       option.name = option.companyName;
       option.value = option.id;
     });
+
+    const allFields =
+      listFields && listFields.fields
+        ? listFields.fields
+        : Array.isArray(listFields)
+        ? listFields
+        : [];
+    const industryDefaultValue =
+      configSetting.industryId &&
+      Array.isArray(configSetting.industryId) &&
+      configSetting.industryId.length
+        ? configSetting.industryId.map((f) => f.id).join(",")
+        : null;
 
     return (
       <div className="config-system">
@@ -555,7 +639,16 @@ class BusinessInformation extends Component {
         <div className="config-system-content">
           {currentTab == 0 ? (
             <div className="config-system-content-config-system">
-              <h2>Thông tin chưa được kiểm chứng và xác thực</h2>
+              <h2
+                style={{
+                  color: verifiedStatus === 0 ? "red" : "green",
+                  fontWeight: "bold",
+                }}
+              >
+                {verifiedStatus === 0
+                  ? "Thông tin chưa được kiểm chứng và xác thực"
+                  : "Thông tin đã được kiểm chứng và xác thực"}
+              </h2>
               <div>
                 <label className="form-control-label">Hình đại diện</label>
                 <ImageUploader
@@ -609,15 +702,38 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <Select
-                      labelMark={industryId}
+                      labelMark={
+                        configSetting.industryId
+                          ? configSetting.industryId.map(
+                              (f) => f.fieldName || f.label || f.name
+                            )
+                          : null
+                      }
                       name="listFields"
                       title="Chọn ngành nghề"
-                      data={listFields?.fields}
+                      data={listFields?.fields || []}
                       labelName="fieldName"
-                      defaultValue={null}
+                      defaultValue={
+                        configSetting.industryId
+                          ? configSetting.industryId.map((f) => f.id).join(",")
+                          : null
+                      }
                       isMulti={true}
                       val="id"
-                      handleChange={this.onChangeValue("industryId")}
+                      handleChange={(value) => {
+                        if (!value) {
+                          this.onChangeValue("industryId")([]);
+                          return;
+                        }
+                        const ids = value
+                          .toString()
+                          .split(",")
+                          .filter((v) => v);
+                        const selected = (listFields?.fields || []).filter(
+                          (f) => ids.includes(String(f.id))
+                        );
+                        this.onChangeValue("industryId")(selected);
+                      }}
                     />
 
                     <p className="form-error-message">
