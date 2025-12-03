@@ -679,7 +679,7 @@ class BusinessInformation extends Component {
               <div>
                 <label className="form-control-label">Hình đại diện</label>
                 <ImageUploader
-                  initialImageUrl={configSetting.verifiedImage || Noimg}
+                  initialImageUrl={configSetting.logo || Noimg}
                   onFileSelected={this.handleImageUploadSuccess}
                 />
               </div>
