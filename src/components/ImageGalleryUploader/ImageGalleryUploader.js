@@ -39,7 +39,6 @@ class ImageGalleryUploader extends Component {
   }
 
   handleImageUploadSuccess = (newImageUrl, index) => {
-    console.log(newImageUrl)
     this.setState((prevState) => {
       let updatedImages = [...prevState.images];
       updatedImages[index] = { ...updatedImages[index], url: newImageUrl };

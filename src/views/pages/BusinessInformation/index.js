@@ -346,7 +346,6 @@ class BusinessInformation extends Component {
 
   onSaveConfigSystem = async () => {
     const { configSetting } = this.state;
-    console.log(configSetting, "configSetting");
 
     try {
       const formData = new FormData();
@@ -358,6 +357,7 @@ class BusinessInformation extends Component {
       formData.append("DistrictID", configSetting.districtID || "");
       formData.append("ProvinceID", configSetting.provinceID || "");
       formData.append("CompanyName", configSetting.companyName || "");
+      formData.append("IsCheckZone", configSetting.isCheckZone || "");
       formData.append("PhoneNumber", configSetting.phoneNumber || "");
       formData.append("Fax", configSetting.fax || "");
       const industryData = configSetting.industryId;

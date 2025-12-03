@@ -750,7 +750,6 @@ export const configSystemAction = {
   },
 
   updateStampPrice: (data) => async (dispatch, getState) => {
-    console.log(data);
     return new Promise(async resolve => {
       dispatch({
         type: CONFIG_UPDATE_STAMP_PRICE_TYPE,

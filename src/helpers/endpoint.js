@@ -21,11 +21,9 @@ export const DISTRICT = {
 export const WARD = {
   getListWardByDistrictId: "location/getward?districtID={id}",
 };
-
 export const ACCOUNT = {
   getCurrentCompany: "company/getcurrent",
 };
-
 export const INFO_COMPANY = {
   detailInfoCompany: "company/get?id={id}",
   getFieldComboBox: "field/getalllevel4",
@@ -36,9 +34,37 @@ export const INFO_COMPANY = {
   updateInfoCompany: "company/update",
   uploadFile: "company/upload",
 };
-
 export const FIELD_COMPANY = {
   detailInfoCompany: "field/getallbycompanyhaveaccess",
+};
+
+export const MATERIAL_MANAGEMENT = {
+  getListMaterialManagement: "material/getall",
+  getMaterialGroupList: "materialgroupnext/getall",
+  getDetailMaterial: "material/get?id={id}",
+  getNationGroupList: "location/nation",
+  editMaterial: "material/update",
+  addMaterial: "material/create",
+  updateLock: "material/lock?id={id}",
+  getUnitAll: "unit/getall",
+};
+
+export const MATERIAL_HISTORIES = {
+  getListMaterialHistory:
+    "materialhistory/getlisthistory?materialId={0}&page={1}&limit={2}",
+};
+
+export const PRODUCT_MANAGEMENT = {
+  getListProductManagement: "product/getall",
+};
+
+export const QR_MANAGEMENT = {
+  getListManageQRStamp:
+    "requestprovidestamp/qrcodestampunused?page={0}&limit={1}&productID={2}",
+  getListManageQRSystem: "qrmanager/getallqrcodessystem",
+  getListManageQRUsed:
+    "requestprovidestamp/getstampused?page={0}&limit={1}&productId={2}",
+  getListManageQRIncurred: "qrmanager/getallqrcodesincurred",
 };
 
 export const PAYLOAD = {

@@ -490,7 +490,6 @@ class AdminNavbar extends Component {
   }
 
   onChangePrinter = (value) => {
-    console.log(value);
     this.setState({ typePrint: Number(value || 0) });
   }
 
