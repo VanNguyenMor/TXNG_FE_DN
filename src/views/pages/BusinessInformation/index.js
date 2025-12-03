@@ -289,17 +289,38 @@ class BusinessInformation extends Component {
     this.loadData();
   }
 
-  async uploadSingleFile(file) {
-    if (!file) return "";
+  async uploadSingleFile(file, type = "verifiedImage") {
+    if (!file) return null;
 
     const uploadFormData = new FormData();
-    uploadFormData.append("BusinessLicensesFile", file, file.name);
+
+    switch (type) {
+      case "verifiedImage":
+        uploadFormData.append("VerifiedImageFile", file, file.name);
+        break;
+      case "businessLicense":
+        uploadFormData.append("BusinessLicensesFile", file, file.name);
+        break;
+      case "registrationPaper":
+        uploadFormData.append("RegistrationPapersFile", file, file.name);
+        break;
+      case "workImages":
+        uploadFormData.append("WorkImagesFile", file, file.name);
+        break;
+      default:
+        uploadFormData.append("file", file, file.name);
+    }
 
     try {
       const res = await fetchData.infoCompany.uploadFile(uploadFormData);
+
+      if (res && res.data && res.data.uploadKey) {
+        return res.data.uploadKey;
+      }
+      return null;
     } catch (error) {
       console.error("Error during file upload:", error);
-      return "";
+      return null;
     }
   }
 
@@ -363,30 +384,36 @@ class BusinessInformation extends Component {
       formData.append("Location", configSetting.location || "");
 
       if (configSetting.verifiedImage) {
-        formData.append("VerifiedImage", configSetting.verifiedImage);
+        formData.append(
+          "VerifiedImage",
+          Array.isArray(configSetting.verifiedImage)
+            ? configSetting.verifiedImage[0] || ""
+            : configSetting.verifiedImage || ""
+        );
       }
 
-      if (configSetting.businessLicenseImages?.length) {
-        const businessLicenseStr = configSetting.businessLicenseImages
-          .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
-          .join(";");
-          console.log(businessLicenseStr, "businessLicenseStr")
-        formData.append("BusinessLicenses", businessLicenseStr);
-      }
+      const formatImageUrls = (imageArray) => {
+        if (!Array.isArray(imageArray) || imageArray.length === 0) {
+          return "";
+        }
+        const cleanUrls = imageArray.filter(
+          (url) => url && url.startsWith("http")
+        );
+        return cleanUrls.join(";");
+      };
 
-      if (configSetting.registrationPaperImages?.length) {
-        const registrationPaperStr = configSetting.registrationPaperImages
-          .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
-          .join(";");
-        formData.append("RegistrationPapers", registrationPaperStr);
-      }
+      const businessLicenseStr = formatImageUrls(
+        configSetting.businessLicenseImages
+      );
+      formData.append("BusinessLicenses", businessLicenseStr);
 
-      if (configSetting.workImages?.length) {
-        const workImagesStr = configSetting.workImages
-          .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
-          .join(";");
-        formData.append("WorkImages", workImagesStr);
-      }
+      const registrationPaperStr = formatImageUrls(
+        configSetting.registrationPaperImages
+      );
+      formData.append("Certifications", registrationPaperStr);
+
+      const workImagesStr = formatImageUrls(configSetting.workImages);
+      formData.append("Images", workImagesStr);
 
       const response = await fetchData.infoCompany.update(formData);
 
@@ -504,13 +531,15 @@ class BusinessInformation extends Component {
   };
   handleImageUploadSuccess = async (file, previewUrl) => {
     if (file) {
-      const fileLink = await this.uploadSingleFile(file);
+      const uploadKey = await this.uploadSingleFile(file, "verifiedImage");
+
+      if (!uploadKey) return;
 
       this.setState(
-        (previousState) => ({
+        (prev) => ({
           configSetting: {
-            ...previousState.configSetting,
-            verifiedImage: fileLink,
+            ...prev.configSetting,
+            verifiedImage: uploadKey, 
           },
         }),
         () => {
@@ -520,9 +549,9 @@ class BusinessInformation extends Component {
         }
       );
     } else if (!previewUrl) {
-      this.setState((previousState) => ({
+      this.setState((prev) => ({
         configSetting: {
-          ...previousState.configSetting,
+          ...prev.configSetting,
           verifiedImage: null,
         },
       }));
@@ -530,6 +559,7 @@ class BusinessInformation extends Component {
   };
 
   handleBusinessLicenseImagesChange = (imagesList) => {
+    console.log(imagesList)
     this.setState(
       (previousState) => ({
         configSetting: {
@@ -1119,6 +1149,7 @@ class BusinessInformation extends Component {
                       mdVal={3}
                       title="Giấy phép kinh doanh"
                       initialImages={businessLicenseImages}
+                      uploadKey="files"
                       onImagesChange={this.handleBusinessLicenseImagesChange}
                     />
                   </div>
@@ -1135,6 +1166,7 @@ class BusinessInformation extends Component {
                       mdVal={3}
                       title="Giấy đăng ký/ chứng nhận có liên quan"
                       initialImages={registrationPaperImages}
+                      uploadKey="files"
                       onImagesChange={
                         this.handleRegistrationPaperImagesImagesChange
                       }
@@ -1152,6 +1184,7 @@ class BusinessInformation extends Component {
                       mdVal={3}
                       title="Một số hình ảnh hoạt động"
                       initialImages={workImages}
+                      uploadKey="files"
                       onImagesChange={this.handleWorkImagesImagesChange}
                     />
                   </div>

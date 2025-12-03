@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Row, Col, Button, Card, CardBody } from "reactstrap";
 import ImageUploader from "components/ImageUploader/ImageUploader";
 import Noimg from "../../assets/img/NoImg/NoImg.jpg";
+import { fetchData } from "helpers/fetchData";
 
 let nextId = 0;
 function createInitialImages(urls) {
@@ -33,16 +34,15 @@ class ImageGalleryUploader extends Component {
   notifyParent(updatedImagesObject) {
     const updatedUrls = updatedImagesObject.map((img) => img.url);
     if (this.props.onImagesChange) {
-      this.props.onImagesChange(updatedUrls);
+      this.props.onImagesChange(updatedUrls); 
     }
   }
 
   handleImageUploadSuccess = (newImageUrl, index) => {
+    console.log(newImageUrl)
     this.setState((prevState) => {
       let updatedImages = [...prevState.images];
-
       updatedImages[index] = { ...updatedImages[index], url: newImageUrl };
-
       this.notifyParent(updatedImages);
 
       return { images: updatedImages };
@@ -53,7 +53,6 @@ class ImageGalleryUploader extends Component {
     this.setState((prevState) => {
       const newImageObject = { id: nextId++, url: Noimg };
       const updatedImages = [...prevState.images, newImageObject];
-
       this.notifyParent(updatedImages);
 
       return {
@@ -134,9 +133,20 @@ class ImageGalleryUploader extends Component {
                 <div style={imageContainerStyle}>
                   <ImageUploader
                     initialImageUrl={imageObject.url}
-                    onFileSelected={(file, previewUrl) =>
-                      this.handleImageUploadSuccess(previewUrl, index)
-                    }
+                    onFileSelected={async (file, previewUrl) => {
+                      if (!file) return;
+
+                      const formData = new FormData();
+                      const keyToUse = this.props.uploadKey || "files";
+                      formData.append(keyToUse, file, file.name);
+
+                      const res = await fetchData.infoCompany.uploadFile(
+                        formData
+                      );
+                      const uploadedUrl = res;
+
+                      this.handleImageUploadSuccess(uploadedUrl, index);
+                    }}
                   />
                   {displayImages.length > 1 && index !== 0 && (
                     <Button

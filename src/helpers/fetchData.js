@@ -136,9 +136,14 @@ export const fetchData = {
         return null;
       }
     },
-    uploadFile: async () => {
+    uploadFile: async (payload) => {
       try {
-        const result = await callApi("post", INFO_COMPANY.uploadFile);
+        const result = await callApi(
+          "post",
+          INFO_COMPANY.uploadFile,
+          payload,
+          true
+        ); 
         return result?.data || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật uploadFile:", error);
