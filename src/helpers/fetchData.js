@@ -230,6 +230,72 @@ export const fetchData = {
     },
   },
 
+  productManagement: {
+    getAll: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListProductManagement,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListProductTypeAddComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListProductTypeAddComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListMaterialGroupComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListMaterialGroupComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListPartnerComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListPartnerComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListNationComboBox: async () => {
+      const result = await callApi(
+        "get",
+        PRODUCT_MANAGEMENT.getListNationComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListUnitComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListUnitComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getDetail: async (id) => {
+      const result = await callApi(
+        "get",
+        `${PRODUCT_MANAGEMENT.getDetailProduct.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+    getListFieldComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListFieldComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+  },
+
   materialManagement: {
     getAll: async () => {
       const result = await callApi(

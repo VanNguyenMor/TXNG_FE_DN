@@ -45,7 +45,7 @@ class ConversionManagerTable extends Component {
       return;
     }
 
-    if (String(currentUnitId) === String(this.props.defaultUnitId || "")) {
+    if (String(currentUnitId) === String(defaultUnitId || "")) {
       alert("Đơn vị quy đổi không được trùng với đơn vị chính.");
       return;
     }

@@ -24,6 +24,7 @@ import {
 } from "reactstrap";
 import { fetchData } from "helpers/fetchData.js";
 import { handleGenTree } from "../../../helpers/trees";
+import formatFieldsForSelect from "utils/formatFieldsForSelect.js";
 
 class ProductManagement extends Component {
   constructor(props) {
@@ -55,19 +56,65 @@ class ProductManagement extends Component {
         { id: 1, title: "Đã xác thực" },
       ],
       HISTORY_DATA: [],
-      UNITS_DATA: [
-        { id: 1, title: "Cái" },
-        { id: 2, title: "Đôi" },
-        { id: 3, title: "Thùng" },
-        { id: 4, title: "Hộp" },
-        { id: 5, title: "Bộ" },
-      ],
+      FIELD_DATA: [],
+      UNITS_DATA: [],
+      PRODUCT_GROUP_DATA: [],
+      PRODUCT_TYPE_DATA: [],
+      NATION_DATA: [],
     };
   }
 
   componentDidMount() {
     this.fetchSummary();
+    this.onFetchDataUnit();
+    this.onFetchDataField();
+    this.onFetchDataProductGroup();
+    this.onFetchDataProductType();
+    this.onFetchDataPartner();
+    this.onFetchDataNation();
   }
+
+  onFetchDataUnit = async () => {
+    const result = await fetchData.productManagement.getListUnitComboBox();
+    const units = result?.units || [];
+
+    this.setState({ UNITS_DATA: units });
+  };
+
+  onFetchDataField = async () => {
+    const result = await fetchData.productManagement.getListFieldComboBox();
+    const fields = result?.fields || [];
+
+    this.setState({ FIELD_DATA: fields });
+  };
+
+  onFetchDataProductGroup = async () => {
+    const result =
+      await fetchData.productManagement.getListProductTypeAddComboBox();
+    const productGroups = result?.productGroups || [];
+
+    this.setState({ PRODUCT_GROUP_DATA: productGroups });
+  };
+
+  onFetchDataProductType = async () => {
+    const result =
+      await fetchData.productManagement.getListProductTypeAddComboBox();
+    const productTypes = result?.productTypes || [];
+
+    this.setState({ PRODUCT_TYPE_DATA: productTypes });
+  };
+
+  onFetchDataNation = async () => {
+    const result = await fetchData.productManagement.getListNationComboBox();
+    this.setState({ NATION_DATA: result });
+  };
+
+  onFetchDataPartner = async () => {
+    const result = await fetchData.productManagement.getListPartnerComboBox();
+    const partners = result?.partners || [];
+
+    this.setState({ PRODUCT_PARTNER_DATA: partners });
+  };
 
   fetchSummary = async () => {
     this.setState({ isLoaded: true });
@@ -273,6 +320,13 @@ class ProductManagement extends Component {
       editId,
       errorInserts,
       HISTORY_DATA,
+      islocked,
+      UNITS_DATA,
+      FIELD_DATA,
+      PRODUCT_GROUP_DATA,
+      PRODUCT_TYPE_DATA,
+      PRODUCT_PARTNER_DATA,
+      NATION_DATA,
     } = this.state;
 
     return (
@@ -306,11 +360,27 @@ class ProductManagement extends Component {
                       <ShowEditData
                         id={editId}
                         errors={errorInserts}
-                        onHandleChangeValue={() => {}}
+                        UNITS_DATA={UNITS_DATA}
+                        FIELD_DATA={FIELD_DATA}
+                        islocked={islocked}
+                        PRODUCT_GROUP_DATA={PRODUCT_GROUP_DATA}
+                        PRODUCT_TYPE_DATA={PRODUCT_TYPE_DATA}
+                        PRODUCT_PARTNER_DATA={PRODUCT_PARTNER_DATA}
+                        NATION_DATA={NATION_DATA}
                       />
                     ) : isShowForHistoryList ? (
                       <ShowHistoryData id={editId} historyData={HISTORY_DATA} />
-                    ) : null}
+                    ) : (
+                      <ShowEditData
+                        errors={errorInserts}
+                        UNITS_DATA={UNITS_DATA}
+                        FIELD_DATA={FIELD_DATA}
+                        PRODUCT_GROUP_DATA={PRODUCT_GROUP_DATA}
+                        PRODUCT_TYPE_DATA={PRODUCT_TYPE_DATA}
+                        PRODUCT_PARTNER_DATA={PRODUCT_PARTNER_DATA}
+                        NATION_DATA={NATION_DATA}
+                      />
+                    )}
                   </div>
                 }
               />

@@ -56,6 +56,7 @@ class BusinessInformation extends Component {
         districtID: null,
         districtName: "",
         wardID: null,
+        logo: null,
         wardName: "",
         phoneNumber: "",
         fax: "",
@@ -96,6 +97,15 @@ class BusinessInformation extends Component {
     this.refAttachments = null;
     this.refAttachmentStamps = null;
     this.redSelect = null;
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.initialImageUrl !== this.props.initialImageUrl) {
+      this.setState({
+        previewImageUrl:
+          this.props.initialImageUrl || "URL_TO_DEFAULT_NOIMG_IMAGE",
+      });
+    }
   }
 
   onChooseTab = (tab) => () => {
@@ -200,6 +210,7 @@ class BusinessInformation extends Component {
         districtName,
         wardID,
         wardName,
+        logo,
         phoneNumber,
         email,
         fax,
@@ -236,6 +247,7 @@ class BusinessInformation extends Component {
               districtName,
               wardID,
               wardName,
+              logo,
               phoneNumber,
               fax,
               email,
@@ -355,6 +367,7 @@ class BusinessInformation extends Component {
       formData.append("Address", configSetting.address || "");
       formData.append("TaxCode", configSetting.companyCode || "");
       formData.append("DistrictID", configSetting.districtID || "");
+      formData.append("Logo", configSetting.logo || "");
       formData.append("ProvinceID", configSetting.provinceID || "");
       formData.append("CompanyName", configSetting.companyName || "");
       formData.append("IsCheckZone", configSetting.isCheckZone || "");
@@ -529,6 +542,43 @@ class BusinessInformation extends Component {
       };
     });
   };
+
+  handleLogoUpload = async (file) => {
+    if (!file) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("files", file);
+
+    try {
+      const response = await fetchData.infoCompany.uploadFile(formData);
+      if (response) {
+        const newLogoUrl = Array.isArray(response) ? response : response;
+
+        this.setState(
+          (prevState) => ({
+            configSetting: {
+              ...prevState.configSetting,
+              logo: newLogoUrl,
+            },
+          }),
+          () => {
+            if (this.props.onHandleChangeValue) {
+              this.props.onHandleChangeValue(this.state);
+            }
+            toast.success("Cập nhật Hình đại diện thành công!");
+          }
+        );
+      } else {
+        toast.error("Lỗi: Không nhận được URL sau khi upload.");
+      }
+    } catch (error) {
+      console.error("Lỗi upload Hình đại diện:", error);
+      toast.error("Lỗi: Upload Hình đại diện thất bại.");
+    }
+  };
+
   handleImageUploadSuccess = async (file, previewUrl) => {
     if (file) {
       const uploadKey = await this.uploadSingleFile(file, "verifiedImage");
@@ -539,7 +589,7 @@ class BusinessInformation extends Component {
         (prev) => ({
           configSetting: {
             ...prev.configSetting,
-            verifiedImage: uploadKey, 
+            verifiedImage: uploadKey,
           },
         }),
         () => {
@@ -559,7 +609,7 @@ class BusinessInformation extends Component {
   };
 
   handleBusinessLicenseImagesChange = (imagesList) => {
-    console.log(imagesList)
+    console.log(imagesList);
     this.setState(
       (previousState) => ({
         configSetting: {
@@ -679,8 +729,9 @@ class BusinessInformation extends Component {
               <div>
                 <label className="form-control-label">Hình đại diện</label>
                 <ImageUploader
+                  key={configSetting.logo}
                   initialImageUrl={configSetting.logo || Noimg}
-                  onFileSelected={this.handleImageUploadSuccess}
+                  onFileSelected={this.handleLogoUpload}
                 />
               </div>
               <div className="config-system-content-config-system-multi">
