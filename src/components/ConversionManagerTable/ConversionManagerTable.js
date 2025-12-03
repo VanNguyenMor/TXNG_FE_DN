@@ -69,7 +69,7 @@ class ConversionManagerTable extends Component {
     }
     const newUnit = {
       id: currentUnitId,
-      unitName: selectedUnitObj.title,
+      unitName: selectedUnitObj.title || selectedUnitObj.unitName || "",
       conversionRate: rate,
       isPrimary: selectedUnits.length === 0,
     };
@@ -143,7 +143,7 @@ class ConversionManagerTable extends Component {
             <option value="">Chọn đơn vị</option>
             {availableUnits.map((unit) => (
               <option key={unit.id} value={unit.id}>
-                {unit.title && unit.title.toLowerCase()}
+                {(unit.title || unit.unitName || "").toString().toLowerCase()}
               </option>
             ))}
           </Input>
@@ -204,7 +204,7 @@ class ConversionManagerTable extends Component {
             {selectedUnits.map((unit, index) => (
               <tr key={unit.id}>
                 <td>{index + 1}</td>
-                <td>{unit.unitName && unit.unitName.toLowerCase()}</td>
+                <td>{(unit.title || unit.unitName || "").toString().toLowerCase()}</td>
                 <td>{unit.conversionRate}</td>
                 <td className="text-center">
                   <Input

@@ -41,14 +41,25 @@ class Select extends Component {
 
   componentWillReceiveProps(props) {
     if (props.defaultValue && props.defaultValue != this.state.value && props.isMulti) {
-      this.setState(previousState => {
-        return {
-          ...previousState,
-          value: props.defaultValue
+      this.setState(
+        (previousState) => {
+          return {
+            ...previousState,
+            value: props.defaultValue,
+          };
+        },
+        () => {
+          this.handleGetLabelNameMulti(this.state.value);
         }
-      }, () => {
-        this.handleGetLabelNameMulti(this.state.value);
-      });
+      );
+    }
+
+    if (
+      typeof props.defaultValue !== "undefined" &&
+      props.defaultValue != this.state.value &&
+      !props.isMulti
+    ) {
+      this.handleGetLabelName(props.defaultValue);
     }
   }
 
@@ -248,13 +259,13 @@ class Select extends Component {
                 .map(item => current = item)
             }
             if (current !== null)
-              this.setState({ value: current[val], currentLabel: current[labelName] });
+              this.setState({ value: current[val] != null ? current[val].toString() : current[val], currentLabel: current[labelName] });
           } else {
             data.filter(item => item === value)
               .map(item => current = value);
 
             if (current !== null)
-              this.setState({ value: current, currentLabel: current });
+              this.setState({ value: current != null ? current.toString() : current, currentLabel: current });
           }
         }
       }
@@ -271,13 +282,14 @@ class Select extends Component {
     let current = [];
     let currentLb = [];
     if (typeof (value) !== 'undefined') {
-      data.filter(item => value.split(',').includes(item.id))
+      const values = String(value).split(',').map(v => v.trim());
+      data.filter(item => values.includes(String(item.id)))
         .map(item => (
-          current.push({ value: item.id, label: item[labelName] }),
+          current.push({ value: String(item.id), label: item[labelName] }),
           currentLb.push(item[labelName])
         ));
 
-      this.setState({ currentArray: current, currentLabel: currentLb, value });
+      this.setState({ currentArray: current, currentLabel: currentLb, value: String(value) });
 
     }
   }
@@ -294,6 +306,10 @@ class Select extends Component {
   render() {
     const { title, data, labelName, val, name, isHideSelectAll, isHideDefault, notActiveRoot, isDisable, labelMark, isMulti, refLabel, isDisNo2 } = this.props;
     const { currentArray, open, value, currentLabel, left, top, width, dissableMulti } = this.state;
+    const hasValue = value !== null && (
+      (Array.isArray(value) && value.length > 0) || (!Array.isArray(value) && String(value).length > 0)
+    );
+
     return (
       <div ref={ref => this.refParent = ref}
         className={isDisable == true || dissableMulti === true ?
@@ -305,7 +321,7 @@ class Select extends Component {
             !notActiveRoot && this.handleSelect(event);
 
           }}>
-          {(value !== null && (value || []).length > 0) ? (
+          {hasValue ? (
             <div className={`${classes.text} ${Array.isArray(currentLabel) && classes.overHeight} css-height-span-select`}>{
               labelMark || (
                 typeof (currentLabel) !== 'undefined' && (

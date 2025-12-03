@@ -41,12 +41,12 @@ class ShowEditData extends Component {
       professionId: null,
       productGroupId: null,
       productCateId: null,
-      manufacturerId: null,
-      originId: null,
-      unitId: null,
+      manufactID: null,
+      origin: null,
+      unitID: null,
       usageTimeVal: "",
       accordId: null,
-      typeUsageTimeId: null,
+      expiredType: null,
       qualityNum: "",
       introduce: "",
       ingredient: "",
@@ -97,19 +97,17 @@ class ShowEditData extends Component {
       return {};
     }
 
-    
-
     const { product, productsUnits, productFields } = detailData;
-    console.log(productFields, "==================")
+
+    const initialProfessionId =
+      productFields && productFields.length > 0 ? productFields[0].id : null;
+
     const conversionUnits = productsUnits
-      ? productsUnits
-          .map((unit) => ({
-            ...unit,
-            value: unit.value ? parseFloat(unit.value) : 0,
-          }))
+      ? productsUnits.map((unit) => ({
+          ...unit,
+          value: unit.value ? parseFloat(unit.value) : 0,
+        }))
       : [];
-
-
 
     return {
       id: product.id,
@@ -117,11 +115,14 @@ class ShowEditData extends Component {
       barcode: product.barcode || "",
       productName: product.productName || "",
 
+      professionId: initialProfessionId,
+
       productGroupId: product.productGroupID || null,
       materialGroupFromApi: product.materialGroupID || null,
-      manufacturerId: product.manufactID || null,
-      originVal: product.origin || null,
-      unitId: product.unitID || "",
+      manufactID: product.manufactID || null,
+      origin: product.origin || null,
+      unitID: product.unitID || "",
+    typeUsageTimeId: product.typeUsageTimeId || null,
       unitName: product.unitName || "",
       qualityNum: product.qualityNum || "",
       productionProcess: product.productionProcess || "",
@@ -141,9 +142,7 @@ class ShowEditData extends Component {
       certificationInformation: product.certification,
       isLocked: product.isLocked,
       productConversionUnits: conversionUnits,
-
-      professionId: null,
-      productCateId: null,
+      expiredType: product.expiredType,
       loading: false,
     };
   }
@@ -386,7 +385,7 @@ class ShowEditData extends Component {
       expandedInformation,
       ingredient,
       unitVal,
-      unitId, 
+      unitID,
       unitName,
       storage,
       usage,
@@ -400,17 +399,16 @@ class ShowEditData extends Component {
       expiredNum,
       expiredUnit,
       productionProcess,
+      professionId,
+      manufactID,
+      expiredType,
+      origin,
     } = this.state;
     const {
       errors,
       UNITS_DATA,
       PRODUCT_GROUP_DATA,
       PRODUCT_CATE_DATA,
-      MANUFACTURER_DATA,
-      ORIGIN_DATA,
-      UNIT_DATA,
-      DATE_DATA,
-      USAGE_TIME_TYPE_DATA,
       isShowForDetail,
       islocked,
       FIELD_DATA,
@@ -563,6 +561,7 @@ class ShowEditData extends Component {
                       data={FIELD_DATA}
                       labelName="fieldName"
                       val="id"
+                      defaultValue={professionId}
                       handleChange={this.onChangeValue("professionId")}
                     />
                   </div>
@@ -622,16 +621,17 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="manufacturerId"
+                      name="manufactID"
                       title="Chọn nhà sản xuất"
                       data={PRODUCT_PARTNER_DATA}
                       labelName="partnerName"
                       val="id"
-                      handleChange={this.onChangeSelect("manufacturerId")}
+                      defaultValue={manufactID}
+                      handleChange={this.onChangeSelect("manufactID")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.manufacturerId}
+                    {errors.manufactID}
                   </p>
                 </Col>
               </Row>
@@ -643,16 +643,17 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="originId"
+                      name="origin"
                       title="Chọn nơi xuất xứ"
                       data={NATION_DATA}
                       labelName="nationName"
                       val="id"
-                      handleChange={this.onChangeSelect("originId")}
+                      defaultValue={origin}
+                      handleChange={this.onChangeSelect("origin")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.originId}
+                    {errors.origin}
                   </p>
                 </Col>
                 <Col md="6">
@@ -662,17 +663,18 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="unitId"
+                      name="unitID"
                       title="Chọn đơn vị"
                       isDisable={isShowForDetail}
                       data={UNITS_DATA}
                       labelName="unitName"
                       val="id"
-                      handleChange={this.onChangeSelect("unitId")}
+                      defaultValue={unitID}
+                      handleChange={this.onChangeSelect("unitID")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.unitId}
+                    {errors.unitID}
                   </p>
                 </Col>
               </Row>
@@ -689,7 +691,7 @@ class ShowEditData extends Component {
                         readOnly
                       >
                         <Input
-                          type="text"
+                          type="number"
                           name="expiredNum"
                           placeholder="Thời hạn sử dụng"
                           readOnly={isShowForDetail}
@@ -735,17 +737,18 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="typeUsageTimeId"
+                      name="expiredType"
                       title="Chọn loại thời hạn sử dụng"
                       data={PRODUCT_EXPIRED_TYPE}
                       isDisable={isShowForDetail}
                       labelName="label"
+                      defaultValue={expiredType}
                       val="value"
-                      handleChange={this.onChangeSelect("typeUsageTimeId")}
+                      handleChange={this.onChangeSelect("expiredType")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.typeUsageTimeId}
+                    {errors.expiredType}
                   </p>
                 </Col>
                 <Col md="6">
@@ -781,7 +784,7 @@ class ShowEditData extends Component {
                 allAvailableUnits={UNITS_DATA || []}
                 initialSelectedUnits={productConversionUnits}
                 onChange={this.onConversionChange}
-                defaultUnitId={unitId}
+                defaultUnitId={unitID}
               />
             </CardBody>
           </Collapse>
@@ -1121,9 +1124,7 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue(
-                            "storage"
-                          )}
+                          onEditorChange={this.onChangeValue("storage")}
                           initialValue={storage}
                           init={{
                             width: "100%",
@@ -1224,9 +1225,7 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue(
-                            "usage"
-                          )}
+                          onEditorChange={this.onChangeValue("usage")}
                           initialValue={usage}
                           init={{
                             width: "100%",
@@ -1428,9 +1427,7 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue(
-                            "packing"
-                          )}
+                          onEditorChange={this.onChangeValue("packing")}
                           initialValue={packing}
                           init={{
                             width: "100%",
