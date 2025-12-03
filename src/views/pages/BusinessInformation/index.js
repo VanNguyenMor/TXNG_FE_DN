@@ -353,20 +353,20 @@ class BusinessInformation extends Component {
       formData.append("CompanyName", configSetting.companyName || "");
       formData.append("PhoneNumber", configSetting.phoneNumber || "");
       formData.append("Fax", configSetting.fax || "");
-      let fieldIDsString = "";
-
-      if (
-        Array.isArray(configSetting.industryId) &&
-        configSetting.industryId.length > 0
-      ) {
-        const selectedIDs = configSetting.industryId
-          .map((item) => (item && item.id ? item.id : null))
-          .filter((id) => id !== null);
-
-        fieldIDsString = selectedIDs.join(",");
+      const industryData = configSetting.industryId;
+      let selectedIDs = [];
+      if (industryData) {
+        if (Array.isArray(industryData)) {
+          selectedIDs = industryData
+            .map((item) => (item && item.id ? item.id : null))
+            .filter((id) => id !== null);
+        } else if (typeof industryData === "object" && industryData.id) {
+          selectedIDs = [industryData.id];
+        }
       }
-
-      formData.append("FieldID", fieldIDsString);
+      selectedIDs.forEach((id) => {
+        formData.append("fieldIDs", id);
+      });
 
       formData.append("Introduce", configSetting.introduce || "");
       formData.append("Email", configSetting.email || "");
