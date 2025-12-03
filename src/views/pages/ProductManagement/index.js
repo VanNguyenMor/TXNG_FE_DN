@@ -186,6 +186,93 @@ class ProductManagement extends Component {
     });
   };
 
+  handleLoadDetailData = (dataInsertFromChild) => {
+    this.setState({ dataInsert: dataInsertFromChild });
+  };
+
+  onHandleChangeValue = (data) => {
+    this.setState((prevState) => ({
+      dataInsert: {
+        ...prevState.dataInsert,
+        ...data,
+      },
+    }));
+  };
+
+  onConfirm = async (toggleModal) => {
+    const { dataInsert } = this.state;
+    console.log(dataInsert)
+    try {
+      const formData = new FormData();
+      if (dataInsert.id) formData.append("Id", dataInsert.id);
+      formData.append("ProductCode", dataInsert.productCodeVal || "");
+      formData.append("ProductName", dataInsert.productName || "");
+      formData.append("Barcode", dataInsert.barcode || "");
+      let professionId =
+        dataInsert.professionId ||
+        (dataInsert.productFields && dataInsert.productFields.length
+          ? dataInsert.productFields[0].id
+          : "");
+
+      // If professionId is still missing, try to re-fetch detail from API (defensive)
+      if (!professionId && dataInsert.id) {
+        try {
+          const detail = await fetchData.productManagement.getDetail(dataInsert.id);
+          if (detail && detail.productFields && detail.productFields.length) {
+            professionId = detail.productFields[0].id;
+          }
+        } catch (err) {
+          console.error("Không lấy được detail để bổ sung ProfessionId:", err);
+        }
+      }
+
+      console.log("ProfessionId ->", professionId);
+      formData.append("ProfessionId", professionId || "");
+      formData.append("UnitID", dataInsert.unitID || dataInsert.unitId || "");
+      formData.append("ProductGroupID", dataInsert.productGroupId || "");
+      formData.append("ManufactID", dataInsert.manufactID || dataInsert.manufactID || "");
+      formData.append("Origin", dataInsert.origin || "");
+      formData.append("ExpiredNum", dataInsert.expiredNum || "");
+      formData.append("ExpiredUnit", dataInsert.expiredUnit || "");
+      formData.append("ExpiredType", dataInsert.expiredType || "");
+      formData.append("Introduce", dataInsert.introduce || "");
+      formData.append("ProductionProcess", dataInsert.productionProcess || "");
+      formData.append("Ingredient", dataInsert.ingredient || "");
+      formData.append("Storage", dataInsert.storage || "");
+      formData.append("Usage", dataInsert.usage || "");
+      formData.append("Packing", dataInsert.packing || "");
+
+      if (dataInsert.productImageFile && dataInsert.productImageFile instanceof File) {
+        formData.append("Avatar", dataInsert.productImageFile);
+      }
+
+      // product gallery images (if URLs) - append as JSON
+      if (dataInsert.productGalleryImages) {
+        formData.append("Images", JSON.stringify(dataInsert.productGalleryImages));
+      }
+
+      (dataInsert.productConversionUnits || []).forEach((unit, index) => {
+        // The API expects productUnits[][unitId] to reference the productsUnits.id
+        formData.append(`productUnits[${index}][unitId]`, unit.id || unit.unitID || "");
+        formData.append(`productUnits[${index}][name]`, unit.unitName || unit.name || "");
+        formData.append(`productUnits[${index}][value]`,
+          typeof unit.value !== "undefined" ? unit.value : unit.conversionRate || 1
+        );
+        formData.append(`productUnits[${index}][isReport]`, unit.isReport ? true : false);
+      });
+
+      const result = dataInsert.id
+        ? await fetchData.productManagement.update(formData)
+        : await fetchData.productManagement.create(formData);
+
+      toggleModal && toggleModal();
+      this.fetchSummary();
+    } catch (error) {
+      console.error("Lỗi gửi dữ liệu sản phẩm:", error);
+      openAlertContext("Lỗi gửi dữ liệu sản phẩm");
+    }
+  };
+
   onShowHistoryModal = (item) => {
     this.setState({
       editId: item.id,
@@ -352,7 +439,11 @@ class ProductManagement extends Component {
                     : "Danh sách sản phẩm"
                 }
                 hideSearch={true}
+                dataReload={this.fetchSummary}
+                onConfirm={this.onConfirm}
+                hideReload={false}
                 isShowForEdit={isShowForDetail || isShowForHistoryList}
+                // isReadOnly={this.state.dataInsert?.islocked === true}
                 closeForm={this.onCloseModal}
                 moduleBody={
                   <div>
@@ -367,6 +458,8 @@ class ProductManagement extends Component {
                         PRODUCT_TYPE_DATA={PRODUCT_TYPE_DATA}
                         PRODUCT_PARTNER_DATA={PRODUCT_PARTNER_DATA}
                         NATION_DATA={NATION_DATA}
+                        onHandleChangeValue={this.onHandleChangeValue}
+                        onLoadDetailData={this.handleLoadDetailData}
                       />
                     ) : isShowForHistoryList ? (
                       <ShowHistoryData id={editId} historyData={HISTORY_DATA} />
@@ -379,6 +472,7 @@ class ProductManagement extends Component {
                         PRODUCT_TYPE_DATA={PRODUCT_TYPE_DATA}
                         PRODUCT_PARTNER_DATA={PRODUCT_PARTNER_DATA}
                         NATION_DATA={NATION_DATA}
+                        onHandleChangeValue={this.onHandleChangeValue}
                       />
                     )}
                   </div>

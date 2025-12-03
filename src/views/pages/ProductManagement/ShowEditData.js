@@ -15,6 +15,10 @@ import {
   InputGroup,
   Label,
   Row,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
 import ConversionManagerTable from "components/ConversionManagerTable/ConversionManagerTable";
 import Select from "components/Select";
@@ -70,6 +74,10 @@ class ShowEditData extends Component {
       collapseBaseInfo: true,
       expandedInformation: false,
       tabImage: false,
+      // permission modal
+      permissionModalOpen: false,
+      permissionGroups: [],
+      selectedPermissionGroups: [],
     };
     this.toggle = this.toggle.bind(this);
   }
@@ -142,6 +150,12 @@ class ShowEditData extends Component {
       certificationInformation: product.certification,
       isLocked: product.isLocked,
       productConversionUnits: conversionUnits,
+      selectedPermissionGroups:
+        (product.permissionGroups &&
+          product.permissionGroups.map((g) => (g && g.id ? g.id : g))) ||
+        product.permissionGroupIds ||
+        product.permissions ||
+        [],
       expiredType: product.expiredType,
       loading: false,
     };
@@ -235,6 +249,38 @@ class ShowEditData extends Component {
   toggleModal() {
     this.setState((prevState) => ({ isModalOpen: !prevState.isModalOpen }));
   }
+
+  togglePermissionModal = async () => {
+    const willOpen = !this.state.permissionModalOpen;
+    if (willOpen && (!this.state.permissionGroups || this.state.permissionGroups.length === 0)) {
+      // load groups lazily
+      try {
+        const groups = await fetchData.material.getGroupList();
+        this.setState({ permissionGroups: groups || [] });
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách nhóm quyền:", err);
+      }
+    }
+
+    this.setState({ permissionModalOpen: willOpen });
+  };
+
+  handlePermissionChange = (value) => {
+    // value may be array of ids for multi select
+    this.setState({ selectedPermissionGroups: value || [] }, () => {
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue({ permissionGroups: this.state.selectedPermissionGroups });
+      }
+    });
+  };
+
+  handleSavePermissionModal = () => {
+    // propagate selected permissions to parent and close
+    if (this.props.onHandleChangeValue) {
+      this.props.onHandleChangeValue({ permissionGroups: this.state.selectedPermissionGroups });
+    }
+    this.setState({ permissionModalOpen: false });
+  };
 
   handleFormChange = (newValues) => {
     this.setState((prevState) => ({
@@ -435,7 +481,7 @@ class ShowEditData extends Component {
             Thông tin chưa được kiểm chứng và xác thực
           </strong>
         ) : null}
-        <Card className="mb-3">
+  <Card className="mb-3">
           <CardHeader id="headingBaseInfo" className="p-0 bg-white">
             <Button
               block
@@ -455,6 +501,15 @@ class ShowEditData extends Component {
 
           <Collapse isOpen={collapseBaseInfo}>
             <CardBody className="p-3">
+              <div className="mb-3 d-flex justify-content-end">
+                <Button
+                  color="primary"
+                  size="sm"
+                  onClick={this.togglePermissionModal}
+                >
+                  Chỉnh sửa quyền
+                </Button>
+              </div>
               <Row className="mb-3">
                 <Col md="12">
                   <div className={`${classes.rowItem} mr-b-0 `}>
@@ -1559,6 +1614,60 @@ class ShowEditData extends Component {
             </CardBody>
           </Collapse>
         </Card>
+
+        <Modal
+          isOpen={this.state.permissionModalOpen}
+          toggle={this.togglePermissionModal}
+          size="lg"
+        >
+          <ModalHeader toggle={this.togglePermissionModal}>
+            Chỉnh sửa quyền
+          </ModalHeader>
+          <ModalBody>
+            <div className="mb-3">
+              <Select
+                isMulti
+                className="wrap-insert-or-update-zone-item-select"
+                title="Nhóm quyền"
+                data={this.state.permissionGroups || []}
+                labelName="name"
+                val="id"
+                defaultValue={this.state.selectedPermissionGroups}
+                handleChange={this.handlePermissionChange}
+              />
+            </div>
+
+            <div>
+              <Label className="form-control-label">Nhóm đã chọn</Label>
+              <div>
+                {this.state.selectedPermissionGroups &&
+                this.state.selectedPermissionGroups.length > 0 ? (
+                  <ul>
+                    {this.state.selectedPermissionGroups.map((gId) => {
+                      const found = (this.state.permissionGroups || []).find(
+                        (g) => String(g.id) === String(gId)
+                      );
+                      const label =
+                        (found && (found.name || found.title || found.groupName)) ||
+                        gId;
+                      return <li key={gId}>{label}</li>;
+                    })}
+                  </ul>
+                ) : (
+                  <div className="text-muted">Chưa có nhóm nào được chọn</div>
+                )}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="primary" onClick={this.handleSavePermissionModal}>
+              Lưu
+            </Button>
+            <Button color="secondary" onClick={this.togglePermissionModal}>
+              Hủy
+            </Button>
+          </ModalFooter>
+        </Modal>
 
         <PopupMessage
           popupMessage={popupMessage}

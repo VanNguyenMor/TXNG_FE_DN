@@ -231,6 +231,19 @@ export const fetchData = {
   },
 
   productManagement: {
+    update: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          PRODUCT_MANAGEMENT.editProduct,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật InfoCompany:", error);
+        return null;
+      }
+    },
     getAll: async () => {
       const result = await callApi(
         "post",
