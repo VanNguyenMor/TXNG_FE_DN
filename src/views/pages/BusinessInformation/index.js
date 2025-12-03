@@ -293,24 +293,10 @@ class BusinessInformation extends Component {
     if (!file) return "";
 
     const uploadFormData = new FormData();
-    uploadFormData.append("files", file);
+    uploadFormData.append("BusinessLicensesFile", file, file.name);
 
     try {
-      const data = await axios({
-        method: "post",
-        url: CONFIG_UPDATE_IMG,
-        headers: {
-          authorization: localStorage.getItem("TOKEN"),
-        },
-        data: uploadFormData,
-      });
-
-      if (data.data.status === 200) {
-        return data.data.data;
-      } else {
-        console.error("Upload failed for file:", file.name);
-        return "";
-      }
+      const res = await fetchData.infoCompany.uploadFile(uploadFormData);
     } catch (error) {
       console.error("Error during file upload:", error);
       return "";
@@ -384,14 +370,15 @@ class BusinessInformation extends Component {
         const businessLicenseStr = configSetting.businessLicenseImages
           .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
           .join(";");
-        formData.append("BusinessLicenseImages", businessLicenseStr);
+          console.log(businessLicenseStr, "businessLicenseStr")
+        formData.append("BusinessLicenses", businessLicenseStr);
       }
 
       if (configSetting.registrationPaperImages?.length) {
         const registrationPaperStr = configSetting.registrationPaperImages
           .map((img) => (typeof img === "string" ? img : img.file?.name || ""))
           .join(";");
-        formData.append("RegistrationPaperImages", registrationPaperStr);
+        formData.append("RegistrationPapers", registrationPaperStr);
       }
 
       if (configSetting.workImages?.length) {
