@@ -89,19 +89,47 @@ class ProductManagement extends Component {
   };
 
   onFetchDataProductGroup = async () => {
-    const result =
-      await fetchData.productManagement.getListProductTypeAddComboBox();
-    const productGroups = result?.productGroups || [];
-
+    const productGroups = await fetchData.productManagement.getListMaterialGroup();
+    console.log('DEBUG: onFetchDataProductGroup productGroups =', productGroups);
     this.setState({ PRODUCT_GROUP_DATA: productGroups });
   };
 
   onFetchDataProductType = async () => {
-    const result =
-      await fetchData.productManagement.getListProductTypeAddComboBox();
-    const productTypes = result?.productTypes || [];
-
+    const productTypes = await fetchData.productManagement.getListProductType();
+    console.log('DEBUG: onFetchDataProductType productTypes =', productTypes);
     this.setState({ PRODUCT_TYPE_DATA: productTypes });
+  };
+
+  getListProductTypeAddComboBox = async (page = 0, init = true, filter = '') => {
+    try {
+      const payload = {
+        search: '',
+        filter: filter || '',
+        orderBy: '',
+        page,
+        limit: null,
+      };
+
+      const newProductTypes = await fetchData.productManagement.getListProductType(payload);
+      console.log('DEBUG: getListProductTypeAddComboBox newProductTypes =', newProductTypes, 'filter =', filter);
+
+      let productTypes = Array.isArray(this.state.PRODUCT_TYPE_DATA)
+        ? [...this.state.PRODUCT_TYPE_DATA]
+        : [];
+
+      if (newProductTypes.length > 0) {
+        productTypes = init ? [...newProductTypes] : productTypes.concat(newProductTypes);
+      } else if (init) {
+        productTypes = [];
+      }
+
+      this.setState({ PRODUCT_TYPE_DATA: productTypes });
+
+      return productTypes;
+    } catch (error) {
+      console.error('Lỗi khi lấy loại sản phẩm theo nhóm:', error);
+      return [];
+    }
   };
 
   onFetchDataNation = async () => {
@@ -111,7 +139,8 @@ class ProductManagement extends Component {
 
   onFetchDataPartner = async () => {
     const result = await fetchData.productManagement.getListPartnerComboBox();
-    const partners = result?.partners || [];
+    // API returns array directly or object with partners property
+    const partners = Array.isArray(result) ? result : (result?.partners || result || []);
 
     this.setState({ PRODUCT_PARTNER_DATA: partners });
   };
@@ -203,38 +232,83 @@ class ProductManagement extends Component {
     const { dataInsert } = this.state;
     console.log(dataInsert)
     try {
+      const uploadSingleFile = async (file, type = "file") => {
+        if (!file) return null;
+        const uploadFormData = new FormData();
+        uploadFormData.append("files", file, file.name);
+        try {
+          const res = await fetchData.infoCompany.uploadFile(uploadFormData);
+          if (res && res.data && res.data.uploadKey) return res.data.uploadKey;
+          if (res && res.uploadKey) return res.uploadKey;
+          if (typeof res === 'string') return res;
+          return null;
+        } catch (err) {
+          console.error('Upload file error:', err);
+          return null;
+        }
+      };
+
+      const uploadAndFormatImages = async (imagesList) => {
+        if (!imagesList || !Array.isArray(imagesList) || imagesList.length === 0) {
+          return "";
+        }
+
+        const processed = await Promise.all(
+          imagesList.map(async (img) => {
+            if (!img) return "";
+            
+            if (typeof img === 'string') {
+              return img.trim();
+            }
+            
+            if (img instanceof File) {
+              return await uploadSingleFile(img);
+            }
+            
+            if (typeof img === 'object' && img.file && img.file instanceof File) {
+              return await uploadSingleFile(img.file);
+            }
+            
+            return "";
+          })
+        );
+
+        return processed.filter((p) => p && p.trim()).join(";");
+      };
+
       const formData = new FormData();
       if (dataInsert.id) formData.append("Id", dataInsert.id);
       formData.append("ProductCode", dataInsert.productCodeVal || "");
       formData.append("ProductName", dataInsert.productName || "");
       formData.append("Barcode", dataInsert.barcode || "");
-      let professionId =
-        dataInsert.professionId ||
-        (dataInsert.productFields && dataInsert.productFields.length
-          ? dataInsert.productFields[0].id
-          : "");
+      
+      const selectedFields = Array.isArray(dataInsert.selectedFields) ? dataInsert.selectedFields : [];
+      console.log('DEBUG: selectedFields =', selectedFields, 'length =', selectedFields.length);
+      
+      selectedFields.forEach((fieldId, index) => {
+        const actualFieldId = (typeof fieldId === 'object' && fieldId.id) ? fieldId.id : fieldId;
+        console.log(`DEBUG: fields[${index}] = ${actualFieldId}`);
+        formData.append(`fields[${index}]`, actualFieldId);
+      });
 
-      // If professionId is still missing, try to re-fetch detail from API (defensive)
-      if (!professionId && dataInsert.id) {
-        try {
-          const detail = await fetchData.productManagement.getDetail(dataInsert.id);
-          if (detail && detail.productFields && detail.productFields.length) {
-            professionId = detail.productFields[0].id;
-          }
-        } catch (err) {
-          console.error("Không lấy được detail để bổ sung ProfessionId:", err);
-        }
-      }
-
-      console.log("ProfessionId ->", professionId);
-      formData.append("ProfessionId", professionId || "");
       formData.append("UnitID", dataInsert.unitID || dataInsert.unitId || "");
       formData.append("ProductGroupID", dataInsert.productGroupId || "");
+      formData.append("ProductTypeID", dataInsert.productCateId || "");  // Product Type/Category ID
       formData.append("ManufactID", dataInsert.manufactID || dataInsert.manufactID || "");
       formData.append("Origin", dataInsert.origin || "");
-      formData.append("ExpiredNum", dataInsert.expiredNum || "");
-      formData.append("ExpiredUnit", dataInsert.expiredUnit || "");
-      formData.append("ExpiredType", dataInsert.expiredType || "");
+      formData.append("QualityNum", dataInsert.qualityNum || "");
+      if (dataInsert.weightVal) {
+        formData.append('Weight', String(dataInsert.weightVal));
+      }
+      if (typeof dataInsert.expiredNum !== 'undefined' && dataInsert.expiredNum !== null && dataInsert.expiredNum !== '') {
+        formData.append('ExpiredNum', String(dataInsert.expiredNum));
+      }
+      if (typeof dataInsert.expiredUnit !== 'undefined' && dataInsert.expiredUnit !== null && dataInsert.expiredUnit !== '') {
+        formData.append('ExpiredUnit', String(dataInsert.expiredUnit));
+      }
+      if (typeof dataInsert.expiredType !== 'undefined' && dataInsert.expiredType !== null && dataInsert.expiredType !== '') {
+        formData.append('ExpiredType', String(dataInsert.expiredType));
+      }
       formData.append("Introduce", dataInsert.introduce || "");
       formData.append("ProductionProcess", dataInsert.productionProcess || "");
       formData.append("Ingredient", dataInsert.ingredient || "");
@@ -243,32 +317,43 @@ class ProductManagement extends Component {
       formData.append("Packing", dataInsert.packing || "");
 
       if (dataInsert.productImageFile && dataInsert.productImageFile instanceof File) {
-        formData.append("Avatar", dataInsert.productImageFile);
+        const avatarKey = await uploadSingleFile(dataInsert.productImageFile);
+        if (avatarKey) formData.append('Avatar', avatarKey);
+      } else if (dataInsert.avatar && typeof dataInsert.avatar === 'string') {
+        formData.append('Avatar', dataInsert.avatar);
       }
 
-      // product gallery images (if URLs) - append as JSON
-      if (dataInsert.productGalleryImages) {
-        formData.append("Images", JSON.stringify(dataInsert.productGalleryImages));
-      }
+      const imagesStr = await uploadAndFormatImages(dataInsert.images || []);
+      if (imagesStr) formData.append('Images', imagesStr);
 
-      (dataInsert.productConversionUnits || []).forEach((unit, index) => {
-        // The API expects productUnits[][unitId] to reference the productsUnits.id
-        formData.append(`productUnits[${index}][unitId]`, unit.id || unit.unitID || "");
-        formData.append(`productUnits[${index}][name]`, unit.unitName || unit.name || "");
-        formData.append(`productUnits[${index}][value]`,
-          typeof unit.value !== "undefined" ? unit.value : unit.conversionRate || 1
-        );
-        formData.append(`productUnits[${index}][isReport]`, unit.isReport ? true : false);
-      });
+      const accreditationStr = await uploadAndFormatImages(dataInsert.accreditation || []);
+      if (accreditationStr) formData.append('Accreditation', accreditationStr);
+
+      const certificationStr = await uploadAndFormatImages(dataInsert.certification || []);
+      if (certificationStr) formData.append('Certification', certificationStr);
+
+      // Send product conversion units as JSON. Backend should parse into ProductsUnit list.
+      const productUnits = Array.isArray(dataInsert.productConversionUnits) ? dataInsert.productConversionUnits : [];
+      if (productUnits.length > 0) {
+        formData.append('productUnits', JSON.stringify(productUnits));
+      }
 
       const result = dataInsert.id
         ? await fetchData.productManagement.update(formData)
         : await fetchData.productManagement.create(formData);
 
+      // Show success toast
+      if (dataInsert.id) {
+        toast.success("Cập nhật sản phẩm thành công!", { autoClose: 3000 });
+      } else {
+        toast.success("Tạo sản phẩm thành công!", { autoClose: 3000 });
+      }
+
       toggleModal && toggleModal();
       this.fetchSummary();
     } catch (error) {
       console.error("Lỗi gửi dữ liệu sản phẩm:", error);
+      toast.error("Lỗi gửi dữ liệu sản phẩm", { autoClose: 3000 });
       openAlertContext("Lỗi gửi dữ liệu sản phẩm");
     }
   };
@@ -459,6 +544,7 @@ class ProductManagement extends Component {
                         PRODUCT_PARTNER_DATA={PRODUCT_PARTNER_DATA}
                         NATION_DATA={NATION_DATA}
                         onHandleChangeValue={this.onHandleChangeValue}
+                        getListProductTypeAddComboBox={this.getListProductTypeAddComboBox}
                         onLoadDetailData={this.handleLoadDetailData}
                       />
                     ) : isShowForHistoryList ? (
@@ -473,6 +559,7 @@ class ProductManagement extends Component {
                         PRODUCT_PARTNER_DATA={PRODUCT_PARTNER_DATA}
                         NATION_DATA={NATION_DATA}
                         onHandleChangeValue={this.onHandleChangeValue}
+                        getListProductTypeAddComboBox={this.getListProductTypeAddComboBox}
                       />
                     )}
                   </div>

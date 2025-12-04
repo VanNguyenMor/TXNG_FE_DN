@@ -57,11 +57,14 @@ export const MATERIAL_HISTORIES = {
 export const PRODUCT_MANAGEMENT = {
   getListProductManagement: "product/getall",
   getListUnitComboBox: "unit/getall",
+  createProduct: "product/create",
   editProduct: "product/update",
   getDetailProduct: "product/getforlist?id={id}",
   getListFieldComboBox: "field/getallbycompanylevel4",
   getListPartnerComboBox: "partner/getall",
   getListNationComboBox: "location/nation",
+  getListMaterialGroup: "materialgroup/getall",
+  getListProductType: "productgroup/getall",
 };
 
 export const QR_MANAGEMENT = {

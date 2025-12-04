@@ -40,7 +40,15 @@ class Select extends Component {
   }
 
   componentWillReceiveProps(props) {
-    if (props.defaultValue && props.defaultValue != this.state.value && props.isMulti) {
+    // When defaultValue changes, update internal state. Also handle clearing when defaultValue is null/empty.
+    if (props.isMulti) {
+      if (!props.defaultValue || props.defaultValue == this.state.value) {
+        // if defaultValue is falsy (null/empty), clear multi-selection state
+        if (!props.defaultValue) {
+          this.setState({ currentArray: [], currentLabel: [], value: null });
+        }
+      }
+      if (props.defaultValue && props.defaultValue != this.state.value) {
       this.setState(
         (previousState) => {
           return {
@@ -53,13 +61,16 @@ class Select extends Component {
         }
       );
     }
-
-    if (
-      typeof props.defaultValue !== "undefined" &&
-      props.defaultValue != this.state.value &&
-      !props.isMulti
-    ) {
-      this.handleGetLabelName(props.defaultValue);
+    } else {
+      // non-multi
+      if (typeof props.defaultValue !== "undefined") {
+        // clear when explicitly set to null/empty (but NOT when 0, which is a valid value)
+        if (props.defaultValue === null || props.defaultValue === "") {
+          this.setState({ value: null, currentLabel: null, currentArray: [] });
+        } else if (props.defaultValue != this.state.value) {
+          this.handleGetLabelName(props.defaultValue);
+        }
+      }
     }
   }
 

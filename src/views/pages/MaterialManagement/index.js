@@ -230,7 +230,7 @@ class MaterialManagement extends Component {
         "Đơn vị quy đổi không được trùng với đơn vị chính";
     }
 
-    if ((conv.filter((u) => u.isPrimary).length || 0) > 1) {
+    if ((conv.filter((u) => u.isReport).length || 0) > 1) {
       errorInserts.productConversionUnits = "Chỉ chọn 1 đơn vị làm báo cáo";
     }
 
@@ -290,7 +290,7 @@ class MaterialManagement extends Component {
         );
         formData.append(
           `materialUnits[${index}][isReport]`,
-          unit.isPrimary ? true : false
+          unit.isReport ? true : false
         );
       });
 

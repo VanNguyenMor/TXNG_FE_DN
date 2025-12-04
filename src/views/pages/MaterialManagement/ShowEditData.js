@@ -191,7 +191,7 @@ class ShowEditData extends Component {
             id: u.unitID,
             unitName: u.unitName,
             conversionRate: u.value || 1,
-            isPrimary: u.isReport || false,
+            isReport: u.isReport || false,
           })),
       };
 

@@ -38,11 +38,11 @@ class ShowEditData extends Component {
     this.state = {
       // state for tab 1
       productImageFile: null,
-      productImageUrlVal: Noimg,
+      avatar: Noimg,
       productCodeVal: "",
       barcode: "",
       productName: "",
-      professionId: null,
+      selectedFields: [],
       productGroupId: null,
       productCateId: null,
       manufactID: null,
@@ -64,9 +64,9 @@ class ShowEditData extends Component {
       unitName: "",
 
       // state 3
-      productGalleryImages: [Noimg],
-      inspectionInformationImages: [Noimg],
-      certificationInformation: [Noimg],
+      images: [Noimg],
+      accreditation: [Noimg],
+      certification: [Noimg],
 
       productConversionUnits: [],
 
@@ -107,15 +107,26 @@ class ShowEditData extends Component {
 
     const { product, productsUnits, productFields } = detailData;
 
-    const initialProfessionId =
-      productFields && productFields.length > 0 ? productFields[0].id : null;
+    // Filter to only include non-main units (isMain === false)
+    const filteredUnits = productsUnits
+      ? productsUnits.filter((unit) => unit.isMain === false)
+      : [];
 
-    const conversionUnits = productsUnits
-      ? productsUnits.map((unit) => ({
+    const conversionUnits = filteredUnits
+      ? filteredUnits.map((unit) => ({
           ...unit,
           value: unit.value ? parseFloat(unit.value) : 0,
         }))
       : [];
+
+    const parseImages = (imgData) => {
+      if (!imgData) return [];
+      if (Array.isArray(imgData)) return imgData;
+      if (typeof imgData === "string") {
+        return imgData.split(";").filter((url) => url && url.trim() !== "");
+      }
+      return [];
+    };
 
     return {
       id: product.id,
@@ -123,31 +134,34 @@ class ShowEditData extends Component {
       barcode: product.barcode || "",
       productName: product.productName || "",
 
-      professionId: initialProfessionId,
-
       productGroupId: product.productGroupID || null,
       materialGroupFromApi: product.materialGroupID || null,
+      productGroupsId: product.materialGroupID || null,
+      productGroupsName:
+        product.materialGroupName || product.materialGroup?.name || "",
       manufactID: product.manufactID || null,
       origin: product.origin || null,
       unitID: product.unitID || "",
-    typeUsageTimeId: product.typeUsageTimeId || null,
+      typeUsageTimeId: product.typeUsageTimeId || null,
       unitName: product.unitName || "",
       qualityNum: product.qualityNum || "",
       productionProcess: product.productionProcess || "",
 
       weightVal: product.weight || "",
       expiredNum: product.expiredNum || null,
-      expiredUnit: product.expiredUnit || null,
+      expiredUnit: typeof product.expiredUnit !== 'undefined' && product.expiredUnit !== null
+        ? Number(product.expiredUnit)
+        : null,
       packing: product.packing || "",
       introduce: product.introduce || "",
       ingredient: product.ingredient || "",
       storage: product.storage || "",
       usage: product.usage || "",
-      productImageUrlVal: product.avatar || Noimg,
+      avatar: product.avatar || Noimg,
       productImageFile: null,
-      productGalleryImages: product.images,
-      inspectionInformationImages: product.accreditation,
-      certificationInformation: product.certification,
+      images: parseImages(product.images),
+      accreditation: parseImages(product.accreditation),
+      certification: parseImages(product.certification),
       isLocked: product.isLocked,
       productConversionUnits: conversionUnits,
       selectedPermissionGroups:
@@ -156,7 +170,15 @@ class ShowEditData extends Component {
         product.permissionGroupIds ||
         product.permissions ||
         [],
-      expiredType: product.expiredType,
+      selectedFields:
+        (productFields && productFields.map((f) => (f && f.id ? f.id : f))) ||
+        [],
+      // Convert expiredType to number for proper Select matching (PRODUCT_EXPIRED_TYPE has numeric values)
+      expiredType:
+        typeof product.expiredType !== "undefined" &&
+        product.expiredType !== null
+          ? Number(product.expiredType)
+          : null,
       loading: false,
     };
   }
@@ -166,24 +188,64 @@ class ShowEditData extends Component {
 
     this.setState({ loading: true });
     const response = await fetchData.productManagement.getDetail(id);
-    if (response != null) {
-      const newState = this.initStateFromProps(response);
-
-      this.setState(newState, () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(newState);
-        }
-      });
-    } else {
+    if (response == null) {
       this.setState({ loading: false });
       console.error("Lỗi khi tải dữ liệu chi tiết:", response);
+      return;
     }
+
+    // Normalize different possible response shapes from API
+    // Possible shapes:
+    // 1) { product: {...}, productsUnits: [...], productFields: [...] }
+    // 2) { data: { product: {...}, productsUnits: [...], productFields: [...] } }
+    // 3) product object directly
+    const productFromRes =
+      response.product || response.data?.product || response;
+    const productsUnits =
+      response.productsUnits ||
+      response.data?.productsUnits ||
+      response.productsUnits ||
+      [];
+    const productFields =
+      response.productFields || response.data?.productFields || [];
+
+    const normalizedDetail = {
+      product: productFromRes,
+      productsUnits,
+      productFields,
+    };
+
+    const newState = this.initStateFromProps(normalizedDetail);
+
+    this.setState(newState, () => {
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue(newState);
+      }
+      // Mirror mobile: when opening detail, load product types filtered by the product's group
+      if (
+        this.props.getListProductTypeAddComboBox &&
+        newState.productGroupsId
+      ) {
+        try {
+          this.props.getListProductTypeAddComboBox(
+            0,
+            true,
+            newState.productGroupsId
+          );
+        } catch (err) {
+          console.error(
+            "Lỗi khi tải loại sản phẩm cho nhóm khi mở chi tiết:",
+            err
+          );
+        }
+      }
+    });
   }
 
   handleGalleryImagesChange = (imagesList) => {
     this.setState(
       {
-        productGalleryImages: imagesList,
+        images: imagesList,
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -196,7 +258,7 @@ class ShowEditData extends Component {
   handleInspectionInformationChange = (imagesList) => {
     this.setState(
       {
-        inspectionInformationImages: imagesList,
+        accreditation: imagesList,
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -209,7 +271,7 @@ class ShowEditData extends Component {
   handleCertificationInformationChange = (imagesList) => {
     this.setState(
       {
-        certificationInformation: imagesList,
+        certification: imagesList,
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -233,17 +295,48 @@ class ShowEditData extends Component {
   };
 
   handleImageUploadSuccess = (file, previewUrl) => {
-    this.setState(
-      {
-        productImageFile: file,
-        productImageUrlVal: previewUrl,
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
+    // Immediately upload the file and store the returned URL as avatar.
+    // This keeps the create/update payload using a URL (not raw binary) like mobile expects.
+    if (!file) {
+      this.setState({ avatar: previewUrl }, () => {
+        this.props.onHandleChangeValue &&
           this.props.onHandleChangeValue(this.state);
-        }
+      });
+      return;
+    }
+
+    (async () => {
+      try {
+        const form = new FormData();
+        form.append("files", file, file.name);
+
+        // reuse the upload helper used elsewhere (infoCompany.uploadFile)
+        const res = await fetchData.infoCompany.uploadFile(form);
+
+        // Backend returns the full URL directly in res (already unwrapped by fetchData)
+        // E.g: "https://txng-cloud-v1.isopro.vn/upload/company/TGI02.C.d1cca030-dfe0-4fd3-8204-7d6adb00cfdf/imgs/TGI02.2025-12-04-11-24-46-754.jpeg"
+        const uploadedUrl = res || previewUrl;
+
+        console.log(
+          "DEBUG: handleImageUploadSuccess uploadedUrl =",
+          uploadedUrl
+        );
+
+        this.setState({ productImageFile: null, avatar: uploadedUrl }, () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
+        });
+      } catch (err) {
+        // fallback to previewUrl if upload fails
+        console.error("Lỗi upload avatar:", err);
+        this.setState({ productImageFile: file, avatar: previewUrl }, () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
+        });
       }
-    );
+    })();
   };
 
   toggleModal() {
@@ -252,7 +345,10 @@ class ShowEditData extends Component {
 
   togglePermissionModal = async () => {
     const willOpen = !this.state.permissionModalOpen;
-    if (willOpen && (!this.state.permissionGroups || this.state.permissionGroups.length === 0)) {
+    if (
+      willOpen &&
+      (!this.state.permissionGroups || this.state.permissionGroups.length === 0)
+    ) {
       // load groups lazily
       try {
         const groups = await fetchData.material.getGroupList();
@@ -269,7 +365,9 @@ class ShowEditData extends Component {
     // value may be array of ids for multi select
     this.setState({ selectedPermissionGroups: value || [] }, () => {
       if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue({ permissionGroups: this.state.selectedPermissionGroups });
+        this.props.onHandleChangeValue({
+          permissionGroups: this.state.selectedPermissionGroups,
+        });
       }
     });
   };
@@ -277,7 +375,9 @@ class ShowEditData extends Component {
   handleSavePermissionModal = () => {
     // propagate selected permissions to parent and close
     if (this.props.onHandleChangeValue) {
-      this.props.onHandleChangeValue({ permissionGroups: this.state.selectedPermissionGroups });
+      this.props.onHandleChangeValue({
+        permissionGroups: this.state.selectedPermissionGroups,
+      });
     }
     this.setState({ permissionModalOpen: false });
   };
@@ -305,31 +405,46 @@ class ShowEditData extends Component {
         let newState = {
           ...prevState,
           [name]: value,
-          ...(name === "importTypeId"
-            ? {
-                ingredientId: null,
-                jobId: null,
-                warehouseId: null,
-                quantity: 0,
-                vat: 0,
-                price: 0,
-                unit: "",
-                inventory: 0,
-              }
-            : {}),
         };
 
-        if (name === "ingredientId") {
-          const selected = prevState.INGREDIENT_LIST.find((i) => i.id == value);
+        // When product group changes, reset product type/category
+        if (name === "productGroupId") {
+          newState.productCateId = null;
+          // Also keep mobile-compatible keys: productGroupsId and productGroupsName
+          const groups = this.props.PRODUCT_GROUP_DATA || [];
+          const selectedGroup = groups.find(
+            (g) =>
+              (g && (g.id || g.materialGroupID || g.materialGroupId)) == value
+          );
 
-          if (selected) {
-            newState = {
-              ...newState,
-              quantity: selected.quantity,
-              unit: selected.unit !== null ? selected.unit : "",
-              warehouseId:
-                selected.warehouseId !== null ? selected.warehouseId : null,
-            };
+          newState.productGroupsId = selectedGroup
+            ? selectedGroup.id ||
+              selectedGroup.materialGroupID ||
+              selectedGroup.materialGroupId
+            : value;
+
+          newState.productGroupsName = selectedGroup
+            ? selectedGroup.name ||
+              selectedGroup.materialGroupName ||
+              selectedGroup.title ||
+              ""
+            : "";
+
+          // If the selected group provides a default unit, set unitID/unitName too (mobile does this)
+          const units = this.props.UNITS_DATA || [];
+          const groupUnitId =
+            selectedGroup &&
+            (selectedGroup.unitID ||
+              selectedGroup.unitId ||
+              selectedGroup.defaultUnitID);
+          if (groupUnitId) {
+            const unit = units.find(
+              (u) => (u && (u.id || u.unitID)) == groupUnitId
+            );
+            if (unit) {
+              newState.unitID = unit.id || unit.unitID || unit.unitId;
+              newState.unitName = unit.unitName || unit.name || "";
+            }
           }
         }
 
@@ -338,6 +453,16 @@ class ShowEditData extends Component {
       () => {
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
+        }
+
+        // After updating selected group, ask parent to reload product types filtered by that group (mobile logic)
+        if (
+          name === "productGroupId" &&
+          this.props.getListProductTypeAddComboBox
+        ) {
+          const groupId =
+            this.state.productGroupsId || this.state.productGroupId || value;
+          this.props.getListProductTypeAddComboBox(0, true, groupId);
         }
       }
     );
@@ -416,6 +541,25 @@ class ShowEditData extends Component {
     });
   };
 
+  handleSelectedFieldsChange = (value) => {
+    // Select component multi-select returns comma-separated string like "1,2,3"
+    // Convert to array of IDs for proper handling
+    let fieldsArray = [];
+    if (value) {
+      if (typeof value === "string") {
+        fieldsArray = value.split(",").filter((v) => v.trim());
+      } else if (Array.isArray(value)) {
+        fieldsArray = value;
+      }
+    }
+
+    this.setState({ selectedFields: fieldsArray }, () => {
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue(this.state);
+      }
+    });
+  };
+
   render() {
     const {
       errMessage,
@@ -427,7 +571,7 @@ class ShowEditData extends Component {
       usageTimeVal,
       qualityNum,
       introduce,
-      productImageUrlVal,
+      avatar,
       expandedInformation,
       ingredient,
       unitVal,
@@ -438,29 +582,40 @@ class ShowEditData extends Component {
       usageWarningVal,
       packing,
       tabImage,
-      productGalleryImages,
-      inspectionInformationImages,
-      certificationInformation,
+      images,
+      accreditation,
+      certification,
       productConversionUnits,
       expiredNum,
       expiredUnit,
       productionProcess,
-      professionId,
+      selectedFields,
       manufactID,
       expiredType,
       origin,
+      productGroupId,
+      productCateId,
     } = this.state;
     const {
       errors,
       UNITS_DATA,
       PRODUCT_GROUP_DATA,
-      PRODUCT_CATE_DATA,
+      PRODUCT_TYPE_DATA,
       isShowForDetail,
       islocked,
       FIELD_DATA,
       PRODUCT_PARTNER_DATA,
       NATION_DATA,
     } = this.props;
+
+    // Filter product types/categories based on selected group
+    // API returns productTypes with materialGroupID that should match productGroupId
+    // Prefer the types set by parent via getListProductTypeAddComboBox
+    const filteredProductTypes = productGroupId
+      ? (PRODUCT_TYPE_DATA || []).filter(
+          (ptype) => ptype.materialGroupID === productGroupId
+        )
+      : PRODUCT_TYPE_DATA || [];
 
     return (
       <div id="detailLoggingAccordion">
@@ -481,7 +636,7 @@ class ShowEditData extends Component {
             Thông tin chưa được kiểm chứng và xác thực
           </strong>
         ) : null}
-  <Card className="mb-3">
+        <Card className="mb-3">
           <CardHeader id="headingBaseInfo" className="p-0 bg-white">
             <Button
               block
@@ -501,21 +656,12 @@ class ShowEditData extends Component {
 
           <Collapse isOpen={collapseBaseInfo}>
             <CardBody className="p-3">
-              <div className="mb-3 d-flex justify-content-end">
-                <Button
-                  color="primary"
-                  size="sm"
-                  onClick={this.togglePermissionModal}
-                >
-                  Chỉnh sửa quyền
-                </Button>
-              </div>
               <Row className="mb-3">
                 <Col md="12">
                   <div className={`${classes.rowItem} mr-b-0 `}>
                     <label className="form-control-label">Hình đại diện</label>
                     <ImageUploader
-                      initialImageUrl={productImageUrlVal || Noimg}
+                      initialImageUrl={avatar || Noimg}
                       onFileSelected={this.handleImageUploadSuccess}
                     />
                   </div>
@@ -610,18 +756,19 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="professionId"
+                      isMulti
+                      name="selectedFields"
                       isDisable={isShowForDetail}
                       title="Chọn ngành nghề"
                       data={FIELD_DATA}
                       labelName="fieldName"
                       val="id"
-                      defaultValue={professionId}
-                      handleChange={this.onChangeValue("professionId")}
+                      defaultValue={selectedFields}
+                      handleChange={this.handleSelectedFieldsChange}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.professionId}
+                    {errors.selectedFields}
                   </p>
                 </Col>
               </Row>
@@ -655,11 +802,12 @@ class ShowEditData extends Component {
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
                       name="productCateId"
-                      isDisable={isShowForDetail}
+                      isDisable={isShowForDetail || !productGroupId}
                       title="Chọn loại sản phẩm"
-                      data={PRODUCT_CATE_DATA}
-                      labelName="title"
+                      data={filteredProductTypes}
+                      labelName="name"
                       val="id"
+                      defaultValue={productCateId}
                       handleChange={this.onChangeSelect("productCateId")}
                     />
                   </div>
@@ -777,7 +925,6 @@ class ShowEditData extends Component {
                       defaultValue={expiredUnit}
                       handleChange={this.onChangeSelect("expiredUnit")}
                     />
-                    {console.log(expiredUnit, "=================")}
                   </div>
                   <p className="form-error-message margin-bottom-0">
                     {errors.expiredUnit}
@@ -1595,79 +1742,31 @@ class ShowEditData extends Component {
           <Collapse isOpen={tabImage}>
             <CardBody className="p-3">
               <ImageGalleryUploader
+                key={`gallery-${images.length}-${this.state.id}`}
                 title="Hình ảnh sản phẩm"
-                initialImages={productGalleryImages}
+                initialImages={images}
+                noMutil={true}
                 onImagesChange={this.handleGalleryImagesChange}
               />
 
               <ImageGalleryUploader
+                key={`accreditation-${accreditation.length}-${this.state.id}`}
                 title="Thông tin kiểm định"
-                initialImages={inspectionInformationImages}
+                initialImages={accreditation}
+                noMutil={true}
                 onImagesChange={this.handleInspectionInformationChange}
               />
 
               <ImageGalleryUploader
+                key={`certification-${certification.length}-${this.state.id}`}
                 title="Thông tin chứng nhận"
-                initialImages={certificationInformation}
+                noMutil={true}
+                initialImages={certification}
                 onImagesChange={this.handleCertificationInformationChange}
               />
             </CardBody>
           </Collapse>
         </Card>
-
-        <Modal
-          isOpen={this.state.permissionModalOpen}
-          toggle={this.togglePermissionModal}
-          size="lg"
-        >
-          <ModalHeader toggle={this.togglePermissionModal}>
-            Chỉnh sửa quyền
-          </ModalHeader>
-          <ModalBody>
-            <div className="mb-3">
-              <Select
-                isMulti
-                className="wrap-insert-or-update-zone-item-select"
-                title="Nhóm quyền"
-                data={this.state.permissionGroups || []}
-                labelName="name"
-                val="id"
-                defaultValue={this.state.selectedPermissionGroups}
-                handleChange={this.handlePermissionChange}
-              />
-            </div>
-
-            <div>
-              <Label className="form-control-label">Nhóm đã chọn</Label>
-              <div>
-                {this.state.selectedPermissionGroups &&
-                this.state.selectedPermissionGroups.length > 0 ? (
-                  <ul>
-                    {this.state.selectedPermissionGroups.map((gId) => {
-                      const found = (this.state.permissionGroups || []).find(
-                        (g) => String(g.id) === String(gId)
-                      );
-                      const label =
-                        (found && (found.name || found.title || found.groupName)) ||
-                        gId;
-                      return <li key={gId}>{label}</li>;
-                    })}
-                  </ul>
-                ) : (
-                  <div className="text-muted">Chưa có nhóm nào được chọn</div>
-                )}
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button color="primary" onClick={this.handleSavePermissionModal}>
-              Lưu
-            </Button>
-            <Button color="secondary" onClick={this.togglePermissionModal}>
-              Hủy
-            </Button>
-          </ModalFooter>
-        </Modal>
 
         <PopupMessage
           popupMessage={popupMessage}

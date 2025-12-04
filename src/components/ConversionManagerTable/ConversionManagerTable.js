@@ -71,7 +71,7 @@ class ConversionManagerTable extends Component {
       id: currentUnitId,
       unitName: selectedUnitObj.title || selectedUnitObj.unitName || "",
       conversionRate: rate,
-      isPrimary: selectedUnits.length === 0,
+      isReport: selectedUnits.length === 0,
     };
 
     this.setState((prevState) => {
@@ -89,7 +89,7 @@ class ConversionManagerTable extends Component {
     this.setState((prevState) => {
       const newUnits = prevState.selectedUnits.map((unit) => ({
         ...unit,
-        isPrimary: unit.id === unitId,
+        isReport: unit.id === unitId,
       }));
       this.triggerOnChange(newUnits);
       return { selectedUnits: newUnits };
@@ -99,7 +99,7 @@ class ConversionManagerTable extends Component {
   handleDeleteUnit = (unitId) => {
     const unitToDelete = this.state.selectedUnits.find((u) => u.id === unitId);
 
-    if (unitToDelete.isPrimary) {
+    if (unitToDelete.isReport) {
       alert("Không thể xóa đơn vị đang được chọn làm 'Hiện báo cáo'.");
       return;
     }
@@ -209,7 +209,7 @@ class ConversionManagerTable extends Component {
                 <td className="text-center">
                   <Input
                     type="checkbox"
-                    checked={unit.isPrimary}
+                    checked={unit.isReport}
                     onChange={() =>
                       !isDisable && this.handlePrimaryChange(unit.id)
                     }
@@ -219,7 +219,7 @@ class ConversionManagerTable extends Component {
                   <Button
                     color="link"
                     onClick={() => this.handleDeleteUnit(unit.id)}
-                    disabled={unit.isPrimary || isDisable}
+                    disabled={unit.isReport || isDisable}
                     className="text-danger p-0"
                   >
                     <i className="fas fa-trash-alt"></i>

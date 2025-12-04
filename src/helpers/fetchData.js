@@ -14,6 +14,20 @@ import {
   MATERIAL_HISTORIES,
 } from "./endpoint";
 
+// Helper to extract product/material groups from API response
+// Response can have different structures: .productGroups, .materialGroups, or nested .data.productGroups
+const extractGroupsData = (response) => {
+  if (!response) return [];
+  // Try multiple paths for compatibility
+  return (
+    response.productGroups ||
+    response.materialGroups ||
+    response.data?.productGroups ||
+    response.data?.materialGroups ||
+    []
+  );
+};
+
 export const fetchData = {
   province: {
     getAll: async () => {
@@ -231,6 +245,19 @@ export const fetchData = {
   },
 
   productManagement: {
+    create: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          PRODUCT_MANAGEMENT.createProduct,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi tạo sản phẩm:", error);
+        return null;
+      }
+    },
     update: async (payload) => {
       try {
         const result = await callApi(
@@ -240,7 +267,7 @@ export const fetchData = {
         );
         return result?.data || null;
       } catch (error) {
-        console.error("Lỗi khi cập nhật InfoCompany:", error);
+        console.error("Lỗi khi cập nhật sản phẩm:", error);
         return null;
       }
     },
@@ -252,21 +279,30 @@ export const fetchData = {
       );
       return result?.data || [];
     },
-    getListProductTypeAddComboBox: async () => {
+    // Accept an optional payload so callers can pass filters (eg. filter by productGroupId)
+    // Returns the groups/types array directly (already unwrapped from nested data structure)
+    getListProductType: async (payload = PAYLOAD.defaultPayLoad) => {
       const result = await callApi(
         "post",
-        PRODUCT_MANAGEMENT.getListProductTypeAddComboBox,
-        PAYLOAD.defaultPayLoad
+        PRODUCT_MANAGEMENT.getListProductType,
+        payload
       );
-      return result?.data || [];
+      // Response structure: { data: { data: { productGroups: [...] } } } or similar
+      // callApi unwraps first .data, so we get { data: { productGroups: [...] } }
+      // Extract the groups array from the potentially nested response
+      const groupsData = result?.data || result;
+      return extractGroupsData(groupsData);
     },
-    getListMaterialGroupComboBox: async () => {
+    // Get material groups (same as product groups but from materialgroup endpoint)
+    getListMaterialGroup: async () => {
       const result = await callApi(
         "post",
-        PRODUCT_MANAGEMENT.getListMaterialGroupComboBox,
+        PRODUCT_MANAGEMENT.getListMaterialGroup,
         PAYLOAD.defaultPayLoad
       );
-      return result?.data || [];
+      // Same nested structure as getListProductType
+      const groupsData = result?.data || result;
+      return extractGroupsData(groupsData);
     },
     getListPartnerComboBox: async () => {
       const result = await callApi(
