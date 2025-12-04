@@ -46,6 +46,7 @@ export const MATERIAL_MANAGEMENT = {
   editMaterial: "material/update",
   addMaterial: "material/create",
   updateLock: "material/lock?id={id}",
+  deleteMaterial: "material/delete/{id}",
   getUnitAll: "unit/getall",
 };
 
@@ -56,6 +57,22 @@ export const MATERIAL_HISTORIES = {
 
 export const PRODUCT_MANAGEMENT = {
   getListProductManagement: "product/getall",
+  getListUnitComboBox: "unit/getall",
+  createProduct: "product/create",
+  editProduct: "product/update",
+  getDetailProduct: "product/getforlist?id={id}",
+  getListFieldComboBox: "field/getallbycompanylevel4",
+  getListPartnerComboBox: "partner/getall",
+  getListNationComboBox: "location/nation",
+  getListMaterialGroup: "materialgroup/getall",
+  getListProductType: "productgroup/getall",
+  updateLock: "product/lock/{id}",
+  deleteProduct: "product/delete/{id}",
+};
+
+export const PRODUCT_HISTORIES = {
+  getListProductHistory:
+    'producthistory/getlisthistory?productid={0}&page={1}&limit={2}',
 };
 
 export const QR_MANAGEMENT = {

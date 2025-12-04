@@ -5,8 +5,34 @@ import Noimg from "../../assets/img/NoImg/NoImg.jpg";
 import { fetchData } from "helpers/fetchData";
 
 let nextId = 0;
+function normalizeUrlsInput(urls) {
+  // Accept multiple input shapes: array of urls, semicolon/comma-delimited string, or null/undefined
+  if (!urls) return [];
+
+  if (Array.isArray(urls)) return urls.filter((u) => !!u);
+
+  if (typeof urls === "string") {
+    // split by semicolon or comma, trim
+    const parts = urls
+      .split(/;|,/)
+      .map((s) => s && s.trim())
+      .filter(Boolean);
+    return parts;
+  }
+
+  // If object with images property
+  if (typeof urls === "object") {
+    // try common shapes
+    if (Array.isArray(urls.images)) return urls.images.filter((u) => !!u);
+    if (Array.isArray(urls.data)) return urls.data.filter((u) => !!u);
+  }
+
+  return [];
+}
+
 function createInitialImages(urls) {
-  return urls.map((url) => ({ id: nextId++, url: url }));
+  const normalized = normalizeUrlsInput(urls || []);
+  return normalized.map((url) => ({ id: nextId++, url: url }));
 }
 
 class ImageGalleryUploader extends Component {
@@ -23,7 +49,9 @@ class ImageGalleryUploader extends Component {
       nextProps.initialImages &&
       nextProps.initialImages !== this.props.initialImages
     ) {
-      this.setState({ images: createInitialImages(nextProps.initialImages) });
+      const imgs = createInitialImages(nextProps.initialImages);
+      this.setState({ images: imgs });
+      nextId = imgs.length;
     }
   }
 
@@ -34,7 +62,7 @@ class ImageGalleryUploader extends Component {
   notifyParent(updatedImagesObject) {
     const updatedUrls = updatedImagesObject.map((img) => img.url);
     if (this.props.onImagesChange) {
-      this.props.onImagesChange(updatedUrls); 
+      this.props.onImagesChange(updatedUrls);
     }
   }
 
@@ -80,7 +108,7 @@ class ImageGalleryUploader extends Component {
   };
 
   render() {
-    const { title, mdVal } = this.props;
+    const { title, mdVal, noMutil } = this.props;
     const { images } = this.state;
 
     const displayImages =
@@ -162,20 +190,22 @@ class ImageGalleryUploader extends Component {
               </Col>
             ))}
 
-            <Col
-              md="3"
-              className="d-flex align-items-center justify-content-center"
-              style={{
-                paddingTop: "10px",
-                position: "absolute",
-                right: "0",
-                top: "0",
-              }}
-            >
-              <div style={plusButtonStyle} onClick={this.handleAddImageField}>
-                <i className="fas fa-plus"></i>
-              </div>
-            </Col>
+            {noMutil ? null : (
+              <Col
+                md="3"
+                className="d-flex align-items-center justify-content-center"
+                style={{
+                  paddingTop: "10px",
+                  position: "absolute",
+                  right: "0",
+                  top: "0",
+                }}
+              >
+                <div style={plusButtonStyle} onClick={this.handleAddImageField}>
+                  <i className="fas fa-plus"></i>
+                </div>
+              </Col>
+            )}
           </Row>
         </CardBody>
       </Card>

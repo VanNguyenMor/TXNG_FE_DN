@@ -12,7 +12,22 @@ import {
   PRODUCT_MANAGEMENT,
   QR_MANAGEMENT,
   MATERIAL_HISTORIES,
+  PRODUCT_HISTORIES,
 } from "./endpoint";
+
+// Helper to extract product/material groups from API response
+// Response can have different structures: .productGroups, .materialGroups, or nested .data.productGroups
+const extractGroupsData = (response) => {
+  if (!response) return [];
+  // Try multiple paths for compatibility
+  return (
+    response.productGroups ||
+    response.materialGroups ||
+    response.data?.productGroups ||
+    response.data?.materialGroups ||
+    []
+  );
+};
 
 export const fetchData = {
   province: {
@@ -230,6 +245,145 @@ export const fetchData = {
     },
   },
 
+  productHistories: {
+    getListProductHistory: async (id, page, limit) => {
+      const result = await callApi(
+        "get",
+        `${PRODUCT_HISTORIES.getListProductHistory
+          .replace("{0}", id)
+          .replace("{1}", page)
+          .replace("{2}", limit)}`
+      );
+      return result?.data || [];
+    },
+  },
+
+  productManagement: {
+    create: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          PRODUCT_MANAGEMENT.createProduct,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi tạo sản phẩm:", error);
+        return null;
+      }
+    },
+    update: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          PRODUCT_MANAGEMENT.editProduct,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật sản phẩm:", error);
+        return null;
+      }
+    },
+    delete: async (id) => {
+      try {
+        const result = await callApi(
+          "delete",
+          `${PRODUCT_MANAGEMENT.deleteProduct.replace("{id}", id)}`
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi xóa sản phẩm:", error);
+        return null;
+      }
+    },
+    getAll: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListProductManagement,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListProductType: async (payload = PAYLOAD.defaultPayLoad) => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListProductType,
+        payload
+      );
+      const groupsData = result?.data || result;
+      return extractGroupsData(groupsData);
+    },
+    getListMaterialGroup: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListMaterialGroup,
+        PAYLOAD.defaultPayLoad
+      );
+      const groupsData = result?.data || result;
+      return extractGroupsData(groupsData);
+    },
+    getListPartnerComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListPartnerComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListNationComboBox: async () => {
+      const result = await callApi(
+        "get",
+        PRODUCT_MANAGEMENT.getListNationComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getListUnitComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListUnitComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    getDetail: async (id) => {
+      const result = await callApi(
+        "get",
+        `${PRODUCT_MANAGEMENT.getDetailProduct.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+    getListFieldComboBox: async () => {
+      const result = await callApi(
+        "post",
+        PRODUCT_MANAGEMENT.getListFieldComboBox,
+        PAYLOAD.defaultPayLoad
+      );
+      return result?.data || [];
+    },
+    updateLock: async (id) => {
+      const result = await callApi(
+        "get",
+        `${PRODUCT_MANAGEMENT.updateLock.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+  },
+
+  materialHistories: {
+    getListMaterialHistory: async (id, page, limit) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_HISTORIES.getListMaterialHistory
+          .replace("{0}", id)
+          .replace("{1}", page)
+          .replace("{2}", limit)}`
+      );
+      return result?.data || [];
+    },
+  },
+
   materialManagement: {
     getAll: async () => {
       const result = await callApi(
@@ -263,12 +417,25 @@ export const fetchData = {
       try {
         const result = await callApi(
           "post",
-          MATERIAL_MANAGEMENT.editMaterial, // Dùng endpoint của MATERIAL_MANAGEMENT
+          MATERIAL_MANAGEMENT.editMaterial,
           payload
         );
         return result?.data || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật nguyên vật liệu:", error);
+        return null;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const result = await callApi(
+          "delete",
+          `${MATERIAL_MANAGEMENT.deleteMaterial.replace("{id}", id)}`
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi xóa nguyên vật liệu:", error);
         return null;
       }
     },

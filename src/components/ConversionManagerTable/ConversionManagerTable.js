@@ -45,7 +45,7 @@ class ConversionManagerTable extends Component {
       return;
     }
 
-    if (String(currentUnitId) === String(this.props.defaultUnitId || "")) {
+    if (String(currentUnitId) === String(defaultUnitId || "")) {
       alert("Đơn vị quy đổi không được trùng với đơn vị chính.");
       return;
     }
@@ -69,9 +69,9 @@ class ConversionManagerTable extends Component {
     }
     const newUnit = {
       id: currentUnitId,
-      unitName: selectedUnitObj.title,
+      unitName: selectedUnitObj.title || selectedUnitObj.unitName || "",
       conversionRate: rate,
-      isPrimary: selectedUnits.length === 0,
+      isReport: selectedUnits.length === 0,
     };
 
     this.setState((prevState) => {
@@ -89,7 +89,7 @@ class ConversionManagerTable extends Component {
     this.setState((prevState) => {
       const newUnits = prevState.selectedUnits.map((unit) => ({
         ...unit,
-        isPrimary: unit.id === unitId,
+        isReport: unit.id === unitId,
       }));
       this.triggerOnChange(newUnits);
       return { selectedUnits: newUnits };
@@ -99,7 +99,7 @@ class ConversionManagerTable extends Component {
   handleDeleteUnit = (unitId) => {
     const unitToDelete = this.state.selectedUnits.find((u) => u.id === unitId);
 
-    if (unitToDelete.isPrimary) {
+    if (unitToDelete.isReport) {
       alert("Không thể xóa đơn vị đang được chọn làm 'Hiện báo cáo'.");
       return;
     }
@@ -143,7 +143,7 @@ class ConversionManagerTable extends Component {
             <option value="">Chọn đơn vị</option>
             {availableUnits.map((unit) => (
               <option key={unit.id} value={unit.id}>
-                {unit.title && unit.title.toLowerCase()}
+                {(unit.title || unit.unitName || "").toString().toLowerCase()}
               </option>
             ))}
           </Input>
@@ -204,12 +204,12 @@ class ConversionManagerTable extends Component {
             {selectedUnits.map((unit, index) => (
               <tr key={unit.id}>
                 <td>{index + 1}</td>
-                <td>{unit.unitName && unit.unitName.toLowerCase()}</td>
+                <td>{(unit.title || unit.unitName || "").toString().toLowerCase()}</td>
                 <td>{unit.conversionRate}</td>
                 <td className="text-center">
                   <Input
                     type="checkbox"
-                    checked={unit.isPrimary}
+                    checked={unit.isReport}
                     onChange={() =>
                       !isDisable && this.handlePrimaryChange(unit.id)
                     }
@@ -219,7 +219,7 @@ class ConversionManagerTable extends Component {
                   <Button
                     color="link"
                     onClick={() => this.handleDeleteUnit(unit.id)}
-                    disabled={unit.isPrimary || isDisable}
+                    disabled={unit.isReport || isDisable}
                     className="text-danger p-0"
                   >
                     <i className="fas fa-trash-alt"></i>

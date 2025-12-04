@@ -12,6 +12,7 @@ import ShowEditData from "./ShowEditData.js";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
+import WarningPopup from "../../../components/WarningPopup";
 import {
   Card,
   Table,
@@ -52,6 +53,9 @@ class MaterialManagement extends Component {
       currentPage: 0,
       collapseList: [],
       HISTORY_DATA: [],
+      deleteId: null,
+      deleteTitle: null,
+      warningPopupModal: false,
       STATUS_OPTIONS: [
         { id: 0, title: "Chưa khóa" },
         { id: 1, title: "Đã khóa" },
@@ -230,7 +234,7 @@ class MaterialManagement extends Component {
         "Đơn vị quy đổi không được trùng với đơn vị chính";
     }
 
-    if ((conv.filter((u) => u.isPrimary).length || 0) > 1) {
+    if ((conv.filter((u) => u.isReport).length || 0) > 1) {
       errorInserts.productConversionUnits = "Chỉ chọn 1 đơn vị làm báo cáo";
     }
 
@@ -290,7 +294,7 @@ class MaterialManagement extends Component {
         );
         formData.append(
           `materialUnits[${index}][isReport]`,
-          unit.isPrimary ? true : false
+          unit.isReport ? true : false
         );
       });
 
@@ -323,9 +327,56 @@ class MaterialManagement extends Component {
     });
   }
 
+  deleteMaterial = async (id = this.state.deleteId) => {
+    if (!id) return;
+    try {
+      const result = await fetchData.materialManagement.delete(id);
+      console.log("DEBUG deleteMaterial result =", result);
+
+      if (result && result.status === 200) {
+        toast.success("Xoá nguyên vật liệu thành công!");
+        this.toggleModalPopupDelete();
+
+        setTimeout(() => {
+          this.fetchSummary();
+        }, 500);
+      } else {
+        const errorMessage = result?.message || "Xóa nguyên vật liệu thất bại";
+        toast.error(errorMessage);
+        this.toggleModalPopupDelete();
+      }
+    } catch (error) {
+      console.error("Lỗi xóa nguyên vật liệu:", error);
+      toast.error("Lỗi xóa nguyên vật liệu, vui lòng thử lại!", {
+        autoClose: 3000,
+      });
+      this.toggleModalPopupDelete();
+    }
+  };
+
+  onDeleteMaterial = (id) => () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        warningPopupModal: true,
+        deleteId: id,
+      };
+    });
+  };
+
+  toggleModalPopupDelete = () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        warningPopupModal: false,
+      };
+    });
+  };
+
   handleLoadDetailData = (dataInsertFromChild) => {
     this.setState({ dataInsert: dataInsertFromChild });
   };
+
   onShowHistoryModal(item) {
     this.setState({
       editId: item.id,
@@ -335,6 +386,7 @@ class MaterialManagement extends Component {
       isModalOpen: true,
     });
   }
+
   onCloseModal = () => {
     this.setState({
       isShowForDetail: false,
@@ -420,6 +472,11 @@ class MaterialManagement extends Component {
                         Khóa vật liệu
                       </DropdownItem>
                     )}
+                    {e.islocked == true ? null : (
+                      <DropdownItem onClick={this.onDeleteMaterial(e.id)}>
+                        Xoá
+                      </DropdownItem>
+                    )}
                   </DropdownMenu>
                 </ButtonDropdown>
               ))}
@@ -499,6 +556,7 @@ class MaterialManagement extends Component {
       materialGroup,
       nations,
       UNITS_DATA,
+      warningPopupModal,
     } = this.state;
 
     return (
@@ -590,6 +648,18 @@ class MaterialManagement extends Component {
           </Row>
         )}
         <ToastContainer position="top-center" autoClose={3000} />
+
+        <WarningPopup
+          moduleTitle="Thông báo"
+          moduleBody={
+            <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+              Bạn đồng ý xóa sản phẩm này?
+            </p>
+          }
+          warningPopupModal={warningPopupModal}
+          toggleModal={this.toggleModalPopupDelete}
+          handleWarning={this.deleteMaterial}
+        />
       </Container>
     );
   }

@@ -15,6 +15,10 @@ import {
   InputGroup,
   Label,
   Row,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
 import ConversionManagerTable from "components/ConversionManagerTable/ConversionManagerTable";
 import Select from "components/Select";
@@ -23,6 +27,9 @@ import { Editor } from "@tinymce/tinymce-react";
 import axios from "axios";
 import { CONFIG_UPDATE_IMG } from "apis";
 import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUploader";
+import { fetchData } from "helpers/fetchData";
+import { PRODUCT_TYPE_DATES } from "helpers/constant";
+import { PRODUCT_EXPIRED_TYPE } from "helpers/constant";
 
 class ShowEditData extends Component {
   constructor(props) {
@@ -31,42 +38,48 @@ class ShowEditData extends Component {
     this.state = {
       // state for tab 1
       productImageFile: null,
-      productImageUrlVal: Noimg,
+      avatar: Noimg,
       productCodeVal: "",
-      barcodeVal: "",
-      productNameVal: "",
-      professionId: null,
-      productGroupId: null,
+      barcode: "",
+      productName: "",
+      selectedFields: [],
+      materialGroupId: null,
       productCateId: null,
-      manufacturerId: null,
-      originId: null,
-      unitId: null,
+      manufactID: null,
+      origin: null,
+      unitID: null,
+      unitVal: "",
+      unitName: "",
       usageTimeVal: "",
       accordId: null,
-      typeUsageTimeId: null,
-      qualityNumberVal: "",
-      introduceVal: "",
-      productionProcessVal: "",
-      ingredientVal: "",
-      storageInstructionsVal: "",
-      instructionsForUseVal: "",
+      expiredType: null,
+      qualityNum: "",
+      introduce: "",
+      ingredient: "",
+      storage: "",
+      usage: "",
       usageWarningVal: "",
-      packingSpecificationVal: "",
+      packing: "",
+
+      productionProcess: "",
+      unitVal: "",
+      unitName: "",
 
       // state 3
-      productGalleryImages: [Noimg],
-      inspectionInformationImages: [Noimg],
-      certificationInformation: [Noimg],
+      images: [Noimg],
+      accreditation: [Noimg],
+      certification: [Noimg],
 
-      productConversionUnits: [
-        { id: 2, unitName: "Đôi", conversionRate: 50, isPrimary: true },
-        { id: 5, unitName: "Bộ", conversionRate: 5, isPrimary: false },
-      ],
+      productConversionUnits: [],
 
       id: null,
       collapseBaseInfo: true,
       expandedInformation: false,
       tabImage: false,
+      // permission modal
+      permissionModalOpen: false,
+      permissionGroups: [],
+      selectedPermissionGroups: [],
     };
     this.toggle = this.toggle.bind(this);
   }
@@ -77,10 +90,218 @@ class ShowEditData extends Component {
     });
   }
 
+  componentDidMount() {
+    if (this.props.id) {
+      this.loadDetailData(this.props.id);
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.id && prevProps.id !== this.props.id) {
+      this.loadDetailData(this.props.id);
+    }
+  }
+
+  initStateFromProps(detailData) {
+    if (!detailData || !detailData.product) {
+      return {};
+    }
+
+    const { product, productsUnits, productFields } = detailData;
+
+    // Filter to only include non-main units (isMain === false)
+    const filteredUnits = productsUnits
+      ? productsUnits.filter((unit) => unit.isMain === false)
+      : [];
+
+    // Normalize conversion units to the shape used by ConversionManagerTable
+    // and expected by the backend when updating/creating products.
+    // Use keys: { id, unitName, conversionRate, isReport }
+    const conversionUnits = (filteredUnits || []).map((unit) => {
+      const id = unit.unitID || unit.id || unit.unitId || null;
+      const unitName = unit.unitName || unit.title || unit.name || "";
+      const conversionRate = unit.conversionRate
+        ? parseFloat(unit.conversionRate)
+        : unit.value
+        ? parseFloat(unit.value)
+        : 1;
+      const isReport = !!(unit.isReport || unit.isreport || false);
+
+      return {
+        id,
+        unitName,
+        conversionRate,
+        isReport,
+      };
+    });
+
+    const parseImages = (imgData) => {
+      if (!imgData) return [];
+      if (Array.isArray(imgData)) return imgData;
+      if (typeof imgData === "string") {
+        return imgData.split(";").filter((url) => url && url.trim() !== "");
+      }
+      return [];
+    };
+
+    const normalizeAvatar = (avatarData) => {
+      if (!avatarData) return Noimg;
+      if (typeof avatarData === "string") {
+        const s = avatarData.trim();
+        if (s === "" ) return Noimg;
+        // If semicolon-separated, take first
+        if (s.indexOf(";") >= 0) return s.split(";")[0];
+        return s;
+      }
+      // avatar could be an object with common keys
+      if (typeof avatarData === "object") {
+        return (
+          avatarData.url || avatarData.data || avatarData.uploadKey || avatarData.path || Noimg
+        );
+      }
+      return Noimg;
+    };
+
+    const finalAvatar = normalizeAvatar(product.avatar) || Noimg;
+    console.log('DEBUG initStateFromProps: product.avatar =', product.avatar, 'type =', typeof product.avatar, 'finalAvatar =', finalAvatar);
+
+    return {
+      id: product.id,
+      productCodeVal: product.productCode || "",
+      barcode: product.barcode || "",
+      productName: product.productName || "",
+
+      // materialGroupId (state field for "Nhóm sản phẩm") should be initialized from API's materialGroupID
+      materialGroupId: product.materialGroupID || null,
+      // productCateId (state field for "Loại sản phẩm") should be initialized from API's productGroupID
+      productCateId: product.productGroupID || null,
+      productGroupsId: product.materialGroupID || null,
+      productGroupsName:
+        product.materialGroupName || product.materialGroup?.name || "",
+      manufactID: product.manufactID || null,
+      origin: product.origin || null,
+      unitID: product.unitID || "",
+      typeUsageTimeId: product.typeUsageTimeId || null,
+      unitName: product.unitName || "",
+      qualityNum: product.qualityNum || "",
+      productionProcess: product.productionProcess || "",
+
+      weightVal: product.weight || "",
+      expiredNum: product.expiredNum || null,
+      expiredUnit: typeof product.expiredUnit !== 'undefined' && product.expiredUnit !== null
+        ? Number(product.expiredUnit)
+        : null,
+      packing: product.packing || "",
+      introduce: product.introduce || "",
+      ingredient: product.ingredient || "",
+      storage: product.storage || "",
+      usage: product.usage || "",
+      avatar: finalAvatar,
+      productImageFile: null,
+      images: parseImages(product.images),
+      accreditation: parseImages(product.accreditation),
+      certification: parseImages(product.certification),
+      isLocked: product.isLocked,
+      productConversionUnits: conversionUnits,
+      selectedPermissionGroups:
+        (product.permissionGroups &&
+          product.permissionGroups.map((g) => (g && g.id ? g.id : g))) ||
+        product.permissionGroupIds ||
+        product.permissions ||
+        [],
+      selectedFields:
+        (productFields && productFields.map((f) => (f && f.id ? f.id : f))) ||
+        [],
+      // Convert expiredType to number for proper Select matching (PRODUCT_EXPIRED_TYPE has numeric values)
+      expiredType:
+        typeof product.expiredType !== "undefined" &&
+        product.expiredType !== null
+          ? Number(product.expiredType)
+          : null,
+      loading: false,
+    };
+  }
+
+  async loadDetailData(id) {
+    if (!id) return;
+
+    this.setState({ loading: true });
+    const response = await fetchData.productManagement.getDetail(id);
+    if (response == null) {
+      this.setState({ loading: false });
+      console.error("Lỗi khi tải dữ liệu chi tiết:", response);
+      return;
+    }
+
+    console.log('DEBUG loadDetailData: raw response =', response);
+
+    // Normalize different possible response shapes from API
+    // Possible shapes:
+    // 1) { product: {...}, productsUnits: [...], productFields: [...] }
+    // 2) { data: { product: {...}, productsUnits: [...], productFields: [...] } }
+    // 3) product object directly (has productCode, productName, etc.)
+    let productFromRes = null;
+    let productsUnits = [];
+    let productFields = [];
+
+    if (response.product) {
+      // Shape 1 or 2: wrapper with .product
+      productFromRes = response.product;
+      productsUnits = response.productsUnits || response.data?.productsUnits || [];
+      productFields = response.productFields || response.data?.productFields || [];
+    } else if (response.data?.product) {
+      // Shape 2: nested under .data
+      productFromRes = response.data.product;
+      productsUnits = response.data.productsUnits || [];
+      productFields = response.data.productFields || [];
+    } else if (response.productCode || response.productName) {
+      // Shape 3: response IS the product object directly
+      productFromRes = response;
+      productsUnits = response.productsUnits || [];
+      productFields = response.productFields || [];
+    }
+
+    console.log('DEBUG loadDetailData: productFromRes.avatar =', productFromRes?.avatar, 'productFromRes.productCode =', productFromRes?.productCode);
+
+    const normalizedDetail = {
+      product: productFromRes,
+      productsUnits,
+      productFields,
+    };
+
+    const newState = this.initStateFromProps(normalizedDetail);
+    console.log('DEBUG loadDetailData: newState.avatar after initStateFromProps =', newState.avatar);
+
+    this.setState(newState, () => {
+      console.log('DEBUG setState callback: this.state.avatar =', this.state.avatar);
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue(newState);
+      }
+      // Mirror mobile: when opening detail, load product types filtered by the product's group
+      if (
+        this.props.getListProductTypeAddComboBox &&
+        newState.productGroupsId
+      ) {
+        try {
+          this.props.getListProductTypeAddComboBox(
+            0,
+            true,
+            newState.productGroupsId
+          );
+        } catch (err) {
+          console.error(
+            "Lỗi khi tải loại sản phẩm cho nhóm khi mở chi tiết:",
+            err
+          );
+        }
+      }
+    });
+  }
+
   handleGalleryImagesChange = (imagesList) => {
     this.setState(
       {
-        productGalleryImages: imagesList,
+        images: imagesList,
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -93,7 +314,7 @@ class ShowEditData extends Component {
   handleInspectionInformationChange = (imagesList) => {
     this.setState(
       {
-        inspectionInformationImages: imagesList,
+        accreditation: imagesList,
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -106,7 +327,7 @@ class ShowEditData extends Component {
   handleCertificationInformationChange = (imagesList) => {
     this.setState(
       {
-        certificationInformation: imagesList,
+        certification: imagesList,
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -119,7 +340,7 @@ class ShowEditData extends Component {
   handleEditorChange = (content, editor) => {
     this.setState(
       {
-        introduceVal: content,
+        introduce: content,
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -130,22 +351,92 @@ class ShowEditData extends Component {
   };
 
   handleImageUploadSuccess = (file, previewUrl) => {
-    this.setState(
-      {
-        productImageFile: file,
-        productImageUrlVal: previewUrl,
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
+    // Immediately upload the file and store the returned URL as avatar.
+    // This keeps the create/update payload using a URL (not raw binary) like mobile expects.
+    if (!file) {
+      this.setState({ avatar: previewUrl }, () => {
+        this.props.onHandleChangeValue &&
           this.props.onHandleChangeValue(this.state);
-        }
+      });
+      return;
+    }
+
+    (async () => {
+      try {
+        const form = new FormData();
+        form.append("files", file, file.name);
+
+        // reuse the upload helper used elsewhere (infoCompany.uploadFile)
+        const res = await fetchData.infoCompany.uploadFile(form);
+
+        // Backend returns the full URL directly in res (already unwrapped by fetchData)
+        // E.g: "https://txng-cloud-v1.isopro.vn/upload/company/TGI02.C.d1cca030-dfe0-4fd3-8204-7d6adb00cfdf/imgs/TGI02.2025-12-04-11-24-46-754.jpeg"
+        const uploadedUrl = res || previewUrl;
+
+        console.log(
+          "DEBUG: handleImageUploadSuccess uploadedUrl =",
+          uploadedUrl
+        );
+
+        this.setState({ productImageFile: null, avatar: uploadedUrl }, () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
+        });
+      } catch (err) {
+        // fallback to previewUrl if upload fails
+        console.error("Lỗi upload avatar:", err);
+        this.setState({ productImageFile: file, avatar: previewUrl }, () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
+        });
       }
-    );
+    })();
   };
 
   toggleModal() {
     this.setState((prevState) => ({ isModalOpen: !prevState.isModalOpen }));
   }
+
+  togglePermissionModal = async () => {
+    const willOpen = !this.state.permissionModalOpen;
+    if (
+      willOpen &&
+      (!this.state.permissionGroups || this.state.permissionGroups.length === 0)
+    ) {
+      // load groups lazily
+      try {
+        const groups = await fetchData.material.getGroupList();
+        this.setState({ permissionGroups: groups || [] });
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách nhóm quyền:", err);
+      }
+    }
+
+    this.setState({ permissionModalOpen: willOpen });
+  };
+
+  handlePermissionChange = (value) => {
+    // value may be array of ids for multi select
+    this.setState({ selectedPermissionGroups: value || [] }, () => {
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue({
+          permissionGroups: this.state.selectedPermissionGroups,
+        });
+      }
+    });
+  };
+
+  handleSavePermissionModal = () => {
+    // propagate selected permissions to parent and close
+    if (this.props.onHandleChangeValue) {
+      this.props.onHandleChangeValue({
+        permissionGroups: this.state.selectedPermissionGroups,
+      });
+    }
+    this.setState({ permissionModalOpen: false });
+  };
 
   handleFormChange = (newValues) => {
     this.setState((prevState) => ({
@@ -153,28 +444,6 @@ class ShowEditData extends Component {
       ...newValues,
     }));
   };
-
-  async componentDidMount() {
-    const { onHandleChangeValue } = this.props;
-
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
-    }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
-      }
-    );
-
-    this.focusInput();
-  }
 
   focusInput = () => {
     if (this.refInputName) {
@@ -192,31 +461,46 @@ class ShowEditData extends Component {
         let newState = {
           ...prevState,
           [name]: value,
-          ...(name === "importTypeId"
-            ? {
-                ingredientId: null,
-                jobId: null,
-                warehouseId: null,
-                quantity: 0,
-                vat: 0,
-                price: 0,
-                unit: "",
-                inventory: 0,
-              }
-            : {}),
         };
 
-        if (name === "ingredientId") {
-          const selected = prevState.INGREDIENT_LIST.find((i) => i.id == value);
+        // When product group changes, reset product type/category
+        if (name === "materialGroupId") {
+          newState.productCateId = null;
+          // Also keep mobile-compatible keys: productGroupsId and productGroupsName
+          const groups = this.props.PRODUCT_GROUP_DATA || [];
+          const selectedGroup = groups.find(
+            (g) =>
+              (g && (g.id || g.materialGroupID || g.materialGroupId)) == value
+          );
 
-          if (selected) {
-            newState = {
-              ...newState,
-              quantity: selected.quantity,
-              unit: selected.unit !== null ? selected.unit : "",
-              warehouseId:
-                selected.warehouseId !== null ? selected.warehouseId : null,
-            };
+          newState.productGroupsId = selectedGroup
+            ? selectedGroup.id ||
+              selectedGroup.materialGroupID ||
+              selectedGroup.materialGroupId
+            : value;
+
+          newState.productGroupsName = selectedGroup
+            ? selectedGroup.name ||
+              selectedGroup.materialGroupName ||
+              selectedGroup.title ||
+              ""
+            : "";
+
+          // If the selected group provides a default unit, set unitID/unitName too (mobile does this)
+          const units = this.props.UNITS_DATA || [];
+          const groupUnitId =
+            selectedGroup &&
+            (selectedGroup.unitID ||
+              selectedGroup.unitId ||
+              selectedGroup.defaultUnitID);
+          if (groupUnitId) {
+            const unit = units.find(
+              (u) => (u && (u.id || u.unitID)) == groupUnitId
+            );
+            if (unit) {
+              newState.unitID = unit.id || unit.unitID || unit.unitId;
+              newState.unitName = unit.unitName || unit.name || "";
+            }
           }
         }
 
@@ -225,6 +509,16 @@ class ShowEditData extends Component {
       () => {
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
+        }
+
+        // After updating selected group, ask parent to reload product types filtered by that group (mobile logic)
+        if (
+          name === "materialGroupId" &&
+          this.props.getListProductTypeAddComboBox
+        ) {
+          const groupId =
+            this.state.materialGroupId || value;
+          this.props.getListProductTypeAddComboBox(0, true, groupId);
         }
       }
     );
@@ -296,44 +590,86 @@ class ShowEditData extends Component {
     this.setState({ filter });
   };
 
+  onConversionChange = (newUnits) => {
+    this.setState({ productConversionUnits: newUnits }, () => {
+      this.props.onHandleChangeValue &&
+        this.props.onHandleChangeValue(this.state);
+    });
+  };
+
+  handleSelectedFieldsChange = (value) => {
+    // Select component multi-select returns comma-separated string like "1,2,3"
+    // Convert to array of IDs for proper handling
+    let fieldsArray = [];
+    if (value) {
+      if (typeof value === "string") {
+        fieldsArray = value.split(",").filter((v) => v.trim());
+      } else if (Array.isArray(value)) {
+        fieldsArray = value;
+      }
+    }
+
+    this.setState({ selectedFields: fieldsArray }, () => {
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue(this.state);
+      }
+    });
+  };
+
   render() {
     const {
       errMessage,
       popupMessage,
       collapseBaseInfo,
       productCodeVal,
-      barcodeVal,
-      productNameVal,
+      barcode,
+      productName,
       usageTimeVal,
-      qualityNumberVal,
-      introduceVal,
-      productImageUrlVal,
+      qualityNum,
+      introduce,
+      avatar,
       expandedInformation,
-      productionProcessVal,
-      ingredientVal,
-      storageInstructionsVal,
-      instructionsForUseVal,
+      ingredient,
+      unitVal,
+      unitID,
+      unitName,
+      storage,
+      usage,
       usageWarningVal,
-      packingSpecificationVal,
+      packing,
       tabImage,
-      productGalleryImages,
-      inspectionInformationImages,
-      certificationInformation,
+      images,
+      accreditation,
+      certification,
       productConversionUnits,
+      expiredNum,
+      expiredUnit,
+      productionProcess,
+      selectedFields,
+      manufactID,
+      expiredType,
+      origin,
+      materialGroupId,
+      productCateId,
     } = this.state;
     const {
       errors,
       UNITS_DATA,
-      JOB_DATA,
       PRODUCT_GROUP_DATA,
-      PRODUCT_CATE_DATA,
-      MANUFACTURER_DATA,
-      ORIGIN_DATA,
-      UNIT_DATA,
-      DATE_DATA,
-      USAGE_TIME_TYPE_DATA,
+      PRODUCT_TYPE_DATA,
       isShowForDetail,
+      islocked,
+      FIELD_DATA,
+      PRODUCT_PARTNER_DATA,
+      NATION_DATA,
     } = this.props;
+
+
+    const filteredProductTypes = materialGroupId
+      ? (PRODUCT_TYPE_DATA || []).filter(
+          (ptype) => ptype.materialGroupID === materialGroupId
+        )
+      : PRODUCT_TYPE_DATA || [];
 
     return (
       <div id="detailLoggingAccordion">
@@ -378,8 +714,9 @@ class ShowEditData extends Component {
                 <Col md="12">
                   <div className={`${classes.rowItem} mr-b-0 `}>
                     <label className="form-control-label">Hình đại diện</label>
+                    {console.log('DEBUG render: avatar =', avatar, 'Noimg =', Noimg)}
                     <ImageUploader
-                      initialImageUrl={productImageUrlVal || Noimg}
+                      initialImageUrl={avatar || Noimg}
                       onFileSelected={this.handleImageUploadSuccess}
                     />
                   </div>
@@ -423,14 +760,14 @@ class ShowEditData extends Component {
                       >
                         <Input
                           type="text"
-                          name="barcodeVal"
+                          name="barcode"
                           placeholder="Mã vạch"
-                          value={barcodeVal}
-                          onChange={this.onChangeValue("barcodeVal")}
+                          value={barcode}
+                          onChange={this.onChangeValue("barcode")}
                         />
                       </InputGroup>
                       <p className="form-error-message margin-bottom-0">
-                        {errors.barcodeVal || ""}
+                        {errors.barcode || ""}
                       </p>
                     </div>
                   </div>
@@ -451,15 +788,16 @@ class ShowEditData extends Component {
                         <Input
                           type="text"
                           readOnly={isShowForDetail}
-                          name="productNameVal"
+                          name="productName"
                           placeholder="Tên sản phẩm"
-                          value={productNameVal}
+                          value={productName}
                           required
-                          onChange={this.onChangeValue("productNameVal")}
+                          onChange={this.onChangeValue("productName")}
                         />
+                        {console.log(this.state.productName)}
                       </InputGroup>
                       <p className="form-error-message margin-bottom-0">
-                        {errors.productNameVal || ""}
+                        {errors.productName || ""}
                       </p>
                     </div>
                   </div>
@@ -473,17 +811,19 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="professionId"
+                      isMulti
+                      name="selectedFields"
                       isDisable={isShowForDetail}
                       title="Chọn ngành nghề"
-                      data={JOB_DATA}
-                      labelName="title"
+                      data={FIELD_DATA}
+                      labelName="fieldName"
                       val="id"
-                      handleChange={this.onChangeValue("professionId")}
+                      defaultValue={selectedFields}
+                      handleChange={this.handleSelectedFieldsChange}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.professionId}
+                    {errors.selectedFields}
                   </p>
                 </Col>
               </Row>
@@ -496,16 +836,17 @@ class ShowEditData extends Component {
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
                       isDisable={isShowForDetail}
-                      name="productGroupId"
+                      name="materialGroupId"
                       title="Chọn nhóm sản phẩm"
                       data={PRODUCT_GROUP_DATA}
-                      labelName="title"
+                      labelName="name"
                       val="id"
-                      handleChange={this.onChangeSelect("productGroupId")}
+                      defaultValue={materialGroupId}
+                      handleChange={this.onChangeSelect("materialGroupId")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.productGroupId}
+                    {errors.materialGroupId}
                   </p>
                 </Col>
 
@@ -517,11 +858,12 @@ class ShowEditData extends Component {
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
                       name="productCateId"
-                      isDisable={isShowForDetail}
+                      isDisable={isShowForDetail || !materialGroupId}
                       title="Chọn loại sản phẩm"
-                      data={PRODUCT_CATE_DATA}
-                      labelName="title"
+                      data={filteredProductTypes}
+                      labelName="name"
                       val="id"
+                      defaultValue={productCateId}
                       handleChange={this.onChangeSelect("productCateId")}
                     />
                   </div>
@@ -538,16 +880,17 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="manufacturerId"
+                      name="manufactID"
                       title="Chọn nhà sản xuất"
-                      data={MANUFACTURER_DATA}
-                      labelName="title"
+                      data={PRODUCT_PARTNER_DATA}
+                      labelName="partnerName"
                       val="id"
-                      handleChange={this.onChangeSelect("manufacturerId")}
+                      defaultValue={manufactID}
+                      handleChange={this.onChangeSelect("manufactID")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.manufacturerId}
+                    {errors.manufactID}
                   </p>
                 </Col>
               </Row>
@@ -559,16 +902,17 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="originId"
+                      name="origin"
                       title="Chọn nơi xuất xứ"
-                      data={ORIGIN_DATA}
-                      labelName="title"
+                      data={NATION_DATA}
+                      labelName="nationName"
                       val="id"
-                      handleChange={this.onChangeSelect("originId")}
+                      defaultValue={origin}
+                      handleChange={this.onChangeSelect("origin")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.originId}
+                    {errors.origin}
                   </p>
                 </Col>
                 <Col md="6">
@@ -578,17 +922,18 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="unitId"
+                      name="unitID"
                       title="Chọn đơn vị"
                       isDisable={isShowForDetail}
-                      data={UNIT_DATA}
-                      labelName="title"
+                      data={UNITS_DATA}
+                      labelName="unitName"
                       val="id"
-                      handleChange={this.onChangeSelect("unitId")}
+                      defaultValue={unitID}
+                      handleChange={this.onChangeSelect("unitID")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.unitId}
+                    {errors.unitID}
                   </p>
                 </Col>
               </Row>
@@ -605,19 +950,19 @@ class ShowEditData extends Component {
                         readOnly
                       >
                         <Input
-                          type="text"
-                          name="usageTimeVal"
+                          type="number"
+                          name="expiredNum"
                           placeholder="Thời hạn sử dụng"
                           readOnly={isShowForDetail}
-                          value={usageTimeVal}
+                          value={expiredNum}
                           required
-                          onChange={this.onChangeValue("usageTimeVal")}
+                          onChange={this.onChangeValue("expiredNum")}
                         />
                       </InputGroup>
                     </div>
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.usageTimeVal}
+                    {errors.expiredNum}
                   </p>
                 </Col>
                 <Col md="6">
@@ -627,17 +972,18 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="accordId"
+                      name="expiredUnit"
                       title="Chọn loại thời hạn"
-                      data={DATE_DATA}
+                      data={PRODUCT_TYPE_DATES}
                       isDisable={isShowForDetail}
-                      labelName="title"
-                      val="id"
-                      handleChange={this.onChangeSelect("accordId")}
+                      labelName="label"
+                      val="value"
+                      defaultValue={expiredUnit}
+                      handleChange={this.onChangeSelect("expiredUnit")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.accordId}
+                    {errors.expiredUnit}
                   </p>
                 </Col>
               </Row>
@@ -649,17 +995,18 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      name="typeUsageTimeId"
+                      name="expiredType"
                       title="Chọn loại thời hạn sử dụng"
-                      data={USAGE_TIME_TYPE_DATA}
+                      data={PRODUCT_EXPIRED_TYPE}
                       isDisable={isShowForDetail}
-                      labelName="title"
-                      val="id"
-                      handleChange={this.onChangeSelect("typeUsageTimeId")}
+                      labelName="label"
+                      defaultValue={expiredType}
+                      val="value"
+                      handleChange={this.onChangeSelect("expiredType")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.typeUsageTimeId}
+                    {errors.expiredType}
                   </p>
                 </Col>
                 <Col md="6">
@@ -675,15 +1022,15 @@ class ShowEditData extends Component {
                       >
                         <Input
                           type="text"
-                          name="qualityNumberVal"
+                          name="qualityNum"
                           placeholder="Số công bố chất lượng"
-                          value={qualityNumberVal}
+                          value={qualityNum}
                           required
-                          onChange={this.onChangeValue("qualityNumberVal")}
+                          onChange={this.onChangeValue("qualityNum")}
                         />
                       </InputGroup>
                       <p className="form-error-message margin-bottom-0">
-                        {errors.qualityNumberVal || ""}
+                        {errors.qualityNum || ""}
                       </p>
                     </div>
                   </div>
@@ -691,9 +1038,11 @@ class ShowEditData extends Component {
               </Row>
               <hr className="css-hr" />
               <ConversionManagerTable
-                isDisable={isShowForDetail}
-                allAvailableUnits={UNITS_DATA}
+                isDisable={islocked}
+                allAvailableUnits={UNITS_DATA || []}
                 initialSelectedUnits={productConversionUnits}
+                onChange={this.onConversionChange}
+                defaultUnitId={unitID}
               />
             </CardBody>
           </Collapse>
@@ -730,8 +1079,8 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue("introduceVal")}
-                          initialValue={introduceVal}
+                          onEditorChange={this.onChangeValue("introduce")}
+                          initialValue={introduce}
                           init={{
                             width: "100%",
                             height: 300,
@@ -832,9 +1181,9 @@ class ShowEditData extends Component {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
                           onEditorChange={this.onChangeValue(
-                            "productionProcessVal"
+                            "productionProcess"
                           )}
-                          initialValue={productionProcessVal}
+                          initialValue={productionProcess}
                           init={{
                             width: "100%",
                             height: 300,
@@ -932,8 +1281,8 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue("ingredientVal")}
-                          initialValue={ingredientVal}
+                          onEditorChange={this.onChangeValue("ingredient")}
+                          initialValue={ingredient}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1033,10 +1382,8 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue(
-                            "storageInstructionsVal"
-                          )}
-                          initialValue={storageInstructionsVal}
+                          onEditorChange={this.onChangeValue("storage")}
+                          initialValue={storage}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1136,10 +1483,8 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue(
-                            "instructionsForUseVal"
-                          )}
-                          initialValue={instructionsForUseVal}
+                          onEditorChange={this.onChangeValue("usage")}
+                          initialValue={usage}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1340,10 +1685,8 @@ class ShowEditData extends Component {
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
-                          onEditorChange={this.onChangeValue(
-                            "packingSpecificationVal"
-                          )}
-                          initialValue={packingSpecificationVal}
+                          onEditorChange={this.onChangeValue("packing")}
+                          initialValue={packing}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1455,20 +1798,26 @@ class ShowEditData extends Component {
           <Collapse isOpen={tabImage}>
             <CardBody className="p-3">
               <ImageGalleryUploader
+                key={`gallery-${images.length}-${this.state.id}`}
                 title="Hình ảnh sản phẩm"
-                initialImages={productGalleryImages}
+                initialImages={images}
+                noMutil={true}
                 onImagesChange={this.handleGalleryImagesChange}
               />
 
               <ImageGalleryUploader
+                key={`accreditation-${accreditation.length}-${this.state.id}`}
                 title="Thông tin kiểm định"
-                initialImages={inspectionInformationImages}
+                initialImages={accreditation}
+                noMutil={true}
                 onImagesChange={this.handleInspectionInformationChange}
               />
 
               <ImageGalleryUploader
-                title="Thông tin kiểm định"
-                initialImages={certificationInformation}
+                key={`certification-${certification.length}-${this.state.id}`}
+                title="Thông tin chứng nhận"
+                noMutil={true}
+                initialImages={certification}
                 onImagesChange={this.handleCertificationInformationChange}
               />
             </CardBody>

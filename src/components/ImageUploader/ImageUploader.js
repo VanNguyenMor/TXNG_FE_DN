@@ -71,6 +71,24 @@ class ImageUploader extends Component {
     event.target.value = null;
   };
 
+  componentDidUpdate(prevProps) {
+    // If initialImageUrl prop changes, update state to display new image
+    if (prevProps.initialImageUrl !== this.props.initialImageUrl && this.props.initialImageUrl) {
+      const isInitialOrNoImg =
+        this.state.previewImageUrl === prevProps.initialImageUrl ||
+        this.state.previewImageUrl === "URL_TO_DEFAULT_NOIMG_IMAGE";
+
+      if (this.state.previewImageUrl && !isInitialOrNoImg) {
+        window.URL.revokeObjectURL(this.state.previewImageUrl);
+      }
+
+      this.setState({
+        previewImageUrl: this.props.initialImageUrl,
+        fileToUpload: null,
+      });
+    }
+  }
+
   componentWillUnmount() {
     const isInitialOrNoImg =
       this.state.previewImageUrl === this.props.initialImageUrl ||

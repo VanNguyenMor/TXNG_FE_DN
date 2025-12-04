@@ -2,6 +2,9 @@ import React, { Component } from "react";
 import PopupMessage from "../../../components/PopupMessage";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import HistoryListTable from "components/HistoryListTable/HistoryListTable";
+import { fetchData } from "helpers/fetchData";
+import { toast } from "react-toastify";
+import { getErrorMessageServer } from "utils/errorMessageServer";
 
 class ShowHistoryData extends Component {
   constructor(props) {
@@ -12,27 +15,23 @@ class ShowHistoryData extends Component {
       jobId: null,
       productId: null,
       zoneId: null,
+      historyData: [],
+      isLoading: false,
+      popupMessage: "",
+      errMessage: "",
     };
   }
 
   async componentDidMount() {
-    const { onHandleChangeValue } = this.props;
+    const { onHandleChangeValue, id } = this.props;
 
     if (onHandleChangeValue) {
       onHandleChangeValue(this.state);
     }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
-      }
-    );
+
+    if (id) {
+      this.setState({ id }, () => this.getHistoryData());
+    }
 
     this.focusInput();
   }
@@ -41,9 +40,43 @@ class ShowHistoryData extends Component {
     if (this.refInputName) {
       const timeOut = setTimeout(() => {
         this.refInputName.focus();
-
         clearTimeout(timeOut);
       }, 100);
+    }
+  };
+
+  getHistoryData = async (page = 0, limit = 100) => {
+    const { id } = this.state;
+    if (!id) return;
+
+    this.setState({ isLoading: true });
+    console.log("productId đang gửi:", id);
+
+    try {
+      const res = await fetchData.productHistories.getListProductHistory(
+        id,
+        page,
+        limit
+      );
+      console.log("API response:", res);
+
+      // Support multiple possible response shapes. Prefer productHistories.
+      const histories =
+        (res && (res.productHistories || res.productHistory || res.histories)) ||
+        res?.data ||
+        [];
+
+      if (histories && histories.length >= 0) {
+        this.setState({ historyData: histories });
+      } else {
+        const message = getErrorMessageServer(res);
+        toast.error(message || "Lấy lịch sử thất bại");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi khi lấy lịch sử sản phẩm");
+    } finally {
+      this.setState({ isLoading: false });
     }
   };
 
@@ -145,12 +178,20 @@ class ShowHistoryData extends Component {
   };
 
   render() {
-    const { errMessage, popupMessage, jobId, productId } = this.state;
-    const { errors, historyData, productName } = this.props;
+    const { errMessage, popupMessage, isLoading, historyData: stateHistory } = this.state;
+    const { errors, historyData: propHistoryData, productName } = this.props;
+
+    const finalHistory = Array.isArray(propHistoryData) && propHistoryData.length > 0
+      ? propHistoryData
+      : stateHistory || [];
 
     return (
       <div className="wrap-insert-or-update-zone">
-        <HistoryListTable historyData={historyData} productName={productName} />
+        {isLoading ? (
+          <div>Đang tải dữ liệu...</div>
+        ) : (
+          <HistoryListTable historyData={finalHistory} productName={productName} />
+        )}
 
         <PopupMessage
           popupMessage={popupMessage}
