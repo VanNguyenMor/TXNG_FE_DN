@@ -46,7 +46,6 @@ class ShowHistoryData extends Component {
     }
   };
 
-  // ----------------- Fetch data -----------------
   getHistoryData = async (page = 0, limit = 100) => {
     const { id } = this.state;
     if (!id) return;
@@ -77,7 +76,6 @@ class ShowHistoryData extends Component {
     }
   };
 
-  // ----------------- Handle input changes -----------------
   onChangeSelect = (name) => (value) => {
     this.setState(
       (prevState) => ({
@@ -127,7 +125,6 @@ class ShowHistoryData extends Component {
     this.setState({ [state]: !this.state[state] });
   };
 
-  // ----------------- Render -----------------
   render() {
     const { errMessage, popupMessage, historyData, isLoading } = this.state;
     const { tableTitle } = this.props;

@@ -43,11 +43,13 @@ class ShowEditData extends Component {
       barcode: "",
       productName: "",
       selectedFields: [],
-      productGroupId: null,
+      materialGroupId: null,
       productCateId: null,
       manufactID: null,
       origin: null,
       unitID: null,
+      unitVal: "",
+      unitName: "",
       usageTimeVal: "",
       accordId: null,
       expiredType: null,
@@ -112,12 +114,26 @@ class ShowEditData extends Component {
       ? productsUnits.filter((unit) => unit.isMain === false)
       : [];
 
-    const conversionUnits = filteredUnits
-      ? filteredUnits.map((unit) => ({
-          ...unit,
-          value: unit.value ? parseFloat(unit.value) : 0,
-        }))
-      : [];
+    // Normalize conversion units to the shape used by ConversionManagerTable
+    // and expected by the backend when updating/creating products.
+    // Use keys: { id, unitName, conversionRate, isReport }
+    const conversionUnits = (filteredUnits || []).map((unit) => {
+      const id = unit.unitID || unit.id || unit.unitId || null;
+      const unitName = unit.unitName || unit.title || unit.name || "";
+      const conversionRate = unit.conversionRate
+        ? parseFloat(unit.conversionRate)
+        : unit.value
+        ? parseFloat(unit.value)
+        : 1;
+      const isReport = !!(unit.isReport || unit.isreport || false);
+
+      return {
+        id,
+        unitName,
+        conversionRate,
+        isReport,
+      };
+    });
 
     const parseImages = (imgData) => {
       if (!imgData) return [];
@@ -128,14 +144,37 @@ class ShowEditData extends Component {
       return [];
     };
 
+    const normalizeAvatar = (avatarData) => {
+      if (!avatarData) return Noimg;
+      if (typeof avatarData === "string") {
+        const s = avatarData.trim();
+        if (s === "" ) return Noimg;
+        // If semicolon-separated, take first
+        if (s.indexOf(";") >= 0) return s.split(";")[0];
+        return s;
+      }
+      // avatar could be an object with common keys
+      if (typeof avatarData === "object") {
+        return (
+          avatarData.url || avatarData.data || avatarData.uploadKey || avatarData.path || Noimg
+        );
+      }
+      return Noimg;
+    };
+
+    const finalAvatar = normalizeAvatar(product.avatar) || Noimg;
+    console.log('DEBUG initStateFromProps: product.avatar =', product.avatar, 'type =', typeof product.avatar, 'finalAvatar =', finalAvatar);
+
     return {
       id: product.id,
       productCodeVal: product.productCode || "",
       barcode: product.barcode || "",
       productName: product.productName || "",
 
-      productGroupId: product.productGroupID || null,
-      materialGroupFromApi: product.materialGroupID || null,
+      // materialGroupId (state field for "Nhóm sản phẩm") should be initialized from API's materialGroupID
+      materialGroupId: product.materialGroupID || null,
+      // productCateId (state field for "Loại sản phẩm") should be initialized from API's productGroupID
+      productCateId: product.productGroupID || null,
       productGroupsId: product.materialGroupID || null,
       productGroupsName:
         product.materialGroupName || product.materialGroup?.name || "",
@@ -157,7 +196,7 @@ class ShowEditData extends Component {
       ingredient: product.ingredient || "",
       storage: product.storage || "",
       usage: product.usage || "",
-      avatar: product.avatar || Noimg,
+      avatar: finalAvatar,
       productImageFile: null,
       images: parseImages(product.images),
       accreditation: parseImages(product.accreditation),
@@ -194,20 +233,35 @@ class ShowEditData extends Component {
       return;
     }
 
+    console.log('DEBUG loadDetailData: raw response =', response);
+
     // Normalize different possible response shapes from API
     // Possible shapes:
     // 1) { product: {...}, productsUnits: [...], productFields: [...] }
     // 2) { data: { product: {...}, productsUnits: [...], productFields: [...] } }
-    // 3) product object directly
-    const productFromRes =
-      response.product || response.data?.product || response;
-    const productsUnits =
-      response.productsUnits ||
-      response.data?.productsUnits ||
-      response.productsUnits ||
-      [];
-    const productFields =
-      response.productFields || response.data?.productFields || [];
+    // 3) product object directly (has productCode, productName, etc.)
+    let productFromRes = null;
+    let productsUnits = [];
+    let productFields = [];
+
+    if (response.product) {
+      // Shape 1 or 2: wrapper with .product
+      productFromRes = response.product;
+      productsUnits = response.productsUnits || response.data?.productsUnits || [];
+      productFields = response.productFields || response.data?.productFields || [];
+    } else if (response.data?.product) {
+      // Shape 2: nested under .data
+      productFromRes = response.data.product;
+      productsUnits = response.data.productsUnits || [];
+      productFields = response.data.productFields || [];
+    } else if (response.productCode || response.productName) {
+      // Shape 3: response IS the product object directly
+      productFromRes = response;
+      productsUnits = response.productsUnits || [];
+      productFields = response.productFields || [];
+    }
+
+    console.log('DEBUG loadDetailData: productFromRes.avatar =', productFromRes?.avatar, 'productFromRes.productCode =', productFromRes?.productCode);
 
     const normalizedDetail = {
       product: productFromRes,
@@ -216,8 +270,10 @@ class ShowEditData extends Component {
     };
 
     const newState = this.initStateFromProps(normalizedDetail);
+    console.log('DEBUG loadDetailData: newState.avatar after initStateFromProps =', newState.avatar);
 
     this.setState(newState, () => {
+      console.log('DEBUG setState callback: this.state.avatar =', this.state.avatar);
       if (this.props.onHandleChangeValue) {
         this.props.onHandleChangeValue(newState);
       }
@@ -408,7 +464,7 @@ class ShowEditData extends Component {
         };
 
         // When product group changes, reset product type/category
-        if (name === "productGroupId") {
+        if (name === "materialGroupId") {
           newState.productCateId = null;
           // Also keep mobile-compatible keys: productGroupsId and productGroupsName
           const groups = this.props.PRODUCT_GROUP_DATA || [];
@@ -457,11 +513,11 @@ class ShowEditData extends Component {
 
         // After updating selected group, ask parent to reload product types filtered by that group (mobile logic)
         if (
-          name === "productGroupId" &&
+          name === "materialGroupId" &&
           this.props.getListProductTypeAddComboBox
         ) {
           const groupId =
-            this.state.productGroupsId || this.state.productGroupId || value;
+            this.state.materialGroupId || value;
           this.props.getListProductTypeAddComboBox(0, true, groupId);
         }
       }
@@ -593,7 +649,7 @@ class ShowEditData extends Component {
       manufactID,
       expiredType,
       origin,
-      productGroupId,
+      materialGroupId,
       productCateId,
     } = this.state;
     const {
@@ -608,12 +664,10 @@ class ShowEditData extends Component {
       NATION_DATA,
     } = this.props;
 
-    // Filter product types/categories based on selected group
-    // API returns productTypes with materialGroupID that should match productGroupId
-    // Prefer the types set by parent via getListProductTypeAddComboBox
-    const filteredProductTypes = productGroupId
+
+    const filteredProductTypes = materialGroupId
       ? (PRODUCT_TYPE_DATA || []).filter(
-          (ptype) => ptype.materialGroupID === productGroupId
+          (ptype) => ptype.materialGroupID === materialGroupId
         )
       : PRODUCT_TYPE_DATA || [];
 
@@ -660,6 +714,7 @@ class ShowEditData extends Component {
                 <Col md="12">
                   <div className={`${classes.rowItem} mr-b-0 `}>
                     <label className="form-control-label">Hình đại diện</label>
+                    {console.log('DEBUG render: avatar =', avatar, 'Noimg =', Noimg)}
                     <ImageUploader
                       initialImageUrl={avatar || Noimg}
                       onFileSelected={this.handleImageUploadSuccess}
@@ -781,16 +836,17 @@ class ShowEditData extends Component {
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
                       isDisable={isShowForDetail}
-                      name="productGroupId"
+                      name="materialGroupId"
                       title="Chọn nhóm sản phẩm"
                       data={PRODUCT_GROUP_DATA}
                       labelName="name"
                       val="id"
-                      handleChange={this.onChangeSelect("productGroupId")}
+                      defaultValue={materialGroupId}
+                      handleChange={this.onChangeSelect("materialGroupId")}
                     />
                   </div>
                   <p className="form-error-message margin-bottom-0">
-                    {errors.productGroupId}
+                    {errors.materialGroupId}
                   </p>
                 </Col>
 
@@ -802,7 +858,7 @@ class ShowEditData extends Component {
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
                       name="productCateId"
-                      isDisable={isShowForDetail || !productGroupId}
+                      isDisable={isShowForDetail || !materialGroupId}
                       title="Chọn loại sản phẩm"
                       data={filteredProductTypes}
                       labelName="name"

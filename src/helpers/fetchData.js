@@ -12,6 +12,7 @@ import {
   PRODUCT_MANAGEMENT,
   QR_MANAGEMENT,
   MATERIAL_HISTORIES,
+  PRODUCT_HISTORIES,
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -244,6 +245,19 @@ export const fetchData = {
     },
   },
 
+  productHistories: {
+    getListProductHistory: async (id, page, limit) => {
+      const result = await callApi(
+        "get",
+        `${PRODUCT_HISTORIES.getListProductHistory
+          .replace("{0}", id)
+          .replace("{1}", page)
+          .replace("{2}", limit)}`
+      );
+      return result?.data || [];
+    },
+  },
+
   productManagement: {
     create: async (payload) => {
       try {
@@ -271,6 +285,18 @@ export const fetchData = {
         return null;
       }
     },
+    delete: async (id) => {
+      try {
+        const result = await callApi(
+          "delete",
+          `${PRODUCT_MANAGEMENT.deleteProduct.replace("{id}", id)}`
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi xóa sản phẩm:", error);
+        return null;
+      }
+    },
     getAll: async () => {
       const result = await callApi(
         "post",
@@ -279,28 +305,21 @@ export const fetchData = {
       );
       return result?.data || [];
     },
-    // Accept an optional payload so callers can pass filters (eg. filter by productGroupId)
-    // Returns the groups/types array directly (already unwrapped from nested data structure)
     getListProductType: async (payload = PAYLOAD.defaultPayLoad) => {
       const result = await callApi(
         "post",
         PRODUCT_MANAGEMENT.getListProductType,
         payload
       );
-      // Response structure: { data: { data: { productGroups: [...] } } } or similar
-      // callApi unwraps first .data, so we get { data: { productGroups: [...] } }
-      // Extract the groups array from the potentially nested response
       const groupsData = result?.data || result;
       return extractGroupsData(groupsData);
     },
-    // Get material groups (same as product groups but from materialgroup endpoint)
     getListMaterialGroup: async () => {
       const result = await callApi(
         "post",
         PRODUCT_MANAGEMENT.getListMaterialGroup,
         PAYLOAD.defaultPayLoad
       );
-      // Same nested structure as getListProductType
       const groupsData = result?.data || result;
       return extractGroupsData(groupsData);
     },
@@ -343,6 +362,26 @@ export const fetchData = {
       );
       return result?.data || [];
     },
+    updateLock: async (id) => {
+      const result = await callApi(
+        "get",
+        `${PRODUCT_MANAGEMENT.updateLock.replace("{id}", id)}`
+      );
+      return result?.data || [];
+    },
+  },
+
+  materialHistories: {
+    getListMaterialHistory: async (id, page, limit) => {
+      const result = await callApi(
+        "get",
+        `${MATERIAL_HISTORIES.getListMaterialHistory
+          .replace("{0}", id)
+          .replace("{1}", page)
+          .replace("{2}", limit)}`
+      );
+      return result?.data || [];
+    },
   },
 
   materialManagement: {
@@ -378,12 +417,25 @@ export const fetchData = {
       try {
         const result = await callApi(
           "post",
-          MATERIAL_MANAGEMENT.editMaterial, // Dùng endpoint của MATERIAL_MANAGEMENT
+          MATERIAL_MANAGEMENT.editMaterial,
           payload
         );
         return result?.data || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật nguyên vật liệu:", error);
+        return null;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const result = await callApi(
+          "delete",
+          `${MATERIAL_MANAGEMENT.deleteMaterial.replace("{id}", id)}`
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi xóa nguyên vật liệu:", error);
         return null;
       }
     },
