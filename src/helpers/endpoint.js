@@ -72,16 +72,17 @@ export const PRODUCT_MANAGEMENT = {
 
 export const PRODUCT_HISTORIES = {
   getListProductHistory:
-    'producthistory/getlisthistory?productid={0}&page={1}&limit={2}',
+    "producthistory/getlisthistory?productid={0}&page={1}&limit={2}",
 };
 
 export const QR_MANAGEMENT = {
-  getListManageQRStamp:
-    "requestprovidestamp/qrcodestampunused?page={0}&limit={1}&productID={2}",
   getListManageQRSystem: "qrmanager/getallqrcodessystem",
-  getListManageQRUsed:
-    "requestprovidestamp/getstampused?page={0}&limit={1}&productId={2}",
+  getListManageQRRequest: "manageqr/getlist?page={0}&limit={1}",
   getListManageQRIncurred: "qrmanager/getallqrcodesincurred",
+};
+
+export const SCANS = {
+  scanQRCodePrivate: 'qrcode/privatescanqr?qrCode={0}',
 };
 
 export const PAYLOAD = {

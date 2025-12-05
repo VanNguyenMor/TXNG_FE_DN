@@ -13,6 +13,7 @@ import {
   QR_MANAGEMENT,
   MATERIAL_HISTORIES,
   PRODUCT_HISTORIES,
+  SCANS,
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -469,5 +470,70 @@ export const fetchData = {
       );
       return result?.data || [];
     },
+  },
+
+  qrCodeManagement: {
+    getListManageQRSystem: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          QR_MANAGEMENT.getListManageQRSystem,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách quản lý QR System:", error);
+        return null;
+      }
+    },
+    getListManageQRUsed: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          QR_MANAGEMENT.getListManageQRUsed,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách quản lý QR Used:", error);
+        return null;
+      }
+    },
+    getListManageQRIncurred: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          QR_MANAGEMENT.getListManageQRIncurred,
+          payload
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách quản lý QR Incurred:", error);
+        return null;
+      }
+    },
+    getListManageQRRequest: async (page = 0, limit = 10) => {
+      try {
+        const url = QR_MANAGEMENT.getListManageQRRequest
+          .replace("{0}", page)
+          .replace("{1}", limit);
+        const result = await callApi("get", url);
+        return result?.data || result || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách quản lý QR Request:", error);
+        return null;
+      }
+    },
+  },
+
+  scanQR: {
+    scanQRCodePrivate: async (qrCode) => {
+      const result = await callApi(
+        "get",
+        `${SCANS.scanQRCodePrivate.replace("{0}", qrCode)}`
+      );
+      return result?.data || [];
+    },
+
   },
 };

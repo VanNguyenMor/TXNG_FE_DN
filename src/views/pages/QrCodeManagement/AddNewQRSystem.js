@@ -1,16 +1,10 @@
 import React, { Component } from "react";
 import classes from "./index.module.css";
-import { Guid } from "guid-typescript";
-import { bindActionCreators } from "redux";
-import compose from "recompose/compose";
-import { actionStampPlate } from "../../../actions/StampTemplateActions";
-import { configSystemAction } from "../../../actions/ConfigSystemAction";
-import { connect } from "react-redux";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 
 // reactstrap components
 import { Input, InputGroup } from "reactstrap";
-import moment from "moment";
+import { fetchData } from "helpers/fetchData";
 
 class AddNewQRSystem extends Component {
   constructor(props) {
@@ -22,6 +16,9 @@ class AddNewQRSystem extends Component {
       file: null,
       id: null,
       name: "",
+      productName: "",
+      plantingZoneName: "",
+      qrCodeValue: "",
       executedDate: null,
       stampPriceDetail: [],
     };
@@ -39,184 +36,29 @@ class AddNewQRSystem extends Component {
       };
     });
   }
-  async componentDidMount() {
-    const { id, onHandleChangeValue, getAllStampPrice, getDetailStampPrice } =
-      this.props;
-
-    getAllStampPrice(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
-
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
-    }
-
-    // if (id) {
-    //   const result = await getDetailStampPrice(id)
-
-    //   const data = ((result || {}).data || {}).data || null;
-
-    //   if (!data) {
-    //     alert('Không tìm thấy bảng giá tem này');
-    //   }
-    //   const stampPrice = data.stampPriceDetail || '[]'
-
-    //   const stampPriceDetail = (stampPrice || [])
-    //     .map(item => {
-    //       return {
-    //         id: Guid.create().toString(),
-    //         quantityFrom: item.quantityFrom,
-    //         stampPriceID: '',
-    //         quantityTo: item.quantityTo,
-    //         amount: item.amount
-    //       }
-    //     })
-
-    //   this.setState(previousState => {
-    //     return {
-    //       ...previousState,
-    //       id: data.id,
-    //       name: data.name,
-    //       executedDate: data.executedDate,
-    //       stampPriceDetail
-    //     }
-    //   }, () => {
-    //     if (this.props.onHandleChangeValue) {
-    //       this.props.onHandleChangeValue(this.state);
-    //     }
-    //   })
-    // }
+  componentDidMount() {
+    this.initializeFromProp();
   }
 
-  onAddArea = () => {
-    const stampPriceDetail = [...this.state.stampPriceDetail];
-    let { error } = this.state;
-    let n = stampPriceDetail.length;
-    let quantityFrom;
+  initializeFromProp = () => {
+    const { data } = this.props;
+    const res = fetchData.scanQR.scanQRCodePrivate(data.qrCode);
 
-    if (stampPriceDetail.length >= 1) {
-      for (let i = 0; i < n; i++) {
-        quantityFrom = Number(stampPriceDetail[i].quantityTo) + 1;
-      }
-    }
-    stampPriceDetail.push({
-      id: Guid.create().toString(),
-      quantityFrom: quantityFrom || 0,
-      stampPriceID: "",
-      quantityTo: 0,
-      amount: 0,
-    });
+    let productName = data.productName || "";
+    let plantingZoneName = data.plantingZoneName || "";
+    let qrCodeValue = data.qrCode || "";
 
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          stampPriceDetail,
-        };
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
-  };
-
-  onDeleteArea = (id) => () => {
-    const stampPriceDetail = [...this.state.stampPriceDetail];
-    const priceStamps = stampPriceDetail.find((p) => p.id == id);
-
-    if (priceStamps) {
-      const priceNew = stampPriceDetail.filter((p) => p.id !== id);
-      this.setState(
-        (previousState) => {
-          return {
-            ...previousState,
-            stampPriceDetail: priceNew,
-          };
-        },
-        () => {
-          if (this.props.onHandleChangeValue) {
-            this.props.onHandleChangeValue(this.state);
-          }
-        }
-      );
-    } else {
-      alert("Không tìm thấy dữ liệu này");
-    }
-  };
-
-  onChangeQuantityFrom = (id) => (e) => {
-    const stampPriceDetail = [...this.state.stampPriceDetail];
-    const value = e.target.value;
-    const priceStamps = stampPriceDetail.find((p) => p.id === id);
-    if (priceStamps) {
-      priceStamps.quantityFrom = value;
-      this.setState(
-        (previousState) => {
-          return {
-            ...previousState,
-            stampPriceDetail,
-          };
-        },
-        () => {
-          if (this.props.onHandleChangeValue) {
-            this.props.onHandleChangeValue(this.state);
-          }
-        }
-      );
-    }
-  };
-
-  onChangeQuantityTo = (id) => (e) => {
-    const stampPriceDetail = [...this.state.stampPriceDetail];
-    const value = e.target.value;
-    let error = {};
-    const priceStamps = stampPriceDetail.find((p) => p.id === id);
-
-    if (priceStamps) {
-      priceStamps.quantityTo = value;
-      this.setState(
-        (previousState) => {
-          return {
-            ...previousState,
-            stampPriceDetail,
-          };
-        },
-        () => {
-          if (this.props.onHandleChangeValue) {
-            this.props.onHandleChangeValue(this.state);
-          }
-        }
-      );
-    }
-  };
-
-  onChangeAmount = (id) => (e) => {
-    const stampPriceDetail = [...this.state.stampPriceDetail];
-    const value = e.target.value;
-    const priceStamps = stampPriceDetail.find((p) => p.id === id);
-    if (priceStamps) {
-      priceStamps.amount = value;
-      this.setState(
-        (previousState) => {
-          return {
-            ...previousState,
-            stampPriceDetail,
-          };
-        },
-        () => {
-          if (this.props.onHandleChangeValue) {
-            this.props.onHandleChangeValue(this.state);
-          }
-        }
-      );
+    if (data.id) {
+        this.setState({
+            id: data.id || null,
+            productName: productName || "",
+            plantingZoneName: plantingZoneName || "",
+            qrCodeValue: qrCodeValue || "",
+        }, () => {
+             if (this.props.onHandleChangeValue) {
+                 this.props.onHandleChangeValue(this.state);
+             }
+        });
     }
   };
 
@@ -238,29 +80,9 @@ class AddNewQRSystem extends Component {
     );
   };
 
-  handleChangeFromDate = (event) => {
-    let _executedDate = event ? new Date(event) : "";
-    this.setState(
-      {
-        executedDate: new Date(_executedDate),
-      },
-      () => {
-        this.props.onHandleChangeValue(this.state);
-      }
-    );
-  };
-
   render() {
-    const { errorInsert, id } = this.props;
-    const { stampPriceDetail, name, executedDate, error } = this.state;
-    const numberWithCommas = (value, coma) => {
-      value = value || "";
-      coma = coma || ".";
-
-      return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, coma) || 0;
-    };
-
-    let dateConvert = executedDate && moment(executedDate).format("DD-MM-YYYY");
+    const { errorInsert = {}, id } = this.props;
+    const { productName, plantingZoneName, qrCodeValue } = this.state;
     return (
       <>
         <div
@@ -277,14 +99,14 @@ class AddNewQRSystem extends Component {
                   readOnly
                   placeholder="Tên sản phẩm"
                   type="text"
-                  name="name"
-                  value={name}
-                  defaultValue={name}
-                  onChange={this.onChangeValue("name")}
+                  name="productName"
+                  value={productName}
+                  defaultValue={productName}
+                  onChange={this.onChangeValue("productName")}
                 />
               </InputGroup>
               <p className="form-error-message margin-bottom-0">
-                {errorInsert.name || ""}
+                {errorInsert.productName || ""}
               </p>
             </div>
           </div>
@@ -298,14 +120,14 @@ class AddNewQRSystem extends Component {
                   readOnly
                   placeholder="Vùng sản xuất"
                   type="text"
-                  name="name"
-                  value={name}
-                  defaultValue={name}
-                  onChange={this.onChangeValue("name")}
+                  name="plantingZoneName"
+                  value={plantingZoneName}
+                  defaultValue={plantingZoneName}
+                  onChange={this.onChangeValue("plantingZoneName")}
                 />
               </InputGroup>
               <p className="form-error-message margin-bottom-0">
-                {errorInsert.name || ""}
+                {errorInsert.plantingZoneName || ""}
               </p>
             </div>
           </div>
@@ -314,7 +136,21 @@ class AddNewQRSystem extends Component {
               Ảnh QR&nbsp;<b style={{ color: "red" }}>*</b>
             </label>
             <div className={classes.inputArea}>
-              <img style={{ width: 250, height: 250 }} src={NoImg} alt="..." />
+              {qrCodeValue ? (
+                <img
+                  style={{ width: 250, height: 250 }}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+                    qrCodeValue
+                  )}`}
+                  alt="QR Code"
+                />
+              ) : (
+                <img
+                  style={{ width: 250, height: 250 }}
+                  src={NoImg}
+                  alt="..."
+                />
+              )}
             </div>
           </div>
         </div>
@@ -323,20 +159,4 @@ class AddNewQRSystem extends Component {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    ConfigSystemStore: state.ConfigSystemStore,
-    stampTemplate: state.StampPlateStore,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    ...bindActionCreators(configSystemAction, dispatch),
-    ...bindActionCreators(actionStampPlate, dispatch),
-  };
-};
-
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  AddNewQRSystem
-);
+export default AddNewQRSystem;
