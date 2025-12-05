@@ -524,6 +524,32 @@ export const fetchData = {
         return null;
       }
     },
+    getListStampRequestComboBox: async () => {
+      try {
+        const result = await callApi(
+          "get",
+          QR_MANAGEMENT.getListStampRequestComboBox
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách stamp request:", error);
+        return null;
+      }
+    },
+    addBadStamp: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          QR_MANAGEMENT.addBadStamp,
+          payload,
+          true
+        );
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi tạo yêu cầu hủy tem:", error);
+        return null;
+      }
+    },
   },
 
   scanQR: {

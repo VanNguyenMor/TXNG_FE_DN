@@ -53,6 +53,8 @@ const QRArisesTab = ({
   setDeleteItem,
   PRODUCT_OPTIONS,
   setState,
+  handleQRArisesDataReload,
+  resetKeyQRArises,
 }) => {
   const sourceData = Array.isArray(dataQRArises) ? dataQRArises : [];
   const pageSize = Number(limitQRArises) > 0 ? Number(limitQRArises) : 10;
@@ -70,6 +72,7 @@ const QRArisesTab = ({
         moduleTitle={
           isShowForEdit ? "Chỉnh sửa QR Phát sinh" : "Thêm mới QR Phát sinh"
         }
+        dataReload={handleQRArisesDataReload}
         moduleBody={
           <AddNewQRArises
             id={idQRArises}
@@ -89,11 +92,13 @@ const QRArisesTab = ({
                 flex: "wrap",
                 width: "100%",
                 flexWrap: "wrap",
+                marginTop: "20px"
               }}
             >
               <div className="mg-div-search">
                 <label className="form-control-label">Từ ngày</label>
                 <ReactDatetime
+                  key={`fromDate-${resetKeyQRArises}`}
                   inputProps={{ placeholder: "dd/mm/yyyy" }}
                   value={fromDate || ""}
                   timeFormat={false}
@@ -109,6 +114,7 @@ const QRArisesTab = ({
               <div className="mg-div-search">
                 <label className="form-control-label">Đến ngày</label>
                 <ReactDatetime
+                  key={`toDate-${resetKeyQRArises}`}
                   inputProps={{ placeholder: "dd/mm/yyyy" }}
                   value={toDate || ""}
                   timeFormat={false}
@@ -124,6 +130,7 @@ const QRArisesTab = ({
               <div className="mg-div-search">
                 <label className="form-control-label">Sản phẩm</label>
                 <Select
+                  key={`filter-${resetKeyQRArises}`}
                   name="filter"
                   title="Lọc theo sản phẩm"
                   data={PRODUCT_OPTIONS}

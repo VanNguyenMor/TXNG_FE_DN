@@ -79,6 +79,8 @@ export const QR_MANAGEMENT = {
   getListManageQRSystem: "qrmanager/getallqrcodessystem",
   getListManageQRRequest: "manageqr/getlist?page={0}&limit={1}",
   getListManageQRIncurred: "qrmanager/getallqrcodesincurred",
+  getListStampRequestComboBox: "manageqr/getliststamprequestcombobox",
+  addBadStamp: "badstamp/create",
 };
 
 export const SCANS = {
