@@ -17,6 +17,8 @@ import {
 import PopupMessage from "../../../components/PopupMessage";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import moment from "moment";
+import { fetchData } from "helpers/fetchData";
 
 import SummaryReportTemUseConfig from "./CpTable/SummaryReportTemUseConfig";
 import SummaryReportShipment from "./CpTable/SummaryReportShipment";
@@ -29,17 +31,6 @@ class SummaryReport extends Component {
   constructor(props) {
     super(props);
 
-    const initialSummaryReportTemUse = [
-      {
-        stt: 1,
-        id: 1,
-        date: "13/11/2025",
-        productName: "Dép lào",
-        temRangeOriginal: "271 - 320",
-        quantityUsed: 2,
-        temRangeUsed: "279 - 280",
-      },
-    ];
     const limitSummaryReportTemUse = 10;
 
     const initialShipment = [
@@ -105,25 +96,27 @@ class SummaryReport extends Component {
       headerSell: SUMMARY_REPORT_PRODUCT_SELL,
       createNewModal: false,
 
-      // State cho Tab 0
+      // State cho Tab 0 - Báo cáo tem sử dụng
       limitSummaryReportTemUse: limitSummaryReportTemUse,
       beginItemSummaryReportTemUse: 0,
       endItemSummaryReportTemUse: limitSummaryReportTemUse,
-      totalElementItemSummaryReportTemUse: Math.min(
-        initialSummaryReportTemUse.length,
-        limitSummaryReportTemUse
-      ),
-      listLengthSummaryReportTemUse: initialSummaryReportTemUse.length,
+      totalElementItemSummaryReportTemUse: 0,
+      listLengthSummaryReportTemUse: 0,
       currentPageSummaryReportTemUse: 0,
       insertSummaryReportTemUse: {},
       idSummaryReportTemUse: null,
-      dataSummaryReportTemUse: initialSummaryReportTemUse,
-      fromDateSummaryReportTemUse: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        1
-      ),
-      toDateSummaryReportTemUse: new Date(),
+      dataSummaryReportTemUse: [],
+      summaryReportTemUseInfo: {
+        totalCount: 0,
+        usedCount: 0,
+        remainCount: 0,
+        badCount: 0,
+      },
+      fromDateSummaryReportTemUse: moment().subtract(30, "days").format("YYYY-MM-DD"),
+      toDateSummaryReportTemUse: moment().format("YYYY-MM-DD"),
+      productIdTemUse: "",
+      productsTemUse: [],
+      isLoadingTemUse: false,
 
       // State cho Tab 1
       limitShipment: limitShipment,
@@ -135,12 +128,15 @@ class SummaryReport extends Component {
       insertShipment: {},
       idShipment: null,
       dataShipment: initialShipment,
-      fromDateShipment: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        1
-      ),
-      toDateShipment: new Date(),
+      fromDateShipment: moment().subtract(30, "days").format("YYYY-MM-DD"),
+      toDateShipment: moment().format("YYYY-MM-DD"),
+      productIdShipment: "",
+      productsShipment: [],
+      summaryShipmentInfo: {
+        totalCount: 0,
+        shipmentCount: 0,
+      },
+      isLoadingShipment: false,
 
       // State cho Tab 2
       limitOutput: limitOutput,
@@ -233,6 +229,185 @@ class SummaryReport extends Component {
       ],
     };
   }
+
+  componentDidMount() {
+    this.fetchProductsTemUse();
+    this.fetchReportUsedStamp(0);
+    // Load Shipment data on mount
+    this.fetchProductsShipment();
+    this.fetchReportShipment(0);
+  }
+
+  // Fetch products for filter
+  fetchProductsTemUse = async () => {
+    try {
+      const result = await fetchData.summaryReport.getListProductComboBox();
+      if (result && Array.isArray(result.products)) {
+        const products = result.products.map((item) => ({
+          id: item.id,
+          title: item.productName,
+          productName: item.productName,
+        }));
+        this.setState({ productsTemUse: products });
+      }
+    } catch (error) {
+      console.error("Fetch products error:", error);
+    }
+  };
+
+  // Fetch report used stamp data
+  fetchReportUsedStamp = async (page = 0) => {
+    try {
+      this.setState({ isLoadingTemUse: true });
+      const {
+        limitSummaryReportTemUse,
+        fromDateSummaryReportTemUse,
+        toDateSummaryReportTemUse,
+        productIdTemUse,
+      } = this.state;
+
+      const result = await fetchData.summaryReport.getListReportUsedStampV2(
+        page,
+        limitSummaryReportTemUse,
+        fromDateSummaryReportTemUse,
+        toDateSummaryReportTemUse,
+        productIdTemUse
+      );
+
+      if (result) {
+        const reports = result.reports || [];
+        const info = result.info || {
+          totalCount: 0,
+          usedCount: 0,
+          remainCount: 0,
+          badCount: 0,
+        };
+
+        this.setState({
+          dataSummaryReportTemUse: reports,
+          summaryReportTemUseInfo: info,
+          listLengthSummaryReportTemUse: reports.length,
+          totalElementItemSummaryReportTemUse: reports.length,
+          currentPageSummaryReportTemUse: page,
+          beginItemSummaryReportTemUse: 0,
+          endItemSummaryReportTemUse: Math.min(limitSummaryReportTemUse, reports.length),
+          isLoadingTemUse: false,
+        });
+      }
+    } catch (error) {
+      console.error("Fetch report error:", error);
+      this.setState({ isLoadingTemUse: false });
+    }
+  };
+
+  // Handle filter change
+  handleChangeFilterTemUse = (name) => (value) => {
+    this.setState({ [name]: value });
+  };
+
+  // Handle reload - reset filters and fetch fresh data
+  handleReloadTemUse = () => {
+    this.setState(
+      {
+        productIdTemUse: "",
+        fromDateSummaryReportTemUse: moment().subtract(30, "days").format("YYYY-MM-DD"),
+        toDateSummaryReportTemUse: moment().format("YYYY-MM-DD"),
+        currentPageSummaryReportTemUse: 0,
+      },
+      () => {
+        this.fetchReportUsedStamp(0);
+      }
+    );
+  };
+
+  // Handle search button click
+  handleSearchTemUse = () => {
+    this.fetchReportUsedStamp(0);
+  };
+
+  fetchProductsShipment = async () => {
+    try {
+      const result = await fetchData.summaryReport.getListProductComboBox();
+      const products = result?.data || [];
+      this.setState({ productsShipment: products });
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+    }
+  };
+
+  fetchReportShipment = async (page) => {
+    try {
+      this.setState({ isLoadingShipment: true });
+
+      const {
+        limitShipment,
+        fromDateShipment,
+        toDateShipment,
+        productIdShipment,
+      } = this.state;
+
+      const result = await fetchData.summaryReport.getListReportShipment(
+        page,
+        limitShipment,
+        fromDateShipment || moment().subtract(30, "days").format("YYYY-MM-DD"),
+        toDateShipment || moment().format("YYYY-MM-DD"),
+        productIdShipment
+      );
+
+      if (result?.data) {
+        const reports = result.data.reports || [];
+        const info = result.data.info || {
+          totalCount: 0,
+          shipmentCount: 0,
+        };
+
+        const beginItem = page * limitShipment;
+        const endItem = Math.min(beginItem + limitShipment, reports.length);
+        const totalElement = endItem - beginItem;
+
+        this.setState({
+          dataShipment: reports,
+          summaryShipmentInfo: info,
+          currentPageShipment: page,
+          beginItemShipment: beginItem,
+          endItemShipment: endItem,
+          totalElementItemShipment: totalElement,
+          listLengthShipment: reports.length,
+          isLoadingShipment: false,
+        });
+      } else {
+        this.setState({ isLoadingShipment: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy báo cáo lô hàng:", error);
+      this.setState({ isLoadingShipment: false });
+    }
+  };
+
+  // Handle filter change for Shipment
+  handleChangeFilterShipment = (name) => (value) => {
+    this.setState({ [name]: value });
+  };
+
+  // Handle reload - reset filters and fetch fresh data for Shipment
+  handleReloadShipment = () => {
+    this.setState(
+      {
+        productIdShipment: "",
+        fromDateShipment: moment().subtract(30, "days").format("YYYY-MM-DD"),
+        toDateShipment: moment().format("YYYY-MM-DD"),
+        currentPageShipment: 0,
+      },
+      () => {
+        this.fetchReportShipment(0);
+      }
+    );
+  };
+
+  // Handle search button click for Shipment
+  handleSearchShipment = () => {
+    this.fetchReportShipment(0);
+  };
 
   // Method summary report tem use
 
@@ -803,6 +978,10 @@ class SummaryReport extends Component {
       dataShipment,
       fromDateShipment,
       toDateShipment,
+      productIdShipment,
+      productsShipment,
+      summaryShipmentInfo,
+      isLoadingShipment,
 
       // Tab 2
       headerOutput,
@@ -845,6 +1024,12 @@ class SummaryReport extends Component {
       dataSell,
       fromDateSell,
       toDateSell,
+
+      // Tab 0 - Báo cáo tem sử dụng
+      summaryReportTemUseInfo,
+      isLoadingTemUse,
+      productIdTemUse,
+      productsTemUse,
 
       // Dùng chung
       options,
@@ -960,7 +1145,13 @@ class SummaryReport extends Component {
               currentPage={currentPageSummaryReportTemUse}
               fromDate={fromDateSummaryReportTemUse}
               toDate={toDateSummaryReportTemUse}
-              PRODUCT_OPTIONS={PRODUCT_OPTIONS}
+              productId={productIdTemUse}
+              products={productsTemUse}
+              summaryInfo={summaryReportTemUseInfo}
+              isLoading={isLoadingTemUse}
+              onChangeFilter={this.handleChangeFilterTemUse}
+              onSearch={this.handleSearchTemUse}
+              dataReload={this.handleReloadTemUse}
             />
           )}
 
@@ -985,8 +1176,15 @@ class SummaryReport extends Component {
               totalElementItem={totalElementItemShipment}
               handlePageClick={this.handlePageClickShipment}
               currentPage={currentPageShipment}
-              formDate={fromDateShipment}
+              fromDate={fromDateShipment}
               toDate={toDateShipment}
+              productId={productIdShipment}
+              products={productsShipment}
+              summaryInfo={summaryShipmentInfo}
+              isLoading={isLoadingShipment}
+              onChangeFilter={this.handleChangeFilterShipment}
+              onSearch={this.handleSearchShipment}
+              dataReload={this.handleReloadShipment}
               PRODUCT_OPTIONS={PRODUCT_OPTIONS}
               handleSubmitSearchFormShipment={
                 this.handleSubmitSearchFormShipment
@@ -1092,18 +1290,4 @@ class SummaryReport extends Component {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    ConfigSystemStore: state.ConfigSystemStore,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    ...bindActionCreators(configSystemAction, dispatch),
-  };
-};
-
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  SummaryReport
-);
+export default SummaryReport

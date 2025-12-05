@@ -14,6 +14,7 @@ import {
   MATERIAL_HISTORIES,
   PRODUCT_HISTORIES,
   SCANS,
+  SUMMARY_REPORT,
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -560,6 +561,52 @@ export const fetchData = {
       );
       return result?.data || [];
     },
+  },
 
+  summaryReport: {
+    getListReportUsedStampV2: async (page, limit, startDate, endDate, productId) => {
+      try {
+        const endpoint = SUMMARY_REPORT.getListReportUsedStampV2
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", startDate)
+          .replace("{3}", endDate)
+          .replace("{4}", productId || "");
+        
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy báo cáo tem sử dụng:", error);
+        return null;
+      }
+    },
+
+    getListReportShipment: async (page, limit, startDate, endDate, productId) => {
+      try {
+        const endpoint = SUMMARY_REPORT.getListReportShipment
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", startDate)
+          .replace("{3}", endDate)
+          .replace("{4}", productId || "");
+        
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy báo cáo lô hàng:", error);
+        return null;
+      }
+    },
+
+    getListProductComboBox: async () => {
+      try {
+        const result = await callApi("get", SUMMARY_REPORT.getListProductComboBox);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+        return null;
+      }
+    },
   },
 };
+

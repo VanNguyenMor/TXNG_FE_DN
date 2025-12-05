@@ -1,5 +1,6 @@
 import HeaderTable from "components/HeaderTable";
 import React, { Component } from "react";
+import { withRouter } from "react-router-dom";
 import MenuButton from "../../../../assets/img/buttons/menu.png";
 import classes from "../index.module.css";
 import SearchImg from "../../../../assets/img/buttons/searchig.svg";
@@ -44,12 +45,17 @@ class SummaryReportTemUseConfig extends Component {
       toDate,
       setState,
       toggleModal,
-      PRODUCT_OPTIONS,
+      productId,
+      products,
+      summaryInfo,
+      isLoading,
+      onChangeFilter,
+      onSearch,
     } = this.props;
-    const summaryData = {
-      totalStamps: 4390,
-      usedStamps: 278,
-      remainingStamps: 4112,
+    const summaryData = summaryInfo || {
+      totalStamps: 0,
+      usedStamps: 0,
+      remainingStamps: 0,
       damagedStamps: 0,
     };
     return (
@@ -82,16 +88,16 @@ class SummaryReportTemUseConfig extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
-                        to: "fromDate",
+                        placeholder: "YYYY-MM-DD",
+                        name: "fromDate",
                       }}
                       value={fromDate || ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
+                      dateFormat="YYYY-MM-DD"
                       onChange={(value) =>
-                        this.setState({
-                          fromDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
+                        onChangeFilter("fromDateSummaryReportTemUse")(
+                          value ? value.format("YYYY-MM-DD") : ""
+                        )
                       }
                     />
                   </div>
@@ -102,16 +108,16 @@ class SummaryReportTemUseConfig extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
+                        placeholder: "YYYY-MM-DD",
                         name: "toDate",
                       }}
                       value={toDate || ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
+                      dateFormat="YYYY-MM-DD"
                       onChange={(value) =>
-                        this.setState({
-                          toDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
+                        onChangeFilter("toDateSummaryReportTemUse")(
+                          value ? value.format("YYYY-MM-DD") : ""
+                        )
                       }
                     />
                   </div>
@@ -122,11 +128,11 @@ class SummaryReportTemUseConfig extends Component {
                   <div>
                     <Select
                       name="filter"
-                      title="Lọc theo trạng thái"
-                      data={PRODUCT_OPTIONS}
+                      title="Lọc theo sản phẩm"
+                      data={products || []}
                       labelName="title"
                       val="id"
-                      handleChange={this.handleChangeSelectFilter}
+                      handleChange={onChangeFilter("productIdTemUse")}
                     />
                   </div>
                 </div>
@@ -139,7 +145,7 @@ class SummaryReportTemUseConfig extends Component {
                     type="button"
                     size="md"
                     onClick={() => {
-                      this.handleSubmitSearchForm();
+                      onSearch();
                     }}
                   >
                     <img src={SearchImg} alt="Tìm kiếm" />
@@ -156,7 +162,7 @@ class SummaryReportTemUseConfig extends Component {
               <div style={{ fontSize: "1rem", fontWeight: "500" }}>
                 Tổng tem:{" "}
                 <span style={{ fontWeight: "bold" }}>
-                  {summaryData.totalStamps}
+                  {summaryData.totalCount || 0}
                 </span>
               </div>
             </div>
@@ -165,7 +171,7 @@ class SummaryReportTemUseConfig extends Component {
               <div style={{ fontSize: "1rem", fontWeight: "500" }}>
                 Đã dùng:{" "}
                 <span style={{ fontWeight: "bold", color: "#ffb300" }}>
-                  {summaryData.usedStamps}
+                  {summaryData.usedCount || 0}
                 </span>
               </div>
             </div>
@@ -176,7 +182,7 @@ class SummaryReportTemUseConfig extends Component {
               <div style={{ fontSize: "1rem", fontWeight: "500" }}>
                 Còn lại:{" "}
                 <span style={{ fontWeight: "bold", color: "#007bff" }}>
-                  {summaryData.remainingStamps}
+                  {summaryData.remainCount || 0}
                 </span>
               </div>
             </div>
@@ -185,7 +191,7 @@ class SummaryReportTemUseConfig extends Component {
               <div style={{ fontSize: "1rem", fontWeight: "500" }}>
                 Bị hư:{" "}
                 <span style={{ fontWeight: "bold", color: "#dc3545" }}>
-                  {summaryData.damagedStamps}
+                  {summaryData.badCount || 0}
                 </span>
               </div>
             </div>
@@ -217,7 +223,7 @@ class SummaryReportTemUseConfig extends Component {
                             fontSize: 14,
                           }}
                         >
-                          {item.date}
+                          {item.createdDate}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
@@ -235,7 +241,7 @@ class SummaryReportTemUseConfig extends Component {
                             fontSize: 14,
                           }}
                         >
-                          {item.temRangeOriginal}
+                          {item.startNum} - {item.endNum}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
@@ -244,7 +250,7 @@ class SummaryReportTemUseConfig extends Component {
                             fontSize: 14,
                           }}
                         >
-                          {item.quantityUsed}
+                          {item.usedCount}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
@@ -253,27 +259,19 @@ class SummaryReportTemUseConfig extends Component {
                             fontSize: 14,
                           }}
                         >
-                          {item.temRangeUsed}
+                          {item.usedStartNum} - {item.usedEndNum}
                         </span>
                       </td>
-                      <td>
-                        <ButtonDropdown
-                          isOpen={item.collapse}
-                          toggle={() => toggle(key, item.id)}
+                      <td style={{ textAlign: "center" }}>
+                        <Button
+                          className="btn-sm"
+                          color="info"
+                          onClick={() =>
+                            this.props.history.push("/trang_chu/quan_ly_lo_hang")
+                          }
                         >
-                          <DropdownToggle>
-                            <img src={MenuButton} alt="Menu" />
-                          </DropdownToggle>
-                          <DropdownMenu>
-                            <DropdownItem
-                              onClick={() =>
-                                alert("Chuyển sang trang quản lý lô hàng")
-                              }
-                            >
-                              Xem lô hàng
-                            </DropdownItem>
-                          </DropdownMenu>
-                        </ButtonDropdown>
+                          Xem lô hàng
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -295,4 +293,4 @@ class SummaryReportTemUseConfig extends Component {
   }
 }
 
-export default SummaryReportTemUseConfig;
+export default withRouter(SummaryReportTemUseConfig);
