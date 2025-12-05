@@ -41,6 +41,7 @@ const QRSystemTab = ({
   onHandleChangeValueQR,
   errorInsertAlert,
   activeCreateSubmit,
+  handleQRSystemDataReload,
 }) => {
   return (
     <div className="config-system-content-config-qr-system">
@@ -51,6 +52,7 @@ const QRSystemTab = ({
         styleCustom={"justifyContentStart"}
         isShowForEdit={isShowForEdit}
         moduleTitle={"Xem QR hệ thống"}
+        dataReload={handleQRSystemDataReload}
         moduleBody={
           <AddNewQRSystem
             id={idQRSystem}

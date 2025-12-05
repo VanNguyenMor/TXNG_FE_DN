@@ -156,7 +156,19 @@ class QrCodeManagement extends Component {
     }
   };
 
-  fetchQRArises = async () => {
+  handleQRSystemDataReload = () => {
+    // Reset pagination to first page and refetch data
+    this.setState(
+      {
+        currentPageQRSystem: 0,
+        beginItemQRSystem: 0,
+        endItemQRSystem: this.state.limitQRSystem,
+      },
+      () => {
+        this.fetchQRSystem();
+      }
+    );
+  };  fetchQRArises = async () => {
     this.setState({ isLoadedQRArises: true });
     try {
       const { currentPageQRArises, limitQRArises } = this.state;
@@ -545,6 +557,7 @@ class QrCodeManagement extends Component {
       insertQRSystem,
       createNewModal,
       warningPopupDelQR,
+      handleQRSystemDataReload: this.handleQRSystemDataReload,
       toggleModal: this.toggleModal,
       errorInserts: this.state.errorInserts,
       onHandleChangeValueQR: this.onHandleChangeValueQR,
