@@ -84,7 +84,23 @@ export const QR_MANAGEMENT = {
 };
 
 export const SCANS = {
-  scanQRCodePrivate: 'qrcode/privatescanqr?qrCode={0}',
+  scanQRCodePrivate: "qrcode/privatescanqr?qrCode={0}",
+};
+
+export const SUMMARY_REPORT = {
+  getListReportUsedStampV2:
+    "report/getListReportUsedStampV2?page={0}&limit={1}&startdate={2}&enddate={3}&productId={4}",
+  getListProductComboBox: "product/getalllock",
+  getListReportBatchV2:
+    "report/getListReportBatchV2?page={0}&limit={1}&fromDate={2}&toDate={3}&productId={4}",
+  getListReportQuantityProductV2:
+    "report/getListReportQuantityProductV2?page={0}&limit={1}&fromDate={2}&toDate={3}&productId={4}",
+  getListReportQuantityProductByPlantingZoneV2:
+    "report/getListReportQuantityProductByPlantingZoneV2?page={0}&limit={1}&fromDate={2}&toDate={3}&productId={4}&plantingZoneId={5}",
+  getListReportSellV2:
+    "report/getListReportSellV2?page={0}&limit={1}&fromDate={2}&toDate={3}&productId={4}&partnerId={5}",
+  getListPlantingZoneComboBox: "plantingzone/getall",
+  getListPartnerComboBox: "partner/getall",
 };
 
 export const PAYLOAD = {

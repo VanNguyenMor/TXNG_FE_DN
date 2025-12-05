@@ -509,6 +509,7 @@ export const SUMMARY_REPORT_TEM_USE = [
   "Thuộc dải tem",
   "Dùng",
   "Dải tem dùng",
+  "Hành động",
 ];
 
 export const SUMMARY_REPORT_SHIPMENT = ["Stt", "Ngày", "Mã lô", "SL tem"];

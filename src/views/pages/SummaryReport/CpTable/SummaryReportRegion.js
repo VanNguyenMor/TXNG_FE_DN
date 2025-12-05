@@ -2,6 +2,8 @@ import HeaderTable from "components/HeaderTable";
 import React, { Component } from "react";
 import MenuButton from "../../../../assets/img/buttons/menu.png";
 import classes from "../index.module.css";
+import { withRouter } from "react-router-dom";
+
 import SearchImg from "../../../../assets/img/buttons/searchig.svg";
 import {
   Card,
@@ -14,39 +16,58 @@ import {
   Row,
   Col,
 } from "reactstrap";
-import AddNewQRSystem from "../AddNewQRSystem";
 import HeadTitleTable from "components/HeadTitleTable";
 import Pagination from "components/Pagination";
 import ReactDatetime from "react-datetime";
 import Select from "components/Select";
+import moment from "moment";
 
 class SummaryReportRegion extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      openDropdowns: {}, // Track which dropdowns are open
+    };
+  }
+
+  toggleDropdown = (itemId) => {
+    this.setState((prevState) => ({
+      openDropdowns: {
+        ...prevState.openDropdowns,
+        [itemId]: !prevState.openDropdowns[itemId],
+      },
+    }));
+  };
+
+  handleChangeSelectPlantingZone = (value) => {
+    this.props.onChangeFilter("plantingZoneIdRegion")(value);
+  };
+
+  handleChangeSelectProduct = (value) => {
+    this.props.onChangeFilter("productIdRegion")(value);
+  };
+
   render() {
     const {
-      id,
-      onHandleChangeValue,
-      errorInserts,
-      insert,
-      handleModal,
-      onConfirm,
-      header,
-      data,
-      beginItem,
-      endItem,
-      toggle,
-      onEdit,
-      listLength,
-      totalPage,
-      totalElementItem,
+      data = [],
+      beginItem = 0,
+      endItem = 10,
+      listLength = 0,
+      totalPage = 1,
+      totalElementItem = 0,
       handlePageClick,
-      currentPage,
-      fromDate,
-      toDate,
-      setState,
-      toggleModal,
-      PRODUCT_OPTIONS,
-      handleSubmitSearchFormShipment,
-      PLANTINGZONE_OPTIONS,
+      currentPage = 0,
+      fromDate = "",
+      toDate = "",
+      productId = "",
+      plantingZoneId = "",
+      products = [],
+      plantingZones = [],
+      isLoading = false,
+      onChangeFilter,
+      onSearch,
+      dataReload,
+      header,
     } = this.props;
 
     return (
@@ -57,17 +78,7 @@ class SummaryReportRegion extends Component {
           isReadOnly={true}
           styleCustom={"justifyContentStart"}
           isShowForEdit={false}
-          moduleTitle={false ? "Xem QR hệ thống" : "Thêm mới QR hệ thống"}
-          moduleBody={
-            <AddNewQRSystem
-              id={id}
-              onHandleChangeValue={onHandleChangeValue}
-              errorInsert={errorInserts}
-              data={insert}
-            />
-          }
-          handleModal={handleModal}
-          onConfirm={onConfirm}
+          moduleTitle="Báo cáo sản lượng hàng hóa theo vùng trồng"
           typeSearch={
             <>
               <div
@@ -79,17 +90,12 @@ class SummaryReportRegion extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
-                        to: "fromDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={fromDate || ""}
+                      value={fromDate ? moment(fromDate) : ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
-                      onChange={(value) =>
-                        this.setState({
-                          fromDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
-                      }
+                      dateFormat="DD/MM/YYYY"
+                      onChange={onChangeFilter("fromDateRegion")}
                     />
                   </div>
                 </div>
@@ -99,17 +105,12 @@ class SummaryReportRegion extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
-                        name: "toDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={toDate || ""}
+                      value={toDate ? moment(toDate) : ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
-                      onChange={(value) =>
-                        this.setState({
-                          toDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
-                      }
+                      dateFormat="DD/MM/YYYY"
+                      onChange={onChangeFilter("toDateRegion")}
                     />
                   </div>
                 </div>
@@ -118,12 +119,14 @@ class SummaryReportRegion extends Component {
                   <label className="form-control-label">Vùng trồng</label>
                   <div>
                     <Select
-                      name="filter"
-                      title="Lọc theo trạng thái"
-                      data={PLANTINGZONE_OPTIONS}
-                      labelName="title"
+                      key={plantingZoneId || "empty"}
+                      name="plantingZoneIdRegion"
+                      title="Chọn vùng trồng"
+                      data={plantingZones || []}
+                      labelName="name"
                       val="id"
-                      handleChange={this.handleChangeSelectFilter}
+                      defaultValue={plantingZoneId || null}
+                      handleChange={this.handleChangeSelectPlantingZone}
                     />
                   </div>
                 </div>
@@ -132,12 +135,14 @@ class SummaryReportRegion extends Component {
                   <label className="form-control-label">Sản phẩm</label>
                   <div>
                     <Select
-                      name="filter"
-                      title="Lọc theo trạng thái"
-                      data={PRODUCT_OPTIONS}
-                      labelName="title"
+                      key={productId || "empty"}
+                      name="productIdRegion"
+                      title="Chọn sản phẩm"
+                      data={products || []}
+                      labelName="productName"
                       val="id"
-                      handleChange={this.handleChangeSelectFilter}
+                      defaultValue={productId || null}
+                      handleChange={this.handleChangeSelectProduct}
                     />
                   </div>
                 </div>
@@ -149,7 +154,8 @@ class SummaryReportRegion extends Component {
                     color="default"
                     type="button"
                     size="md"
-                    onClick={handleSubmitSearchFormShipment}
+                    onClick={onSearch}
+                    disabled={isLoading}
                   >
                     <img src={SearchImg} alt="Tìm kiếm" />
                     <span>Tìm kiếm</span>
@@ -158,6 +164,7 @@ class SummaryReportRegion extends Component {
               </div>
             </>
           }
+          dataReload={dataReload}
         />
 
         <Card className="shadow">
@@ -181,45 +188,29 @@ class SummaryReportRegion extends Component {
                         {key + beginItem + 1}
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.region}
+                        <span style={{ fontSize: 14 }}>
+                          {item.plantingZoneName || item.region || "-"}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.product}
+                        <span style={{ fontSize: 14 }}>
+                          {item.productName || item.product || "-"}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.unit}
+                        <span style={{ fontSize: 14 }}>
+                          {item.unitName || "-"}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.quantity}
+                        <span style={{ fontSize: 14 }}>
+                          {item.quantity || 0}
                         </span>
                       </td>
                       <td>
                         <ButtonDropdown
-                          isOpen={item.collapse}
-                          toggle={() => toggle(key, item.id)}
+                          isOpen={this.state.openDropdowns[item.id] || false}
+                          toggle={() => this.toggleDropdown(item.id)}
                         >
                           <DropdownToggle>
                             <img src={MenuButton} alt="Menu" />
@@ -227,14 +218,16 @@ class SummaryReportRegion extends Component {
                           <DropdownMenu>
                             <DropdownItem
                               onClick={() =>
-                                alert("Chuyển sang trang quản lý sản phẩm")
+                                this.props.history.push(
+                                  "/trang_chu/quan_ly_hang_hoa"
+                                )
                               }
                             >
                               Xem sản phẩm
                             </DropdownItem>
                             <DropdownItem
                               onClick={() =>
-                                alert("Chuyển sang trang quản lý vùng")
+                                this.props.history.push("/trang_chu/vung_trong")
                               }
                             >
                               Xem vùng
@@ -262,4 +255,4 @@ class SummaryReportRegion extends Component {
   }
 }
 
-export default SummaryReportRegion;
+export default withRouter(SummaryReportRegion);

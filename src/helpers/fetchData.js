@@ -14,6 +14,7 @@ import {
   MATERIAL_HISTORIES,
   PRODUCT_HISTORIES,
   SCANS,
+  SUMMARY_REPORT,
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -560,6 +561,125 @@ export const fetchData = {
       );
       return result?.data || [];
     },
+  },
 
+  summaryReport: {
+    getListReportUsedStampV2: async (page, limit, startDate, endDate, productId) => {
+      try {
+        const endpoint = SUMMARY_REPORT.getListReportUsedStampV2
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", startDate)
+          .replace("{3}", endDate)
+          .replace("{4}", productId || "");
+        
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy báo cáo tem sử dụng:", error);
+        return null;
+      }
+    },
+
+    getListReportBatchV2: async (page, limit, startDate, endDate, productId) => {
+      try {
+        const endpoint = SUMMARY_REPORT.getListReportBatchV2
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", startDate)
+          .replace("{3}", endDate)
+          .replace("{4}", productId || "");
+        
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy báo cáo lô hàng:", error);
+        return null;
+      }
+    },
+
+    getListReportQuantityProductV2: async (page, limit, startDate, endDate, productId) => {
+      try {
+        const endpoint = SUMMARY_REPORT.getListReportQuantityProductV2
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", startDate)
+          .replace("{3}", endDate)
+          .replace("{4}", productId || "");
+        
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy báo cáo sản lượng hàng hóa:", error);
+        return null;
+      }
+    },
+
+    getListReportQuantityProductByPlantingZoneV2: async (page, limit, startDate, endDate, productId, plantingZoneId) => {
+      try {
+        const endpoint = SUMMARY_REPORT.getListReportQuantityProductByPlantingZoneV2
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", startDate)
+          .replace("{3}", endDate)
+          .replace("{4}", productId || "")
+          .replace("{5}", plantingZoneId || "");
+        
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy báo cáo sản lượng theo vùng:", error);
+        return null;
+      }
+    },
+
+    getListReportSellV2: async (page, limit, startDate, endDate, productId, partnerId) => {
+      try {
+        const endpoint = SUMMARY_REPORT.getListReportSellV2
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", startDate)
+          .replace("{3}", endDate)
+          .replace("{4}", productId || "")
+          .replace("{5}", partnerId || "");
+        
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy báo cáo bán hàng:", error);
+        return null;
+      }
+    },
+
+    getListProductComboBox: async () => {
+      try {
+        const result = await callApi("post", SUMMARY_REPORT.getListProductComboBox, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+        return null;
+      }
+    },
+
+    getListPlantingZoneComboBox: async () => {
+      try {
+        const result = await callApi("post", SUMMARY_REPORT.getListPlantingZoneComboBox, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách vùng trồng:", error);
+        return null;
+      }
+    },
+
+    getListPartnerComboBox: async () => {
+      try {
+        const result = await callApi("post", SUMMARY_REPORT.getListPartnerComboBox, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách đối tác:", error);
+        return null;
+      }
+    },
   },
 };
+
