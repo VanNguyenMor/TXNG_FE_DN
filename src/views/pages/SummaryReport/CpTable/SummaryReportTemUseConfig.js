@@ -1,27 +1,25 @@
 import HeaderTable from "components/HeaderTable";
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import MenuButton from "../../../../assets/img/buttons/menu.png";
 import classes from "../index.module.css";
 import SearchImg from "../../../../assets/img/buttons/searchig.svg";
 import {
   Card,
   Table,
-  ButtonDropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
   Button,
   Row,
-  Col,
 } from "reactstrap";
-import AddNewQRSystem from "../AddNewQRSystem";
 import HeadTitleTable from "components/HeadTitleTable";
 import Pagination from "components/Pagination";
 import ReactDatetime from "react-datetime";
 import Select from "components/Select";
+import moment from "moment";
 
 class SummaryReportTemUseConfig extends Component {
+  handleChangeSelectProduct = (value) => {
+    this.props.onChangeFilter("productIdTemUse")(value);
+  };
+
   render() {
     const {
       id,
@@ -51,12 +49,14 @@ class SummaryReportTemUseConfig extends Component {
       isLoading,
       onChangeFilter,
       onSearch,
+      dataReload,
     } = this.props;
+
     const summaryData = summaryInfo || {
-      totalStamps: 0,
-      usedStamps: 0,
-      remainingStamps: 0,
-      damagedStamps: 0,
+      totalCount: 0,
+      usedCount: 0,
+      remainCount: 0,
+      badCount: 0,
     };
     return (
       <div className="config-system-content-config-qr-system">
@@ -66,37 +66,29 @@ class SummaryReportTemUseConfig extends Component {
           isReadOnly={true}
           styleCustom={"justifyContentStart"}
           isShowForEdit={false}
-          moduleTitle={false ? "Xem QR hệ thống" : "Thêm mới QR hệ thống"}
-          moduleBody={
-            <AddNewQRSystem
-              id={id}
-              onHandleChangeValue={onHandleChangeValue}
-              errorInsert={errorInserts}
-              data={insert}
-            />
-          }
+          moduleTitle="Báo cáo tem sử dụng"
+          dataReload={dataReload}
           handleModal={handleModal}
           onConfirm={onConfirm}
           typeSearch={
             <>
               <div
                 className="div_flex"
-                style={{ marginBottom: "10px", flex: "wrap" }}
+                style={{ marginBottom: "10px", flexWrap: "wrap" }}
               >
                 <div className="mg-div-search">
                   <label className="form-control-label">Từ ngày</label>
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "YYYY-MM-DD",
-                        name: "fromDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={fromDate || ""}
+                      value={fromDate ? moment(fromDate) : ""}
                       timeFormat={false}
-                      dateFormat="YYYY-MM-DD"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
                         onChangeFilter("fromDateSummaryReportTemUse")(
-                          value ? value.format("YYYY-MM-DD") : ""
+                          value ? value.format("DD/MM/YYYY") : ""
                         )
                       }
                     />
@@ -108,15 +100,14 @@ class SummaryReportTemUseConfig extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "YYYY-MM-DD",
-                        name: "toDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={toDate || ""}
+                      value={toDate ? moment(toDate) : ""}
                       timeFormat={false}
-                      dateFormat="YYYY-MM-DD"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
                         onChangeFilter("toDateSummaryReportTemUse")(
-                          value ? value.format("YYYY-MM-DD") : ""
+                          value ? value.format("DD/MM/YYYY") : ""
                         )
                       }
                     />
@@ -125,14 +116,16 @@ class SummaryReportTemUseConfig extends Component {
 
                 <div className="mg-div-search">
                   <label className="form-control-label">Sản phẩm</label>
-                  <div>
+                  <div style={{ minWidth: "200px" }}>
                     <Select
-                      name="filter"
-                      title="Lọc theo sản phẩm"
+                      key={productId || "empty"}
+                      name="productIdTemUse"
+                      title="Chọn sản phẩm"
                       data={products || []}
-                      labelName="title"
+                      labelName="productName"
                       val="id"
-                      handleChange={onChangeFilter("productIdTemUse")}
+                      defaultValue={productId || null}
+                      handleChange={this.handleChangeSelectProduct}
                     />
                   </div>
                 </div>
@@ -144,19 +137,19 @@ class SummaryReportTemUseConfig extends Component {
                     color="default"
                     type="button"
                     size="md"
-                    onClick={() => {
-                      onSearch();
-                    }}
+                    onClick={() => onSearch && onSearch()}
+                    disabled={isLoading}
                   >
                     <img src={SearchImg} alt="Tìm kiếm" />
-                    <span>Tìm kiếm</span>
+                    <span>{isLoading ? "Đang tải..." : "Tìm kiếm"}</span>
                   </Button>
                 </div>
               </div>
             </>
           }
         />
-        <div className=" p-3">
+
+        <div className="p-3">
           <Row>
             <div className="text-left m-2">
               <div style={{ fontSize: "1rem", fontWeight: "500" }}>
@@ -209,7 +202,13 @@ class SummaryReportTemUseConfig extends Component {
               }}
             />
             <tbody className="config-system-content-config-server-list-table-body">
-              {Array.isArray(data) &&
+              {isLoading ? (
+                <tr>
+                  <td colSpan={header.length + 1} className="text-center">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : Array.isArray(data) && data.length > 0 ? (
                 data
                   .filter((item, key) => key >= beginItem && key < endItem)
                   .map((item, key) => (
@@ -218,47 +217,27 @@ class SummaryReportTemUseConfig extends Component {
                         {key + beginItem + 1}
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
+                        <span style={{ fontSize: 14 }}>
                           {item.createdDate}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
+                        <span style={{ fontSize: 14 }}>
                           {item.productName}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
+                        <span style={{ fontSize: 14 }}>
                           {item.startNum} - {item.endNum}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
+                        <span style={{ fontSize: 14 }}>
                           {item.usedCount}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
+                        <span style={{ fontSize: 14 }}>
                           {item.usedStartNum} - {item.usedEndNum}
                         </span>
                       </td>
@@ -274,11 +253,19 @@ class SummaryReportTemUseConfig extends Component {
                         </Button>
                       </td>
                     </tr>
-                  ))}
+                  ))
+              ) : (
+                <tr>
+                  <td colSpan={header.length + 1} className="text-center">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </Card>
-        {Array.isArray(data) && listLength > 0 && (
+
+        {!isLoading && Array.isArray(data) && listLength > 0 && (
           <Pagination
             data={data}
             listLength={listLength}

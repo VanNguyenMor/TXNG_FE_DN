@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import HeaderTable from "components/HeaderTable";
+import { withRouter } from "react-router-dom";
 import MenuButton from "../../../../assets/img/buttons/menu.png";
 import classes from "../index.module.css";
 import SearchImg from "../../../../assets/img/buttons/searchig.svg";
@@ -20,9 +21,8 @@ import Select from "components/Select";
 import moment from "moment";
 
 class SummaryReportShipment extends Component {
-  // Xử lý khi chọn sản phẩm từ Dropdown
   handleChangeSelectProduct = (value) => {
-    // Truyền giá trị về index.js thông qua props onChangeFilter
+    console.log("Selected product value:", value, "Products list:", this.props.products);
     this.props.onChangeFilter("productIdShipment")(value);
   };
 
@@ -46,11 +46,13 @@ class SummaryReportShipment extends Component {
       currentPage,
       fromDate,
       toDate,
-      products, 
-      productId, 
-      isLoading, 
+      products,
+      productIdShipment,
+      isLoading,
       handleSubmitSearchFormShipment,
       onChangeFilter,
+      dataReload,
+      onSearch,
     } = this.props;
 
     return (
@@ -70,6 +72,7 @@ class SummaryReportShipment extends Component {
               data={insert}
             />
           }
+          dataReload={dataReload}
           handleModal={handleModal}
           onConfirm={onConfirm}
           typeSearch={
@@ -83,11 +86,11 @@ class SummaryReportShipment extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "YYYY-MM-DD",
+                        placeholder: "DD/MM/YYYY",
                       }}
                       value={fromDate ? moment(fromDate) : ""}
                       timeFormat={false}
-                      dateFormat="YYYY-MM-DD"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
                         onChangeFilter("fromDateShipment")(value)
                       }
@@ -100,11 +103,11 @@ class SummaryReportShipment extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "YYYY-MM-DD",
+                        placeholder: "DD/MM/YYYY",
                       }}
                       value={toDate ? moment(toDate) : ""}
                       timeFormat={false}
-                      dateFormat="YYYY-MM-DD"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
                         onChangeFilter("toDateShipment")(value)
                       }
@@ -116,12 +119,14 @@ class SummaryReportShipment extends Component {
                   <label className="form-control-label">Sản phẩm</label>
                   <div style={{ minWidth: "200px" }}>
                     <Select
+                      key={productIdShipment || "empty"}
                       name="productIdShipment"
                       title="Chọn sản phẩm"
                       data={products || []}
-                      labelName="title"
+                      labelName="productName"
                       val="id"
-                      value={productId}
+                      defaultValue={productIdShipment || null}
+                      isHideDefault={false}
                       handleChange={this.handleChangeSelectProduct}
                     />
                   </div>
@@ -134,7 +139,7 @@ class SummaryReportShipment extends Component {
                     color="default"
                     type="button"
                     size="md"
-                    onClick={handleSubmitSearchFormShipment}
+                    onClick={() => onSearch && onSearch()}
                     disabled={isLoading}
                   >
                     <img src={SearchImg} alt="Tìm kiếm" />
@@ -166,46 +171,44 @@ class SummaryReportShipment extends Component {
                 </tr>
               ) : Array.isArray(data) && data.length > 0 ? (
                 data
-                .filter((item, key) => key >= beginItem && key < endItem)
-                .map((item, key) => (
-                  <tr key={key}>
-                    <td className="table-scale-col table-user-col-1">
-                      {item.stt}
-                    </td>
+                  .filter((item, key) => key >= beginItem && key < endItem)
+                  .map((item, key) => (
+                    <tr key={key}>
+                      <td className="table-scale-col table-user-col-1">
+                        {item.stt}
+                      </td>
 
-                    <td style={{ textAlign: "left" }}>
-                      <span style={{ fontSize: 14 }}>{item.date}</span>
-                    </td>
+                      <td style={{ textAlign: "left" }}>
+                        <span style={{ fontSize: 14 }}>{item.date}</span>
+                      </td>
 
-                    <td style={{ textAlign: "left" }}>
-                      <span style={{ fontSize: 14 }}>{item.shipmentCode}</span>
-                    </td>
+                      <td style={{ textAlign: "left" }}>
+                        <span style={{ fontSize: 14 }}>
+                          {item.shipmentCode}
+                        </span>
+                      </td>
 
-                    <td style={{ textAlign: "left" }}>
-                      <span style={{ fontSize: 14 }}>{item.stampQuantity}</span>
-                    </td>
+                      <td style={{ textAlign: "left" }}>
+                        <span style={{ fontSize: 14 }}>
+                          {item.stampQuantity}
+                        </span>
+                      </td>
 
-                    <td>
-                      <ButtonDropdown
-                        isOpen={item.collapse}
-                        toggle={() => toggle(key, item.id)}
-                      >
-                        <DropdownToggle>
-                          <img src={MenuButton} alt="Menu" />
-                        </DropdownToggle>
-                        <DropdownMenu>
-                          <DropdownItem
-                            onClick={() =>
-                              alert(`Xem chi tiết lô: ${item.shipmentCode}`)
-                            }
-                          >
-                            Xem lô hàng
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </ButtonDropdown>
-                    </td>
-                  </tr>
-                ))
+                      <td style={{ textAlign: "center" }}>
+                        <Button
+                          className="btn-sm"
+                          color="info"
+                          onClick={() =>
+                            this.props.history.push(
+                              "/trang_chu/quan_ly_lo_hang"
+                            )
+                          }
+                        >
+                          Xem lô hàng
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
               ) : (
                 <tr>
                   <td colSpan={header.length + 1} className="text-center">
@@ -216,7 +219,7 @@ class SummaryReportShipment extends Component {
             </tbody>
           </Table>
         </Card>
-        
+
         {/* Pagination */}
         {!isLoading && Array.isArray(data) && listLength > 0 && (
           <Pagination
@@ -233,4 +236,4 @@ class SummaryReportShipment extends Component {
   }
 }
 
-export default SummaryReportShipment;
+export default withRouter(SummaryReportShipment);

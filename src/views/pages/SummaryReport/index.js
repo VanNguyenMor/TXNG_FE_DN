@@ -114,8 +114,8 @@ class SummaryReport extends Component {
       },
       fromDateSummaryReportTemUse: moment()
         .subtract(30, "days")
-        .format("YYYY-MM-DD"),
-      toDateSummaryReportTemUse: moment().format("YYYY-MM-DD"),
+        .format("DD/MM/YYYY"),
+      toDateSummaryReportTemUse: moment().format("DD/MM/YYYY"),
       productIdTemUse: "",
       productsTemUse: [],
       isLoadingTemUse: false,
@@ -130,8 +130,8 @@ class SummaryReport extends Component {
       insertShipment: {},
       idShipment: null,
       dataShipment: initialShipment,
-      fromDateShipment: moment().subtract(30, "days").format("YYYY-MM-DD"),
-      toDateShipment: moment().format("YYYY-MM-DD"),
+      fromDateShipment: moment().subtract(30, "days").format("DD/MM/YYYY"),
+      toDateShipment: moment().format("DD/MM/YYYY"),
       productIdShipment: "",
       productsShipment: [],
       summaryShipmentInfo: {
@@ -150,12 +150,11 @@ class SummaryReport extends Component {
       insertOutput: {},
       idOutput: null,
       dataOutput: initialOutput,
-      fromDateOutput: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        1
-      ),
-      toDateOutput: new Date(),
+      fromDateOutput: moment().subtract(30, "days").format("DD/MM/YYYY"),
+      toDateOutput: moment().format("DD/MM/YYYY"),
+      productIdOutput: "",
+      productsOutput: [],
+      isLoadingOutput: false,
 
       // State cho Tab 3
       limitRegion: limitRegion,
@@ -167,12 +166,13 @@ class SummaryReport extends Component {
       insertRegion: {},
       idRegion: null,
       dataRegion: initialRegion,
-      fromDateRegion: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        1
-      ),
-      toDateRegion: new Date(),
+      fromDateRegion: moment().subtract(30, "days").format("DD/MM/YYYY"),
+      toDateRegion: moment().format("DD/MM/YYYY"),
+      productIdRegion: "",
+      plantingZoneIdRegion: "",
+      productsRegion: [],
+      plantingZonesRegion: [],
+      isLoadingRegion: false,
 
       // State cho Tab 4
       limitSell: limitSell,
@@ -184,12 +184,13 @@ class SummaryReport extends Component {
       insertSell: {},
       idSell: null,
       dataSell: initialSell,
-      fromDateSell: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        1
-      ),
-      toDateSell: new Date(),
+      fromDateSell: moment().subtract(30, "days").format("DD/MM/YYYY"),
+      toDateSell: moment().format("DD/MM/YYYY"),
+      productIdSell: "",
+      partnerIdSell: "",
+      productsSell: [],
+      partnersSell: [],
+      isLoadingSell: false,
 
       errorUpdate: {},
       errorInsert: {},
@@ -238,6 +239,17 @@ class SummaryReport extends Component {
     // Load Shipment data on mount
     this.fetchProductsShipment();
     this.fetchReportShipment(0);
+    // Load Output data on mount
+    this.fetchProductsOutput();
+    this.fetchReportOutput(0);
+    // Load Region data on mount
+    this.fetchProductsRegion();
+    this.fetchPlantingZonesRegion();
+    this.fetchReportRegion(0);
+    // Load Sell data on mount
+    this.fetchProductsSell();
+    this.fetchPartnersSell();
+    this.fetchReportSell(0);
   }
 
   // Fetch products for filter
@@ -268,11 +280,19 @@ class SummaryReport extends Component {
         productIdTemUse,
       } = this.state;
 
+      // Convert DD/MM/YYYY to YYYY-MM-DD for API
+      const fromDateAPI = fromDateSummaryReportTemUse
+        ? moment(fromDateSummaryReportTemUse, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+      const toDateAPI = toDateSummaryReportTemUse
+        ? moment(toDateSummaryReportTemUse, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+
       const result = await fetchData.summaryReport.getListReportUsedStampV2(
         page,
         limitSummaryReportTemUse,
-        fromDateSummaryReportTemUse,
-        toDateSummaryReportTemUse,
+        fromDateAPI,
+        toDateAPI,
         productIdTemUse
       );
 
@@ -317,8 +337,8 @@ class SummaryReport extends Component {
         productIdTemUse: "",
         fromDateSummaryReportTemUse: moment()
           .subtract(30, "days")
-          .format("YYYY-MM-DD"),
-        toDateSummaryReportTemUse: moment().format("YYYY-MM-DD"),
+          .format("DD/MM/YYYY"),
+        toDateSummaryReportTemUse: moment().format("DD/MM/YYYY"),
         currentPageSummaryReportTemUse: 0,
       },
       () => {
@@ -335,8 +355,15 @@ class SummaryReport extends Component {
   fetchProductsShipment = async () => {
     try {
       const result = await fetchData.summaryReport.getListProductComboBox();
-      const products = result?.data || [];
-      this.setState({ productsShipment: products });
+      if (result && Array.isArray(result.products)) {
+        const products = result.products.map((item) => ({
+          id: item.id,
+          title: item.productName,
+          productName: item.productName,
+        }));
+        console.log("Products Shipment transformed:", products);
+        this.setState({ productsShipment: products });
+      }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách sản phẩm:", error);
     }
@@ -353,12 +380,20 @@ class SummaryReport extends Component {
         productIdShipment,
       } = this.state;
 
+      // Convert DD/MM/YYYY to YYYY-MM-DD for API
+      const fromDateAPI = fromDateShipment
+        ? moment(fromDateShipment, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+      const toDateAPI = toDateShipment
+        ? moment(toDateShipment, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+
       const result = await fetchData.summaryReport.getListReportBatchV2(
         page,
         limitShipment,
-        fromDateShipment,
-        toDateShipment,
-        productIdShipment
+        fromDateAPI,
+        toDateAPI,
+        productIdShipment,
       );
       const reports = result?.reports || [];
       const info = result?.info || {
@@ -398,20 +433,28 @@ class SummaryReport extends Component {
   handleChangeFilterShipment = (name) => (value) => {
     const normalized =
       value && typeof value === "object" && moment.isMoment(value)
-        ? value.format("YYYY-MM-DD")
+        ? value.format("DD/MM/YYYY")
         : value;
     this.setState({ [name]: normalized });
   };
 
   handleReloadShipment = () => {
+    const fromDefault = moment().subtract(30, "days").format("DD/MM/YYYY");
+    const toDefault = moment().format("DD/MM/YYYY");
+
     this.setState(
       {
         productIdShipment: "",
-        fromDateShipment: moment().subtract(30, "days").format("YYYY-MM-DD"),
-        toDateShipment: moment().format("YYYY-MM-DD"),
+        fromDateShipment: fromDefault,
+        toDateShipment: toDefault,
         currentPageShipment: 0,
+        isLoadingShipment: true,
       },
-      () => this.fetchReportShipment(0)
+      async () => {
+        await this.fetchProductsShipment();
+
+        this.fetchReportShipment(0);
+      }
     );
   };
 
@@ -419,7 +462,426 @@ class SummaryReport extends Component {
     this.fetchReportShipment(0);
   };
 
-  // Method summary report tem use
+  // Methods for Tab 2 - Báo cáo sản lượng hàng hóa (Output)
+  fetchProductsOutput = async () => {
+    try {
+      const result = await fetchData.summaryReport.getListProductComboBox();
+      if (result && Array.isArray(result.products)) {
+        const products = result.products.map((item) => ({
+          id: item.id,
+          title: item.productName,
+          productName: item.productName,
+        }));
+        console.log("Products Output transformed:", products);
+        this.setState({ productsOutput: products });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+    }
+  };
+
+  fetchReportOutput = async (page = 0) => {
+    try {
+      this.setState({ isLoadingOutput: true });
+
+      const {
+        limitOutput,
+        fromDateOutput,
+        toDateOutput,
+        productIdOutput,
+      } = this.state;
+
+      // Convert DD/MM/YYYY to YYYY-MM-DD for API
+      const fromDateAPI = fromDateOutput
+        ? moment(fromDateOutput, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+      const toDateAPI = toDateOutput
+        ? moment(toDateOutput, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+
+      const result = await fetchData.summaryReport.getListReportQuantityProductV2(
+        page,
+        limitOutput,
+        fromDateAPI,
+        toDateAPI,
+        productIdOutput,
+      );
+      const reports = result?.reports || [];
+
+      const listLength = reports.length;
+      const beginItem = page * limitOutput;
+      const endItem = Math.min(beginItem + limitOutput, listLength);
+
+      this.setState({
+        dataOutput: reports.map((item, index) => ({
+          id: item.id,
+          stt: index + 1,
+          createdDate: item.createdDate
+            ? moment(item.createdDate).format("DD/MM/YYYY")
+            : "",
+          productName: item.productName,
+          unitName: item.unitName,
+          quantity: item.quantity,
+          collapse: false,
+        })),
+        listLengthOutput: listLength,
+        beginItemOutput: beginItem,
+        endItemOutput: endItem,
+        totalElementItemOutput: endItem - beginItem,
+        currentPageOutput: page,
+        isLoadingOutput: false,
+      });
+    } catch (error) {
+      console.error("Lỗi fetch output:", error);
+      this.setState({ isLoadingOutput: false });
+    }
+  };
+
+  handleChangeFilterOutput = (name) => (value) => {
+    const normalized =
+      value && typeof value === "object" && moment.isMoment(value)
+        ? value.format("DD/MM/YYYY")
+        : value;
+    this.setState({ [name]: normalized });
+  };
+
+  handleReloadOutput = () => {
+    const fromDefault = moment().subtract(30, "days").format("DD/MM/YYYY");
+    const toDefault = moment().format("DD/MM/YYYY");
+
+    this.setState(
+      {
+        productIdOutput: "",
+        fromDateOutput: fromDefault,
+        toDateOutput: toDefault,
+        currentPageOutput: 0,
+        isLoadingOutput: true,
+      },
+      async () => {
+        await this.fetchProductsOutput();
+
+        this.fetchReportOutput(0);
+      }
+    );
+  };
+
+  handleSearchOutput = () => {
+    this.fetchReportOutput(0);
+  };
+
+  // Tab 3 - Region Methods
+  fetchProductsRegion = async () => {
+    try {
+      const result = await fetchData.summaryReport.getListProductComboBox();
+      
+      let productsData = [];
+      
+      // Handle different response structures
+      if (result && Array.isArray(result)) {
+        productsData = result;
+      } else if (result && Array.isArray(result.products)) {
+        productsData = result.products;
+      } else if (result && Array.isArray(result.data)) {
+        productsData = result.data;
+      }
+      
+      if (productsData.length > 0) {
+        const products = productsData.map((item) => ({
+          id: item.id,
+          title: item.productName,
+          productName: item.productName,
+        }));
+        this.setState({ productsRegion: products });
+      } else {
+        this.setState({ productsRegion: [] });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+      this.setState({ productsRegion: [] });
+    }
+  };
+
+  fetchPlantingZonesRegion = async () => {
+    try {
+      const result = await fetchData.summaryReport.getListPlantingZoneComboBox();
+      
+      let zonesData = [];
+      
+      // Handle different response structures
+      if (result && Array.isArray(result)) {
+        zonesData = result;
+      } else if (result && Array.isArray(result.plantingZones)) {
+        zonesData = result.plantingZones;
+      } else if (result && Array.isArray(result.data)) {
+        zonesData = result.data;
+      }
+      
+      if (zonesData.length > 0) {
+        const zones = zonesData.map((item) => ({
+          id: item.id,
+          title: item.name,
+          name: item.name,
+        }));
+        this.setState({ plantingZonesRegion: zones });
+      } else {
+        this.setState({ plantingZonesRegion: [] });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách vùng trồng:", error);
+      this.setState({ plantingZonesRegion: [] });
+    }
+  };
+
+  fetchReportRegion = async (page = 0) => {
+    try {
+      const {
+        productIdRegion,
+        plantingZoneIdRegion,
+        fromDateRegion,
+        toDateRegion,
+        limitRegion,
+      } = this.state;
+
+      this.setState({ isLoadingRegion: true });
+
+      // Convert DD/MM/YYYY to YYYY-MM-DD for API
+      const fromDateAPI = fromDateRegion
+        ? moment(fromDateRegion, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+      const toDateAPI = toDateRegion
+        ? moment(toDateRegion, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+
+      const result = await fetchData.summaryReport.getListReportQuantityProductByPlantingZoneV2(
+        page,
+        limitRegion,
+        fromDateAPI,
+        toDateAPI,
+        productIdRegion || "",
+        plantingZoneIdRegion || ""
+      );
+
+      if (result && result.reports && Array.isArray(result.reports)) {
+        const reports = result.reports.map((item, index) => ({
+          id: item.id || index,
+          ...item,
+        }));
+
+        this.setState({
+          dataRegion: reports,
+          currentPageRegion: page,
+          isLoadingRegion: false,
+          listLengthRegion: reports.length,
+        });
+      } else {
+        this.setState({
+          dataRegion: [],
+          isLoadingRegion: false,
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy báo cáo:", error);
+      this.setState({
+        dataRegion: [],
+        isLoadingRegion: false,
+      });
+    }
+  };
+
+  handleChangeFilterRegion = (name) => (value) => {
+    console.log(`Filter change - ${name}:`, value);
+    if (name === "fromDateRegion" || name === "toDateRegion") {
+      const momentValue = moment(value);
+      const formattedValue = momentValue.isValid()
+        ? momentValue.format("DD/MM/YYYY")
+        : "";
+      this.setState({ [name]: formattedValue });
+    } else {
+      this.setState({ [name]: value });
+    }
+  };
+
+  handleReloadRegion = () => {
+    const fromDefault = moment().subtract(30, "days").format("DD/MM/YYYY");
+    const toDefault = moment().format("DD/MM/YYYY");
+
+    this.setState(
+      {
+        productIdRegion: "",
+        plantingZoneIdRegion: "",
+        fromDateRegion: fromDefault,
+        toDateRegion: toDefault,
+        currentPageRegion: 0,
+        isLoadingRegion: true,
+      },
+      async () => {
+        await this.fetchProductsRegion();
+        await this.fetchPlantingZonesRegion();
+
+        this.fetchReportRegion(0);
+      }
+    );
+  };
+
+  handleSearchRegion = () => {
+    this.fetchReportRegion(0);
+  };
+
+  // Tab 4 - Sell Methods
+  fetchProductsSell = async () => {
+    try {
+      const result = await fetchData.summaryReport.getListProductComboBox();
+      
+      let productsData = [];
+      
+      if (result && Array.isArray(result)) {
+        productsData = result;
+      } else if (result && Array.isArray(result.products)) {
+        productsData = result.products;
+      } else if (result && Array.isArray(result.data)) {
+        productsData = result.data;
+      }
+      
+      if (productsData.length > 0) {
+        const products = productsData.map((item) => ({
+          id: item.id,
+          title: item.productName,
+          productName: item.productName,
+        }));
+        this.setState({ productsSell: products });
+      } else {
+        this.setState({ productsSell: [] });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+      this.setState({ productsSell: [] });
+    }
+  };
+
+  fetchPartnersSell = async () => {
+    try {
+      const result = await fetchData.summaryReport.getListPartnerComboBox();
+      
+      let partnersData = [];
+      
+      if (result && Array.isArray(result)) {
+        partnersData = result;
+      } else if (result && Array.isArray(result.partners)) {
+        partnersData = result.partners;
+      } else if (result && Array.isArray(result.data)) {
+        partnersData = result.data;
+      }
+      
+      if (partnersData.length > 0) {
+        const partners = partnersData.map((item) => ({
+          id: item.id,
+          title: item.partnerName,
+          partnerName: item.partnerName,
+        }));
+        this.setState({ partnersSell: partners });
+      } else {
+        this.setState({ partnersSell: [] });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách đối tác:", error);
+      this.setState({ partnersSell: [] });
+    }
+  };
+
+  fetchReportSell = async (page = 0) => {
+    try {
+      const {
+        productIdSell,
+        partnerIdSell,
+        fromDateSell,
+        toDateSell,
+        limitSell,
+      } = this.state;
+
+      this.setState({ isLoadingSell: true });
+
+      // Convert DD/MM/YYYY to YYYY-MM-DD for API
+      const fromDateAPI = fromDateSell
+        ? moment(fromDateSell, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+      const toDateAPI = toDateSell
+        ? moment(toDateSell, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+
+      const result = await fetchData.summaryReport.getListReportSellV2(
+        page,
+        limitSell,
+        fromDateAPI,
+        toDateAPI,
+        productIdSell || "",
+        partnerIdSell || ""
+      );
+
+      if (result && result.reports && Array.isArray(result.reports)) {
+        const reports = result.reports.map((item, index) => ({
+          id: item.id || index,
+          ...item,
+        }));
+
+        this.setState({
+          dataSell: reports,
+          currentPageSell: page,
+          isLoadingSell: false,
+          listLengthSell: reports.length,
+        });
+      } else {
+        this.setState({
+          dataSell: [],
+          isLoadingSell: false,
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy báo cáo:", error);
+      this.setState({
+        dataSell: [],
+        isLoadingSell: false,
+      });
+    }
+  };
+
+  handleChangeFilterSell = (name) => (value) => {
+    console.log(`Filter change - ${name}:`, value);
+    if (name === "fromDateSell" || name === "toDateSell") {
+      const momentValue = moment(value);
+      const formattedValue = momentValue.isValid()
+        ? momentValue.format("DD/MM/YYYY")
+        : "";
+      this.setState({ [name]: formattedValue });
+    } else {
+      this.setState({ [name]: value });
+    }
+  };
+
+  handleReloadSell = () => {
+    const fromDefault = moment().subtract(30, "days").format("DD/MM/YYYY");
+    const toDefault = moment().format("DD/MM/YYYY");
+
+    this.setState(
+      {
+        productIdSell: "",
+        partnerIdSell: "",
+        fromDateSell: fromDefault,
+        toDateSell: toDefault,
+        currentPageSell: 0,
+        isLoadingSell: true,
+      },
+      async () => {
+        await this.fetchProductsSell();
+        await this.fetchPartnersSell();
+
+        this.fetchReportSell(0);
+      }
+    );
+  };
+
+  handleSearchSell = () => {
+    this.fetchReportSell(0);
+  };
 
   handlePageClickSummaryReportTemUse = (data) => {
     let { limitSummaryReportTemUse, dataSummaryReportTemUse } = this.state;
@@ -1004,6 +1466,9 @@ class SummaryReport extends Component {
       dataOutput,
       fromDateOutput,
       toDateOutput,
+      productIdOutput,
+      productsOutput,
+      isLoadingOutput,
 
       // Tab 3
       headerRegion,
@@ -1018,6 +1483,11 @@ class SummaryReport extends Component {
       dataRegion,
       fromDateRegion,
       toDateRegion,
+      productIdRegion,
+      plantingZoneIdRegion,
+      productsRegion,
+      plantingZonesRegion,
+      isLoadingRegion,
 
       // Tab 4
       headerSell,
@@ -1032,6 +1502,11 @@ class SummaryReport extends Component {
       dataSell,
       fromDateSell,
       toDateSell,
+      productIdSell,
+      partnerIdSell,
+      productsSell,
+      partnersSell,
+      isLoadingSell,
 
       // Tab 0 - Báo cáo tem sử dụng
       summaryReportTemUseInfo,
@@ -1193,10 +1668,6 @@ class SummaryReport extends Component {
               onChangeFilter={this.handleChangeFilterShipment}
               onSearch={this.handleSearchShipment}
               dataReload={this.handleReloadShipment}
-              PRODUCT_OPTIONS={PRODUCT_OPTIONS}
-              handleSubmitSearchFormShipment={
-                this.handleSubmitSearchFormShipment
-              }
             />
           )}
 
@@ -1221,68 +1692,61 @@ class SummaryReport extends Component {
               totalElementItem={totalElementItemOutput}
               handlePageClick={this.handlePageClickOutput}
               currentPage={currentPageOutput}
-              formDate={fromDateOutput}
+              fromDate={fromDateOutput}
               toDate={toDateOutput}
-              PRODUCT_OPTIONS={PRODUCT_OPTIONS}
-              handleSubmitSearchFormOutput={this.handleSubmitSearchFormOutput}
+              productId={productIdOutput}
+              products={productsOutput}
+              isLoading={isLoadingOutput}
+              onChangeFilter={this.handleChangeFilterOutput}
+              onSearch={this.handleSearchOutput}
+              dataReload={this.handleReloadOutput}
             />
           )}
 
           {currentTab === 3 && (
             <SummaryReportRegion
-              id={idRegion}
-              onHandleChangeValue={this.onHandleChangeValueRegion}
-              errorInserts={errorInserts}
-              insert={insertRegion}
-              handleModal={this.handleModal}
-              onConfirm={this.onConfirmRegion}
-              header={headerRegion}
               data={dataRegion}
               beginItem={beginItemRegion}
               endItem={endItemRegion}
-              toggle={this.toggleRegion}
-              onEdit={this.onEditRegion}
-              toggleModal={this.toggleModal}
-              setState={this.setState.bind(this)}
               listLength={listLengthRegion}
               totalPage={totalPageRegion}
               totalElementItem={totalElementItemRegion}
               handlePageClick={this.handlePageClickRegion}
               currentPage={currentPageRegion}
-              formDate={fromDateRegion}
+              fromDate={fromDateRegion}
+              header={headerRegion}
               toDate={toDateRegion}
-              PRODUCT_OPTIONS={PRODUCT_OPTIONS}
-              handleSubmitSearchFormRegion={this.handleSubmitSearchFormRegion}
-              PLANTINGZONE_OPTIONS={PLANTINGZONE_OPTIONS}
+              productId={productIdRegion}
+              plantingZoneId={plantingZoneIdRegion}
+              products={productsRegion}
+              plantingZones={plantingZonesRegion}
+              isLoading={isLoadingRegion}
+              onChangeFilter={this.handleChangeFilterRegion}
+              onSearch={this.handleSearchRegion}
+              dataReload={this.handleReloadRegion}
             />
           )}
 
           {currentTab === 4 && (
             <SummaryReportSell
-              id={idSell}
-              onHandleChangeValue={this.onHandleChangeValueSell}
-              errorInserts={errorInserts}
-              insert={insertSell}
-              handleModal={this.handleModal}
-              onConfirm={this.onConfirmSell}
-              header={headerSell}
               data={dataSell}
               beginItem={beginItemSell}
               endItem={endItemSell}
-              toggle={this.toggleSell}
-              onEdit={this.onEditSell}
-              toggleModal={this.toggleModal}
-              setState={this.setState.bind(this)}
               listLength={listLengthSell}
               totalPage={totalPageSell}
               totalElementItem={totalElementItemSell}
               handlePageClick={this.handlePageClickSell}
               currentPage={currentPageSell}
-              formDate={fromDateSell}
+              fromDate={fromDateSell}
               toDate={toDateSell}
-              PRODUCT_OPTIONS={PRODUCT_OPTIONS}
-              handleSubmitSearchFormSell={this.handleSubmitSearchFormSell}
-              CUSTOMER_OPTIONS={CUSTOMER_OPTIONS}
+              productId={productIdSell}
+              partnerId={partnerIdSell}
+              products={productsSell}
+              partners={partnersSell}
+              isLoading={isLoadingSell}
+              onChangeFilter={this.handleChangeFilterSell}
+              onSearch={this.handleSearchSell}
+              dataReload={this.handleReloadSell}
             />
           )}
         </div>

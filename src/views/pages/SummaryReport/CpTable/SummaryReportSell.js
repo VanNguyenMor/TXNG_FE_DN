@@ -11,44 +11,73 @@ import {
   DropdownMenu,
   DropdownItem,
   Button,
-  Row,
-  Col,
 } from "reactstrap";
-import AddNewQRSystem from "../AddNewQRSystem";
 import HeadTitleTable from "components/HeadTitleTable";
 import Pagination from "components/Pagination";
 import ReactDatetime from "react-datetime";
 import Select from "components/Select";
 import { formatMoney } from "utils/formatMoney";
+import moment from "moment";
 
 class SummaryReportSell extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      openDropdowns: {},
+    };
+  }
+
+  toggleDropdown = (itemId) => {
+    this.setState((prevState) => ({
+      openDropdowns: {
+        ...prevState.openDropdowns,
+        [itemId]: !prevState.openDropdowns[itemId],
+      },
+    }));
+  };
+
+  handleChangeSelectProduct = (value) => {
+    this.props.onChangeFilter("productIdSell")(value);
+  };
+
+  handleChangeSelectPartner = (value) => {
+    this.props.onChangeFilter("partnerIdSell")(value);
+  };
+
   render() {
     const {
-      id,
-      onHandleChangeValue,
-      errorInserts,
-      insert,
-      handleModal,
-      onConfirm,
-      header,
-      data,
-      beginItem,
-      endItem,
-      toggle,
-      onEdit,
-      listLength,
-      totalPage,
-      totalElementItem,
+      data = [],
+      beginItem = 0,
+      endItem = 10,
+      listLength = 0,
+      totalPage = 1,
+      totalElementItem = 0,
       handlePageClick,
-      currentPage,
-      fromDate,
-      toDate,
-      setState,
-      toggleModal,
-      PRODUCT_OPTIONS,
-      CUSTOMER_OPTIONS,
-      handleSubmitSearchFormShipment,
+      currentPage = 0,
+      fromDate = "",
+      toDate = "",
+      productId = "",
+      partnerId = "",
+      products = [],
+      partners = [],
+      isLoading = false,
+      onChangeFilter,
+      onSearch,
+      dataReload,
     } = this.props;
+
+    const header = [
+      "STT",
+      "Khách hàng",
+      "Sản phẩm",
+      "Đơn vị",
+      "Sản lượng",
+      "Đơn giá",
+      "VAT (%)",
+      "Tổng tiền",
+      "Người thực hiện",
+      "Thao tác",
+    ];
 
     return (
       <div className="config-system-content-config-qr-system">
@@ -58,38 +87,26 @@ class SummaryReportSell extends Component {
           isReadOnly={true}
           styleCustom={"justifyContentStart"}
           isShowForEdit={false}
-          moduleTitle={false ? "Xem QR hệ thống" : "Thêm mới QR hệ thống"}
-          moduleBody={
-            <AddNewQRSystem
-              id={id}
-              onHandleChangeValue={onHandleChangeValue}
-              errorInsert={errorInserts}
-              data={insert}
-            />
-          }
-          handleModal={handleModal}
-          onConfirm={onConfirm}
+          moduleTitle="Báo cáo bán hàng"
+          dataReload={dataReload}
           typeSearch={
             <>
               <div
                 className="div_flex"
-                style={{ marginBottom: "10px", flex: "wrap" }}
+                style={{ marginBottom: "10px", flexWrap: "wrap" }}
               >
                 <div className="mg-div-search">
                   <label className="form-control-label">Từ ngày</label>
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
-                        to: "fromDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={fromDate || ""}
+                      value={fromDate ? moment(fromDate) : ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
-                        this.setState({
-                          fromDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
+                        onChangeFilter("fromDateSell")(value)
                       }
                     />
                   </div>
@@ -100,16 +117,13 @@ class SummaryReportSell extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
-                        name: "toDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={toDate || ""}
+                      value={toDate ? moment(toDate) : ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
-                        this.setState({
-                          toDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
+                        onChangeFilter("toDateSell")(value)
                       }
                     />
                   </div>
@@ -117,28 +131,32 @@ class SummaryReportSell extends Component {
 
                 <div className="mg-div-search">
                   <label className="form-control-label">Sản phẩm</label>
-                  <div>
+                  <div style={{ minWidth: "200px" }}>
                     <Select
-                      name="filter"
-                      title="Lọc theo trạng thái"
-                      data={PRODUCT_OPTIONS}
-                      labelName="title"
+                      key={productId || "empty"}
+                      name="productIdSell"
+                      title="Chọn sản phẩm"
+                      data={products || []}
+                      labelName="productName"
                       val="id"
-                      handleChange={this.handleChangeSelectFilter}
+                      defaultValue={productId || null}
+                      handleChange={this.handleChangeSelectProduct}
                     />
                   </div>
                 </div>
 
                 <div className="mg-div-search">
                   <label className="form-control-label">Khách hàng</label>
-                  <div>
+                  <div style={{ minWidth: "200px" }}>
                     <Select
-                      name="filter"
-                      title="Lọc theo trạng thái"
-                      data={CUSTOMER_OPTIONS}
-                      labelName="title"
+                      key={partnerId || "empty"}
+                      name="partnerIdSell"
+                      title="Chọn khách hàng"
+                      data={partners || []}
+                      labelName="partnerName"
                       val="id"
-                      handleChange={this.handleChangeSelectFilter}
+                      defaultValue={partnerId || null}
+                      handleChange={this.handleChangeSelectPartner}
                     />
                   </div>
                 </div>
@@ -150,7 +168,8 @@ class SummaryReportSell extends Component {
                     color="default"
                     type="button"
                     size="md"
-                    onClick={handleSubmitSearchFormShipment}
+                    onClick={onSearch}
+                    disabled={isLoading}
                   >
                     <img src={SearchImg} alt="Tìm kiếm" />
                     <span>Tìm kiếm</span>
@@ -182,91 +201,55 @@ class SummaryReportSell extends Component {
                         {key + beginItem + 1}
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.customer}
+                        <span style={{ fontSize: 14 }}>
+                          {item.partnerName || item.customer || "-"}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.product}
+                        <span style={{ fontSize: 14 }}>
+                          {item.productName || item.product || "-"}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.unit}
+                        <span style={{ fontSize: 14 }}>
+                          {item.unitName || item.unit || "-"}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.quantity}
+                        <span style={{ fontSize: 14 }}>
+                          {item.quantity || 0}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {formatMoney(item.unitPrice)}
+                        <span style={{ fontSize: 14 }}>
+                          {formatMoney(item.unitPrice || 0)}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.vat}
+                        <span style={{ fontSize: 14 }}>
+                          {item.vat || item.perVAT || 0}%
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {formatMoney(item.totalAmount)}
+                        <span style={{ fontSize: 14 }}>
+                          {formatMoney(item.amount || item.totalAmount || 0)}
                         </span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.executor}
+                        <span style={{ fontSize: 14 }}>
+                          {item.fullName || item.executor || "-"}
                         </span>
                       </td>
                       <td>
                         <ButtonDropdown
-                          isOpen={item.collapse}
-                          toggle={() => toggle(key, item.id)}
+                          isOpen={this.state.openDropdowns[item.id] || false}
+                          toggle={() => this.toggleDropdown(item.id)}
                         >
                           <DropdownToggle>
                             <img src={MenuButton} alt="Menu" />
                           </DropdownToggle>
                           <DropdownMenu>
-                            <DropdownItem
-                              onClick={() =>
-                                alert("Chuyển sang trang quản lý phiếu xuất")
-                              }
-                            >
+                            <DropdownItem onClick={() => {}}>
                               Xem phiếu xuất
                             </DropdownItem>
                           </DropdownMenu>

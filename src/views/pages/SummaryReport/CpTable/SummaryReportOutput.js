@@ -1,5 +1,6 @@
 import HeaderTable from "components/HeaderTable";
 import React, { Component } from "react";
+import { withRouter } from "react-router-dom";
 import MenuButton from "../../../../assets/img/buttons/menu.png";
 import classes from "../index.module.css";
 import SearchImg from "../../../../assets/img/buttons/searchig.svg";
@@ -11,14 +12,19 @@ import {
   DropdownMenu,
   DropdownItem,
   Button,
+  Row,
 } from "reactstrap";
-import AddNewQRSystem from "../AddNewQRSystem";
 import HeadTitleTable from "components/HeadTitleTable";
 import Pagination from "components/Pagination";
 import ReactDatetime from "react-datetime";
 import Select from "components/Select";
+import moment from "moment";
 
 class SummaryReportOutput extends Component {
+  handleChangeSelectProduct = (value) => {
+    this.props.onChangeFilter("productIdOutput")(value);
+  };
+
   render() {
     const {
       id,
@@ -42,8 +48,12 @@ class SummaryReportOutput extends Component {
       toDate,
       setState,
       toggleModal,
-      PRODUCT_OPTIONS,
-      handleSubmitSearchFormOutput,
+      productId,
+      products,
+      isLoading,
+      onChangeFilter,
+      onSearch,
+      dataReload,
     } = this.props;
 
     return (
@@ -54,38 +64,28 @@ class SummaryReportOutput extends Component {
           isReadOnly={true}
           styleCustom={"justifyContentStart"}
           isShowForEdit={false}
-          moduleTitle={false ? "Xem QR hệ thống" : "Thêm mới QR hệ thống"}
-          moduleBody={
-            <AddNewQRSystem
-              id={id}
-              onHandleChangeValue={onHandleChangeValue}
-              errorInsert={errorInserts}
-              data={insert}
-            />
-          }
+          moduleTitle="Báo cáo sản lượng hàng hóa"
+          dataReload={dataReload}
           handleModal={handleModal}
           onConfirm={onConfirm}
           typeSearch={
             <>
               <div
                 className="div_flex"
-                style={{ marginBottom: "10px", flex: "wrap" }}
+                style={{ marginBottom: "10px", flexWrap: "wrap" }}
               >
                 <div className="mg-div-search">
                   <label className="form-control-label">Từ ngày</label>
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
-                        to: "fromDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={fromDate || ""}
+                      value={fromDate ? moment(fromDate) : ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
-                        this.setState({
-                          fromDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
+                        onChangeFilter("fromDateOutput")(value)
                       }
                     />
                   </div>
@@ -96,16 +96,13 @@ class SummaryReportOutput extends Component {
                   <div>
                     <ReactDatetime
                       inputProps={{
-                        placeholder: "dd/mm/yyyy",
-                        name: "toDate",
+                        placeholder: "DD/MM/YYYY",
                       }}
-                      value={toDate || ""}
+                      value={toDate ? moment(toDate) : ""}
                       timeFormat={false}
-                      dateFormat="DD-MM-YYYY"
+                      dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
-                        this.setState({
-                          toDate: value ? value.format("DD-MM-YYYY") : "",
-                        })
+                        onChangeFilter("toDateOutput")(value)
                       }
                     />
                   </div>
@@ -113,14 +110,16 @@ class SummaryReportOutput extends Component {
 
                 <div className="mg-div-search">
                   <label className="form-control-label">Sản phẩm</label>
-                  <div>
+                  <div style={{ minWidth: "200px" }}>
                     <Select
-                      name="filter"
-                      title="Lọc theo trạng thái"
-                      data={PRODUCT_OPTIONS}
-                      labelName="title"
+                      key={productId || "empty"}
+                      name="productIdOutput"
+                      title="Chọn sản phẩm"
+                      data={products || []}
+                      labelName="productName"
                       val="id"
-                      handleChange={this.handleChangeSelectFilter}
+                      defaultValue={productId || null}
+                      handleChange={this.handleChangeSelectProduct}
                     />
                   </div>
                 </div>
@@ -132,10 +131,11 @@ class SummaryReportOutput extends Component {
                     color="default"
                     type="button"
                     size="md"
-                    onClick={handleSubmitSearchFormOutput}
+                    onClick={() => onSearch && onSearch()}
+                    disabled={isLoading}
                   >
                     <img src={SearchImg} alt="Tìm kiếm" />
-                    <span>Tìm kiếm</span>
+                    <span>{isLoading ? "Đang tải..." : "Tìm kiếm"}</span>
                   </Button>
                 </div>
               </div>
@@ -155,7 +155,13 @@ class SummaryReportOutput extends Component {
               }}
             />
             <tbody className="config-system-content-config-server-list-table-body">
-              {Array.isArray(data) &&
+              {isLoading ? (
+                <tr>
+                  <td colSpan={header.length + 1} className="text-center">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : Array.isArray(data) && data.length > 0 ? (
                 data
                   .filter((item, key) => key >= beginItem && key < endItem)
                   .map((item, key) => (
@@ -164,31 +170,13 @@ class SummaryReportOutput extends Component {
                         {key + beginItem + 1}
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.product}
-                        </span>
+                        <span style={{ fontSize: 14 }}>{item.productName}</span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.unit}
-                        </span>
+                        <span style={{ fontSize: 14 }}>{item.unitName}</span>
                       </td>
                       <td style={{ textAlign: "left" }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                          }}
-                        >
-                          {item.quantity}
-                        </span>
+                        <span style={{ fontSize: 14 }}>{item.quantity}</span>
                       </td>
                       <td>
                         <ButtonDropdown
@@ -201,20 +189,37 @@ class SummaryReportOutput extends Component {
                           <DropdownMenu>
                             <DropdownItem
                               onClick={() =>
-                                alert("Chuyển sang trang quản lý sản phẩm")
+                                this.props.history.push(
+                                  "/trang_chu/quan_ly_hang_hoa"
+                                )
                               }
                             >
                               Xem sản phẩm
+                            </DropdownItem>
+                            <DropdownItem
+                              onClick={() =>
+                                this.props.history.push("/trang_chu/vung_trong")
+                              }
+                            >
+                              Xem vùng
                             </DropdownItem>
                           </DropdownMenu>
                         </ButtonDropdown>
                       </td>
                     </tr>
-                  ))}
+                  ))
+              ) : (
+                <tr>
+                  <td colSpan={header.length + 1} className="text-center">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </Card>
-        {Array.isArray(data) && listLength > 0 && (
+
+        {!isLoading && Array.isArray(data) && listLength > 0 && (
           <Pagination
             data={data}
             listLength={listLength}
@@ -229,4 +234,4 @@ class SummaryReportOutput extends Component {
   }
 }
 
-export default SummaryReportOutput;
+export default withRouter(SummaryReportOutput);
