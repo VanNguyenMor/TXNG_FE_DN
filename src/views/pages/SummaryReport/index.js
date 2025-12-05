@@ -112,7 +112,9 @@ class SummaryReport extends Component {
         remainCount: 0,
         badCount: 0,
       },
-      fromDateSummaryReportTemUse: moment().subtract(30, "days").format("YYYY-MM-DD"),
+      fromDateSummaryReportTemUse: moment()
+        .subtract(30, "days")
+        .format("YYYY-MM-DD"),
       toDateSummaryReportTemUse: moment().format("YYYY-MM-DD"),
       productIdTemUse: "",
       productsTemUse: [],
@@ -290,7 +292,10 @@ class SummaryReport extends Component {
           totalElementItemSummaryReportTemUse: reports.length,
           currentPageSummaryReportTemUse: page,
           beginItemSummaryReportTemUse: 0,
-          endItemSummaryReportTemUse: Math.min(limitSummaryReportTemUse, reports.length),
+          endItemSummaryReportTemUse: Math.min(
+            limitSummaryReportTemUse,
+            reports.length
+          ),
           isLoadingTemUse: false,
         });
       }
@@ -310,7 +315,9 @@ class SummaryReport extends Component {
     this.setState(
       {
         productIdTemUse: "",
-        fromDateSummaryReportTemUse: moment().subtract(30, "days").format("YYYY-MM-DD"),
+        fromDateSummaryReportTemUse: moment()
+          .subtract(30, "days")
+          .format("YYYY-MM-DD"),
         toDateSummaryReportTemUse: moment().format("YYYY-MM-DD"),
         currentPageSummaryReportTemUse: 0,
       },
@@ -335,7 +342,7 @@ class SummaryReport extends Component {
     }
   };
 
-  fetchReportShipment = async (page) => {
+  fetchReportShipment = async (page = 0) => {
     try {
       this.setState({ isLoadingShipment: true });
 
@@ -346,50 +353,56 @@ class SummaryReport extends Component {
         productIdShipment,
       } = this.state;
 
-      const result = await fetchData.summaryReport.getListReportShipment(
+      const result = await fetchData.summaryReport.getListReportBatchV2(
         page,
         limitShipment,
-        fromDateShipment || moment().subtract(30, "days").format("YYYY-MM-DD"),
-        toDateShipment || moment().format("YYYY-MM-DD"),
+        fromDateShipment,
+        toDateShipment,
         productIdShipment
       );
+      const reports = result?.reports || [];
+      const info = result?.info || {
+        totalCount: 0,
+        shipmentCount: 0,
+      };
 
-      if (result?.data) {
-        const reports = result.data.reports || [];
-        const info = result.data.info || {
-          totalCount: 0,
-          shipmentCount: 0,
-        };
+      const listLength = reports.length;
+      const beginItem = page * limitShipment;
+      const endItem = Math.min(beginItem + limitShipment, listLength);
 
-        const beginItem = page * limitShipment;
-        const endItem = Math.min(beginItem + limitShipment, reports.length);
-        const totalElement = endItem - beginItem;
-
-        this.setState({
-          dataShipment: reports,
-          summaryShipmentInfo: info,
-          currentPageShipment: page,
-          beginItemShipment: beginItem,
-          endItemShipment: endItem,
-          totalElementItemShipment: totalElement,
-          listLengthShipment: reports.length,
-          isLoadingShipment: false,
-        });
-      } else {
-        this.setState({ isLoadingShipment: false });
-      }
+      this.setState({
+        dataShipment: reports.map((item, index) => ({
+          id: item.id,
+          stt: index + 1,
+          date: item.createdDate
+            ? moment(item.createdDate).format("DD/MM/YYYY")
+            : "",
+          shipmentCode: item.batchNum,
+          stampQuantity: item.usedCount,
+          collapse: false,
+        })),
+        summaryShipmentInfo: info,
+        listLengthShipment: listLength,
+        beginItemShipment: beginItem,
+        endItemShipment: endItem,
+        totalElementItemShipment: endItem - beginItem,
+        currentPageShipment: page,
+        isLoadingShipment: false,
+      });
     } catch (error) {
-      console.error("Lỗi khi lấy báo cáo lô hàng:", error);
+      console.error("Lỗi fetch shipment:", error);
       this.setState({ isLoadingShipment: false });
     }
   };
 
-  // Handle filter change for Shipment
   handleChangeFilterShipment = (name) => (value) => {
-    this.setState({ [name]: value });
+    const normalized =
+      value && typeof value === "object" && moment.isMoment(value)
+        ? value.format("YYYY-MM-DD")
+        : value;
+    this.setState({ [name]: normalized });
   };
 
-  // Handle reload - reset filters and fetch fresh data for Shipment
   handleReloadShipment = () => {
     this.setState(
       {
@@ -398,13 +411,10 @@ class SummaryReport extends Component {
         toDateShipment: moment().format("YYYY-MM-DD"),
         currentPageShipment: 0,
       },
-      () => {
-        this.fetchReportShipment(0);
-      }
+      () => this.fetchReportShipment(0)
     );
   };
 
-  // Handle search button click for Shipment
   handleSearchShipment = () => {
     this.fetchReportShipment(0);
   };
@@ -641,12 +651,10 @@ class SummaryReport extends Component {
   };
 
   handleSubmitSearchFormShipment = () => {
-    console.log("Submit form tìm kiếm với:", {
-      fromDateShipment: this.state.fromDateShipment,
-      toDateShipment: this.state.toDateShipment,
+    this.setState({ currentPageShipment: 0 }, () => {
+      this.fetchReportShipment(0);
     });
   };
-
   // Method output
 
   handlePageClickOutput = (data) => {
@@ -1290,4 +1298,4 @@ class SummaryReport extends Component {
   }
 }
 
-export default SummaryReport
+export default SummaryReport;

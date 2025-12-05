@@ -581,9 +581,9 @@ export const fetchData = {
       }
     },
 
-    getListReportShipment: async (page, limit, startDate, endDate, productId) => {
+    getListReportBatchV2: async (page, limit, startDate, endDate, productId) => {
       try {
-        const endpoint = SUMMARY_REPORT.getListReportShipment
+        const endpoint = SUMMARY_REPORT.getListReportBatchV2
           .replace("{0}", page)
           .replace("{1}", limit)
           .replace("{2}", startDate)

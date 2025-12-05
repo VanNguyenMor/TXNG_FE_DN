@@ -34,7 +34,7 @@ class SummaryReportShipment extends Component {
       insert,
       handleModal,
       onConfirm,
-      header, // ["STT", "Ngày", "Mã lô", "SL Tem", "Hành động"]
+      header,
       data,
       beginItem,
       endItem,
@@ -46,9 +46,9 @@ class SummaryReportShipment extends Component {
       currentPage,
       fromDate,
       toDate,
-      products, // Danh sách sản phẩm
-      productId, // ID sản phẩm đang chọn
-      isLoading, // Trạng thái loading
+      products, 
+      productId, 
+      isLoading, 
       handleSubmitSearchFormShipment,
       onChangeFilter,
     } = this.props;
@@ -78,7 +78,6 @@ class SummaryReportShipment extends Component {
                 className="div_flex"
                 style={{ marginBottom: "10px", flexWrap: "wrap" }}
               >
-                {/* --- FILTER: TỪ NGÀY --- */}
                 <div className="mg-div-search">
                   <label className="form-control-label">Từ ngày</label>
                   <div>
@@ -96,7 +95,6 @@ class SummaryReportShipment extends Component {
                   </div>
                 </div>
 
-                {/* --- FILTER: ĐẾN NGÀY --- */}
                 <div className="mg-div-search">
                   <label className="form-control-label">Đến ngày</label>
                   <div>
@@ -114,7 +112,6 @@ class SummaryReportShipment extends Component {
                   </div>
                 </div>
 
-                {/* --- FILTER: SẢN PHẨM --- */}
                 <div className="mg-div-search">
                   <label className="form-control-label">Sản phẩm</label>
                   <div style={{ minWidth: "200px" }}>
@@ -130,7 +127,6 @@ class SummaryReportShipment extends Component {
                   </div>
                 </div>
 
-                {/* --- BUTTON: TÌM KIẾM --- */}
                 <div className="mg-btn">
                   <label className="form-control-label">&nbsp;</label>
                   <Button
@@ -169,29 +165,26 @@ class SummaryReportShipment extends Component {
                   </td>
                 </tr>
               ) : Array.isArray(data) && data.length > 0 ? (
-                data.map((item, key) => (
+                data
+                .filter((item, key) => key >= beginItem && key < endItem)
+                .map((item, key) => (
                   <tr key={key}>
-                    {/* Cột 1: STT */}
                     <td className="table-scale-col table-user-col-1">
                       {item.stt}
                     </td>
 
-                    {/* Cột 2: Ngày */}
                     <td style={{ textAlign: "left" }}>
                       <span style={{ fontSize: 14 }}>{item.date}</span>
                     </td>
 
-                    {/* Cột 3: Mã lô */}
                     <td style={{ textAlign: "left" }}>
                       <span style={{ fontSize: 14 }}>{item.shipmentCode}</span>
                     </td>
 
-                    {/* Cột 4: Số lượng tem */}
                     <td style={{ textAlign: "left" }}>
                       <span style={{ fontSize: 14 }}>{item.stampQuantity}</span>
                     </td>
 
-                    {/* Cột 5: Hành động */}
                     <td>
                       <ButtonDropdown
                         isOpen={item.collapse}
