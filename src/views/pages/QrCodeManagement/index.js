@@ -54,9 +54,26 @@ class QrCodeManagement extends Component {
       deleteItemQRArises: null,
       headerQRArises: QR_SYSTEM_ARISES,
       isLoadedQRArises: false,
-      fromDate: null,
-      toDate: null,
-      selectedProductId: null, // thêm để filter theo sản phẩm
+      fromDate: "",
+      toDate: "",
+      selectedProductId: "",
+
+      // Tab 1b - QR Incurred (separate state as requested)
+      dataQRIncurredOriginal: [],
+      dataQRIncurredFiltered: [],
+      dataQRIncurred: [],
+      limitQRIncurred: limitQRArises,
+      beginItemQRIncurred: 0,
+      endItemQRIncurred: limitQRArises,
+      totalElementQRIncurred: 0,
+      listLengthQRIncurred: 0,
+      currentPageQRIncurred: 0,
+      insertQRIncurred: {},
+      idQRIncurred: null,
+      warningPopupDelIncurred: false,
+      deleteItemQRIncurred: null,
+      headerQRIncurred: "QR INCURRED",
+      isLoadedQRIncurred: false,
 
       // Tab 2 - QR List
       limitQRList,
@@ -65,12 +82,17 @@ class QrCodeManagement extends Component {
       totalElementQRList: 0,
       listLengthQRList: 0,
       currentPageQRList: 0,
+      isLoadedQRList: false,
       dataQRList: [],
+      dataQRListOriginal: [],
       insertQRList: {},
       idQRList: null,
       warningPopupDelList: false,
       deleteItemQRList: null,
       headerQRList: QR_SYSTEM_LIST,
+      // QR List Filters
+      fromDateQRList: "",
+      toDateQRList: "",
 
       // Dùng chung
       popupMessage: false,
@@ -80,6 +102,11 @@ class QrCodeManagement extends Component {
       isShowForListHistory: false,
       createNewModal: false,
       PRODUCT_OPTIONS: [],
+      // Reset keys for forcing component re-mount
+      resetKeyQRArises: 0,
+      resetKeyQRList: 0,
+      // AddNewQRList form data
+      qrListFormData: {},
     };
   }
 
@@ -108,11 +135,10 @@ class QrCodeManagement extends Component {
     }
   };
 
-  /** FETCH QR SYSTEM */
   fetchQRSystem = async () => {
     this.setState({ isLoadedQRSystem: true });
     try {
-      const result = await fetchData.qrManagement.getListManageQRSystem();
+      const result = await fetchData.qrCodeManagement.getListManageQRSystem();
       if (result && Array.isArray(result.qRCodes)) {
         const { currentPageQRSystem, limitQRSystem } = this.state;
         const mappedData = result.qRCodes.map((item, idx) => ({
@@ -139,12 +165,110 @@ class QrCodeManagement extends Component {
     }
   };
 
-  /** FETCH QR ARISES */
+  handleQRSystemDataReload = () => {
+    this.setState(
+      {
+        currentPageQRSystem: 0,
+        beginItemQRSystem: 0,
+        endItemQRSystem: this.state.limitQRSystem,
+      },
+      () => {
+        this.fetchQRSystem();
+      }
+    );
+  };
+
+  handleQRListDataReload = () => {
+    // Reset filters and pagination, then refetch data
+    this.setState(
+      {
+        currentPageQRList: 0,
+        beginItemQRList: 0,
+        endItemQRList: this.state.limitQRList,
+        fromDateQRList: "",
+        toDateQRList: "",
+        resetKeyQRList: this.state.resetKeyQRList + 1,
+      },
+      () => {
+        this.fetchQRList();
+      }
+    );
+  };
+
+  // Filter QR List by date
+  handleFilterQRList = () => {
+    const {
+      dataQRListOriginal,
+      fromDateQRList,
+      toDateQRList,
+      limitQRList,
+    } = this.state;
+
+    let filtered = Array.isArray(dataQRListOriginal)
+      ? dataQRListOriginal.slice()
+      : [];
+
+    // Filter by fromDate
+    if (fromDateQRList) {
+      const fromDate = new Date(fromDateQRList);
+      filtered = filtered.filter((item) => {
+        const itemDate = new Date(item.confirmedDate);
+        return itemDate >= fromDate;
+      });
+    }
+
+    // Filter by toDate
+    if (toDateQRList) {
+      const toDate = new Date(toDateQRList);
+      toDate.setHours(23, 59, 59, 999); // Include entire day
+      filtered = filtered.filter((item) => {
+        const itemDate = new Date(item.confirmedDate);
+        return itemDate <= toDate;
+      });
+    }
+
+    // Update state with filtered data and reset pagination
+    this.setState({
+      dataQRList: filtered,
+      listLengthQRList: filtered.length,
+      currentPageQRList: 0,
+      beginItemQRList: 0,
+      endItemQRList: Math.min(limitQRList, filtered.length),
+      totalElementQRList: filtered.length,
+    });
+  };
+
+  handleChangeFilterQRList = (name) => (value) => {
+    this.setState({ [name]: value });
+  };
+
+  handleQRListSubmitSearch = () => {
+    this.handleFilterQRList();
+  };
+
+  handleQRArisesDataReload = () => {
+    // Reset pagination to first page and refetch data
+    this.setState(
+      {
+        currentPageQRArises: 0,
+        beginItemQRArises: 0,
+        endItemQRArises: this.state.limitQRArises,
+        fromDate: "",
+        toDate: "",
+        selectedProductId: "",
+        resetKeyQRArises: this.state.resetKeyQRArises + 1,
+      },
+      () => {
+        this.fetchQRArises();
+      }
+    );
+  };
+
   fetchQRArises = async () => {
     this.setState({ isLoadedQRArises: true });
     try {
       const { currentPageQRArises, limitQRArises } = this.state;
-      const result = await fetchData.qrManagement.getListManageQRIncurred();
+      const result = await fetchData.qrCodeManagement.getListManageQRIncurred();
 
       const qrData = result && result.batches;
       const totalElements = result && result.total;
@@ -206,8 +330,82 @@ class QrCodeManagement extends Component {
         if (tab === 1 && this.state.dataQRArises.length === 0) {
           this.fetchQRArises();
         }
+        if (tab === 2 && this.state.dataQRList.length === 0) {
+          this.fetchQRList();
+        }
       }
     );
+  };
+
+  fetchQRList = async () => {
+    this.setState({ isLoadedQRList: true });
+    try {
+      const { currentPageQRList, limitQRList } = this.state;
+      const result = await fetchData.qrCodeManagement.getListManageQRRequest(
+        currentPageQRList,
+        limitQRList
+      );
+
+      // normalize different possible response shapes; backend returns { data: { qrCodes: [...] } }
+      const items =
+        (result &&
+          (result.qrCodes || result.items || result.data || result.list)) ||
+        (Array.isArray(result) ? result : []);
+      const total =
+        result &&
+        (result.total ||
+          result.totalCount ||
+          result.count ||
+          (Array.isArray(items) ? items.length : 0));
+
+      if (items && Array.isArray(items)) {
+        const mappedData = items.map((item, idx) => ({
+          ...item,
+          collapse: false,
+          code: item.code || item.nameCode || item.batchCode || item.id,
+          approvalDate:
+            item.approvalDate || item.confirmedDate || item.approvalDate,
+          temList:
+            item.temList ||
+            (item.startRange && item.endRange
+              ? `${item.startRange} - ${item.endRange}`
+              : item.temList || ""),
+          useCount:
+            item.useCount !== undefined ? item.useCount : item.usedCount,
+          availableCount:
+            item.availableCount !== undefined
+              ? item.availableCount
+              : item.remainCount,
+          errorCount:
+            item.errorCount !== undefined ? item.errorCount : item.badCount,
+          quantity: item.quantity,
+          index: currentPageQRList * limitQRList + idx + 1,
+        }));
+
+        this.setState({
+          dataQRList: mappedData,
+          dataQRListOriginal: mappedData, // Store original data for filtering
+          listLengthQRList: mappedData.length,
+          totalElementQRList: total !== undefined ? total : mappedData.length,
+          endItemQRList: Math.min(limitQRList, mappedData.length),
+          isLoadedQRList: false,
+        });
+      } else {
+        this.setState({
+          dataQRList: [],
+          dataQRListOriginal: [],
+          listLengthQRList: 0,
+          totalElementQRList: 0,
+          endItemQRList: 0,
+          isLoadedQRList: false,
+        });
+        toast.error("Không có dữ liệu QR Request!");
+      }
+    } catch (error) {
+      console.error("Fetch QRList error:", error);
+      this.setState({ isLoadedQRList: false });
+      toast.error("Lỗi khi load dữ liệu QR Request!");
+    }
   };
 
   handlePageClickQRSystem = (data) => {
@@ -242,6 +440,229 @@ class QrCodeManagement extends Component {
     });
   };
 
+  handlePageClickQRList = (data) => {
+    const { limitQRList, dataQRList } = this.state;
+    const selected = data.selected;
+    const beginItemQRList = selected * limitQRList;
+    const endItemQRList = Math.min(
+      beginItemQRList + limitQRList,
+      dataQRList.length
+    );
+    this.setState({
+      beginItemQRList,
+      endItemQRList,
+      currentPageQRList: selected,
+      totalElementQRList: endItemQRList - beginItemQRList,
+    });
+  };
+
+  toggleQRSystem = (idx, id) => {
+    this.setState((prev) => {
+      const data = Array.isArray(prev.dataQRSystem)
+        ? prev.dataQRSystem.slice()
+        : [];
+      let i =
+        typeof idx === "number" ? idx : data.findIndex((d) => d.id === id);
+      if (i >= 0 && data[i]) {
+        data[i] = { ...data[i], collapse: !data[i].collapse };
+      }
+      return { dataQRSystem: data };
+    });
+  };
+
+  toggleQRArises = (idx, id) => {
+    this.setState((prev) => {
+      const filtered = Array.isArray(prev.dataQRArisesFiltered)
+        ? prev.dataQRArisesFiltered.slice()
+        : [];
+      const original = Array.isArray(prev.dataQRArisesOriginal)
+        ? prev.dataQRArisesOriginal.slice()
+        : [];
+      let i =
+        typeof idx === "number" ? idx : filtered.findIndex((d) => d.id === id);
+      if (i >= 0 && filtered[i]) {
+        filtered[i] = { ...filtered[i], collapse: !filtered[i].collapse };
+      }
+      // also toggle in original if possible
+      const j = original.findIndex((d) => d.id === id);
+      if (j >= 0 && original[j]) {
+        original[j] = { ...original[j], collapse: !original[j].collapse };
+      }
+      return {
+        dataQRArisesFiltered: filtered,
+        dataQRArisesOriginal: original,
+      };
+    });
+  };
+
+  toggleQRList = (idx, id) => {
+    this.setState((prev) => {
+      const data = Array.isArray(prev.dataQRList)
+        ? prev.dataQRList.slice()
+        : [];
+      let i =
+        typeof idx === "number" ? idx : data.findIndex((d) => d.id === id);
+      if (i >= 0 && data[i]) {
+        data[i] = { ...data[i], collapse: !data[i].collapse };
+      }
+      return { dataQRList: data };
+    });
+  };
+
+  onEditQRSystem = (id) => async () => {
+    const item = (this.state.dataQRSystem || []).find((d) => d.id === id) || {};
+    console.log("onEditQRSystem selected item:", item);
+
+    // fetch full QR details using the qrCode value from the table row
+    if (item.qrCode) {
+      try {
+        const payload = { qrCode: item.qrCode };
+        const fullData = await fetchData.scanQR.scanQRCodePrivate(payload);
+        console.log("scanQRCodePrivate result:", fullData);
+
+        if (fullData) {
+          // merge table data with API response for complete information
+          const mergedItem = { ...item, ...fullData };
+          this.setState({
+            isShowForEdit: true,
+            idQRSystem: id,
+            insertQRSystem: mergedItem,
+            createNewModal: true,
+          });
+        } else {
+          // fallback to table data if API call fails
+          this.setState({
+            isShowForEdit: true,
+            idQRSystem: id,
+            insertQRSystem: item,
+            createNewModal: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching QR details:", error);
+        // fallback to table data
+        this.setState({
+          isShowForEdit: true,
+          idQRSystem: id,
+          insertQRSystem: item,
+          createNewModal: true,
+        });
+      }
+    } else {
+      // if no qrCode in table data, just use what we have
+      this.setState({
+        isShowForEdit: true,
+        idQRSystem: id,
+        insertQRSystem: item,
+        createNewModal: true,
+      });
+    }
+  };
+
+  onEditQRList = (id) => () => {
+    const item = (this.state.dataQRList || []).find((d) => d.id === id) || {};
+    this.setState({
+      isShowForEdit: true,
+      idQRList: id,
+      insertQRList: item,
+      createNewModal: true,
+    });
+  };
+
+  onEditQRListHistory = (id) => () => {
+    this.setState({
+      isShowForListHistory: true,
+      idQRList: id,
+      createNewModal: true,
+    });
+  };
+
+  onHandleChangeValueQRList = (data) => {
+    this.setState({ qrListFormData: data });
+  };
+
+  onConfirmQRList = async () => {
+    const { qrListFormData } = this.state;
+
+    try {
+      // Validate required fields
+      if (!qrListFormData.reasonVal) {
+        this.setState({
+          popupMessage: true,
+          messageErr: "Vui lòng nhập lý do hủy",
+        });
+        return;
+      }
+
+      if (!qrListFormData.stampRequestId) {
+        this.setState({
+          popupMessage: true,
+          messageErr: "Vui lòng chọn dải tem",
+        });
+        return;
+      }
+
+      if (!qrListFormData.fromVal || !qrListFormData.toVal) {
+        this.setState({
+          popupMessage: true,
+          messageErr: "Vui lòng nhập số tem từ và đến",
+        });
+        return;
+      }
+
+      if (!qrListFormData.badStamps || qrListFormData.badStamps.length === 0) {
+        this.setState({
+          popupMessage: true,
+          messageErr: "Vui lòng thêm dải mã QR",
+        });
+        return;
+      }
+
+      // Prepare payload
+      const formData = new FormData();
+      formData.append("ReasonVal", qrListFormData.reasonVal);
+      formData.append("StampRequestId", qrListFormData.stampRequestId);
+      formData.append("StartNum", qrListFormData.fromVal);
+      formData.append("EndNum", qrListFormData.toVal);
+
+      // Add files if any
+      if (qrListFormData.files && qrListFormData.files.length > 0) {
+        for (let i = 0; i < qrListFormData.files.length; i++) {
+          formData.append("Files", qrListFormData.files[i]);
+        }
+      }
+
+      // Call API
+      const result = await fetchData.qrCodeManagement.addBadStamp(formData);
+
+      if (result && result.status === 200) {
+        this.setState({
+          popupMessage: true,
+          messageErr: "Tạo yêu cầu hủy tem thành công",
+          qrListFormData: {},
+          isShowForEdit: false,
+          createNewModal: false,
+        });
+
+        // Reload QR List after 1 second
+        setTimeout(() => {
+          this.handleQRListDataReload();
+        }, 1000);
+      } else {
+        this.setState({
+          popupMessage: true,
+          messageErr: result?.message || "Tạo yêu cầu hủy tem thất bại",
+        });
+      }
+    } catch (error) {
+      console.error("onConfirmQRList error:", error);
+      this.setState({
+        popupMessage: true,
+        messageErr: "Lỗi: " + (error.message || "Tạo yêu cầu hủy tem thất bại"),
+      });
+    }
+  };
+
   toggleModal = (state) => {
     this.setState((prevState) => ({
       [state]: !prevState[state],
@@ -252,6 +673,10 @@ class QrCodeManagement extends Component {
       insertQRList: {},
       errorInserts: {},
     }));
+  };
+
+  onHandleChangeValueQR = (data) => {
+    this.setState({ insertQRSystem: data });
   };
 
   showTitleWithStatus = (status) => {
@@ -283,6 +708,12 @@ class QrCodeManagement extends Component {
     } = this.state;
 
     const filtered = (dataQRArisesOriginal || []).filter((item) => {
+      console.log("--- Bắt đầu kiểm tra Item ---");
+      console.log("item.productId:", item.productID); 
+      console.log("item.createdDate:", item.createdDate); 
+      console.log("selectedProductId (Filter Value):", selectedProductId);
+      console.log("----------------------------");
+
       const created = item.createdDate ? new Date(item.createdDate) : null;
       const from = fromDate ? new Date(fromDate) : null;
       const to = toDate ? new Date(toDate) : null;
@@ -291,7 +722,7 @@ class QrCodeManagement extends Component {
       if (from && created < from) return false;
       if (to && created > to) return false;
 
-      if (selectedProductId && item.productId !== selectedProductId)
+      if (selectedProductId && item.productID !== selectedProductId)
         return false;
 
       return true;
@@ -329,6 +760,8 @@ class QrCodeManagement extends Component {
       currentPageQRArises,
       headerQRArises,
       dataQRList,
+      listLengthQRList,
+      limitQRList,
       headerQRList,
       isShowForEdit,
       popupMessage,
@@ -341,6 +774,7 @@ class QrCodeManagement extends Component {
 
     const totalPageQRSystem = Math.ceil(listLengthQRSystem / limitQRSystem);
     const totalPageQRArises = Math.ceil(listLengthQRArises / limitQRArises);
+    const totalPageQRList = Math.ceil(listLengthQRList / limitQRList);
 
     const propsForQRSystem = {
       isShowForEdit,
@@ -356,8 +790,15 @@ class QrCodeManagement extends Component {
       insertQRSystem,
       createNewModal,
       warningPopupDelQR,
+      handleQRSystemDataReload: this.handleQRSystemDataReload,
       toggleModal: this.toggleModal,
+      errorInserts: this.state.errorInserts,
+      onHandleChangeValueQR: this.onHandleChangeValueQR,
       handlePageClickQRSystem: this.handlePageClickQRSystem,
+      toggleQRSystem: this.toggleQRSystem,
+      onEditQRSystem: this.onEditQRSystem,
+      toggleModalPopupDeleteQR: () => this.toggleModal("warningPopupDelQR"),
+      setDeleteItem: (id) => this.setState({ deleteItemQRSystem: id }),
     };
 
     const propsForQRArises = {
@@ -373,11 +814,14 @@ class QrCodeManagement extends Component {
       PRODUCT_OPTIONS,
       currentPageQRArises,
       handlePageClickQRArises: this.handlePageClickQRArises,
+      toggleQRArises: this.toggleQRArises,
       showTitleWithStatus: this.showTitleWithStatus,
       setDeleteItem: (id) => this.setState({ deleteItemQRArises: id }),
       setState: (newState) => this.setState(newState),
       handleSubmitSearchForm: this.handleSubmitSearchForm,
       handleChangeSelectFilter: this.handleChangeSelectFilter,
+      handleQRArisesDataReload: this.handleQRArisesDataReload,
+      resetKeyQRArises: this.state.resetKeyQRArises,
     };
 
     const propsForQRList = {
@@ -385,6 +829,32 @@ class QrCodeManagement extends Component {
       dataQRList,
       isShowForEdit,
       isShowForListHistory,
+      createNewModal: this.state.createNewModal,
+      beginItemQRList: this.state.beginItemQRList,
+      endItemQRList: this.state.endItemQRList,
+      listLengthQRList: this.state.listLengthQRList,
+      limitQRList: this.state.limitQRList,
+      totalPageQRList,
+      totalElementQRList: this.state.totalElementQRList,
+      currentPageQRList: this.state.currentPageQRList,
+      handlePageClickQRList: this.handlePageClickQRList,
+      toggleModal: this.toggleModal,
+      toggleQRList: this.toggleQRList,
+      onEditQRList: this.onEditQRList,
+      onEditQRListHistory: this.onEditQRListHistory,
+      toggleModalPopupDeleteList: () => this.toggleModal("warningPopupDelList"),
+      setDeleteItem: (id) => this.setState({ deleteItemQRList: id }),
+      warningPopupDelList: this.state.warningPopupDelList,
+      // Filter props
+      handleQRListDataReload: this.handleQRListDataReload,
+      handleChangeSelectFilter: this.handleChangeFilterQRList,
+      handleQRListSubmitSearch: this.handleQRListSubmitSearch,
+      fromDateQRList: this.state.fromDateQRList,
+      toDateQRList: this.state.toDateQRList,
+      resetKeyQRList: this.state.resetKeyQRList,
+      // Form handlers
+      onHandleChangeValueQRList: this.onHandleChangeValueQRList,
+      onConfimQRList: this.onConfirmQRList,
     };
 
     return (

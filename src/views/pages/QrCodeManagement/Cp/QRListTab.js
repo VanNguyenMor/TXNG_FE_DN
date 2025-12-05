@@ -7,10 +7,18 @@ import {
   DropdownMenu,
   DropdownItem,
   DropdownToggle,
+  Row,
+  Col,
+  Input,
+  Label,
+  Button,
 } from "reactstrap";
+import ReactDatetime from "react-datetime";
+import Select from "components/Select";
 
 import NoImg from "../../../../assets/img/NoImg/NoImg.jpg";
 import MenuButton from "../../../../assets/img/buttons/menu.png";
+import SearchImg from "../../../../assets/img/buttons/searchig.svg";
 import HeadTitleTable from "components/HeadTitleTable";
 import HeaderTable from "components/HeaderTable";
 import AddNewQRList from "../AddNewQRList";
@@ -51,6 +59,13 @@ const QRListTab = ({
   onHandleChangeValueQRList,
   onConfimQRList,
   setDeleteItem,
+  // Filter props
+  handleQRListDataReload,
+  handleChangeSelectFilter,
+  handleQRListSubmitSearch,
+  fromDateQRList,
+  toDateQRList,
+  resetKeyQRList,
 }) => {
   return (
     <div className="config-system-content-config-qr-list">
@@ -66,6 +81,7 @@ const QRListTab = ({
             ? "Thông tin lịch sử dải tem"
             : "Quản lý Mã QR"
         }
+        dataReload={handleQRListDataReload}
         moduleBody={
           <div>
             {isShowForEdit && (
@@ -83,6 +99,65 @@ const QRListTab = ({
         }
         handleModal={handleModal}
         onConfirm={onConfimQRList}
+        typeSearch={
+          <>
+            <div
+              className="div_flex"
+              style={{
+                marginBottom: "30px",
+                flex: "wrap",
+                width: "100%",
+                flexWrap: "wrap",
+                marginTop: "20px"
+              }}
+            >
+              <div className="mg-div-search">
+                <label className="form-control-label">Từ ngày</label>
+                <ReactDatetime
+                  key={`fromDateQRList-${resetKeyQRList}`}
+                  inputProps={{ placeholder: "dd/mm/yyyy" }}
+                  value={fromDateQRList || ""}
+                  timeFormat={false}
+                  dateFormat="DD-MM-YYYY"
+                  onChange={(value) =>
+                    handleChangeSelectFilter("fromDateQRList")(
+                      value ? value.format("YYYY-MM-DD") : ""
+                    )
+                  }
+                />
+              </div>
+
+              <div className="mg-div-search">
+                <label className="form-control-label">Đến ngày</label>
+                <ReactDatetime
+                  key={`toDateQRList-${resetKeyQRList}`}
+                  inputProps={{ placeholder: "dd/mm/yyyy" }}
+                  value={toDateQRList || ""}
+                  timeFormat={false}
+                  dateFormat="DD-MM-YYYY"
+                  onChange={(value) =>
+                    handleChangeSelectFilter("toDateQRList")(
+                      value ? value.format("YYYY-MM-DD") : ""
+                    )
+                  }
+                />
+              </div>
+
+              <div className="mg-btn">
+                <label className="form-control-label">&nbsp;</label>
+                <Button
+                  className="btn-warning-cs"
+                  color="default"
+                  size="md"
+                  onClick={() => handleQRListSubmitSearch()}
+                >
+                  <img src={SearchImg} alt="Tìm kiếm" />
+                  <span>Tìm kiếm</span>
+                </Button>
+              </div>
+            </div>
+          </>
+        }
       />
 
       <Card className="shadow">
@@ -111,7 +186,7 @@ const QRListTab = ({
                     <td>{item.availableCount}</td>
                     <td>{item.errorCount}</td>
 
-                    <td>
+                    {/* <td>
                       <ButtonDropdown
                         isOpen={item.collapse}
                         toggle={() => toggleQRList(idx, item.id)}
@@ -141,7 +216,7 @@ const QRListTab = ({
                           </DropdownItem>
                         </DropdownMenu>
                       </ButtonDropdown>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
           </tbody>
@@ -166,7 +241,7 @@ const QRListTab = ({
           isShowForEdit
             ? idQRList
               ? "Chỉnh sửa Mã QR"
-              : "Thêm mới Mã QR"
+              : "Xử lý dải tem"
             : isShowForListHistory
             ? "Thông tin lịch sử dải tem"
             : "Thông tin Mã QR"

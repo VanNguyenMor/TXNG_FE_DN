@@ -9,9 +9,10 @@ import IconAdd from "../../../assets/img/buttons/add.png";
 import IconDelete from "../../../assets/img/buttons/delete.png";
 
 // reactstrap components
-import { Input, InputGroup } from "reactstrap";
+import { Input, InputGroup, Button, Card, CardBody, CardHeader } from "reactstrap";
 import moment from "moment";
 import Select from "components/Select";
+import { fetchData } from "helpers/fetchData";
 
 class AddNewQRList extends Component {
   constructor(props) {
@@ -21,13 +22,58 @@ class AddNewQRList extends Component {
       id: null,
       reasonVal: "",
       executedDate: null,
-      temListId: null,
+      stampRequestId: null,
+      stampRequestName: "",
       fromVal: "",
-      fielVal: "",
       toVal: "",
+      badStamps: [],
+      files: [],
+      minStamp: 0,
+      maxStamp: 0,
+      companyCode: "",
+      stampRequests: [],
     };
     this.refFileImage = null;
   }
+
+  componentDidMount() {
+    // Fetch stamp requests and company code
+    this.fetchStampRequests();
+    this.fetchCompanyCode();
+  }
+
+  fetchCompanyCode = async () => {
+    try {
+      // Get from Redux store or local storage
+      const configSystemStore = this.props.ConfigSystemStore || {};
+      const companyCode = configSystemStore.company_code || "";
+      
+      if (companyCode) {
+        this.setState({ companyCode });
+      }
+    } catch (error) {
+      console.error("Fetch company code error:", error);
+    }
+  };
+
+  fetchStampRequests = async () => {
+    try {
+      const result = await fetchData.qrCodeManagement.getListStampRequestComboBox();
+      if (result && Array.isArray(result.stampRequests)) {
+        const stampRequests = result.stampRequests.map((item) => ({
+          id: item.id,
+          title: `${item.startNum} - ${item.endNum} (SL: ${item.quantity} | Ngày ĐK: ${moment(item.confirmedDate).format("DD/MM/YYYY")})`,
+          startNum: item.startNum,
+          endNum: item.endNum,
+          confirmedDate: item.confirmedDate,
+          quantity: item.quantity,
+        }));
+        this.setState({ stampRequests });
+      }
+    } catch (error) {
+      console.error("Fetch stamp requests error:", error);
+    }
+  };
 
   onChangeValue = (name) => (e) => {
     const value = e.target.value;
@@ -48,14 +94,99 @@ class AddNewQRList extends Component {
   };
 
   onChangeSelect = (name) => (value) => {
-    this.setState(
-      (prevState) => {
-        let newState = {
-          ...prevState,
-          [name]: value,
-        };
+    if (name === "stampRequestId") {
+      const selectedRequest = this.state.stampRequests.find(
+        (r) => r.id === value
+      );
+      if (selectedRequest) {
+        this.setState(
+          {
+            stampRequestId: value,
+            stampRequestName: selectedRequest.title,
+            minStamp: parseInt(selectedRequest.startNum),
+            maxStamp: parseInt(selectedRequest.endNum),
+            fromVal: "",
+            toVal: "",
+            badStamps: [],
+          },
+          () => {
+            if (this.props.onHandleChangeValue) {
+              this.props.onHandleChangeValue(this.state);
+            }
+          }
+        );
+      }
+    }
+  };
 
-        return newState;
+  onAddQRRange = () => {
+    const { stampRequestId, fromVal, toVal, minStamp, maxStamp, companyCode } = this.state;
+
+    const startNum = parseInt(fromVal || 0);
+    const endNum = parseInt(toVal || 0);
+
+    // Validations
+    if (!stampRequestId) {
+      alert("Vui lòng chọn dải tem");
+      return;
+    }
+
+    if (!startNum) {
+      alert("Vui lòng nhập số tem bắt đầu");
+      return;
+    }
+
+    if (!endNum) {
+      alert("Vui lòng nhập số tem kết thúc");
+      return;
+    }
+
+    if (startNum > endNum) {
+      alert("Số tem bắt đầu không được lớn hơn số tem kết thúc");
+      return;
+    }
+
+    if (startNum < minStamp || startNum > maxStamp) {
+      alert(
+        `Số tem bắt đầu phải nằm trong khoảng từ ${minStamp} đến ${maxStamp}`
+      );
+      return;
+    }
+
+    if (endNum < minStamp || endNum > maxStamp) {
+      alert(
+        `Số tem kết thúc phải nằm trong khoảng từ ${minStamp} đến ${maxStamp}`
+      );
+      return;
+    }
+
+    // Generate QR codes
+    let badStamps = [];
+    for (let i = startNum; i <= endNum; i++) {
+      const qrCode = `${companyCode}${i.toString().padStart(10, "0")}`;
+      badStamps.push({
+        id: `${i}_${Date.now()}`,
+        qrCode,
+        number: i,
+      });
+    }
+
+    this.setState(
+      {
+        badStamps,
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
+  };
+
+  onRemoveQR = (id) => {
+    this.setState(
+      {
+        badStamps: this.state.badStamps.filter((item) => item.id !== id),
       },
       () => {
         if (this.props.onHandleChangeValue) {
@@ -66,14 +197,33 @@ class AddNewQRList extends Component {
   };
 
   handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
+    const fileList = Array.from(files);
+    this.setState(
+      {
+        files: fileList,
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
   };
 
   render() {
-    const { errorInsert, id, TEMLIST_OPTIONS } = this.props;
-    const { reasonVal, executedDate, temListId, fromVal, toVal } = this.state;
+    const { errorInsert = {}, id } = this.props;
+    const {
+      reasonVal,
+      stampRequestId,
+      stampRequestName,
+      fromVal,
+      toVal,
+      badStamps,
+      stampRequests,
+      minStamp,
+      maxStamp,
+    } = this.state;
 
-    let dateConvert = executedDate && moment(executedDate).format("DD-MM-YYYY");
     return (
       <>
         <div className={`${classes.formControl} css-system-stamp`}>
@@ -85,15 +235,14 @@ class AddNewQRList extends Component {
               <InputGroup className="input-group-alternative css-border-input">
                 <Input
                   placeholder="Lý do hủy"
-                  type="text"
+                  type="textarea"
                   name="reasonVal"
                   value={reasonVal}
-                  defaultValue={reasonVal}
                   onChange={this.onChangeValue("reasonVal")}
                 />
               </InputGroup>
               <p className="form-error-message margin-bottom-0">
-                {errorInsert.name || ""}
+                {errorInsert?.reasonVal || ""}
               </p>
             </div>
           </div>
@@ -104,29 +253,28 @@ class AddNewQRList extends Component {
             </label>
             <div className={classes.inputArea}>
               <Select
-                value={temListId}
-                defaultValue={null}
+                value={stampRequestId}
                 labelMark={null}
                 className="wrap-insert-or-update-zone-item-select"
-                name="temListId"
-                title="Chọn chọn dải tem"
-                data={TEMLIST_OPTIONS}
+                name="stampRequestId"
+                title="Chọn dải tem"
+                data={stampRequests}
                 labelName="title"
                 val="id"
-                handleChange={this.onChangeSelect("temListId")}
+                handleChange={this.onChangeSelect("stampRequestId")}
               />
 
               <p className="form-error-message">
-                {errorInsert.temListId || ""}
+                {errorInsert?.stampRequestId || ""}
               </p>
             </div>
           </div>
 
-          {temListId && (
+          {stampRequestId && (
             <>
               <div className={classes.rowItem}>
                 <label className="form-control-label">
-                  Dải tem từ&nbsp;<b style={{ color: "red" }}>*</b>
+                  Số tem từ&nbsp;<b style={{ color: "red" }}>*</b>
                 </label>
                 <div className={classes.rowItem}>
                   <InputGroup className="input-group-alternative css-border-input">
@@ -134,18 +282,20 @@ class AddNewQRList extends Component {
                       onChange={this.onChangeValue("fromVal")}
                       type="number"
                       value={fromVal}
+                      placeholder={`Từ ${minStamp} đến ${maxStamp}`}
                       className="wrap-insert-or-update-zone-item-input"
                     />
                   </InputGroup>
 
                   <p className="form-error-message">
-                    {errorInsert.fromVal || ""}
+                    {errorInsert?.fromVal || ""}
                   </p>
                 </div>
               </div>
+
               <div className={classes.rowItem}>
                 <label className="form-control-label">
-                  Dải tem đến&nbsp;<b style={{ color: "red" }}>*</b>
+                  Số tem đến&nbsp;<b style={{ color: "red" }}>*</b>
                 </label>
                 <div className={classes.rowItem}>
                   <InputGroup className="input-group-alternative css-border-input">
@@ -153,71 +303,78 @@ class AddNewQRList extends Component {
                       onChange={this.onChangeValue("toVal")}
                       type="number"
                       value={toVal}
+                      placeholder={`Từ ${minStamp} đến ${maxStamp}`}
                       className="wrap-insert-or-update-zone-item-input"
                     />
                   </InputGroup>
 
                   <p className="form-error-message">
-                    {errorInsert.toVal || ""}
+                    {errorInsert?.toVal || ""}
                   </p>
                 </div>
+              </div>
+
+              <div className={classes.rowItem}>
+                <label className="form-control-label">&nbsp;</label>
+                <Button
+                  color="primary"
+                  size="md"
+                  onClick={this.onAddQRRange}
+                  className="btn-primary-cs"
+                >
+                  <img src={IconAdd} alt="Thêm" style={{ marginRight: "5px" }} />
+                  <span>Thêm dải mã QR</span>
+                </Button>
               </div>
             </>
           )}
 
-          <div className={classes.cardCustomQrList}>
-            <div class="card-header p-3 d-flex justify-content-between align-items-center bg-info text-white">
-              <h5 class="mb-0">Danh sách mã QR</h5>
-              <button
-                class="btn btn-warning btn-sm btn-icon-only ml-auto"
-                id="add-qr-btn"
-              >
-                <i class="fas fa-plus"></i>
-              </button>
-            </div>
+          {badStamps.length > 0 && (
+            <Card className={`${classes.cardCustomQrList} shadow`}>
+              <CardHeader className="bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 className="mb-0">Danh sách mã QR ({badStamps.length})</h5>
+              </CardHeader>
+              <CardBody>
+                <div
+                  className="d-flex flex-wrap"
+                  style={{ gap: "8px", maxHeight: "300px", overflowY: "auto" }}
+                >
+                  {badStamps.map((item) => (
+                    <div
+                      key={item.id}
+                      className="badge badge-primary p-2 d-flex align-items-center"
+                      style={{ fontSize: "12px" }}
+                    >
+                      <span>{item.qrCode}</span>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link ml-2 p-0"
+                        onClick={() => this.onRemoveQR(item.id)}
+                        style={{
+                          color: "white",
+                          textDecoration: "none",
+                          fontSize: "16px",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          )}
 
-            <div class="card-body p-3">
-              <div class="d-flex flex-wrap qr-list-container">
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000282
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000283
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000284
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000285
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000286
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000287
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000288
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000289
-                </span>
-                <span class="qr-item badge badge-primary m-1">
-                  TGI0200158000000290
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className={`${classes.rowItem} mr-b-0 `}>
-            <label className="wrap-insert-or-update-zone-item-label">
+          <div className={`${classes.rowItem}`}>
+            <label className="form-control-label">
               Chứng từ liên quan
             </label>
 
-            <div className={`${classes.inputArea} `}>
+            <div className={`${classes.inputArea}`}>
               <input
                 type="file"
                 className="form-control-file"
-                name="fielVal"
+                name="files"
                 multiple={true}
                 onChange={(e) => this.handleFileChange(e.target.files)}
               />

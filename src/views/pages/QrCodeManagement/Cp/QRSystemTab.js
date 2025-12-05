@@ -41,6 +41,7 @@ const QRSystemTab = ({
   onHandleChangeValueQR,
   errorInsertAlert,
   activeCreateSubmit,
+  handleQRSystemDataReload,
 }) => {
   return (
     <div className="config-system-content-config-qr-system">
@@ -50,7 +51,8 @@ const QRSystemTab = ({
         isReadOnly={true}
         styleCustom={"justifyContentStart"}
         isShowForEdit={isShowForEdit}
-        moduleTitle={isShowForEdit ? "Xem QR hệ thống" : "Thêm mới QR hệ thống"}
+        moduleTitle={"Xem QR hệ thống"}
+        dataReload={handleQRSystemDataReload}
         moduleBody={
           <AddNewQRSystem
             id={idQRSystem}
@@ -86,7 +88,7 @@ const QRSystemTab = ({
                       <br />
                       <span>Code: {item.code}</span>
                       <br />
-                      <span>Vùng sản xuất: {item.warehouseName}</span>
+                      <span>Vùng sản xuất: {item.plantingZoneName}</span>
                     </td>
                     <td>
                       <ButtonDropdown
@@ -104,7 +106,7 @@ const QRSystemTab = ({
                           >
                             Xem nhật ký truy xuất
                           </DropdownItem>
-                          <DropdownItem onClick={() => onEditQRSystem(item.id)}>
+                          <DropdownItem onClick={onEditQRSystem(item.id)}>
                             Xem thông tin QR
                           </DropdownItem>
                           <DropdownItem divider />
@@ -138,13 +140,14 @@ const QRSystemTab = ({
       {/* POPUP */}
       <CreateNewPopup
         createNewModal={createNewModal}
-        moduleTitle="Thêm mới QR Hệ thống"
+        moduleTitle="Xem QR Hệ thống"
         type100={true}
         moduleBody={
           <AddNewQRSystem
             id={idQRSystem}
             errorInsert={errorInsertAlert}
             onHandleChangeValue={onHandleChangeValueQR}
+            data={insertQRSystem}
           />
         }
         toggleModal={toggleModal}

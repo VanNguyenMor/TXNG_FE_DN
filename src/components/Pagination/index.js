@@ -11,12 +11,20 @@ class Pagination extends Component {
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
-      currentPage: 0,
+      currentPage: props.currentPage || 0,
     };
   }
 
+  componentDidUpdate(prevProps) {
+    // Sync currentPage from parent when it changes (e.g., on data reload)
+    if (prevProps.currentPage !== this.props.currentPage) {
+      this.setState({ currentPage: this.props.currentPage || 0 });
+    }
+  }
+
   render() {
-    const { data, listLength, totalPage, handlePageClick, totalElement } = this.props;
+    const { data, listLength, totalPage, handlePageClick, totalElement, currentPage } = this.props;
+    const { currentPage: stateCurrentPage } = this.state;
 
     return (
       <>
@@ -41,7 +49,7 @@ class Pagination extends Component {
                     previousClassName={classes.pageItem}
                     activeClassName={classes.pageActiveItem}
                     breakClassName={classes.breakPageItem}
-                    initialPage={0}
+                    forcePage={currentPage !== undefined ? currentPage : stateCurrentPage}
                   />
                 </div>
             )
