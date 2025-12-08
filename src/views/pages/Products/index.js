@@ -42,6 +42,8 @@ import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { PRODUCTS } from "../../../helpers/constant";
+import { fetchData } from "helpers/fetchData.js";
+import moment from "moment";
 
 class Product extends Component {
   constructor(props) {
@@ -109,8 +111,10 @@ class Product extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-      toDate: new Date(),
+      // fromDate = 8 tháng trước (8/11), toDate = hôm nay (8/12)
+      fromDate: moment().subtract(1, "month").format("DD-MM-YYYY"),
+      toDate: moment().format("DD-MM-YYYY"),
+      collapseList: [],
 
       STATUS_OPTIONS: [
         { id: 0, title: "Mới tạo" },
@@ -248,9 +252,10 @@ class Product extends Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     const { getListTypeZoneProperty } = this.props;
-    /* Fetch Summary */
+    
+    /* Fetch Summary - load all data without date filter */
     this.fetchSummary(
       JSON.stringify({
         search: "",
@@ -278,40 +283,132 @@ class Product extends Component {
   }
 
   fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
-
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
-      let collapseList = [];
-      const data = (res.data || {}).data || {};
+    const { limit } = this.state;
+    
+    // Parse filter parameters from data
+    let filterParams = {
+      page: 0,
+      limit: limit,
+      search: "",
+      filter: "",
+      orderBy: "",
+    };
 
-      let newData = [...this.state.data];
+    if (data) {
+      try {
+        const parsedData = typeof data === "string" ? JSON.parse(data) : data;
+        filterParams = {
+          page: parsedData.page || 0,
+          limit: parsedData.limit || limit,
+          search: parsedData.search || "",
+          filter: parsedData.filter || "",
+          orderBy: parsedData.orderBy || "",
+          fromDate: parsedData.fromDate,
+          toDate: parsedData.toDate,
+        };
+      } catch (e) {
+        console.error("Error parsing filter params:", e);
+      }
+    }
 
-      newData.forEach((item, key) => {
-        collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
+    // Call Consignment API (batch/getlist)
+    fetchData.consignments
+      .getListConsignment(filterParams)
+      .then((res) => {
+        // Handle null/undefined response
+        if (!res) {
+          this.setState({ isLoaded: false, data: [], collapseList: [] });
+          return;
+        }
+
+        // API returns { batchs: [...] }
+        let reports = res?.batchs || [];
+        
+        // Ensure reports is an array
+        if (!Array.isArray(reports)) {
+          reports = [];
+        }
+
+        // Apply client-side filtering if needed
+        if (filterParams.filter && reports.length > 0) {
+          reports = reports.filter((item) => {
+            return item.Status === parseInt(filterParams.filter);
+          });
+        }
+
+        // Apply date filtering
+        if ((filterParams.fromDate || filterParams.toDate) && reports.length > 0) {
+          reports = reports.filter((item) => {
+            // Use RequestedDate instead of CreatedDate
+            if (!item.RequestedDate) return true;
+            
+            // Parse item.RequestedDate (format: 2025-11-19T15:19:26.813)
+            const requestedDate = moment(item.RequestedDate);
+            
+            // Parse fromDate (format: "DD-MM-YYYY" string)
+            let fromDate = null;
+            if (filterParams.fromDate) {
+              fromDate = moment(filterParams.fromDate, "DD-MM-YYYY");
+            }
+            
+            // Parse toDate (format: "DD-MM-YYYY" string)
+            let toDate = null;
+            if (filterParams.toDate) {
+              toDate = moment(filterParams.toDate, "DD-MM-YYYY");
+            }
+
+            let isValid = true;
+            if (fromDate && fromDate.isValid()) {
+              isValid = isValid && requestedDate.isSameOrAfter(fromDate, "day");
+            }
+            if (toDate && toDate.isValid()) {
+              isValid = isValid && requestedDate.isSameOrBefore(toDate, "day");
+            }
+            return isValid;
+          });
+        }
+
+        let collapseList = [];
+        if (Array.isArray(reports)) {
+          reports.forEach((item) => {
+            collapseList.push({ id: item.ID, collapse: false });
+          });
+        }
+
+        const total = reports.length | 0;
+        const length = reports.length;
+
+        // Transform API data to match table format
+        const tableData = reports.map((item, index) => ({
+          id: item.ID,
+          batchNumber: item.BatchNum,
+          productId: item.ProductName,
+          quantity: item.Quantity || 0,
+          unit: item.UnitName || "kg",
+          requestDate: item.RequestedDate
+            ? moment(item.RequestedDate).format("DD/MM/YYYY HH:mm")
+            : "",
+          status: item.Status || 0,
+          parentID: "",
+          index: index + 1,
+          color: "",
+        }));
+
+        this.setState({
+          data: tableData,
+          listLength: total,
+          totalPage: Math.ceil(length / limit),
+          isLoaded: false,
+          collapseList: collapseList,
+        });
+      })
+      .catch((error) => {
+        console.error("Lỗi fetch dữ liệu:", error);
+        this.setState({ isLoaded: false });
+        toast.error("Lỗi khi tải dữ liệu");
       });
-
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
-
-      this.setState({
-        data: newData,
-        listLength: total,
-        totalPage: Math.ceil(length / limit),
-        isLoaded: false,
-        collapseList: collapseList,
-      });
-    });
   };
 
   closeStatusModal = () => {
@@ -373,14 +470,16 @@ class Product extends Component {
 
     filter[name] = value;
     this.setState({ filter });
+    // Removed auto-fetch - user must click reload button
   };
 
   handleSubmitSearchForm = () => {
     const { fromDate, toDate, filter } = this.state;
+    
     this.fetchSummary(
       JSON.stringify({
         search: "",
-        filter,
+        filter: filter && filter.filter ? filter.filter : "",
         fromDate,
         toDate,
         orderBy: "",
@@ -538,16 +637,16 @@ class Product extends Component {
   showTitleWithStatus = (id) => {
     const { STATUS_OPTIONS } = this.state;
 
-    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
+    let queue = Array.isArray(STATUS_OPTIONS) ? [...STATUS_OPTIONS] : [];
 
-    while (queue.length > 0) {
+    while (queue && queue.length > 0) {
       const status = queue.shift();
 
       if (status && status.id === id) {
         return status.title;
       }
 
-      if (status && status.children && status.children.length > 0) {
+      if (status && status.children && Array.isArray(status.children) && status.children.length > 0) {
         queue.push(...status.children);
       }
     }
@@ -557,6 +656,15 @@ class Product extends Component {
 
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
+    
+    // Ensure data is an array
+    if (!Array.isArray(data)) {
+      data = [];
+    }
+    if (!Array.isArray(collapseList)) {
+      return [];
+    }
+    
     let list = [];
     let parentid = [];
     let autoIndex = 0;
@@ -566,7 +674,7 @@ class Product extends Component {
 
     const cb = (e, key, array) => {
       const renderClass =
-        e.parentID.length === 0
+        (!e.parentID || e.parentID.length === 0)
           ? `${classes.treeParent}`
           : `${classes.treeChild}${
               parentid.includes(e.parentID)
@@ -621,7 +729,7 @@ class Product extends Component {
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
                           <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
+                            Xem chi tiết
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
@@ -642,7 +750,9 @@ class Product extends Component {
         </tr>
       );
       autoIndex++;
-      e.children && e.children.forEach(cb);
+      if (e.children && Array.isArray(e.children)) {
+        e.children.forEach(cb);
+      }
     };
 
     data.forEach(cb);
@@ -772,13 +882,12 @@ class Product extends Component {
                                   value={fromDate || ""}
                                   timeFormat={false}
                                   dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
+                                  onChange={(value) => {
+                                    const newFromDate = value
+                                      ? value.format("DD-MM-YYYY")
+                                      : "";
+                                    this.setState({ fromDate: newFromDate });
+                                  }}
                                 />
                               </div>
                             </div>
@@ -796,13 +905,12 @@ class Product extends Component {
                                   value={toDate || ""}
                                   timeFormat={false}
                                   dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
+                                  onChange={(value) => {
+                                    const newToDate = value
+                                      ? value.format("DD-MM-YYYY")
+                                      : "";
+                                    this.setState({ toDate: newToDate });
+                                  }}
                                 />
                               </div>
                             </div>

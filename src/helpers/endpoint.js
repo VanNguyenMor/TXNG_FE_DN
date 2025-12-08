@@ -103,6 +103,22 @@ export const SUMMARY_REPORT = {
   getListPartnerComboBox: "partner/getall",
 };
 
+export const CONSIGNMENTS = {
+  getListConsignment: "batch/getlist",
+  addConsignment: "batch/create",
+  getDetailConsignment: "batch/get/{id}",
+  editConsignment: "batch/update",
+  deleteConsignment: "batch/delete/{id}",
+  getListFieldComboBox: "batch/getfields",
+  getListProductComboBox: "product/getall",
+  getListWarehouseForUpdate: "warehouse/getall",
+  updateLock: "batch/lock?id={0}&warehouseId={1}",
+  requireConfirm: "batch/requireconfirm?id={id}",
+  confirm: "batch/requestconfirm?id={id}&warehouseId={warehouseId}",
+  unConfirm:
+    "batch/requestunconfirm?id={id}&reason={reason}&content1={content1}&type={type}",
+};
+
 export const PAYLOAD = {
   defaultPayLoad: {
     search: "",

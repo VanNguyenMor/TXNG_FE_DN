@@ -15,6 +15,7 @@ import {
   PRODUCT_HISTORIES,
   SCANS,
   SUMMARY_REPORT,
+  CONSIGNMENTS,
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -677,6 +678,69 @@ export const fetchData = {
         return result?.data || null;
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đối tác:", error);
+        return null;
+      }
+    },
+  },
+
+  consignments: {
+    getListConsignment: async (params) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.getListConsignment, params);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách lô hàng:", error);
+        return null;
+      }
+    },
+
+    addConsignment: async (data) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.addConsignment, data);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi thêm lô hàng:", error);
+        return null;
+      }
+    },
+
+    editConsignment: async (data) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.editConsignment, data);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật lô hàng:", error);
+        return null;
+      }
+    },
+
+    deleteConsignment: async (params) => {
+      try {
+        const endpoint = CONSIGNMENTS.deleteConsignment.replace("{id}", params.id);
+        const result = await callApi("delete", endpoint);
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi xóa lô hàng:", error);
+        return null;
+      }
+    },
+
+    getListProductComboBox: async () => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.getListProductComboBox, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+        return null;
+      }
+    },
+
+    getListWarehouseForUpdate: async () => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.getListWarehouseForUpdate, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách kho hàng:", error);
         return null;
       }
     },
