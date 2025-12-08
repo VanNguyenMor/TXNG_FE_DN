@@ -22,6 +22,8 @@ import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactDatetime from "react-datetime";
+import moment from "moment";
+import { fetchData } from "../../../helpers/fetchData";
 
 // reactstrap components
 import {
@@ -36,6 +38,10 @@ import {
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
 
 import InsertOrUpdate from "./InsertOrUpdate.js";
@@ -109,8 +115,15 @@ class Product extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-      toDate: new Date(),
+      // Date filters for batch management
+      fromDate: moment().subtract(30, "days").format("DD/MM/YYYY"),
+      toDate: moment().format("DD/MM/YYYY"),
+      // Status filter (0-4) - empty string means all statuses
+      statusId: "",
+      isLoadingBatches: false,
+      // Batch form modal
+      showFormModal: false,
+      editingBatchId: null,
 
       STATUS_OPTIONS: [
         { id: 0, title: "Mới tạo" },
@@ -275,7 +288,103 @@ class Product extends Component {
         };
       });
     });
+
+    // Load batch/consignment data with filters
+    this.fetchBatches(0);
   }
+
+  // Fetch batch list with filters
+  fetchBatches = async (page = 0) => {
+    try {
+      this.setState({ isLoadingBatches: true });
+
+      const { limit, fromDate, toDate, statusId } = this.state;
+
+      // Convert DD/MM/YYYY to YYYY-MM-DD for API
+      const fromDateAPI = fromDate
+        ? moment(fromDate, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+      const toDateAPI = toDate
+        ? moment(toDate, "DD/MM/YYYY").format("YYYY-MM-DD")
+        : "";
+
+      const result = await fetchData.consignments.getListConsignment(
+        page,
+        limit,
+        fromDateAPI,
+        toDateAPI,
+        statusId || ""
+      );
+
+      if (result) {
+        // API returns: { batchs: [...] }
+        const batchList = Array.isArray(result) 
+          ? result 
+          : (result.batchs || result.batches || result.data || []);
+        
+        const mappedData = batchList.map((item, index) => ({
+          id: item.ID || item.id || "",
+          index: index + 1,
+          batchNumber: item.BatchNum || item.batchNumber || "",
+          productId: item.ProductName || item.productName || "",
+          status: item.Status || item.status || 0,
+          quantity: item.Quantity || item.quantity || 0,
+          unit: item.UnitName || item.unitName || "",
+          requestDate: item.RequestedDate 
+            ? moment(item.RequestedDate).format("DD/MM/YYYY HH:mm")
+            : (item.CreatedDate
+              ? moment(item.CreatedDate).format("DD/MM/YYYY HH:mm")
+              : ""),
+          ...item,
+        }));
+
+        // Create collapseList for batch data
+        const collapseList = mappedData.map((item) => ({
+          id: item.id,
+          collapse: false,
+        }));
+
+        this.setState({
+          data: mappedData,
+          listLength: mappedData.length,
+          totalPage: Math.ceil(mappedData.length / limit),
+          currentPage: page,
+          collapseList: collapseList,
+          isLoadingBatches: false,
+        });
+      } else {
+        this.setState({
+          data: [],
+          collapseList: [],
+          isLoadingBatches: false,
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách lô hàng:", error);
+      this.setState({
+        data: [],
+        isLoadingBatches: false,
+      });
+    }
+  };
+
+  // Handle date filter change
+  handleDateChange = (name) => (value) => {
+    const formatted = moment.isMoment(value)
+      ? value.format("DD/MM/YYYY")
+      : value;
+    
+    this.setState({ [name]: formatted }, () => {
+      this.fetchBatches(0);
+    });
+  };
+
+  // Handle status filter change
+  handleStatusChange = (value) => {
+    this.setState({ statusId: value }, () => {
+      this.fetchBatches(0);
+    });
+  };
 
   fetchSummary = (data) => {
     const { getListPlantingZone } = this.props;
@@ -391,10 +500,12 @@ class Product extends Component {
   };
 
   handleModal = (stutus, openModal, closeModal) => {
+    // For batch form, use openBatchFormModal instead
     if (stutus || this.state.isShowForEdit) {
       closeModal();
     } else {
-      openModal();
+      // Open batch form modal instead of legacy form
+      this.openBatchFormModal();
     }
 
     this.setState((previousState) => {
@@ -461,12 +572,22 @@ class Product extends Component {
     );
   };
 
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
-    });
+  onEditData = (rowData) => () => {
+    // rowData could be ID or entire row object from batch table
+    const batchId = typeof rowData === 'object' ? rowData.id || rowData.ID : rowData;
+    
+    // Check if this is batch data (has batchNumber property)
+    if (typeof rowData === 'object' && rowData.batchNumber) {
+      // Open batch form modal for editing
+      this.openBatchFormModal(batchId);
+    } else {
+      // Old zone/legacy behavior
+      this.setState((previousState) => {
+        return {
+          isShowForEdit: true,
+        };
+      });
+    }
   };
 
   onDeleteData = (id) => () => {
@@ -525,6 +646,28 @@ class Product extends Component {
     }
   };
 
+  // Batch form methods
+  openBatchFormModal = (batchId = null) => {
+    this.setState({
+      showFormModal: true,
+      editingBatchId: batchId,
+    });
+  };
+
+  closeBatchFormModal = () => {
+    this.setState({
+      showFormModal: false,
+      editingBatchId: null,
+    });
+  };
+
+  handleBatchFormSaveSuccess = () => {
+    // Close modal and reload batch list
+    this.closeBatchFormModal();
+    // Reload batch list with current filters
+    this.fetchBatches(0);
+  };
+
   renderTreeLine = (nodelv) => {
     let line = "";
 
@@ -553,6 +696,81 @@ class Product extends Component {
     }
 
     return "";
+  };
+
+  renderBatchTable = (data, isDisableEdit, isDisableDelete) => {
+    const { beginItem, endItem, collapseList } = this.state;
+    let list = [];
+    let autoIndex = 0;
+
+    // Filter data for pagination
+    const paginatedData = data.filter((item, key) => key >= beginItem && key < endItem);
+
+    paginatedData.forEach((e, index) => {
+      list.push(
+        <tr
+          key={autoIndex}
+          index={autoIndex}
+          className="table-hover-css"
+        >
+          <td className="table-scale-col table-user-col-1">
+            {autoIndex + beginItem + 1}
+          </td>
+          <td style={{ textAlign: "center" }}>
+            <span>{e.batchNumber || ""}</span>
+          </td>
+          <td style={{ textAlign: "left" }}>
+            <span>{e.productId || ""}</span>
+          </td>
+          <td style={{ textAlign: "center" }}>
+            <span>{(e.quantity || 0) + " " + (e.unit || "")}</span>
+          </td>
+          <td style={{ textAlign: "center" }}>
+            <span>{e.requestDate || ""}</span>
+          </td>
+          <td style={{ textAlign: "center" }}>
+            <span>{this.showTitleWithStatus(e.status)}</span>
+          </td>
+          <td>
+            {collapseList
+              .filter((item) => item.id === e.id)
+              .map((ele, key) => (
+                <div key={key}>
+                  {isDisableEdit == true && isDisableDelete == true ? null : (
+                    <ButtonDropdown
+                      isOpen={ele.collapse}
+                      toggle={() => this.toggle(key, e.id)}
+                    >
+                      <DropdownToggle>
+                        <img src={MenuButton} />
+                      </DropdownToggle>
+                      <DropdownMenu>
+                        {isDisableEdit == true ? null : (
+                          <DropdownItem onClick={this.onEditData(e)}>
+                            Xem chi tiết
+                          </DropdownItem>
+                        )}
+                        {isDisableEdit == true ||
+                        isDisableDelete == true ? null : (
+                          <DropdownItem divider />
+                        )}
+                        {isDisableDelete == true ? null : (
+                          <DropdownItem onClick={this.onDeleteData(e.id)}>
+                            Xoá
+                          </DropdownItem>
+                        )}
+                      </DropdownMenu>
+                    </ButtonDropdown>
+                  )}
+                </div>
+              ))}
+          </td>
+        </tr>
+      );
+      autoIndex++;
+    });
+
+    return list;
   };
 
   renderTable = (data, isDisableEdit, isDisableDelete) => {
@@ -675,6 +893,8 @@ class Product extends Component {
       WAREHOUSE_OPTIONS,
       fromDate,
       toDate,
+      showFormModal,
+      editingBatchId,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -716,17 +936,17 @@ class Product extends Component {
                   <div className="col">
                     {/* Header */}
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
-                      }
+                      dataReload={() => {
+                        const fromDefault = moment().subtract(30, "days").format("DD/MM/YYYY");
+                        const toDefault = moment().format("DD/MM/YYYY");
+                        this.setState({
+                          fromDate: fromDefault,
+                          toDate: toDefault,
+                          statusId: "",
+                        }, () => {
+                          this.fetchBatches(0);
+                        });
+                      }}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
@@ -766,19 +986,12 @@ class Product extends Component {
                               <div>
                                 <ReactDatetime
                                   inputProps={{
-                                    placeholder: "dd/mm/yyyy",
-                                    to: "fromDate",
+                                    placeholder: "DD/MM/YYYY",
                                   }}
-                                  value={fromDate || ""}
+                                  value={fromDate ? moment(fromDate, "DD/MM/YYYY") : ""}
                                   timeFormat={false}
-                                  dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
+                                  dateFormat="DD/MM/YYYY"
+                                  onChange={this.handleDateChange("fromDate")}
                                 />
                               </div>
                             </div>
@@ -790,19 +1003,12 @@ class Product extends Component {
                               <div>
                                 <ReactDatetime
                                   inputProps={{
-                                    placeholder: "dd/mm/yyyy",
-                                    name: "toDate",
+                                    placeholder: "DD/MM/YYYY",
                                   }}
-                                  value={toDate || ""}
+                                  value={toDate ? moment(toDate, "DD/MM/YYYY") : ""}
                                   timeFormat={false}
-                                  dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
+                                  dateFormat="DD/MM/YYYY"
+                                  onChange={this.handleDateChange("toDate")}
                                 />
                               </div>
                             </div>
@@ -812,31 +1018,17 @@ class Product extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
-                                  title="Lọc theo trạng thái"
+                                  name="statusId"
+                                  val="id"
+                                  title="Chọn trạng thái"
                                   data={STATUS_OPTIONS}
                                   labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
+                                  defaultValue={this.state.statusId || ""}
+                                  handleChange={(value) =>
+                                    this.handleStatusChange(value)
+                                  }
                                 />
                               </div>
-                            </div>
-                            <div className="mg-btn">
-                              <label className="form-control-label">
-                                &nbsp;
-                              </label>
-                              <Button
-                                className="btn-warning-cs"
-                                color="default"
-                                type="button"
-                                size="md"
-                                onClick={() => {
-                                  this.handleSubmitSearchForm();
-                                }}
-                              >
-                                <img src={SearchImg} alt="Tìm kiếm" />
-                                <span>Tìm kiếm</span>
-                              </Button>
                             </div>
                           </div>
                         </>
@@ -857,11 +1049,17 @@ class Product extends Component {
                         />
                         <tbody>
                           {Array.isArray(data) &&
-                            this.renderTable(
-                              data,
-                              isDisableEdit,
-                              isDisableDelete
-                            )}
+                            (data.length > 0 && data[0].batchNumber !== undefined
+                              ? this.renderBatchTable(
+                                  data,
+                                  isDisableEdit,
+                                  isDisableDelete
+                                )
+                              : this.renderTable(
+                                  data,
+                                  isDisableEdit,
+                                  isDisableDelete
+                                ))}
                         </tbody>
                       </Table>
                     </Card>
@@ -931,6 +1129,25 @@ class Product extends Component {
                 this.onConfirm(data, close);
               }}
             />
+
+            {/* Batch Form Modal */}
+            <Modal
+              isOpen={this.state.showFormModal}
+              toggle={this.closeBatchFormModal}
+              size="lg"
+              scrollable={true}
+            >
+              <ModalHeader toggle={this.closeBatchFormModal}>
+                {this.state.editingBatchId ? "Cập nhật lô hàng" : "Thêm mới lô hàng"}
+              </ModalHeader>
+              <ModalBody style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                <InsertOrUpdate
+                  batchId={this.state.editingBatchId}
+                  onSaveSuccess={this.handleBatchFormSaveSuccess}
+                  onCancel={this.closeBatchFormModal}
+                />
+              </ModalBody>
+            </Modal>
 
             <PopupMessage
               popupMessage={popupMessage}

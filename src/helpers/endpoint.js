@@ -103,6 +103,36 @@ export const SUMMARY_REPORT = {
   getListPartnerComboBox: "partner/getall",
 };
 
+export const CONSIGNMENTS = {
+  getListConsignment: "batch/getlist",
+  addConsignment: "batch/create",
+  getDetailConsignment: "batch/get/{id}",
+  editConsignment: "batch/update",
+  deleteConsignment: "batch/delete/{id}",
+  getListFieldComboBox: "batch/getfields",
+  getListProductComboBox: "product/getall",
+  getListPlantingZoneComboBox: "plantingzone/getall",
+  getListUnitComboBox: "unit/getall",
+  updateLock: "batch/lock?id={0}&warehouseId={1}",
+  getListReportConsignmentDetail: "batch/get/{id}",
+  getListReportConsignment: "batch/getlist",
+  getListDiaryComboBox: "batch/gettraces",
+  getListWarehouseForUpdate: "warehouse/getall",
+  getListTraceHarvestForAddConsignment: "trace/getlistharvest",
+  getItemNameByTraceInform: "item/getitemnamebytraceinform?traceInformId={0}",
+  getUnitNameByTraceInform: "unit/getunitnamebytraceinform?traceInformId={0}",
+  checkStampIDValid: "stamplist/checkstampidvalid?stampid={0}&productid={1}",
+  getStampRange: "stampranges/getstamprange",
+  requireConfirm: "batch/requireconfirm?id={id}",
+  confirm: "batch/requestconfirm?id={id}&warehouseId={warehouseId}",
+  checkValidIdStamp: "qrcode/checkvalididstamp",
+  unConfirm: "batch/requestunconfirm?id={id}&reason={reason}&content1={content1}&type={type}",
+  getBatchCategories: "batch/getbatchcategories",
+  updateConsignment: "batch/update",
+  getListNationComboBox: "location/nation",
+  getListProvinceComboBox: "location/getallprovince",
+};
+
 export const PAYLOAD = {
   defaultPayLoad: {
     search: "",

@@ -15,6 +15,7 @@ import {
   PRODUCT_HISTORIES,
   SCANS,
   SUMMARY_REPORT,
+  CONSIGNMENTS,
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -678,6 +679,273 @@ export const fetchData = {
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đối tác:", error);
         return null;
+      }
+    },
+  },
+
+  consignments: {
+    getListConsignment: async (page, limit, fromDate, toDate, statusId) => {
+      try {
+        const requestBody = {
+          page: page || 0,
+          limit: limit || 10,
+          startDate: fromDate || "",
+          endDate: toDate || "",
+          status: statusId ? parseInt(statusId) : null,
+          search: "",
+          filter: "",
+          orderBy: "",
+        };
+        
+        const result = await callApi("post", CONSIGNMENTS.getListConsignment, requestBody);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách lô hàng:", error);
+        return null;
+      }
+    },
+
+    addConsignment: async (data) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.addConsignment, data);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi tạo lô hàng:", error);
+        return null;
+      }
+    },
+
+    getDetailConsignment: async (id) => {
+      try {
+        const endpoint = CONSIGNMENTS.getDetailConsignment.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy chi tiết lô hàng:", error);
+        return null;
+      }
+    },
+
+    editConsignment: async (data) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.editConsignment, data);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật lô hàng:", error);
+        return null;
+      }
+    },
+
+    deleteConsignment: async (id) => {
+      try {
+        const endpoint = CONSIGNMENTS.deleteConsignment.replace("{id}", id);
+        const result = await callApi("delete", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi xóa lô hàng:", error);
+        return null;
+      }
+    },
+
+    getListProductComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListProductComboBox);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+        return [];
+      }
+    },
+
+    getListPlantingZoneComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListPlantingZoneComboBox);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách vùng trồng:", error);
+        return [];
+      }
+    },
+
+    getListWarehouseForUpdate: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListWarehouseForUpdate);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách kho:", error);
+        return [];
+      }
+    },
+
+    lockConsignment: async (id, warehouseId) => {
+      try {
+        const endpoint = CONSIGNMENTS.updateLock
+          .replace("{0}", id)
+          .replace("{1}", warehouseId || "");
+        const result = await callApi("post", endpoint, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi khóa lô hàng:", error);
+        return null;
+      }
+    },
+
+    confirmConsignment: async (id, warehouseId) => {
+      try {
+        const endpoint = CONSIGNMENTS.confirm
+          .replace("{id}", id)
+          .replace("{warehouseId}", warehouseId || "");
+        const result = await callApi("post", endpoint, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi duyệt lô hàng:", error);
+        return null;
+      }
+    },
+
+    unConfirmConsignment: async (id, reason, content, type) => {
+      try {
+        const endpoint = CONSIGNMENTS.unConfirm
+          .replace("{id}", id)
+          .replace("{reason}", reason || "")
+          .replace("{content1}", content || "")
+          .replace("{type}", type || "");
+        const result = await callApi("post", endpoint, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi không duyệt lô hàng:", error);
+        return null;
+      }
+    },
+
+    // Additional methods for batch management
+    getListTraceComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListDiaryComboBox);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách traces:", error);
+        return [];
+      }
+    },
+
+    getDetailTraceInform: async (traceInformId) => {
+      try {
+        const endpoint = CONSIGNMENTS.getItemNameByTraceInform.replace("{0}", traceInformId);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy chi tiết trace inform:", error);
+        return null;
+      }
+    },
+
+    getUnitNameByTraceInform: async (traceInformId) => {
+      try {
+        const endpoint = CONSIGNMENTS.getUnitNameByTraceInform.replace("{0}", traceInformId);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy unit name:", error);
+        return null;
+      }
+    },
+
+    getListPlantingZoneByTraceInform: async (traceInformId) => {
+      try {
+        const endpoint = CONSIGNMENTS.getListPlantingZoneComboBox.replace("{0}", traceInformId);
+        const result = await callApi("get", endpoint);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách vùng trồng:", error);
+        return [];
+      }
+    },
+
+    getListUnitByProduct: async (productId) => {
+      try {
+        const endpoint = CONSIGNMENTS.getListUnitComboBox.replace("{0}", productId);
+        const result = await callApi("get", endpoint);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách đơn vị:", error);
+        return [];
+      }
+    },
+
+    getBatchCategories: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getBatchCategories);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy phân loại batch:", error);
+        return [];
+      }
+    },
+
+    checkStampIDValid: async (stampId, productId) => {
+      try {
+        const endpoint = CONSIGNMENTS.checkStampIDValid
+          .replace("{0}", stampId)
+          .replace("{1}", productId);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra stamp ID:", error);
+        return null;
+      }
+    },
+
+    checkValidIdStamp: async (stampIds) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.checkValidIdStamp, {
+          stampIds: JSON.stringify(stampIds),
+        });
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra ID stamp hợp lệ:", error);
+        return null;
+      }
+    },
+
+    getStampRange: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getStampRange);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy dải tem:", error);
+        return [];
+      }
+    },
+
+    requireConfirm: async (id) => {
+      try {
+        const endpoint = CONSIGNMENTS.requireConfirm.replace("{id}", id);
+        const result = await callApi("post", endpoint, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi yêu cầu duyệt:", error);
+        return null;
+      }
+    },
+
+    getNationComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListNationComboBox);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách quốc gia:", error);
+        return [];
+      }
+    },
+
+    getProvinceComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListProvinceComboBox);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách tỉnh/thành:", error);
+        return [];
       }
     },
   },
