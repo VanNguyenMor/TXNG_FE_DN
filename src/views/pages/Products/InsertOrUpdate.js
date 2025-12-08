@@ -19,12 +19,13 @@ class InsertOrUpadte extends Component {
 
     this.state = {
       id: null,
-      batchId: "",
+      batchCode: "",
       diaryId: null,
+      traceName: "",
       classifyId: null,
       temId: null,
       batchNumber: "",
-      placeVal: "",
+      planZoneName: "",
       productVal: "",
       noteVal: "",
       unitVal: "",
@@ -40,6 +41,8 @@ class InsertOrUpadte extends Component {
       loading: false,
       errMessage: "",
       popupMessage: false,
+      qrCodes: [],
+      createdDate: "",
     };
   }
 
@@ -76,12 +79,12 @@ class InsertOrUpadte extends Component {
           ...prevState,
           ...{
             id: initialData.id || null,
-            batchId: initialData.batchId || initialData.BatchID || "",
+            batchCode: initialData.batchCode || initialData.batchCode || "",
             diaryId: initialData.diaryId || initialData.DiaryID || null,
             classifyId: initialData.classifyId || initialData.ClassifyID || null,
             temId: initialData.temId || initialData.TemID || null,
             batchNumber: initialData.batchNumber || initialData.BatchNum || "",
-            placeVal: initialData.placeVal || initialData.Location || "",
+            planZoneName: initialData.planZoneName || initialData.Location || "",
             productVal: initialData.productVal || initialData.ProductName || "",
             noteVal: initialData.noteVal || initialData.Notes || "",
             unitVal: initialData.unitVal || initialData.UnitName || "",
@@ -104,12 +107,13 @@ class InsertOrUpadte extends Component {
       // Initialize empty form
       const emptyState = {
         id: null,
-        batchId: "",
+        batchCode: "",
         diaryId: null,
+        traceName: "",
         classifyId: null,
         temId: null,
         batchNumber: "",
-        placeVal: "",
+        planZoneName: "",
         productVal: "",
         noteVal: "",
         unitVal: "",
@@ -121,6 +125,8 @@ class InsertOrUpadte extends Component {
         countryId: null,
         warehouseId: null,
         fileVal: "",
+        qrCodes: [],
+        createdDate: "",
       };
       this.setState(emptyState, () => {
         if (this.props.onHandleChangeValue) {
@@ -138,6 +144,7 @@ class InsertOrUpadte extends Component {
 
     try {
       const res = await fetchData.consignments.getDetailConsignment(id);
+
       if (!res) {
         this.setState({
           loading: false,
@@ -147,25 +154,38 @@ class InsertOrUpadte extends Component {
         return;
       }
 
-      const batch = res.batch || res;
+      const batch = res.data?.batch || res.batch || res.data;
+      const qrCodes = res.data?.qrCodes || res.qrCodes || [];
+      
+      const exportType = batch.exportType !== undefined && batch.exportType !== null ? batch.exportType : null;
+      let marketId = null;
+      if (exportType === 0) {
+        marketId = 1;
+      } else if (exportType === 1) {
+        marketId = 2; 
+      }
+      
       const newData = {
         id: id,
-        batchId: batch.batchID || batch.BatchID || "",
-        diaryId: batch.diaryID || batch.DiaryID || null,
-        classifyId: batch.classifyID || batch.ClassifyID || null,
-        temId: batch.temID || batch.TemID || null,
-        batchNumber: batch.batchNumber || batch.BatchNum || "",
-        placeVal: batch.location || batch.Location || "",
+        batchCode: batch.batchCode || batch.batchID || batch.BatchID || "",
+        diaryId: batch.traceID || batch.traceId || batch.DiaryID || batch.diaryID || null,
+        traceName: batch.traceName || "",
+        classifyId: batch.categoryId || batch.classifyID || batch.ClassifyID || null,
+        temId: batch.stampID || batch.temID || batch.TemID || null,
+        batchNumber: batch.batchNum || batch.batchNumber || batch.BatchNum || "",
+        planZoneName: batch.planZoneName || batch.plantZoneName || "",
         productVal: batch.productName || batch.ProductName || "",
-        noteVal: batch.notes || batch.Notes || "",
+        noteVal: batch.note || batch.notes || batch.Notes || "",
         unitVal: batch.unitID || batch.UnitID || batch.unitName || batch.UnitName || "",
         quantity: batch.quantity || batch.Quantity || 1,
-        fromVal: batch.fromValue || batch.FromValue || "",
-        toVal: batch.toValue || batch.ToValue || "",
-        marketId: batch.marketID || batch.MarketID || null,
+        fromVal: batch.startNum || batch.fromValue || batch.FromValue || "",
+        toVal: batch.endNum || batch.toValue || batch.ToValue || "",
+        marketId: marketId,
         provinceId: batch.provinceID || batch.ProvinceID || null,
         countryId: batch.countryID || batch.CountryID || null,
         warehouseId: batch.warehouseID || batch.WarehouseID || null,
+        qrCodes: qrCodes,
+        createdDate: batch.createdDate || batch.fromDate || "",
       };
 
       this.setState({ ...newData, loading: false }, () => {
@@ -200,7 +220,8 @@ class InsertOrUpadte extends Component {
         (prevState) => ({
           ...prevState,
           diaryId: selectValue,
-          placeVal: selectedOption?.location || "",
+          traceName: selectedOption?.title || selectedOption?.traceName || "",
+          planZoneName: selectedOption?.planZoneName || "",
           productVal: selectedOption?.product || "",
           unitVal: selectedOption?.unit || "",
         }),
@@ -272,14 +293,15 @@ class InsertOrUpadte extends Component {
 
   render() {
     const {
-      batchId,
+      batchCode,
       batchNumber,
       errMessage,
       popupMessage,
       diaryId,
+      traceName,
       temId,
       classifyId,
-      placeVal,
+      planZoneName,
       productVal,
       noteVal,
       unitVal,
@@ -292,6 +314,8 @@ class InsertOrUpadte extends Component {
       warehouseId,
       fileVal,
       loading,
+      qrCodes,
+      createdDate,
     } = this.state;
 
     const {
@@ -337,14 +361,14 @@ class InsertOrUpadte extends Component {
             <InputGroup className="input-group-alternative css-border-input">
               <input
                 readOnly={isShowForEdit}
-                onChange={this.onChangeValue("batchId")}
+                onChange={this.onChangeValue("batchCode")}
                 type="text"
-                value={batchId}
+                value={batchCode}
                 className="wrap-insert-or-update-zone-item-input"
               />
             </InputGroup>
 
-            <p className="form-error-message">{errors.batchId || ""}</p>
+            <p className="form-error-message">{errors.batchCode || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
@@ -381,20 +405,20 @@ class InsertOrUpadte extends Component {
                 <ReactDatetime
                   inputProps={{
                     placeholder: "Ngày tạo",
-                    name: "batchNumber",
+                    name: "createdDate",
                   }}
-                  value={batchNumber}
+                  value={createdDate}
                   timeFormat={false}
                   dateFormat="DD-MM-YYYY"
-                  onChange={this.onChangeValue("batchNumber")}
+                  onChange={this.onChangeValue("createdDate")}
                 />
               </InputGroup>
               <p className="form-error-message margin-bottom-0">
-                {errors.batchNumber || ""}
+                {errors.createdDate || ""}
               </p>
             </FormGroup>
 
-            <p className="form-error-message">{errors.batchNumber || ""}</p>
+            <p className="form-error-message">{errors.createdDate || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
@@ -429,15 +453,15 @@ class InsertOrUpadte extends Component {
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
               <input
-                onChange={this.onChangeValue("placeVal")}
+                onChange={this.onChangeValue("planZoneName")}
                 readOnly={isShowForEdit}
                 type="text"
-                value={placeVal}
+                value={planZoneName}
                 className="wrap-insert-or-update-zone-item-input"
               />
             </InputGroup>
 
-            <p className="form-error-message">{errors.placeVal || ""}</p>
+            <p className="form-error-message">{errors.planZoneName || ""}</p>
           </div>
         </div>
         <div
@@ -614,33 +638,15 @@ class InsertOrUpadte extends Component {
 
           <div class="card-body p-3">
             <div class="d-flex flex-wrap qr-list-container">
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000282
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000283
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000284
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000285
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000286
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000287
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000288
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000289
-              </span>
-              <span class="qr-item badge badge-primary m-1">
-                TGI0200158000000290
-              </span>
+              {qrCodes && qrCodes.length > 0 ? (
+                qrCodes.map((qrCode, index) => (
+                  <span key={index} class="qr-item badge badge-primary m-1">
+                    {qrCode}
+                  </span>
+                ))
+              ) : (
+                <p className="text-muted">Chưa có mã QR nào</p>
+              )}
             </div>
           </div>
         </div>
@@ -760,26 +766,6 @@ class InsertOrUpadte extends Component {
         </div>
         <hr className="my-4" />
 
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Chọn kho nhập hàng
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <Select
-              value={warehouseId}
-              defaultValue={null}
-              labelMark={null}
-              className="wrap-insert-or-update-zone-item-select"
-              name="warehouseId"
-              title="Chọn kho để nhập hàng"
-              data={WAREHOUSE_OPTIONS}
-              labelName="title"
-              val="id"
-              handleChange={this.onChangeSelect("warehouseId")}
-            />
-            <p className="form-error-message">{errors.warehouseId || ""}</p>
-          </div>
-        </div>
         <PopupMessage
           popupMessage={popupMessage}
           moduleTitle={"Thông báo"}

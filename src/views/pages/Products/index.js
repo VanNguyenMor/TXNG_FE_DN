@@ -123,46 +123,9 @@ class Product extends Component {
         { id: 3, title: "Không duyệt" },
         { id: 4, title: "Chờ duyệt lại" },
       ],
-      DIARY_OPTIONS: [
-        {
-          id: 1,
-          title: "Nhật ký 1",
-          createdAt: "23/06/2025",
-          quantity: 50,
-          location: "Kho A",
-          product: "Phân bón NPK",
-          unit: "kg",
-        },
-        {
-          id: 2,
-          title: "Nhật ký 2",
-          createdAt: "21/06/2025",
-          quantity: 20,
-          location: "Kho B",
-          product: "Phân bón NPKS",
-          unit: "tấn",
-        },
-      ],
-      CLASSIFY_OPTIONS: [
-        {
-          id: 1,
-          title: "Phân loại 1",
-        },
-        {
-          id: 2,
-          title: "Phân loại 2",
-        },
-      ],
-      TEM_OPTIONS: [
-        {
-          id: 1,
-          title: "Dải tem 1",
-        },
-        {
-          id: 2,
-          title: "Dải tem 2",
-        },
-      ],
+      DIARY_OPTIONS: [], // Sẽ được load từ API batch/gettraces
+      CLASSIFY_OPTIONS: [], // Sẽ được load từ API batch/getbatchcategories
+      TEM_OPTIONS: [], // Sẽ được load từ API stamptemplate/getall
       PROVINCE_OPTIONS: [
         { id: 1, title: "Hà Nội" },
         { id: 2, title: "Hồ Chí Minh" },
@@ -253,6 +216,7 @@ class Product extends Component {
   }
 
   componentDidMount() {
+    console.log("🚀 Product Component Mounted");
     const { getListTypeZoneProperty } = this.props;
     
     /* Fetch Summary - load all data without date filter */
@@ -280,6 +244,132 @@ class Product extends Component {
         };
       });
     });
+
+    // Fetch danh sách nhật ký (traces)
+    console.log("📞 Gọi fetchDiaryOptions()");
+    this.fetchDiaryOptions();
+
+    // Fetch danh sách phân loại (categories)
+    console.log("📞 Gọi fetchClassifyOptions()");
+    this.fetchClassifyOptions();
+
+    // Fetch danh sách dải tem (stamp templates)
+    console.log("📞 Gọi fetchStampTemplateOptions()");
+    this.fetchStampTemplateOptions();
+  }
+
+  fetchDiaryOptions = async () => {
+    try {
+      console.log("🔄 Bắt đầu fetch danh sách nhật ký từ API: batch/gettraces");
+      const result = await fetchData.consignments.getListDiaryComboBox();
+      console.log("📥 API Response nhật ký:", result);
+      
+      if (result && Array.isArray(result)) {
+        console.log("✅ Có dữ liệu, đang format...");
+        // Format dữ liệu từ API thành DIARY_OPTIONS
+        const formattedDiaries = result.map((item) => ({
+          id: item.id || item.ID,
+          title: item.traceName || item.name || item.title || "",
+          traceName: item.traceName || "",
+          createdAt: item.createdDate || item.CreatedDate || "",
+          quantity: item.quantity || item.Quantity || 0,
+          location: item.planZoneName || item.location || "",
+          product: item.productName || item.product || "",
+          unit: item.unitName || item.unit || "",
+        }));
+        
+        console.log("📋 Formatted DIARY_OPTIONS:", formattedDiaries);
+        this.setState((previousState) => ({
+          ...previousState,
+          DIARY_OPTIONS: formattedDiaries,
+        }), () => {
+          console.log("✨ State DIARY_OPTIONS updated:", this.state.DIARY_OPTIONS);
+        });
+      } else {
+        console.warn("⚠️ API trả về data không phải array hoặc rỗng:", result);
+      }
+    } catch (error) {
+      console.error("❌ Lỗi fetch danh sách nhật ký:", error);
+    }
+  }
+
+  fetchClassifyOptions = async () => {
+    try {
+      console.log("🔄 Bắt đầu fetch danh sách phân loại từ API: batch/getbatchcategories");
+      const result = await fetchData.consignments.getListClassifyComboBox();
+      console.log("📥 API Response phân loại:", result);
+      
+      if (result && Array.isArray(result)) {
+        console.log("✅ Có dữ liệu phân loại, đang format...");
+        // Format dữ liệu từ API thành CLASSIFY_OPTIONS
+        // API trả về { id, description }
+        const formattedClassifies = result.map((item) => ({
+          id: item.id || item.ID,
+          title: item.description || item.name || item.title || item.categoryName || "",
+        }));
+        
+        console.log("📋 Formatted CLASSIFY_OPTIONS:", formattedClassifies);
+        this.setState((previousState) => ({
+          ...previousState,
+          CLASSIFY_OPTIONS: formattedClassifies,
+        }), () => {
+          console.log("✨ State CLASSIFY_OPTIONS updated:", this.state.CLASSIFY_OPTIONS);
+        });
+      } else {
+        console.warn("⚠️ API phân loại trả về data không phải array hoặc rỗng:", result);
+      }
+    } catch (error) {
+      console.error("❌ Lỗi fetch danh sách phân loại:", error);
+    }
+  }
+
+  fetchStampTemplateOptions = async () => {
+    try {
+      console.log("🔄 Bắt đầu fetch danh sách dải tem từ API: stampranges/getstamprange");
+      const result = await fetchData.consignments.getListStampTemplate();
+      console.log("📥 API Response dải tem:", result);
+      
+      // API returns { status, message, data: { stampRanges: [...] } }
+      let stampRanges = [];
+      
+      if (result && result.stampRanges && Array.isArray(result.stampRanges)) {
+        stampRanges = result.stampRanges;
+      } else if (result && result.data && result.data.stampRanges && Array.isArray(result.data.stampRanges)) {
+        stampRanges = result.data.stampRanges;
+      } else if (Array.isArray(result)) {
+        stampRanges = result;
+      }
+      
+      if (stampRanges && stampRanges.length > 0) {
+        console.log("✅ Có dữ liệu dải tem, đang format...", stampRanges);
+        // Format dữ liệu từ API thành TEM_OPTIONS
+        // Mỗi dải tem hiển thị: "startNum - endNum" (ví dụ: "281 - 281" hoặc "277 - 278")
+        const formattedStamps = stampRanges.map((stamp) => ({
+          id: stamp.id,
+          title: `${stamp.startNum} - ${stamp.endNum}`,
+        }));
+        
+        console.log("📋 Formatted TEM_OPTIONS:", formattedStamps);
+        this.setState((previousState) => ({
+          ...previousState,
+          TEM_OPTIONS: formattedStamps,
+        }), () => {
+          console.log("✨ State TEM_OPTIONS updated:", this.state.TEM_OPTIONS);
+        });
+      } else {
+        console.warn("⚠️ API dải tem trả về data không phải array hoặc rỗng:", result);
+        this.setState((previousState) => ({
+          ...previousState,
+          TEM_OPTIONS: [],
+        }));
+      }
+    } catch (error) {
+      console.error("❌ Lỗi fetch danh sách dải tem:", error);
+      this.setState((previousState) => ({
+        ...previousState,
+        TEM_OPTIONS: [],
+      }));
+    }
   }
 
   fetchSummary = (data) => {

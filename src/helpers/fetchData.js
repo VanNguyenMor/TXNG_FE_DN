@@ -755,6 +755,45 @@ export const fetchData = {
         return null;
       }
     },
+
+    getListDiaryComboBox: async () => {
+      try {
+        console.log("🌐 Calling API: batch/gettraces");
+        const result = await callApi("get", CONSIGNMENTS.getListDiaryComboBox);
+        console.log("✅ API batch/gettraces response:", result);
+        // API might return nested data, try to extract array
+        return result?.data?.traces || result?.data || null;
+      } catch (error) {
+        console.error("❌ API batch/gettraces error:", error);
+        return null;
+      }
+    },
+
+    getListClassifyComboBox: async () => {
+      try {
+        console.log("🌐 Calling API: batch/getbatchcategories");
+        const result = await callApi("get", CONSIGNMENTS.getListClassifyComboBox);
+        console.log("✅ API batch/getbatchcategories response:", result);
+        // API returns { data: { batchCategories: [...] } }
+        return result?.data?.batchCategories || result?.data || null;
+      } catch (error) {
+        console.error("❌ API batch/getbatchcategories error:", error);
+        return null;
+      }
+    },
+
+    getListStampTemplate: async () => {
+      try {
+        console.log("🌐 Calling API: stamptemplate/getall");
+        const result = await callApi("get", CONSIGNMENTS.getListStampTemplate);
+        console.log("✅ API stamptemplate/getall response:", result);
+        // API might return nested data in various formats
+        return result?.data?.stampTemplates || result?.data?.stamps || result?.data || null;
+      } catch (error) {
+        console.error("❌ API stamptemplate/getall error:", error);
+        return null;
+      }
+    },
   },
 };
 
