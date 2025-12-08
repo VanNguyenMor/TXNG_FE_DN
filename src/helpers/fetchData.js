@@ -15,11 +15,7 @@ import {
   PRODUCT_HISTORIES,
   SCANS,
   SUMMARY_REPORT,
-<<<<<<< HEAD
   CONSIGNMENTS,
-=======
-  BATCH,
->>>>>>> d7d300a (init)
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -690,26 +686,16 @@ export const fetchData = {
   consignments: {
     getListConsignment: async (page, limit, fromDate, toDate, statusId) => {
       try {
-<<<<<<< HEAD
         const requestBody = {
           page: page || 0,
           limit: limit || 10,
           startDate: fromDate || "",
           endDate: toDate || "",
           status: statusId ? parseInt(statusId) : null,
-=======
-        const payload = {
-          page,
-          limit,
-          startDate: fromDate,
-          endDate: toDate,
-          status: statusId || null,
->>>>>>> d7d300a (init)
           search: "",
           filter: "",
           orderBy: "",
         };
-<<<<<<< HEAD
         
         const result = await callApi("post", CONSIGNMENTS.getListConsignment, requestBody);
         return result?.data || null;
@@ -767,17 +753,10 @@ export const fetchData = {
         return result?.data || [];
       } catch (error) {
         console.error("Lỗi khi lấy danh sách sản phẩm:", error);
-=======
-        const result = await callApi("post", BATCH.getListConsignment, payload);
-        return result?.data || result || [];
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách lô hàng:", error);
->>>>>>> d7d300a (init)
         return [];
       }
     },
 
-<<<<<<< HEAD
     getListPlantingZoneComboBox: async () => {
       try {
         const result = await callApi("get", CONSIGNMENTS.getListPlantingZoneComboBox);
@@ -890,36 +869,20 @@ export const fetchData = {
         return result?.data || [];
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đơn vị:", error);
-=======
-    getListTraceComboBox: async () => {
-      try {
-        const result = await callApi("get", BATCH.getListTraceComboBox);
-        return result?.data || result || [];
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách sơ đồ:", error);
->>>>>>> d7d300a (init)
         return [];
       }
     },
 
     getBatchCategories: async () => {
       try {
-<<<<<<< HEAD
         const result = await callApi("get", CONSIGNMENTS.getBatchCategories);
         return result?.data || [];
       } catch (error) {
         console.error("Lỗi khi lấy phân loại batch:", error);
-=======
-        const result = await callApi("get", BATCH.getBatchCategories);
-        return result?.data || result || [];
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách phân loại lô:", error);
->>>>>>> d7d300a (init)
         return [];
       }
     },
 
-<<<<<<< HEAD
     checkStampIDValid: async (stampId, productId) => {
       try {
         const endpoint = CONSIGNMENTS.checkStampIDValid
@@ -951,19 +914,10 @@ export const fetchData = {
         return result?.data || [];
       } catch (error) {
         console.error("Lỗi khi lấy dải tem:", error);
-=======
-    getStampRange: async () => {
-      try {
-        const result = await callApi("get", BATCH.getStampRange);
-        return result?.data || result || [];
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách dải tem:", error);
->>>>>>> d7d300a (init)
         return [];
       }
     },
 
-<<<<<<< HEAD
     requireConfirm: async (id) => {
       try {
         const endpoint = CONSIGNMENTS.requireConfirm.replace("{id}", id);
@@ -981,21 +935,12 @@ export const fetchData = {
         return result?.data || [];
       } catch (error) {
         console.error("Lỗi khi lấy danh sách quốc gia:", error);
-=======
-    getListWarehouseForUpdate: async () => {
-      try {
-        const result = await callApi("get", BATCH.getListWarehouseForUpdate);
-        return result?.data || result || [];
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách kho hàng:", error);
->>>>>>> d7d300a (init)
         return [];
       }
     },
 
     getProvinceComboBox: async () => {
       try {
-<<<<<<< HEAD
         const result = await callApi("get", CONSIGNMENTS.getListProvinceComboBox);
         return result?.data || [];
       } catch (error) {
@@ -1003,72 +948,6 @@ export const fetchData = {
         return [];
       }
     },
-=======
-        const result = await callApi("get", BATCH.getProvinceComboBox);
-        return result?.data || result || [];
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách tỉnh:", error);
-        return [];
-      }
-    },
-
-    getNationComboBox: async () => {
-      try {
-        const result = await callApi("get", BATCH.getNationComboBox);
-        return result?.data || result || [];
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách quốc gia:", error);
-        return [];
-      }
-    },
-
-    createBatch: async (payload) => {
-      try {
-        const result = await callApi("post", BATCH.createBatch, payload);
-        return result?.data || result || null;
-      } catch (error) {
-        console.error("Lỗi khi tạo lô hàng:", error);
-        return null;
-      }
-    },
-
-    updateBatch: async (payload) => {
-      try {
-        const result = await callApi("post", BATCH.updateBatch, payload);
-        return result?.data || result || null;
-      } catch (error) {
-        console.error("Lỗi khi cập nhật lô hàng:", error);
-        return null;
-      }
-    },
-
-    deleteBatch: async (id) => {
-      try {
-        const result = await callApi(
-          "delete",
-          BATCH.deleteBatch.replace("{id}", id)
-        );
-        return result?.data || result || null;
-      } catch (error) {
-        console.error("Lỗi khi xóa lô hàng:", error);
-        return null;
-      }
-    },
-
-    lockBatch: async (batchId, warehouseId) => {
-      try {
-        const result = await callApi(
-          "post",
-          `${BATCH.lockBatch}?id=${batchId}&warehouseId=${warehouseId}`,
-          {}
-        );
-        return result?.data || result || null;
-      } catch (error) {
-        console.error("Lỗi khi khóa lô hàng:", error);
-        return null;
-      }
-    },
->>>>>>> d7d300a (init)
   },
 };
 

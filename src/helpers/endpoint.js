@@ -103,7 +103,6 @@ export const SUMMARY_REPORT = {
   getListPartnerComboBox: "partner/getall",
 };
 
-<<<<<<< HEAD
 export const CONSIGNMENTS = {
   getListConsignment: "batch/getlist",
   addConsignment: "batch/create",
@@ -132,20 +131,6 @@ export const CONSIGNMENTS = {
   updateConsignment: "batch/update",
   getListNationComboBox: "location/nation",
   getListProvinceComboBox: "location/getallprovince",
-=======
-export const BATCH = {
-  getListConsignment: "batch/getlist",
-  getListTraceComboBox: "batch/gettraces",
-  getBatchCategories: "batch/getbatchcategories",
-  getStampRange: "stampranges/getstamprange",
-  getListWarehouseForUpdate: "warehouse/getall",
-  getProvinceComboBox: "location/getallprovince",
-  getNationComboBox: "location/nation",
-  createBatch: "batch/create",
-  updateBatch: "batch/update",
-  deleteBatch: "batch/delete/{id}",
-  lockBatch: "batch/lock",
->>>>>>> d7d300a (init)
 };
 
 export const PAYLOAD = {

@@ -23,7 +23,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactDatetime from "react-datetime";
 import moment from "moment";
-import { fetchData } from "../../../helpers/fetchData";
 
 // reactstrap components
 import {
@@ -49,8 +48,6 @@ import InsertOrUpdate from "./InsertOrUpdate.js";
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { PRODUCTS } from "../../../helpers/constant";
 import { fetchData } from "helpers/fetchData.js";
-import moment from "moment";
-
 class Product extends Component {
   constructor(props) {
     super(props);
@@ -264,24 +261,6 @@ class Product extends Component {
   }
 
   componentWillMount() {
-    // Load batch/consignment data with filters
-    this.fetchBatches(0);
-
-    getListTypeZoneProperty({
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          dataTypeZone: ((res.data || {}).data || {}).plantingTypes || [],
-        };
-      });
-    });
-
     // Load batch/consignment data with filters
     this.fetchBatches(0);
 
@@ -518,176 +497,6 @@ class Product extends Component {
         collapseList: collapseList,
       });
     });
-  };
-
-  // Fetch batch list with filters
-  fetchBatches = async (page = 0) => {
-    try {
-      this.setState({ isLoadingBatches: true });
-
-      const { limit, fromDate, toDate, statusId } = this.state;
-
-      // Convert DD/MM/YYYY to YYYY-MM-DD for API
-      const fromDateAPI = fromDate
-        ? moment(fromDate, "DD/MM/YYYY").format("YYYY-MM-DD")
-        : "";
-      const toDateAPI = toDate
-        ? moment(toDate, "DD/MM/YYYY").format("YYYY-MM-DD")
-        : "";
-
-      const result = await fetchData.consignments.getListConsignment(
-        page,
-        limit,
-        fromDateAPI,
-        toDateAPI,
-        statusId || ""
-      );
-
-      if (result) {
-        // API returns: { batchs: [...] } or direct array
-        const batchList = Array.isArray(result) 
-          ? result 
-          : (result.batchs || result.batches || result.data || []);
-        
-        const mappedData = batchList.map((item, index) => ({
-          id: item.ID || item.id || "",
-          index: index + 1,
-          batchNumber: item.BatchNum || item.batchNumber || "",
-          productId: item.ProductName || item.productName || "",
-          status: item.Status || item.status || 0,
-          quantity: item.Quantity || item.quantity || 0,
-          unit: item.UnitName || item.unitName || "",
-          requestDate: item.RequestedDate 
-            ? moment(item.RequestedDate).format("DD/MM/YYYY HH:mm")
-            : (item.CreatedDate
-              ? moment(item.CreatedDate).format("DD/MM/YYYY HH:mm")
-              : ""),
-          ...item,
-        }));
-
-        // Create collapseList for batch data
-        const collapseList = mappedData.map((item) => ({
-          id: item.id,
-          collapse: false,
-        }));
-
-        this.setState({
-          data: mappedData,
-          listLength: mappedData.length,
-          totalPage: Math.ceil(mappedData.length / limit),
-          currentPage: page,
-          collapseList: collapseList,
-          isLoadingBatches: false,
-        });
-      } else {
-        this.setState({
-          data: [],
-          collapseList: [],
-          isLoadingBatches: false,
-        });
-      }
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách lô hàng:", error);
-      this.setState({
-        data: [],
-        isLoadingBatches: false,
-      });
-    }
-  };
-
-  // Handle date filter change
-  handleDateChange = (name) => (value) => {
-    const formatted = moment.isMoment(value)
-      ? value.format("DD/MM/YYYY")
-      : value;
-    
-    this.setState({ [name]: formatted }, () => {
-      this.fetchBatches(0);
-    });
-  };
-
-  // Handle status filter change
-  handleStatusChange = (value) => {
-    this.setState({ statusId: value }, () => {
-      this.fetchBatches(0);
-    });
-  };
-
-  // Fetch dropdown data for batch form
-  fetchBatchDropdownData = async () => {
-    try {
-      // Fetch Diary/Traces
-      const diaryResponse = await fetchData.consignments.getListTraceComboBox();
-      const diaryData = diaryResponse?.fields || diaryResponse || [];
-      const diaryOptions = Array.isArray(diaryData) 
-        ? diaryData.map(item => ({
-            id: item.ID || item.id,
-            title: item.NameCode || item.nameCode || item.ProductName || item.productName || "",
-            location: item.PlantingZoneName || item.plantingZoneName || item.Location || item.location || "",
-            product: item.ProductName || item.productName || item.Product || item.product || "",
-            unit: item.Unit || item.unit || item.UnitName || "",
-          }))
-        : [];
-
-      // Fetch Batch Categories (Phân loại)
-      const categoriesResponse = await fetchData.consignments.getBatchCategories();
-      const categoriesData = categoriesResponse?.batchCategories || categoriesResponse || [];
-      const classifyOptions = Array.isArray(categoriesData)
-        ? categoriesData.map(item => ({
-            id: item.id || item.ID,
-            title: item.description || item.Description || item.Title || item.title || item.Name || "",
-          }))
-        : [];
-
-      // Fetch Stamp Ranges (Dải tem)
-      const stampRangeResponse = await fetchData.consignments.getStampRange();
-      const stampRangeData = stampRangeResponse?.stampRanges || stampRangeResponse || [];
-      const temOptions = Array.isArray(stampRangeData)
-        ? stampRangeData.map(item => ({
-            id: item.id || item.ID,
-            title: `${item.startNum || item.StartNum || ""} - ${item.endNum || item.EndNum || ""}` || item.Title || item.title || item.StampRangeName || "",
-          }))
-        : [];
-
-      // Fetch Warehouse data
-      const warehouseData = await fetchData.consignments.getListWarehouseForUpdate();
-      const warehouseOptions = Array.isArray(warehouseData)
-        ? warehouseData.map(item => ({
-            id: item.ID || item.id,
-            title: item.Title || item.title || item.WarehouseName || "",
-          }))
-        : [];
-
-      // Fetch Provinces
-      const provinceData = await fetchData.consignments.getProvinceComboBox();
-      const provinceOptions = Array.isArray(provinceData)
-        ? provinceData.map(item => ({
-            id: item.ID || item.id,
-            title: item.Title || item.title || item.ProvinceName || "",
-          }))
-        : [];
-
-      // Fetch Countries
-      const countryData = await fetchData.consignments.getNationComboBox();
-      const countryOptions = Array.isArray(countryData)
-        ? countryData.map(item => ({
-            id: item.ID || item.id,
-            title: item.Title || item.title || item.CountryName || "",
-          }))
-        : [];
-
-      this.setState({
-        DIARY_OPTIONS: diaryOptions,
-        CLASSIFY_OPTIONS: classifyOptions,
-        TEM_OPTIONS: temOptions,
-        WAREHOUSE_OPTIONS: warehouseOptions,
-        PROVINCE_OPTIONS: provinceOptions,
-        COUNTRY_OPTIONS: countryOptions,
-      });
-
-    } catch (error) {
-      console.error("Lỗi khi lấy dữ liệu dropdown cho form batch:", error);
-    }
   };
 
   closeStatusModal = () => {
