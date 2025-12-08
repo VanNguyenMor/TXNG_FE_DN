@@ -111,9 +111,9 @@ class Product extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
-      // fromDate = 8 tháng trước (8/11), toDate = hôm nay (8/12)
-      fromDate: moment().subtract(1, "month").format("DD-MM-YYYY"),
-      toDate: moment().format("DD-MM-YYYY"),
+      // fromDate và toDate init là empty
+      fromDate: "",
+      toDate: "",
       collapseList: [],
 
       STATUS_OPTIONS: [
@@ -470,12 +470,10 @@ class Product extends Component {
 
     filter[name] = value;
     this.setState({ filter });
-    // Removed auto-fetch - user must click reload button
   };
 
-  handleSubmitSearchForm = () => {
+  applyFilters = () => {
     const { fromDate, toDate, filter } = this.state;
-    
     this.fetchSummary(
       JSON.stringify({
         search: "",
@@ -487,6 +485,32 @@ class Product extends Component {
         limit: null,
       })
     );
+  };
+
+  handleSubmitSearchForm = () => {
+    // Reset filters to default
+    this.setState({
+      fromDate: "",
+      toDate: "",
+      filter: {
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      },
+    }, () => {
+      // After state updated, fetch all data
+      this.fetchSummary(
+        JSON.stringify({
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+    });
   };
 
   handleModal = (stutus, openModal, closeModal) => {
@@ -785,6 +809,7 @@ class Product extends Component {
       WAREHOUSE_OPTIONS,
       fromDate,
       toDate,
+      filter,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -925,6 +950,7 @@ class Product extends Component {
                                   data={STATUS_OPTIONS}
                                   labelName="title"
                                   val="id"
+                                  defaultValue={filter && filter.filter ? filter.filter : null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -939,7 +965,7 @@ class Product extends Component {
                                 type="button"
                                 size="md"
                                 onClick={() => {
-                                  this.handleSubmitSearchForm();
+                                  this.applyFilters();
                                 }}
                               >
                                 <img src={SearchImg} alt="Tìm kiếm" />
