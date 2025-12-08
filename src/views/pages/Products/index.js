@@ -526,18 +526,11 @@ class Product extends Component {
 
   handleModal = (stutus, openModal, closeModal) => {
     if (stutus || this.state.isShowForEdit) {
+      this.onCloseModal();
       closeModal();
     } else {
       openModal();
     }
-
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        isShowForEdit: false,
-        editId: null,
-      };
-    });
   };
   toggle = (el, val) => {
     let { collapseList } = this.state;
@@ -552,25 +545,149 @@ class Product extends Component {
     if (!isCheck) {
       return {};
     }
-    const { dataInsert, data, editId, currentRow } = this.state;
-    const batchNumber = dataInsert.batchNumber;
-
+    const { dataInsert } = this.state;
     const errorInserts = {};
 
-    if (!batchNumber) {
-      errorInserts.batchNumber = "Số phiếu không được bỏ trống";
+    // Validate required fields
+    if (!dataInsert.batchNumber) {
+      errorInserts.batchNumber = "Số lô hàng không được bỏ trống";
+    }
+
+    if (!dataInsert.diaryId) {
+      errorInserts.diaryId = "Vui lòng chọn nhật ký";
+    }
+
+    if (!dataInsert.quantity || dataInsert.quantity < 1) {
+      errorInserts.quantity = "Số lượng phải lớn hơn 0";
+    }
+
+    if (!dataInsert.classifyId) {
+      errorInserts.classifyId = "Vui lòng chọn phân loại";
+    }
+
+    if (!dataInsert.temId) {
+      errorInserts.temId = "Vui lòng chọn dải tem";
+    }
+
+    if (!dataInsert.fromVal && dataInsert.fromVal !== 0) {
+      errorInserts.fromVal = "Vui lòng nhập dải tem từ";
+    }
+
+    if (!dataInsert.toVal && dataInsert.toVal !== 0) {
+      errorInserts.toVal = "Vui lòng nhập dải tem đến";
+    }
+
+    // Validate market selection
+    if (!dataInsert.marketId || (dataInsert.marketId !== 1 && dataInsert.marketId !== 2)) {
+      errorInserts.marketId = "Vui lòng chọn thị trường";
+    }
+
+    // Validate province/country based on market selection
+    if (dataInsert.marketId === 1 && !dataInsert.provinceId) {
+      errorInserts.provinceId = "Vui lòng chọn tỉnh/thành phố";
+    }
+
+    if (dataInsert.marketId === 2 && !dataInsert.countryId) {
+      errorInserts.countryId = "Vui lòng chọn nước";
     }
 
     return errorInserts;
   };
 
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
-    console.log(dataInsert);
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
+  onConfirm = async (toggleModal, closePopup) => {
+    const { dataInsert, editId } = this.state;
+
+    // Validate data
+    const errorInserts = this.checkDataInsert(true);
+    if (Object.keys(errorInserts).length > 0) {
+      this.setState({ errorInserts });
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      const formData = new FormData();
+
+      // Add ID if editing
+      if (dataInsert.id) {
+        formData.append("Id", dataInsert.id);
+      }
+
+      // Append form data
+      formData.append("BatchNum", dataInsert.batchNumber || "");
+      formData.append("DiaryID", dataInsert.diaryId || "");
+      formData.append("ClassifyID", dataInsert.classifyId || "");
+      formData.append("TemID", dataInsert.temId || "");
+      formData.append("Quantity", dataInsert.quantity || 1);
+      formData.append("Location", dataInsert.placeVal || "");
+      formData.append("ProductName", dataInsert.productVal || "");
+      formData.append("Notes", dataInsert.noteVal || "");
+      formData.append("UnitID", dataInsert.unitVal || "");
+      formData.append("FromValue", dataInsert.fromVal || "");
+      formData.append("ToValue", dataInsert.toVal || "");
+      formData.append("MarketID", dataInsert.marketId || null);
+      formData.append("ProvinceID", dataInsert.provinceId || null);
+      formData.append("CountryID", dataInsert.countryId || null);
+      formData.append("WarehouseID", dataInsert.warehouseId || null);
+
+      // Append file if exists
+      if (dataInsert.file && dataInsert.file instanceof File) {
+        formData.append("File", dataInsert.file);
+      }
+
+      // Call API
+      let result;
+      if (dataInsert.id) {
+        // Update
+        result = await fetchData.consignments.editConsignment(formData);
+      } else {
+        // Create
+        result = await fetchData.consignments.addConsignment(formData);
+      }
+
+      if (result) {
+        const message = dataInsert.id
+          ? "Cập nhật lô hàng thành công!"
+          : "Thêm lô hàng thành công!";
+        toast.success(message);
+
+        // Close modal and refresh data
+        if (toggleModal) {
+          toggleModal();
+        }
+
+        // Reset form
+        this.setState({
+          isShowForEdit: false,
+          editId: null,
+          dataInsert: {},
+          errorInserts: {},
+          isLoaded: false,
+        });
+
+        // Reload data
+        this.fetchSummary(
+          JSON.stringify({
+            search: "",
+            filter: "",
+            orderBy: "",
+            page: null,
+            limit: null,
+          })
+        );
+      } else {
+        toast.error(
+          dataInsert.id
+            ? "Cập nhật lô hàng thất bại!"
+            : "Thêm lô hàng thất bại!"
+        );
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lưu lô hàng:", error);
+      toast.error("Có lỗi xảy ra, vui lòng thử lại!");
+      this.setState({ isLoaded: false });
     }
   };
 
@@ -583,7 +700,7 @@ class Product extends Component {
         };
       },
       () => {
-        const errorInserts = this.checkDataInsert();
+        const errorInserts = this.checkDataInsert(false);
 
         this.setState((previousState) => {
           return {
@@ -595,12 +712,61 @@ class Product extends Component {
     );
   };
 
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
+  onCloseModal = () => {
+    this.setState({
+      isShowForEdit: false,
+      editId: null,
+      dataInsert: {},
+      errorInserts: {},
     });
+  };
+
+  onEditData = (item) => async () => {
+    if (!item || !item.id) return;
+
+    this.setState({ isLoaded: true });
+
+    try {
+      // Load detail data from API
+      const detailData = await fetchData.consignments.getDetailConsignment(item.id);
+
+      if (detailData) {
+        const batch = detailData.batch || detailData;
+        const initialData = {
+          id: item.id,
+          batchId: batch.batchID || batch.BatchID || "",
+          diaryId: batch.diaryID || batch.DiaryID || null,
+          classifyId: batch.classifyID || batch.ClassifyID || null,
+          temId: batch.temID || batch.TemID || null,
+          batchNumber: batch.batchNumber || batch.BatchNum || "",
+          placeVal: batch.location || batch.Location || "",
+          productVal: batch.productName || batch.ProductName || "",
+          noteVal: batch.notes || batch.Notes || "",
+          unitVal: batch.unitID || batch.UnitID || batch.unitName || batch.UnitName || "",
+          quantity: batch.quantity || batch.Quantity || 1,
+          fromVal: batch.fromValue || batch.FromValue || "",
+          toVal: batch.toValue || batch.ToValue || "",
+          marketId: batch.marketID || batch.MarketID || null,
+          provinceId: batch.provinceID || batch.ProvinceID || null,
+          countryId: batch.countryID || batch.CountryID || null,
+          warehouseId: batch.warehouseID || batch.WarehouseID || null,
+        };
+
+        this.setState({
+          isShowForEdit: true,
+          editId: item.id,
+          dataInsert: initialData,
+          isLoaded: false,
+        });
+      } else {
+        toast.error("Không tải được dữ liệu chi tiết!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải chi tiết lô hàng:", error);
+      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+      this.setState({ isLoaded: false });
+    }
   };
 
   onDeleteData = (id) => () => {
@@ -893,8 +1059,12 @@ class Product extends Component {
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
+                          initialData={isShowForEdit ? this.state.dataInsert : null}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
+                          onLoadDetailData={(data) => {
+                            this.setState({ dataInsert: data });
+                          }}
                           STATUS_OPTIONS={STATUS_OPTIONS}
                           DIARY_OPTIONS={DIARY_OPTIONS}
                           CLASSIFY_OPTIONS={CLASSIFY_OPTIONS}
@@ -1071,6 +1241,7 @@ class Product extends Component {
               moduleBody={
                 <InsertOrUpdate
                   id={editId}
+                  initialData={null}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
                   STATUS_OPTIONS={STATUS_OPTIONS}

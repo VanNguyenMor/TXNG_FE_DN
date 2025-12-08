@@ -694,6 +694,17 @@ export const fetchData = {
       }
     },
 
+    getDetailConsignment: async (id) => {
+      try {
+        const endpoint = CONSIGNMENTS.getDetailConsignment.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy chi tiết lô hàng:", error);
+        return null;
+      }
+    },
+
     addConsignment: async (data) => {
       try {
         const result = await callApi("post", CONSIGNMENTS.addConsignment, data);

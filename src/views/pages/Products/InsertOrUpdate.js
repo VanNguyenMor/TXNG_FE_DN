@@ -3,12 +3,14 @@ import PopupMessage from "../../../components/PopupMessage";
 import Select from "components/Select";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import ReactDatetime from "react-datetime";
+import { fetchData } from "../../../helpers/fetchData";
 
 import {
   FormGroup,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
+  Spinner,
 } from "reactstrap";
 
 class InsertOrUpadte extends Component {
@@ -17,7 +19,7 @@ class InsertOrUpadte extends Component {
 
     this.state = {
       id: null,
-      batchId: null,
+      batchId: "",
       diaryId: null,
       classifyId: null,
       temId: null,
@@ -34,7 +36,26 @@ class InsertOrUpadte extends Component {
       countryId: null,
       warehouseId: null,
       fileVal: "",
+      file: null,
+      loading: false,
+      errMessage: "",
+      popupMessage: false,
     };
+  }
+
+  componentDidMount() {
+    this.initStateFromProps();
+    const { id } = this.props;
+    if (id) {
+      this.loadDetailData(id);
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    // If id changes and it's for edit, reload detail
+    if (prevProps.id !== this.props.id && this.props.id) {
+      this.loadDetailData(this.props.id);
+    }
   }
 
   componentWillUnmount() {
@@ -46,53 +67,157 @@ class InsertOrUpadte extends Component {
     });
   }
 
-  async componentDidMount() {
-    const { onHandleChangeValue } = this.props;
-
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
-    }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
+  // Initialize state from props (for edit mode)
+  initStateFromProps = () => {
+    const { initialData } = this.props;
+    if (initialData) {
+      this.setState(
+        (prevState) => ({
+          ...prevState,
+          ...{
+            id: initialData.id || null,
+            batchId: initialData.batchId || initialData.BatchID || "",
+            diaryId: initialData.diaryId || initialData.DiaryID || null,
+            classifyId: initialData.classifyId || initialData.ClassifyID || null,
+            temId: initialData.temId || initialData.TemID || null,
+            batchNumber: initialData.batchNumber || initialData.BatchNum || "",
+            placeVal: initialData.placeVal || initialData.Location || "",
+            productVal: initialData.productVal || initialData.ProductName || "",
+            noteVal: initialData.noteVal || initialData.Notes || "",
+            unitVal: initialData.unitVal || initialData.UnitName || "",
+            quantity: initialData.quantity || initialData.Quantity || 1,
+            fromVal: initialData.fromVal || initialData.FromValue || "",
+            toVal: initialData.toVal || initialData.ToValue || "",
+            marketId: initialData.marketId || initialData.MarketID || null,
+            provinceId: initialData.provinceId || initialData.ProvinceID || null,
+            countryId: initialData.countryId || initialData.CountryID || null,
+            warehouseId: initialData.warehouseId || initialData.WarehouseID || null,
+          },
+        }),
+        () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
         }
-      }
-    );
-
-    this.focusInput();
-  }
-
-  focusInput = () => {
-    if (this.refInputName) {
-      const timeOut = setTimeout(() => {
-        this.refInputName.focus();
-
-        clearTimeout(timeOut);
-      }, 100);
+      );
+    } else {
+      // Initialize empty form
+      const emptyState = {
+        id: null,
+        batchId: "",
+        diaryId: null,
+        classifyId: null,
+        temId: null,
+        batchNumber: "",
+        placeVal: "",
+        productVal: "",
+        noteVal: "",
+        unitVal: "",
+        quantity: 1,
+        fromVal: "",
+        toVal: "",
+        marketId: null,
+        provinceId: null,
+        countryId: null,
+        warehouseId: null,
+        fileVal: "",
+      };
+      this.setState(emptyState, () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      });
     }
   };
 
-  onChangeSelect = (name) => (value) => {
-    const numericValue = Number(value);
-    const selectedOption = this.props.DIARY_OPTIONS?.find(
-      (item) => item.id === numericValue
-    );
+  // Load detail data from API
+  loadDetailData = async (id) => {
+    if (!id) return;
 
-    this.setState(
-      (prevState) => ({
-        ...prevState,
-        [name]: value,
-        ...(name === "diaryId" && {
+    this.setState((prev) => ({ ...prev, loading: true }));
+
+    try {
+      const res = await fetchData.consignments.getDetailConsignment(id);
+      if (!res) {
+        this.setState({
+          loading: false,
+          errMessage: "Không tìm thấy dữ liệu chi tiết",
+          popupMessage: true,
+        });
+        return;
+      }
+
+      const batch = res.batch || res;
+      const newData = {
+        id: id,
+        batchId: batch.batchID || batch.BatchID || "",
+        diaryId: batch.diaryID || batch.DiaryID || null,
+        classifyId: batch.classifyID || batch.ClassifyID || null,
+        temId: batch.temID || batch.TemID || null,
+        batchNumber: batch.batchNumber || batch.BatchNum || "",
+        placeVal: batch.location || batch.Location || "",
+        productVal: batch.productName || batch.ProductName || "",
+        noteVal: batch.notes || batch.Notes || "",
+        unitVal: batch.unitID || batch.UnitID || batch.unitName || batch.UnitName || "",
+        quantity: batch.quantity || batch.Quantity || 1,
+        fromVal: batch.fromValue || batch.FromValue || "",
+        toVal: batch.toValue || batch.ToValue || "",
+        marketId: batch.marketID || batch.MarketID || null,
+        provinceId: batch.provinceID || batch.ProvinceID || null,
+        countryId: batch.countryID || batch.CountryID || null,
+        warehouseId: batch.warehouseID || batch.WarehouseID || null,
+      };
+
+      this.setState({ ...newData, loading: false }, () => {
+        if (this.props.onLoadDetailData) {
+          this.props.onLoadDetailData(newData);
+        }
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      });
+    } catch (error) {
+      console.error("Lỗi load chi tiết lô hàng:", error);
+      this.setState({
+        loading: false,
+        errMessage: "Lỗi tải dữ liệu chi tiết",
+        popupMessage: true,
+      });
+    }
+  };
+
+  // Handle select change - special handling for diaryId
+  onChangeSelect = (name) => (value) => {
+    const selectValue = value !== null && value !== undefined ? String(value) : null;
+
+    if (name === "diaryId") {
+      const numericValue = Number(selectValue);
+      const selectedOption = this.props.DIARY_OPTIONS?.find(
+        (item) => item.id === numericValue
+      );
+
+      this.setState(
+        (prevState) => ({
+          ...prevState,
+          diaryId: selectValue,
           placeVal: selectedOption?.location || "",
           productVal: selectedOption?.product || "",
           unitVal: selectedOption?.unit || "",
         }),
+        () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
+        }
+      );
+      return;
+    }
+
+    // Generic select handler for other fields
+    this.setState(
+      (prevState) => ({
+        ...prevState,
+        [name]: selectValue,
       }),
       () => {
         if (this.props.onHandleChangeValue) {
@@ -102,11 +227,13 @@ class InsertOrUpadte extends Component {
     );
   };
 
+  // Handle value input changes
   onChangeValue = (name) => (e) => {
     let value = e && e.target ? e.target.value : e;
 
-    if (name === "marketId" || name === "quantity") {
-      value = Number(value);
+    // Convert specific fields to numbers
+    if (name === "marketId" || name === "quantity" || name === "fromVal" || name === "toVal") {
+      value = value !== "" ? Number(value) : (name === "quantity" ? 1 : "");
     }
 
     this.setState(
@@ -124,29 +251,23 @@ class InsertOrUpadte extends Component {
     );
   };
 
-  onChangeSelectType = () => {
-    this.resetFieldValue();
-  };
-
-  resetFieldValue = () => {
-    alert();
-  };
-
+  // Handle file changes
   handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
+    if (files && files[0]) {
+      this.setState({ 
+        file: files[0],
+        fileVal: files[0].name 
+      }, () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      });
+    }
   };
 
+  // Toggle modal/popup
   toggleModal = (state) => {
     this.setState({ [state]: !this.state[state] });
-  };
-
-  calculateTotalAmount = (quantity, price, vatRate) => {
-    const subtotal = Number(quantity) * Number(price);
-    const vatFactor = 1 + Number(vatRate) / 100;
-
-    const totalAmount = subtotal * vatFactor;
-
-    return Math.round(totalAmount);
   };
 
   render() {
@@ -170,6 +291,7 @@ class InsertOrUpadte extends Component {
       countryId,
       warehouseId,
       fileVal,
+      loading,
     } = this.state;
 
     const {
@@ -184,6 +306,15 @@ class InsertOrUpadte extends Component {
       PROVINCE_OPTIONS,
       WAREHOUSE_OPTIONS,
     } = this.props;
+
+    // Show loading spinner while loading detail data
+    if (loading) {
+      return (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <Spinner color="primary" />
+        </div>
+      );
+    }
 
     return (
       <div className="wrap-insert-or-update-zone">
