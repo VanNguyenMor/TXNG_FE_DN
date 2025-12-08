@@ -7,6 +7,7 @@ import { fetchData } from "../../../helpers/fetchData";
 
 import {
   FormGroup,
+  Input,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
@@ -27,8 +28,8 @@ class InsertOrUpadte extends Component {
       batchNumber: "",
       planZoneName: "",
       productVal: "",
-      noteVal: "",
-      unitVal: "",
+      note: "",
+      unitName: "",
       quantity: 1,
       fromVal: "",
       toVal: "",
@@ -42,7 +43,7 @@ class InsertOrUpadte extends Component {
       errMessage: "",
       popupMessage: false,
       qrCodes: [],
-      createdDate: "",
+      createdDate: new Date(), // Mặc định là ngày hôm nay
     };
   }
 
@@ -86,8 +87,8 @@ class InsertOrUpadte extends Component {
             batchNumber: initialData.batchNumber || initialData.BatchNum || "",
             planZoneName: initialData.planZoneName || initialData.Location || "",
             productVal: initialData.productVal || initialData.ProductName || "",
-            noteVal: initialData.noteVal || initialData.Notes || "",
-            unitVal: initialData.unitVal || initialData.UnitName || "",
+            note: initialData.note || initialData.Notes || "",
+            unitName: initialData.unitName || "",
             quantity: initialData.quantity || initialData.Quantity || 1,
             fromVal: initialData.fromVal || initialData.FromValue || "",
             toVal: initialData.toVal || initialData.ToValue || "",
@@ -95,6 +96,7 @@ class InsertOrUpadte extends Component {
             provinceId: initialData.provinceId || initialData.ProvinceID || null,
             countryId: initialData.countryId || initialData.CountryID || null,
             warehouseId: initialData.warehouseId || initialData.WarehouseID || null,
+            createdDate: initialData.createdDate || initialData.createdDate || new Date(),
           },
         }),
         () => {
@@ -115,8 +117,8 @@ class InsertOrUpadte extends Component {
         batchNumber: "",
         planZoneName: "",
         productVal: "",
-        noteVal: "",
-        unitVal: "",
+        note: "",
+        unitName: "",
         quantity: 1,
         fromVal: "",
         toVal: "",
@@ -126,7 +128,7 @@ class InsertOrUpadte extends Component {
         warehouseId: null,
         fileVal: "",
         qrCodes: [],
-        createdDate: "",
+        createdDate: new Date(),
       };
       this.setState(emptyState, () => {
         if (this.props.onHandleChangeValue) {
@@ -175,8 +177,8 @@ class InsertOrUpadte extends Component {
         batchNumber: batch.batchNum || batch.batchNumber || batch.BatchNum || "",
         planZoneName: batch.planZoneName || batch.plantZoneName || "",
         productVal: batch.productName || batch.ProductName || "",
-        noteVal: batch.note || batch.notes || batch.Notes || "",
-        unitVal: batch.unitID || batch.UnitID || batch.unitName || batch.UnitName || "",
+        note: batch.note || batch.notes || batch.Notes || "",
+        unitName: batch.unitName || "",
         quantity: batch.quantity || batch.Quantity || 1,
         fromVal: batch.startNum || batch.fromValue || batch.FromValue || "",
         toVal: batch.endNum || batch.toValue || batch.ToValue || "",
@@ -223,7 +225,7 @@ class InsertOrUpadte extends Component {
           traceName: selectedOption?.title || selectedOption?.traceName || "",
           planZoneName: selectedOption?.planZoneName || "",
           productVal: selectedOption?.product || "",
-          unitVal: selectedOption?.unit || "",
+          unitName: selectedOption?.unitName || "",
         }),
         () => {
           if (this.props.onHandleChangeValue) {
@@ -303,8 +305,8 @@ class InsertOrUpadte extends Component {
       classifyId,
       planZoneName,
       productVal,
-      noteVal,
-      unitVal,
+      note,
+      unitName,
       quantity,
       fromVal,
       toVal,
@@ -349,23 +351,19 @@ class InsertOrUpadte extends Component {
         ) : null}
         <div
           className="wrap-insert-or-update-zone-item"
-          style={{
-            pointerEvents: "none",
-            opacity: ".5",
-          }}
         >
           <label className="wrap-insert-or-update-zone-item-label">
             Mã lô hàng&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                readOnly={isShowForEdit}
-                onChange={this.onChangeValue("batchCode")}
-                type="text"
-                value={batchCode}
+               <Input
+                  readOnly={isShowForEdit}
+                  onChange={this.onChangeValue("batchCode")}
+                  type="text"
+                  value={batchCode}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
             <p className="form-error-message">{errors.batchCode || ""}</p>
@@ -377,13 +375,13 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("batchNumber")}
-                readOnly={isShowForEdit}
-                type="text"
-                value={batchNumber}
+              <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("batchNumber")}
+                  type="text"
+                  value={batchNumber}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
             <p className="form-error-message">{errors.batchNumber || ""}</p>
@@ -394,30 +392,20 @@ class InsertOrUpadte extends Component {
             Ngày tạo&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
-            <FormGroup>
-              <InputGroup className="input-group-alternative css-border-input ">
-                <InputGroupAddon addonType="prepend" style={{ height: 32 }}>
-                  <InputGroupText>
-                    <i className="ni ni-calendar-grid-58" />
-                  </InputGroupText>
-                </InputGroupAddon>
-
-                <ReactDatetime
-                  inputProps={{
-                    placeholder: "Ngày tạo",
-                    name: "createdDate",
-                  }}
-                  value={createdDate}
-                  timeFormat={false}
-                  dateFormat="DD-MM-YYYY"
-                  onChange={this.onChangeValue("createdDate")}
-                />
-              </InputGroup>
-              <p className="form-error-message margin-bottom-0">
-                {errors.createdDate || ""}
-              </p>
-            </FormGroup>
-
+            <InputGroup className="input-group-alternative css-border-input">
+              <InputGroupAddon addonType="prepend" style={{ height: 32 }}>
+                <InputGroupText>
+                  <i className="ni ni-calendar-grid-58" />
+                </InputGroupText>
+              </InputGroupAddon>
+              <Input
+                type="text"
+                disabled={true}
+                value={createdDate instanceof Date ? createdDate.toLocaleDateString('en-GB') : createdDate}
+                className="wrap-insert-or-update-zone-item-input"
+                placeholder="Ngày tạo"
+              />
+            </InputGroup>
             <p className="form-error-message">{errors.createdDate || ""}</p>
           </div>
         </div>
@@ -442,23 +430,19 @@ class InsertOrUpadte extends Component {
         </div>
         <div
           className="wrap-insert-or-update-zone-item"
-          style={{
-            pointerEvents: "none",
-            opacity: ".5",
-          }}
         >
           <label className="wrap-insert-or-update-zone-item-label">
             Vị trí&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("planZoneName")}
-                readOnly={isShowForEdit}
-                type="text"
-                value={planZoneName}
+              <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("planZoneName")}
+                  type="text"
+                  value={planZoneName}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
             <p className="form-error-message">{errors.planZoneName || ""}</p>
@@ -466,23 +450,19 @@ class InsertOrUpadte extends Component {
         </div>
         <div
           className="wrap-insert-or-update-zone-item"
-          style={{
-            pointerEvents: "none",
-            opacity: ".5",
-          }}
         >
           <label className="wrap-insert-or-update-zone-item-label">
             Sản phẩm&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("productVal")}
-                readOnly={isShowForEdit}
-                type="text"
-                value={productVal}
+               <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("productVal")}
+                  type="text"
+                  value={productVal}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
             <p className="form-error-message">{errors.productVal || ""}</p>
@@ -490,26 +470,23 @@ class InsertOrUpadte extends Component {
         </div>
         <div
           className="wrap-insert-or-update-zone-item"
-          style={{
-            pointerEvents: "none",
-            opacity: ".5",
-          }}
+       
         >
           <label className="wrap-insert-or-update-zone-item-label">
             Đơn vị tính&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("unitVal")}
-                readOnly={isShowForEdit}
-                type="text"
-                value={unitVal}
+              <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("unitName")}
+                  type="text"
+                  value={unitName}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
-            <p className="form-error-message">{errors.unitVal || ""}</p>
+            <p className="form-error-message">{errors.unitName || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
@@ -518,14 +495,13 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("quantity")}
-                readOnly={isShowForEdit}
-                type="number"
-                value={quantity}
-                min={1}
+              <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("quantity")}
+                  type="text"
+                  value={quantity}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
             <p className="form-error-message">{errors.quantity || ""}</p>
@@ -556,16 +532,16 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("noteVal")}
-                type="text"
-                readOnly={isShowForEdit}
-                value={noteVal}
+              <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("note")}
+                  type="text"
+                  value={note}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
-            <p className="form-error-message">{errors.noteVal || ""}</p>
+            <p className="form-error-message">{errors.note || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
@@ -595,13 +571,13 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("fromVal")}
-                type="number"
-                readOnly={isShowForEdit}
-                value={fromVal}
+               <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("fromVal")}
+                  type="text"
+                  value={fromVal}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
             <p className="form-error-message">{errors.fromVal || ""}</p>
@@ -613,13 +589,13 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                onChange={this.onChangeValue("toVal")}
-                type="number"
-                readOnly={isShowForEdit}
-                value={toVal}
+               <Input
+                  readOnly={isShowForEdit}
+                   onChange={this.onChangeValue("toVal")}
+                  type="text"
+                  value={toVal}
                 className="wrap-insert-or-update-zone-item-input"
-              />
+                />
             </InputGroup>
 
             <p className="form-error-message">{errors.toVal || ""}</p>

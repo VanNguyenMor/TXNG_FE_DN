@@ -1023,15 +1023,15 @@ class Product extends Component {
                             Xem chi tiết
                           </DropdownItem>
                         )}
-                        {isDisableEdit == true ||
+                        {/* {isDisableEdit == true ||
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
-                        )}
-                        {isDisableDelete == true ? null : (
+                        )} */}
+                        {/* {isDisableDelete == true ? null : (
                           <DropdownItem onClick={this.onDeleteData(e.id)}>
                             Xoá
                           </DropdownItem>
-                        )}
+                        )} */}
                       </DropdownMenu>
                     </ButtonDropdown>
                   )}
@@ -1144,7 +1144,7 @@ class Product extends Component {
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
-                        isShowForEdit ? "Sửa phiếu nhập" : "Thêm phiếu nhập"
+                        isShowForEdit ? "Sửa lô hàng" : "Thêm lô hàng"
                       }
                       moduleBody={
                         <InsertOrUpdate
