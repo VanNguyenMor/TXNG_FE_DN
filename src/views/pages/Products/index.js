@@ -402,6 +402,10 @@ class Product extends Component {
           totalPage: Math.ceil(length / limit),
           isLoaded: false,
           collapseList: collapseList,
+          totalElement: total,
+          beginItem: 0,
+          endItem: limit,
+          currentPage: 1,
         });
       })
       .catch((error) => {
