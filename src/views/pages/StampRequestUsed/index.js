@@ -98,12 +98,17 @@ class BusinessInformation extends Component {
       warningBlockProductModal: false,
       blockProductId: null,
       STATUS_OPTIONS: [
-        { id: 0, title: "Chờ duyệt" },
-        { id: 1, title: "Đã duyệt" },
+        { id: 0, title: "Mới tạo" },
+        { id: 1, title: "Chờ duyệt" },
+        { id: 2, title: "Đã duyệt" },
+        { id: 3, title: "Không duyệt" },
+        { id: 4, title: "Đã duyệt yêu cầu" },
       ],
       EFFECT_OPTIONS: [
         { id: 0, title: "Chưa hiệu lực" },
-        { id: 1, title: "Có hiệu lực" },
+        { id: 1, title: "Chờ cấp phép" },
+        { id: 2, title: "Có hiệu lực" },
+        { id: 3, title: "Không cấp phép" },
       ],
     };
   }
@@ -380,27 +385,17 @@ class BusinessInformation extends Component {
   };
 
   handlePageClick = (data) => {
-    let { limit, beginItem, endItem } = this.state;
+    let { limit } = this.state;
     let selected = data.selected;
     let offset = Math.ceil(selected * limit);
-    let total = 0;
 
-    beginItem = offset;
-    endItem = offset + limit;
-
-    this.state.data.map(
-      (item, key) => key >= beginItem && key < endItem && total++
-    );
-
-    if (selected > 0) {
-      total = selected * limit + total;
-    } else total = total;
+    let beginItem = offset;
+    let endItem = offset + limit;
 
     this.setState({
       beginItem: beginItem,
       endItem: endItem,
-      currentPage: selected + 1,
-      totalElement: total,
+      currentPage: selected,
     });
   };
 
@@ -681,65 +676,56 @@ class BusinessInformation extends Component {
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
-    let parentid = [];
     let autoIndex = 0;
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
-    data.forEach((e) => parentid.push(e.id));
+    // Lọc dữ liệu theo pagination
+    const filteredData = Array.isArray(data) 
+      ? data.filter((item, key) => key >= beginItem && key < endItem)
+      : [];
 
-    const cb = (e, key, array) => {
-      const renderClass =
-        e.parentID.length === 0
-          ? `${classes.treeParent}`
-          : `${classes.treeChild}${
-              parentid.includes(e.parentID)
-                ? ` ${classes.childs}`
-                : ` ${classes.childsItem}`
-            }`;
+    // Render từng dòng của bảng
+    filteredData.forEach((e, index) => {
       list.push(
         <tr
-          key={autoIndex}
-          parentid={e.parentID}
+          key={`row-${e.id}`}
           currentid={e.id}
-          index={autoIndex}
+          index={index}
           className="table-hover-css"
         >
-          <td
-            className={`className='table-scale-col table-user-col-1' ${renderClass}`}
-          >
-            {autoIndex + 1}
+          <td className="table-scale-col table-user-col-1">
+            {beginItem + index + 1}
           </td>
           <td className="table-scale-col" style={{ textAlign: "left" }}>
-            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+            <span style={{ fontSize: "14px" }}>
               {e.requestDate}
             </span>
           </td>
 
           <td className="table-scale-col" style={{ textAlign: "left" }}>
-            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+            <span style={{ fontSize: "14px" }}>
               {e.totalRequestedQuantity}
             </span>
           </td>
 
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+          <td className="table-scale-col">
+            <span style={{ fontSize: "14px" }}>
               {e.stampRange ?? "-"}
             </span>
           </td>
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.printMethod}</span>
+          <td className="table-scale-col">
+            <span>{e.printMethod}</span>
           </td>
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}` }}>
+          <td className="table-scale-col">
+            <span>
               {this.showTitleWithStatus(e.currentStatus)}
             </span>
           </td>
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}` }}>
+          <td className="table-scale-col">
+            <span>
               {this.showTitleWithEffect(e.effect)}
             </span>
           </td>
-          <td>
+          <td className="table-scale-col">
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
@@ -763,7 +749,7 @@ class BusinessInformation extends Component {
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
                         )}
-                        {isDisableDelete == true || e.currentStatus == 2 ? null : (
+                        {isDisableDelete == true || e.currentStatus == 2 || e.currentStatus == 4 ? null : (
                           <DropdownItem onClick={this.onDeleteData(e.id)}>
                             Xoá
                           </DropdownItem>
@@ -776,11 +762,8 @@ class BusinessInformation extends Component {
           </td>
         </tr>
       );
-      autoIndex++;
-      e.children && e.children.forEach(cb);
-    };
+    });
 
-    data.forEach(cb);
     return list;
   };
 
@@ -1004,7 +987,7 @@ class BusinessInformation extends Component {
                     {/* Pagination */}
                     {
                       // Page of Table
-                      Array.isArray(data) > 0 && (
+                      Array.isArray(data) && data.length > 0 && (
                         <Pagination
                           data={data}
                           listLength={listLength}
