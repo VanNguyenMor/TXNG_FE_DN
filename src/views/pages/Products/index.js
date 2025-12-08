@@ -474,6 +474,13 @@ class Product extends Component {
 
   applyFilters = () => {
     const { fromDate, toDate, filter } = this.state;
+    
+    // If all filters are empty, reset and reload all
+    if (!fromDate && !toDate && (!filter || !filter.filter)) {
+      this.handleSubmitSearchForm();
+      return;
+    }
+    
     this.fetchSummary(
       JSON.stringify({
         search: "",
@@ -851,17 +858,29 @@ class Product extends Component {
                   <div className="col">
                     {/* Header */}
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
+                      dataReload={() => {
+                        this.setState({
+                          fromDate: "",
+                          toDate: "",
+                          filter: {
                             search: "",
                             filter: "",
                             orderBy: "",
                             page: null,
                             limit: null,
-                          })
-                        )
-                      }
+                          },
+                        }, () => {
+                          this.fetchSummary(
+                            JSON.stringify({
+                              search: "",
+                              filter: "",
+                              orderBy: "",
+                              page: null,
+                              limit: null,
+                            })
+                          );
+                        });
+                      }}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
@@ -945,6 +964,7 @@ class Product extends Component {
                               </label>
                               <div>
                                 <Select
+                                  key={filter && filter.filter ? filter.filter : "empty"}
                                   name="filter"
                                   title="Lọc theo trạng thái"
                                   data={STATUS_OPTIONS}
