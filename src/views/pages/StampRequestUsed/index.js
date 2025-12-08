@@ -22,6 +22,8 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
+import { fetchData } from "helpers/fetchData";
+import moment from "moment";
 
 // reactstrap components
 import {
@@ -47,29 +49,8 @@ class BusinessInformation extends Component {
   constructor(props) {
     super(props);
 
-    const dataMock = [
-      {
-        id: 1,
-        requestDate: "2025-10-04",
-        totalRequestedQuantity: 20,
-        stampRange: null,
-        printMethod: "Yêu cầu in",
-        effect: 1,
-        currentStatus: 1,
-      },
-      {
-        id: 2,
-        requestDate: "2025-10-03",
-        totalRequestedQuantity: 30,
-        stampRange: "4341 - 4370",
-        printMethod: "Tự in",
-        effect: 1,
-        currentStatus: 1,
-      },
-    ];
-
     this.state = {
-      data: dataMock,
+      data: [],
       detail: [],
       update: [],
       create: [],
@@ -97,6 +78,8 @@ class BusinessInformation extends Component {
       listLength: 0,
       createNewModal: false,
       currentPage: 0,
+      collapseList: [],
+      totalPage: 0,
       filter: {
         search: "",
         filter: "",
@@ -154,41 +137,236 @@ class BusinessInformation extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
-
+  fetchSummary = async (data) => {
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
+    try {
+      const payload = data ? JSON.parse(data) : {};
+      
+      const res = await fetchData.stampRequest.getList(payload);
+      
+      if (!res) {
+        this.setState({ isLoaded: false, data: [], collapseList: [] });
+        return;
+      }
+
+      let stampRequests = [];
+      
+      if (res.data && res.data.stamps && Array.isArray(res.data.stamps)) {
+        stampRequests = res.data.stamps;
+      } else if (res.stamps && Array.isArray(res.stamps)) {
+        stampRequests = res.stamps;
+      } else if (Array.isArray(res)) {
+        stampRequests = res;
+      } else if (res.data && Array.isArray(res.data)) {
+        stampRequests = res.data;
+      }
+
       const { limit } = this.state;
       let collapseList = [];
-      const data = (res.data || {}).data || {};
 
-      let newData = [...this.state.data];
+      const tableData = stampRequests.map((item, index) => ({
+        id: item.id || item.ID,
+        requestDate: item.requestedDate 
+          ? moment(item.requestedDate).format("DD/MM/YYYY") 
+          : "",
+        totalRequestedQuantity: item.quantity || item.Quantity || 0,
+        stampRange: item.startNum && item.endNum 
+          ? `${item.startNum} - ${item.endNum}` 
+          : item.stampRange || item.StampRange || "-",
+        printMethod: item.isPrint === true ? "Yêu cầu in" : "Tự in",
+        effect: item.requestedUsedStatus || item.RequestedUsedStatus || 0,
+        currentStatus: item.status || item.Status || 0,
+        parentID: "",
+        index: index + 1,
+        color: "",
+      }));
 
-      newData.forEach((item, key) => {
+      tableData.forEach((item) => {
         collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
       });
 
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
+      const total = tableData.length | 0;
+      const length = tableData.length;
 
       this.setState({
-        data: newData,
+        data: tableData,
         listLength: total,
         totalPage: Math.ceil(length / limit),
         isLoaded: false,
         collapseList: collapseList,
       });
+
+    } catch (error) {
+      toast.error("Lỗi khi tải danh sách xin cấp tem");
+      this.setState({ isLoaded: false });
+    }
+  };
+
+  onEditData = (item) => async () => {
+    if (!item || !item.id) return;
+
+    this.setState({ isLoaded: true });
+
+    try {
+      // Load detail data from API
+      const detailData = await fetchData.stampRequest.getDetail(item.id);
+
+      if (detailData) {
+        const request = detailData.request || detailData;
+        const initialData = {
+          id: item.id,
+          quantity: request.quantity || request.Quantity || 0,
+          productId: request.productId || request.ProductId || null,
+          printMethod: request.printMethod || 0,
+          stampRange: request.stampRange || request.StampRange || "",
+          notes: request.notes || request.Notes || "",
+          status: request.status || request.Status || 0,
+        };
+
+        this.setState({
+          isShowForDetail: true,
+          editId: item.id,
+          dataInsert: initialData,
+          isLoaded: false,
+        });
+      } else {
+        toast.error("Không tải được dữ liệu chi tiết!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải chi tiết xin cấp tem:", error);
+      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+      this.setState({ isLoaded: false });
+    }
+  };
+
+  onConfirm = async (toggleModal, closePopup) => {
+    const { dataInsert, editId } = this.state;
+
+    const errorInserts = this.checkDataInsert(true);
+    if (Object.keys(errorInserts).length > 0) {
+      this.setState({ errorInserts });
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      const payload = {
+        id: dataInsert.id || null,
+        quantity: dataInsert.quantity || 0,
+        productId: dataInsert.productId || null,
+        printMethod: dataInsert.printMethod || 0,
+        stampRange: dataInsert.stampRange || "",
+        notes: dataInsert.notes || "",
+      };
+
+      // Call API
+      let result;
+      if (dataInsert.id) {
+        // Update
+        result = await fetchData.stampRequest.edit(payload);
+        if (result && result.status === 200) {
+          toast.success("Cập nhật xin cấp tem thành công!");
+        } else {
+          toast.error("Cập nhật xin cấp tem thất bại!");
+          this.setState({ isLoaded: false });
+          return;
+        }
+      } else {
+        // Create
+        result = await fetchData.stampRequest.add(payload);
+        if (result && result.status === 200) {
+          toast.success("Thêm xin cấp tem thành công!");
+        } else {
+          toast.error("Thêm xin cấp tem thất bại!");
+          this.setState({ isLoaded: false });
+          return;
+        }
+      }
+
+      // Close modal and refresh data
+      if (toggleModal) {
+        toggleModal();
+      }
+
+      // Reset form
+      this.setState({
+        isShowForDetail: false,
+        editId: null,
+        dataInsert: {},
+        errorInserts: {},
+        isLoaded: false,
+      });
+
+      // Reload data
+      this.fetchSummary(
+        JSON.stringify({
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+    } catch (error) {
+      console.error("Lỗi khi lưu xin cấp tem:", error);
+      toast.error("Có lỗi xảy ra, vui lòng thử lại!");
+      this.setState({ isLoaded: false });
+    }
+  };
+
+  onHandleChangeValue = (data) => {
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          dataInsert: data,
+        };
+      },
+      () => {
+        const errorInserts = this.checkDataInsert(false);
+
+        this.setState((previousState) => {
+          return {
+            ...previousState,
+            errorInserts,
+          };
+        });
+      }
+    );
+  };
+
+  onCloseModal = () => {
+    this.setState({
+      isShowForDetail: false,
+      editId: null,
+      dataInsert: {},
+      errorInserts: {},
     });
+  };
+
+  checkDataInsert = (isSubmit = false) => {
+    const { dataInsert } = this.state;
+    let errors = {};
+
+    // Validate quantity
+    if (!dataInsert.quantity || dataInsert.quantity <= 0) {
+      errors.quantity = "Số lượng không được trống và phải lớn hơn 0";
+    }
+
+    // Validate product
+    if (!dataInsert.productId) {
+      errors.productId = "Vui lòng chọn sản phẩm";
+    }
+
+    // Validate stamp range
+    if (!dataInsert.stampRange) {
+      errors.stampRange = "Vui lòng chọn dải tem";
+    }
+
+    return errors;
   };
 
   closeStatusModal = () => {
@@ -353,16 +531,15 @@ class BusinessInformation extends Component {
     });
   };
 
-  onShowDetail = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForDetail: true,
-      };
-    });
+  onShowDetail = (item) => () => {
+    this.onEditData(item)();
   };
 
   onDeleteData = (id) => () => {
-    alert("Xóa thành công");
+    this.setState({
+      warningPopupModal: true,
+      deleteId: id,
+    });
   };
 
   toggleModalPopupDelete = () => {
@@ -374,18 +551,44 @@ class BusinessInformation extends Component {
     });
   };
 
-  handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
+  onAddNew = () => {
+    this.setState({
+      isShowForDetail: true,
+      editId: null,
+      dataInsert: {
+        id: null,
+        quantity: 0,
+        productId: null,
+        stampRange: "",
+        printMethod: 0,
+        notes: "",
+      },
+      errorInserts: {},
+    });
+  };
+
+  handleDeleteRow = async () => {
+    const { deleteId } = this.state;
+
+    if (!deleteId) {
+      this.setState({ warningPopupModal: false });
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      const result = await fetchData.stampRequest.delete(deleteId);
+
+      if (result && result.status === 200) {
+        this.setState({
           warningPopupModal: false,
-        };
-      });
+          message: "Xóa dữ liệu thành công",
+          isLoaded: false,
+        });
+        toast.success("Xóa dữ liệu thành công!");
 
-      const data = res.data;
-
-      if (data.status == 200) {
+        // Reload list
         this.fetchSummary(
           JSON.stringify({
             search: "",
@@ -395,16 +598,23 @@ class BusinessInformation extends Component {
             limit: null,
           })
         );
-
-        this.setState({ message: "Xóa dữ liệu thành công" });
-        toast.success("Xoá dữ liệu thành công!");
       } else {
-        const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa dữ liệu thất bại" });
-        this.toggleModal("popupMessage");
+        this.setState({
+          warningPopupModal: false,
+          message: "Xóa dữ liệu thất bại",
+          isLoaded: false,
+        });
+        toast.error("Xóa dữ liệu thất bại!");
       }
-    });
+    } catch (error) {
+      console.error("❌ Lỗi xóa xin cấp tem:", error);
+      this.setState({
+        warningPopupModal: false,
+        message: "Có lỗi xảy ra khi xóa",
+        isLoaded: false,
+      });
+      toast.error("Có lỗi xảy ra!");
+    }
   };
 
   toggleModal = (state, type) => {
@@ -553,7 +763,7 @@ class BusinessInformation extends Component {
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
                         )}
-                        {isDisableDelete == true ? null : (
+                        {isDisableDelete == true || e.currentStatus == 2 ? null : (
                           <DropdownItem onClick={this.onDeleteData(e.id)}>
                             Xoá
                           </DropdownItem>
@@ -740,27 +950,22 @@ class BusinessInformation extends Component {
                         <div>
                           {isShowForDetail ? (
                             <ShowEditData
-                              id={editId}
+                              dataInsert={this.state.dataInsert}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              EFFECT_OPTIONS={EFFECT_OPTIONS}
                             />
                           ) : isShowForHistoryList ? (
                             <ShowHistoryData
                               id={editId}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              EFFECT_OPTIONS={EFFECT_OPTIONS}
                               historyData={currentHistoryData}
                             />
                           ) : (
                             <ShowEditData
+                              dataInsert={{}}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              EFFECT_OPTIONS={EFFECT_OPTIONS}
                             />
                           )}
                         </div>

@@ -122,6 +122,18 @@ export const CONSIGNMENTS = {
     "batch/requestunconfirm?id={id}&reason={reason}&content1={content1}&type={type}",
 };
 
+export const STAMP_REQUEST = {
+  getListStampRequest: "requestprovidestamp/getall",
+  getDetailStampRequest: "requestprovidestamp/get/{id}",
+  addStampRequest: "requestprovidestamp/create",
+  editStampRequest: "requestprovidestamp/update",
+  deleteStampRequest: "requestprovidestamp/delete/{id}",
+  getListProductComboBox: "product/getall",
+  getListStampTemplate: "requestprovidestamp/getliststemptemplate",
+  getPriceStamp: "requestprovidestamp/getprice?quantity={quantity}",
+  requestProvideStamp: "requestprovidestamp/requestprovincestamp?id={id}",
+};
+
 export const PAYLOAD = {
   defaultPayLoad: {
     search: "",
