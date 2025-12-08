@@ -291,6 +291,9 @@ class Product extends Component {
 
     // Load batch/consignment data with filters
     this.fetchBatches(0);
+
+    // Load batch dropdown data (Diary, Classifications, Stamp Ranges, etc.)
+    this.fetchBatchDropdownData();
   }
 
   // Fetch batch list with filters
@@ -384,6 +387,107 @@ class Product extends Component {
     this.setState({ statusId: value }, () => {
       this.fetchBatches(0);
     });
+  };
+
+  // Fetch dropdown data for batch form
+  fetchBatchDropdownData = async () => {
+    console.log("========== FETCH BATCH DROPDOWN DATA ==========");
+    try {
+      // Fetch Diary/Traces
+      const diaryResponse = await fetchData.consignments.getListTraceComboBox();
+      console.log("🔹 DIARY_OPTIONS từ API:", diaryResponse);
+      const diaryData = diaryResponse?.fields || diaryResponse || [];
+      const diaryOptions = Array.isArray(diaryData) 
+        ? diaryData.map(item => ({
+            id: item.ID || item.id,
+            title: item.Title || item.title || item.TraceName || "",
+            location: item.Location || item.location || "",
+            product: item.Product || item.product || item.ItemName || "",
+            unit: item.Unit || item.unit || item.UnitName || "",
+          }))
+        : [];
+      console.log("✅ DIARY_OPTIONS sau mapping:", diaryOptions);
+
+      // Fetch Batch Categories (Phân loại)
+      const categoriesResponse = await fetchData.consignments.getBatchCategories();
+      console.log("🔹 CLASSIFY_OPTIONS từ API:", categoriesResponse);
+      const categoriesData = categoriesResponse?.batchCategories || categoriesResponse || [];
+      const classifyOptions = Array.isArray(categoriesData)
+        ? categoriesData.map(item => ({
+            id: item.id || item.ID,
+            title: item.description || item.Description || item.Title || item.title || item.Name || "",
+          }))
+        : [];
+      console.log("✅ CLASSIFY_OPTIONS sau mapping:", classifyOptions);
+
+      // Fetch Stamp Ranges (Dải tem)
+      const stampRangeResponse = await fetchData.consignments.getStampRange();
+      console.log("🔹 TEM_OPTIONS từ API:", stampRangeResponse);
+      const stampRangeData = stampRangeResponse?.stampRanges || stampRangeResponse || [];
+      const temOptions = Array.isArray(stampRangeData)
+        ? stampRangeData.map(item => ({
+            id: item.ID || item.id,
+            title: item.Title || item.title || item.StampRangeName || `${item.FromStamp || ""} - ${item.ToStamp || ""}`,
+          }))
+        : [];
+      console.log("✅ TEM_OPTIONS sau mapping:", temOptions);
+
+      // Fetch Warehouse data
+      const warehouseData = await fetchData.consignments.getListWarehouseForUpdate();
+      console.log("🔹 WAREHOUSE_OPTIONS từ API:", warehouseData);
+      const warehouseOptions = Array.isArray(warehouseData)
+        ? warehouseData.map(item => ({
+            id: item.ID || item.id,
+            title: item.Title || item.title || item.WarehouseName || "",
+          }))
+        : [];
+      console.log("✅ WAREHOUSE_OPTIONS sau mapping:", warehouseOptions);
+
+      // Fetch Provinces
+      const provinceData = await fetchData.consignments.getProvinceComboBox();
+      console.log("🔹 PROVINCE_OPTIONS từ API:", provinceData);
+      const provinceOptions = Array.isArray(provinceData)
+        ? provinceData.map(item => ({
+            id: item.ID || item.id,
+            title: item.Title || item.title || item.ProvinceName || "",
+          }))
+        : [];
+      console.log("✅ PROVINCE_OPTIONS sau mapping:", provinceOptions);
+
+      // Fetch Countries
+      const countryData = await fetchData.consignments.getNationComboBox();
+      console.log("🔹 COUNTRY_OPTIONS từ API:", countryData);
+      const countryOptions = Array.isArray(countryData)
+        ? countryData.map(item => ({
+            id: item.ID || item.id,
+            title: item.Title || item.title || item.CountryName || "",
+          }))
+        : [];
+      console.log("✅ COUNTRY_OPTIONS sau mapping:", countryOptions);
+
+      console.log("📌 FINAL STATE TO SET:", {
+        DIARY_OPTIONS: diaryOptions,
+        CLASSIFY_OPTIONS: classifyOptions,
+        TEM_OPTIONS: temOptions,
+        WAREHOUSE_OPTIONS: warehouseOptions,
+        PROVINCE_OPTIONS: provinceOptions,
+        COUNTRY_OPTIONS: countryOptions,
+      });
+
+      this.setState({
+        DIARY_OPTIONS: diaryOptions,
+        CLASSIFY_OPTIONS: classifyOptions,
+        TEM_OPTIONS: temOptions,
+        WAREHOUSE_OPTIONS: warehouseOptions,
+        PROVINCE_OPTIONS: provinceOptions,
+        COUNTRY_OPTIONS: countryOptions,
+      });
+
+      console.log("========== FETCH BATCH DROPDOWN DATA DONE ==========");
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy dữ liệu dropdown cho lô hàng:", error);
+      // Keep using mock data if API fails
+    }
   };
 
   fetchSummary = (data) => {
@@ -500,11 +604,9 @@ class Product extends Component {
   };
 
   handleModal = (stutus, openModal, closeModal) => {
-    // For batch form, use openBatchFormModal instead
     if (stutus || this.state.isShowForEdit) {
       closeModal();
     } else {
-      // Open batch form modal instead of legacy form
       this.openBatchFormModal();
     }
 
@@ -1143,6 +1245,14 @@ class Product extends Component {
               <ModalBody style={{ maxHeight: "70vh", overflowY: "auto" }}>
                 <InsertOrUpdate
                   batchId={this.state.editingBatchId}
+                  errors={this.state.errorInserts || {}}
+                  DIARY_OPTIONS={this.state.DIARY_OPTIONS || []}
+                  CLASSIFY_OPTIONS={this.state.CLASSIFY_OPTIONS || []}
+                  TEM_OPTIONS={this.state.TEM_OPTIONS || []}
+                  WAREHOUSE_OPTIONS={this.state.WAREHOUSE_OPTIONS || []}
+                  PROVINCE_OPTIONS={this.state.PROVINCE_OPTIONS || []}
+                  COUNTRY_OPTIONS={this.state.COUNTRY_OPTIONS || []}
+                  STATUS_OPTIONS={STATUS_OPTIONS}
                   onSaveSuccess={this.handleBatchFormSaveSuccess}
                   onCancel={this.closeBatchFormModal}
                 />
