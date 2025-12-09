@@ -27,7 +27,6 @@ class InsertOrUpadte extends Component {
   constructor(props) {
     super(props);
 
-    // Init state from props.dataInsert if available, otherwise use default
     const defaultState = {
       id: null,
       receiptNumber: "",
@@ -36,7 +35,6 @@ class InsertOrUpadte extends Component {
       importer: "",
       note: "",
       status: 0,
-      // Legacy fields for backwards compatibility
       importTypeId: null,
       ingredientId: null,
       supplierId: null,
@@ -462,7 +460,7 @@ class InsertOrUpadte extends Component {
               />
             </InputGroup>
 
-            <p className="form-error-message">{errors.name || ""}</p>
+            <p className="form-error-message">{errors.importer || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
@@ -479,7 +477,7 @@ class InsertOrUpadte extends Component {
               />
             </InputGroup>
 
-            <p className="form-error-message">{errors.name || ""}</p>
+            <p className="form-error-message">{errors.note || ""}</p>
           </div>
         </div>
         <hr style={{ paddingTop: 5, marginBottom: 0, paddingBottom: 5 }} />

@@ -98,7 +98,11 @@ class ImportProduct extends Component {
       endItem: LIMIT_ITEM_IN_PAGE,
       totalElement: 0,
       listLength: 0,
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate()),
+      fromDate: new Date(
+        new Date().getFullYear(),
+        new Date().getMonth() - 1,
+        new Date().getDate()
+      ),
       toDate: new Date(),
       currentPage: 0,
       filter: {
@@ -137,7 +141,7 @@ class ImportProduct extends Component {
         { id: 2, name: "Chiếc" },
       ],
     };
-    
+
     // Store suppliers in instance variable for quick access
     this.loadedSuppliers = [];
   }
@@ -146,7 +150,7 @@ class ImportProduct extends Component {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
     this.fetchSummary();
-    
+
     /* Load suppliers */
     this.loadSuppliers();
 
@@ -184,24 +188,26 @@ class ImportProduct extends Component {
         page: null,
         limit: null,
       });
-      
-      
+
       let supplierList = [];
       if (suppliers && Array.isArray(suppliers)) {
-        supplierList = suppliers.map(item => {
-          const supplierId = item.id || item.ID || item.partnerID || item.partner_id || "";
+        supplierList = suppliers.map((item) => {
+          const supplierId =
+            item.id || item.ID || item.partnerID || item.partner_id || "";
           return {
             id: String(supplierId),
             name: item.partnerName || item.PartnerName || item.name || "",
           };
         });
       }
-      
+
       this.loadedSuppliers = supplierList;
-      
-      this.setState({ SUPPLIER_LIST: supplierList.length > 0 ? supplierList : this.state.SUPPLIER_LIST });
-    } catch (error) {
-    }
+
+      this.setState({
+        SUPPLIER_LIST:
+          supplierList.length > 0 ? supplierList : this.state.SUPPLIER_LIST,
+      });
+    } catch (error) {}
   };
 
   loadMaterials = async () => {
@@ -213,21 +219,26 @@ class ImportProduct extends Component {
         page: null,
         limit: null,
       });
-      
+
       let materialList = [];
       if (materials && Array.isArray(materials)) {
-        materialList = materials.map(item => ({
+        materialList = materials.map((item) => ({
           id: String(item.id || item.ID || ""),
-          name: item.name || item.materialName || item.MaterialName || item.groupName || "",
+          name:
+            item.name ||
+            item.materialName ||
+            item.MaterialName ||
+            item.groupName ||
+            "",
           unit: item.unitName || item.unit || item.Unit || "",
         }));
       }
-      
-      this.setState({ 
-        INGREDIENT_LIST: materialList.length > 0 ? materialList : this.state.INGREDIENT_LIST
+
+      this.setState({
+        INGREDIENT_LIST:
+          materialList.length > 0 ? materialList : this.state.INGREDIENT_LIST,
       });
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   loadWarehouses = async () => {
@@ -239,20 +250,20 @@ class ImportProduct extends Component {
         page: null,
         limit: null,
       });
-      
+
       let warehouseList = [];
       if (warehouses && Array.isArray(warehouses)) {
-        warehouseList = warehouses.map(item => ({
+        warehouseList = warehouses.map((item) => ({
           id: String(item.id || item.ID || ""),
           name: item.warehouseName || item.WarehouseName || item.name || "",
         }));
       }
-      
-      this.setState({ 
-        WAREHOUSE_LIST: warehouseList.length > 0 ? warehouseList : this.state.WAREHOUSE_LIST
+
+      this.setState({
+        WAREHOUSE_LIST:
+          warehouseList.length > 0 ? warehouseList : this.state.WAREHOUSE_LIST,
       });
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   loadProducts = async () => {
@@ -264,21 +275,21 @@ class ImportProduct extends Component {
         page: null,
         limit: null,
       });
-      
+
       let productList = [];
       if (products && Array.isArray(products)) {
-        productList = products.map(item => ({
+        productList = products.map((item) => ({
           id: String(item.id || item.ID || ""),
           name: item.productName || item.ProductName || item.name || "",
           unit: item.unitName || item.unit || item.Unit || "",
         }));
       }
-      
-      this.setState({ 
-        PRODUCT_LIST: productList.length > 0 ? productList : this.state.PRODUCT_LIST
+
+      this.setState({
+        PRODUCT_LIST:
+          productList.length > 0 ? productList : this.state.PRODUCT_LIST,
       });
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   fetchSummary = async (data) => {
@@ -287,18 +298,17 @@ class ImportProduct extends Component {
     try {
       const { limit, fromDate, toDate, filter } = this.state;
 
-      // Build payload matching mobile app structure exactly
       let fromDateString = "";
       let toDateString = "";
-      
+
       if (fromDate && moment(fromDate).isValid()) {
         fromDateString = moment(fromDate).format("YYYY-MM-DD");
       }
-      
+
       if (toDate && moment(toDate).isValid()) {
         toDateString = moment(toDate).format("YYYY-MM-DD");
       }
-      
+
       const payload = {
         fromDate: fromDateString,
         toDate: toDateString,
@@ -312,7 +322,7 @@ class ImportProduct extends Component {
       };
 
       const res = await fetchData.goodReceived.getList(payload);
-      
+
       if (!res) {
         console.warn("⚠️ No response from API");
         this.setState({ isLoaded: false, data: [], collapseList: [] });
@@ -320,12 +330,18 @@ class ImportProduct extends Component {
       }
 
       let goodReceivedList = [];
-      
-      if (res?.data?.data?.goodsReceipts && Array.isArray(res.data.data.goodsReceipts)) {
+
+      if (
+        res?.data?.data?.goodsReceipts &&
+        Array.isArray(res.data.data.goodsReceipts)
+      ) {
         goodReceivedList = res.data.data.goodsReceipts;
       } else if (res?.goodsReceipts && Array.isArray(res.goodsReceipts)) {
         goodReceivedList = res.goodsReceipts;
-      } else if (res?.data?.goodsReceipts && Array.isArray(res.data.goodsReceipts)) {
+      } else if (
+        res?.data?.goodsReceipts &&
+        Array.isArray(res.data.goodsReceipts)
+      ) {
         goodReceivedList = res.data.goodsReceipts;
       } else if (res?.data && Array.isArray(res.data)) {
         goodReceivedList = res.data;
@@ -333,14 +349,14 @@ class ImportProduct extends Component {
         goodReceivedList = res;
       }
 
-
       let collapseList = [];
 
       let tableData = goodReceivedList.map((item, index) => ({
         id: item.id || item.ID,
-        receiptNumber: item.grCode || item.ReceiptNumber || item.receiptNumber || "",
-        creationDate: item.grTime 
-          ? moment(item.grTime).format("DD/MM/YYYY") 
+        receiptNumber:
+          item.grCode || item.ReceiptNumber || item.receiptNumber || "",
+        creationDate: item.grTime
+          ? moment(item.grTime).format("DD/MM/YYYY")
           : item.creationDate
           ? moment(item.creationDate).format("DD/MM/YYYY")
           : "",
@@ -448,20 +464,23 @@ class ImportProduct extends Component {
 
   handleDataReload = () => {
     // Reset all filters
-    this.setState({
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-      toDate: new Date(),
-      filter: {
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
+    this.setState(
+      {
+        fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+        toDate: new Date(),
+        filter: {
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        },
       },
-    }, () => {
-      // Reload data after state reset
-      this.fetchSummary();
-    });
+      () => {
+        // Reload data after state reset
+        this.fetchSummary();
+      }
+    );
   };
 
   handleSubmitSearchForm = () => {
@@ -477,7 +496,7 @@ class ImportProduct extends Component {
     this.fetchSummary();
   };
 
-  handleModal = (stutus, openModal, closeModal) => {
+  handleModal = async (stutus, openModal, closeModal) => {
     if (stutus || this.state.isShowForEdit) {
       closeModal();
       // Reset form data when closing modal
@@ -509,16 +528,9 @@ class ImportProduct extends Component {
         };
       });
     } else {
-      // Opening modal for new entry - get current user
-      const currentUser = localStorage.getItem("CURRENT_USER");
-      let currentUserName = "";
-      if (currentUser) {
-        try {
-          const userInfo = JSON.parse(currentUser);
-          currentUserName = userInfo.fullName || userInfo.name || "";
-        } catch (e) {}
-      }
-      
+     const resCurrentCompany = await fetchData.account.getCurrentCompany();
+     const currentUserName = resCurrentCompany?.company?.companyName || "";
+     console.log(resCurrentCompany, "currentUserName=======")
       this.setState((previousState) => {
         return {
           ...previousState,
@@ -528,7 +540,7 @@ class ImportProduct extends Component {
           },
         };
       });
-      
+
       openModal();
     }
   };
@@ -577,12 +589,10 @@ class ImportProduct extends Component {
 
     try {
       let res;
-      
+
       // If create, set status to 0
-      const dataToSubmit = editId 
-        ? dataInsert 
-        : { ...dataInsert, status: 0 };
-      
+      const dataToSubmit = editId ? dataInsert : { ...dataInsert, status: 0 };
+
       if (editId) {
         // Update
         res = await fetchData.goodReceived.edit(dataToSubmit);
@@ -653,69 +663,83 @@ class ImportProduct extends Component {
 
       if (detailResponse) {
         const detailData = detailResponse.goodsReceipt || detailResponse;
-        
+
         let supplierId = "";
-        
-        const supplierList = this.loadedSuppliers && this.loadedSuppliers.length > 0 
-          ? this.loadedSuppliers 
-          : this.state.SUPPLIER_LIST;
-    
+
+        const supplierList =
+          this.loadedSuppliers && this.loadedSuppliers.length > 0
+            ? this.loadedSuppliers
+            : this.state.SUPPLIER_LIST;
+
         if (supplierList && supplierList.length > 0) {
           let matchedSupplier = supplierList.find(
-            s => String(s.id).toLowerCase() === String(detailData.partnerID).toLowerCase()
+            (s) =>
+              String(s.id).toLowerCase() ===
+              String(detailData.partnerID).toLowerCase()
           );
-          
+
           if (!matchedSupplier && detailData.receiptPersonName) {
             matchedSupplier = supplierList.find(
-              s => s.name && s.name.toLowerCase().trim() === detailData.receiptPersonName.toLowerCase().trim()
+              (s) =>
+                s.name &&
+                s.name.toLowerCase().trim() ===
+                  detailData.receiptPersonName.toLowerCase().trim()
             );
           }
-          
+
           if (!matchedSupplier && detailData.receiptPersonName) {
-            const searchName = detailData.receiptPersonName.toLowerCase().trim();
+            const searchName = detailData.receiptPersonName
+              .toLowerCase()
+              .trim();
             matchedSupplier = supplierList.find(
-              s => s.name && s.name.toLowerCase().includes(searchName)
+              (s) => s.name && s.name.toLowerCase().includes(searchName)
             );
           }
-          
+
           if (!matchedSupplier && detailData.receiptPersonName) {
-            const searchName = detailData.receiptPersonName.toLowerCase().trim();
+            const searchName = detailData.receiptPersonName
+              .toLowerCase()
+              .trim();
             matchedSupplier = supplierList.find(
-              s => s.name && searchName.includes(s.name.toLowerCase())
+              (s) => s.name && searchName.includes(s.name.toLowerCase())
             );
           }
-          
+
           if (matchedSupplier) {
             supplierId = String(matchedSupplier.id);
           } else {
           }
         }
-        
-        // Map grType to importTypeId
-        // grType: 0 = Sản phẩm (importTypeId: "2")
-        // grType: 1 or other = Nguyên vật liệu (importTypeId: "1")
+
         const importTypeId = detailData.grType === 0 ? "2" : "1";
-        
+
         const initialData = {
           id: item.id,
-          importTypeId: importTypeId,  // Set import type based on grType
+          importTypeId: importTypeId,
           receiptNumber: detailData.grCode || item.receiptNumber || "",
-          creationDate: detailData.grTime ? moment(detailData.grTime).toDate() : new Date(),
-          supplierId: supplierId,  // Use matched supplier ID
+          creationDate: detailData.grTime
+            ? moment(detailData.grTime).toDate()
+            : new Date(),
+          supplierId: supplierId,
           supplier: detailData.receiptPersonName || item.supplier || "",
-          importer: detailData.confirmedByName || detailData.receiptPersonName || item.importer || "",
+          importer:
+            detailData.confirmedByName ||
+            detailData.receiptPersonName ||
+            item.importer ||
+            "",
           note: detailData.note || "",
           status: detailData.status || item.status || 0,
         };
 
-
-        this.setState({
-          isShowForEdit: true,
-          editId: item.id,
-          dataInsert: initialData,
-          isLoaded: false,
-        }, () => {
-        });
+        this.setState(
+          {
+            isShowForEdit: true,
+            editId: item.id,
+            dataInsert: initialData,
+            isLoaded: false,
+          },
+          () => {}
+        );
       } else {
         toast.error("Không tải được dữ liệu chi tiết!");
         this.setState({ isLoaded: false });
@@ -754,7 +778,7 @@ class ImportProduct extends Component {
         });
 
         toast.success("Xoá dữ liệu thành công!");
-        
+
         // Reload data
         this.fetchSummary();
       } else {
@@ -831,7 +855,8 @@ class ImportProduct extends Component {
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>
-              {STATUS_OPTIONS.find(opt => opt.id === e.status)?.name || "Không xác định"}
+              {STATUS_OPTIONS.find((opt) => opt.id === e.status)?.name ||
+                "Không xác định"}
             </span>
           </td>
           <td>
@@ -945,9 +970,7 @@ class ImportProduct extends Component {
                   <div className="col">
                     {/* Header */}
                     <HeaderTable
-                      dataReload={() =>
-                        this.handleDataReload()
-                      }
+                      dataReload={() => this.handleDataReload()}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
