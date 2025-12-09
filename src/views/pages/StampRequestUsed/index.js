@@ -284,15 +284,12 @@ class BusinessInformation extends Component {
       formData.append("Files", "[]");
       formData.append("Amount", 0);
 
-      console.log("📤 Saving stamp request with FormData");
 
       // Call API
       let result;
       if (dataInsert.id) {
         // Update
-        console.log("🔄 Updating stamp request ID:", dataInsert.id);
         result = await fetchData.stampRequest.editFormData(formData);
-        console.log("📥 Update response:", result);
         if (result && result.status === 200) {
           toast.success("Cập nhật xin cấp tem thành công!");
         } else {
@@ -302,9 +299,7 @@ class BusinessInformation extends Component {
         }
       } else {
         // Create
-        console.log("➕ Creating new stamp request");
         result = await fetchData.stampRequest.addFormData(formData);
-        console.log("📥 Create response:", result);
         if (result && result.status === 200) {
           toast.success("Thêm xin cấp tem thành công!");
         } else {

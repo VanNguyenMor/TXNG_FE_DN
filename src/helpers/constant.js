@@ -710,13 +710,6 @@ export const IMPORT_PRODUCT_TYPE = [
     id: "2",
     val: "2",
   },
-  {
-    name: "Từ phiếu xuất",
-    description:
-      "Nhập từ phiếu xuất hàng của công ty cùng hệ thống Trace Center",
-    id: null,
-    val: null,
-  },
 ];
 
 export const EXPORT_PRODUCT_TYPE = [

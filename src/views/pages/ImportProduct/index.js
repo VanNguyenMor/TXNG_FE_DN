@@ -127,27 +127,19 @@ class ImportProduct extends Component {
         { id: 1, name: "Chưa duyệt" },
         { id: 2, name: "Đã duyệt" },
       ],
-      SUPPLIER_LIST: [
-        { id: 1, name: "Nhà cung cấp A" },
-        { id: 2, name: "Nhà cung cấp B" },
-      ],
-      INGREDIENT_LIST: [
-        { id: 1, name: "Nguyên liệu A" },
-        { id: 2, name: "Nguyên liệu B" },
-      ],
-      PRODUCT_LIST: [
-        { id: 1, name: "Sản phẩm A" },
-        { id: 2, name: "Sản phẩm B" },
-      ],
-      WAREHOUSE_LIST: [
-        { id: 1, name: "Kho hàng A" },
-        { id: 2, name: "Kho hàng B" },
-      ],
+      SUPPLIER_LIST: [],
+      USER_LIST: [],
+      INGREDIENT_LIST: [],
+      PRODUCT_LIST: [],
+      WAREHOUSE_LIST: [],
       UNIT_LIST: [
         { id: 1, name: "Cái" },
         { id: 2, name: "Chiếc" },
       ],
     };
+    
+    // Store suppliers in instance variable for quick access
+    this.loadedSuppliers = [];
   }
 
   componentWillMount() {
@@ -157,6 +149,15 @@ class ImportProduct extends Component {
     
     /* Load suppliers */
     this.loadSuppliers();
+
+    /* Load materials */
+    this.loadMaterials();
+
+    /* Load warehouses */
+    this.loadWarehouses();
+
+    /* Load products */
+    this.loadProducts();
 
     getListTypeZoneProperty({
       search: "",
@@ -176,7 +177,6 @@ class ImportProduct extends Component {
 
   loadSuppliers = async () => {
     try {
-      // Fetch suppliers from API using partner endpoint
       const suppliers = await fetchData.partner.getList({
         search: "",
         filter: "",
@@ -185,18 +185,99 @@ class ImportProduct extends Component {
         limit: null,
       });
       
+      
       let supplierList = [];
       if (suppliers && Array.isArray(suppliers)) {
-        supplierList = suppliers.map(item => ({
-          id: item.id || item.ID,
-          name: item.partnerName || item.PartnerName || item.name || "",
-        }));
+        supplierList = suppliers.map(item => {
+          const supplierId = item.id || item.ID || item.partnerID || item.partner_id || "";
+          return {
+            id: String(supplierId),
+            name: item.partnerName || item.PartnerName || item.name || "",
+          };
+        });
       }
+      
+      this.loadedSuppliers = supplierList;
       
       this.setState({ SUPPLIER_LIST: supplierList.length > 0 ? supplierList : this.state.SUPPLIER_LIST });
     } catch (error) {
-      console.error("❌ Error loading suppliers:", error);
-      // Keep default suppliers if API fails
+    }
+  };
+
+  loadMaterials = async () => {
+    try {
+      const materials = await fetchData.material.getList({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      });
+      
+      let materialList = [];
+      if (materials && Array.isArray(materials)) {
+        materialList = materials.map(item => ({
+          id: String(item.id || item.ID || ""),
+          name: item.name || item.materialName || item.MaterialName || item.groupName || "",
+          unit: item.unitName || item.unit || item.Unit || "",
+        }));
+      }
+      
+      this.setState({ 
+        INGREDIENT_LIST: materialList.length > 0 ? materialList : this.state.INGREDIENT_LIST
+      });
+    } catch (error) {
+    }
+  };
+
+  loadWarehouses = async () => {
+    try {
+      const warehouses = await fetchData.warehouse.getList({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      });
+      
+      let warehouseList = [];
+      if (warehouses && Array.isArray(warehouses)) {
+        warehouseList = warehouses.map(item => ({
+          id: String(item.id || item.ID || ""),
+          name: item.warehouseName || item.WarehouseName || item.name || "",
+        }));
+      }
+      
+      this.setState({ 
+        WAREHOUSE_LIST: warehouseList.length > 0 ? warehouseList : this.state.WAREHOUSE_LIST
+      });
+    } catch (error) {
+    }
+  };
+
+  loadProducts = async () => {
+    try {
+      const products = await fetchData.product.getList({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      });
+      
+      let productList = [];
+      if (products && Array.isArray(products)) {
+        productList = products.map(item => ({
+          id: String(item.id || item.ID || ""),
+          name: item.productName || item.ProductName || item.name || "",
+          unit: item.unitName || item.unit || item.Unit || "",
+        }));
+      }
+      
+      this.setState({ 
+        PRODUCT_LIST: productList.length > 0 ? productList : this.state.PRODUCT_LIST
+      });
+    } catch (error) {
     }
   };
 
@@ -230,8 +311,6 @@ class ImportProduct extends Component {
         init: true,
       };
 
-      console.log("🔍 Fetching with payload:", payload);
-      
       const res = await fetchData.goodReceived.getList(payload);
       
       if (!res) {
@@ -240,11 +319,8 @@ class ImportProduct extends Component {
         return;
       }
 
-      console.log("📊 API Response:", res);
-
       let goodReceivedList = [];
       
-      // Handle nested data structure: res.data.data.goodsReceipts
       if (res?.data?.data?.goodsReceipts && Array.isArray(res.data.data.goodsReceipts)) {
         goodReceivedList = res.data.data.goodsReceipts;
       } else if (res?.goodsReceipts && Array.isArray(res.goodsReceipts)) {
@@ -257,7 +333,6 @@ class ImportProduct extends Component {
         goodReceivedList = res;
       }
 
-      console.log("📦 Parsed goodsReceipts:", goodReceivedList);
 
       let collapseList = [];
 
@@ -297,7 +372,6 @@ class ImportProduct extends Component {
         isLoaded: false,
       });
     } catch (error) {
-      console.error("❌ Error fetching good received list:", error);
       toast.error("Lỗi khi tải danh sách nhập hàng!");
       this.setState({ isLoaded: false, data: [], collapseList: [] });
     }
@@ -406,17 +480,57 @@ class ImportProduct extends Component {
   handleModal = (stutus, openModal, closeModal) => {
     if (stutus || this.state.isShowForEdit) {
       closeModal();
+      // Reset form data when closing modal
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          isShowForEdit: false,
+          editId: null,
+          dataInsert: {
+            receiptNumber: "",
+            creationDate: new Date(),
+            supplier: "",
+            importer: "",
+            note: "",
+            status: 0,
+            importTypeId: null,
+            ingredientId: null,
+            supplierId: null,
+            productId: null,
+            warehouseId: null,
+            file: "",
+            unit: "",
+            quantity: 0,
+            vat: 0,
+            price: 0,
+            grDetails: [],
+          },
+          errorInserts: {},
+        };
+      });
     } else {
+      // Opening modal for new entry - get current user
+      const currentUser = localStorage.getItem("CURRENT_USER");
+      let currentUserName = "";
+      if (currentUser) {
+        try {
+          const userInfo = JSON.parse(currentUser);
+          currentUserName = userInfo.fullName || userInfo.name || "";
+        } catch (e) {}
+      }
+      
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          dataInsert: {
+            ...previousState.dataInsert,
+            importer: currentUserName,
+          },
+        };
+      });
+      
       openModal();
     }
-
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        isShowForEdit: false,
-        editId: null,
-      };
-    });
   };
   toggle = (el, val) => {
     let { collapseList } = this.state;
@@ -446,10 +560,6 @@ class ImportProduct extends Component {
       errorInserts.importer = "Người nhập không được bỏ trống";
     }
 
-    if (dataInsert.status === null || dataInsert.status === undefined) {
-      errorInserts.status = "Trạng thái không được bỏ trống";
-    }
-
     return errorInserts;
   };
 
@@ -468,12 +578,17 @@ class ImportProduct extends Component {
     try {
       let res;
       
+      // If create, set status to 0
+      const dataToSubmit = editId 
+        ? dataInsert 
+        : { ...dataInsert, status: 0 };
+      
       if (editId) {
         // Update
-        res = await fetchData.goodReceived.edit(dataInsert);
+        res = await fetchData.goodReceived.edit(dataToSubmit);
       } else {
         // Create
-        res = await fetchData.goodReceived.add(dataInsert);
+        res = await fetchData.goodReceived.add(dataToSubmit);
       }
 
       if (res && res.status === 200) {
@@ -534,26 +649,65 @@ class ImportProduct extends Component {
     this.setState({ isLoaded: true });
 
     try {
-      // Load detail data from API
       const detailResponse = await fetchData.goodReceived.getDetail(item.id);
 
       if (detailResponse) {
-        // Handle nested structure: detailResponse can have goodsReceipt
         const detailData = detailResponse.goodsReceipt || detailResponse;
         
-        // Map API response to form data
+        let supplierId = "";
+        
+        const supplierList = this.loadedSuppliers && this.loadedSuppliers.length > 0 
+          ? this.loadedSuppliers 
+          : this.state.SUPPLIER_LIST;
+    
+        if (supplierList && supplierList.length > 0) {
+          let matchedSupplier = supplierList.find(
+            s => String(s.id).toLowerCase() === String(detailData.partnerID).toLowerCase()
+          );
+          
+          if (!matchedSupplier && detailData.receiptPersonName) {
+            matchedSupplier = supplierList.find(
+              s => s.name && s.name.toLowerCase().trim() === detailData.receiptPersonName.toLowerCase().trim()
+            );
+          }
+          
+          if (!matchedSupplier && detailData.receiptPersonName) {
+            const searchName = detailData.receiptPersonName.toLowerCase().trim();
+            matchedSupplier = supplierList.find(
+              s => s.name && s.name.toLowerCase().includes(searchName)
+            );
+          }
+          
+          if (!matchedSupplier && detailData.receiptPersonName) {
+            const searchName = detailData.receiptPersonName.toLowerCase().trim();
+            matchedSupplier = supplierList.find(
+              s => s.name && searchName.includes(s.name.toLowerCase())
+            );
+          }
+          
+          if (matchedSupplier) {
+            supplierId = String(matchedSupplier.id);
+          } else {
+          }
+        }
+        
+        // Map grType to importTypeId
+        // grType: 0 = Sản phẩm (importTypeId: "2")
+        // grType: 1 or other = Nguyên vật liệu (importTypeId: "1")
+        const importTypeId = detailData.grType === 0 ? "2" : "1";
+        
         const initialData = {
           id: item.id,
+          importTypeId: importTypeId,  // Set import type based on grType
           receiptNumber: detailData.grCode || item.receiptNumber || "",
           creationDate: detailData.grTime ? moment(detailData.grTime).toDate() : new Date(),
-          supplier: detailData.partnerName || item.supplier || "",
+          supplierId: supplierId,  // Use matched supplier ID
+          supplier: detailData.receiptPersonName || item.supplier || "",
           importer: detailData.confirmedByName || detailData.receiptPersonName || item.importer || "",
           note: detailData.note || "",
           status: detailData.status || item.status || 0,
         };
 
-        console.log("Detail data loaded:", detailData);
-        console.log("Initialized form data:", initialData);
 
         this.setState({
           isShowForEdit: true,
@@ -561,14 +715,12 @@ class ImportProduct extends Component {
           dataInsert: initialData,
           isLoaded: false,
         }, () => {
-          console.log("State updated with initialData:", this.state.dataInsert);
         });
       } else {
         toast.error("Không tải được dữ liệu chi tiết!");
         this.setState({ isLoaded: false });
       }
     } catch (error) {
-      console.error("❌ Error loading good received detail:", error);
       toast.error("Có lỗi xảy ra khi tải dữ liệu!");
       this.setState({ isLoaded: false });
     }

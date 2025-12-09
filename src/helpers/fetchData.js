@@ -18,7 +18,10 @@ import {
   CONSIGNMENTS,
   STAMP_REQUEST,
   GOOD_RECEIVED,
+  PARTNER,
+  WAREHOUSE_MANAGEMENT,
 } from "./endpoint";
+import { USER_LIST_ACCOUNT_LIST } from "../apis/index";
 
 // Helper to extract product/material groups from API response
 // Response can have different structures: .productGroups, .materialGroups, or nested .data.productGroups
@@ -879,10 +882,8 @@ export const fetchData = {
     getList: async (payload = {}) => {
       try {
         const result = await callApi("post", GOOD_RECEIVED.getListGoodReceived, payload);
-        console.log("📥 Good Received List API Response:", result);
         return result || null;
       } catch (error) {
-        console.error("❌ Error fetching good received list:", error);
         return null;
       }
     },
@@ -934,5 +935,133 @@ export const fetchData = {
       }
     },
   },
-};
 
+  partner: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", PARTNER.getListPartner, payload);
+        if (result && result.data && result.data.partners) {
+          return result.data.partners;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = PARTNER.getDetailPartner.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    add: async (payload) => {
+      try {
+        const result = await callApi("post", PARTNER.addPartner, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    edit: async (payload) => {
+      try {
+        const result = await callApi("post", PARTNER.editPartner, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = PARTNER.deletePartner.replace("{id}", id);
+        const result = await callApi("delete", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+  },
+
+  user: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", USER_LIST_ACCOUNT_LIST, payload);
+        if (result && result.data && result.data.users) {
+          return result.data.users;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  material: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", MATERIAL_MANAGEMENT.getMaterialGroupList, payload);
+        if (result && result.data && result.data.materialGroups) {
+          return result.data.materialGroups;
+        }
+        if (result && result.data && Array.isArray(result.data)) {
+          return result.data;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  warehouse: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", WAREHOUSE_MANAGEMENT.getListComboBox, payload);
+        if (result && result.data && result.data.wareHouses) {
+          return result.data.wareHouses;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  product: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", PRODUCT_MANAGEMENT.getListProductManagement, payload);
+        if (result && result.data && result.data.products) {
+          return result.data.products;
+        }
+        if (result && result.data && Array.isArray(result.data)) {
+          return result.data;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+};

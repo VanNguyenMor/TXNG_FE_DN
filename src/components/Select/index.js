@@ -54,6 +54,7 @@ class Select extends Component {
     }
   } 
   else {
+    
     if (props.value !== undefined && props.value !== this.state.value) {
       if (props.value === null || props.value === "") {
         this.setState({

@@ -48,6 +48,7 @@ export const MATERIAL_MANAGEMENT = {
   updateLock: "material/lock?id={id}",
   deleteMaterial: "material/delete/{id}",
   getUnitAll: "unit/getall",
+  getListComboBox: "material/getListComboBox",
 };
 
 export const MATERIAL_HISTORIES = {
@@ -134,12 +135,24 @@ export const STAMP_REQUEST = {
   requestProvideStamp: "requestprovidestamp/requestprovincestamp?id={id}",
 };
 
+export const PARTNER = {
+  getListPartner: "partner/getall",
+  getDetailPartner: "partner/get?id={id}",
+  addPartner: "partner/create",
+  editPartner: "partner/update",
+  deletePartner: "partner/delete/{id}",
+};
+
 export const GOOD_RECEIVED = {
   getListGoodReceived: "goodsreceivednote/getall",
   getDetailGoodReceived: "goodsreceivednote/get?id={id}",
   addGoodReceived: "goodsreceivednote/create",
   editGoodReceived: "goodsreceivednote/update",
   deleteGoodReceived: "goodsreceivednote/delete/{id}",
+};
+
+export const WAREHOUSE_MANAGEMENT = {
+  getListComboBox: "warehouse/getall",
 };
 
 export const PAYLOAD = {
