@@ -117,6 +117,7 @@ class ImportProduct extends Component {
         creationDate: new Date(),
         supplier: "",
         importer: "",
+        importerId: "",
         note: "",
         status: 0,
       },
@@ -212,26 +213,31 @@ class ImportProduct extends Component {
 
   loadMaterials = async () => {
     try {
-      const materials = await fetchData.material.getList({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      });
+      const response = await fetchData.materialManagement.getAll();
 
       let materialList = [];
+      // Handle API response structure: { data: { materials: [...] } }
+      let materials = [];
+      
+      if (response && response.data && Array.isArray(response.data.materials)) {
+        materials = response.data.materials;
+      } else if (response && Array.isArray(response)) {
+        materials = response;
+      } else if (response && response.materials && Array.isArray(response.materials)) {
+        materials = response.materials;
+      }
+
       if (materials && Array.isArray(materials)) {
         materialList = materials.map((item) => ({
           id: String(item.id || item.ID || ""),
           name:
-            item.name ||
             item.materialName ||
+            item.name ||
             item.MaterialName ||
             item.groupName ||
             "",
           unit: item.unitName || item.unit || item.Unit || "",
-          unitId: String(item.unitId || item.UnitID || item.unitID || ""),
+          unitId: String(item.unitID || item.unitId || item.UnitID || ""),
         }));
       }
 
@@ -239,7 +245,9 @@ class ImportProduct extends Component {
         INGREDIENT_LIST:
           materialList.length > 0 ? materialList : this.state.INGREDIENT_LIST,
       });
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error loading materials:", error);
+    }
   };
 
   loadWarehouses = async () => {
@@ -326,7 +334,6 @@ class ImportProduct extends Component {
       const res = await fetchData.goodReceived.getList(payload);
 
       if (!res) {
-        console.warn("⚠️ No response from API");
         this.setState({ isLoaded: false, data: [], collapseList: [] });
         return;
       }
@@ -512,6 +519,7 @@ class ImportProduct extends Component {
             creationDate: new Date(),
             supplier: "",
             importer: "",
+            importerId: "",
             note: "",
             status: 0,
             importTypeId: null,
@@ -531,6 +539,7 @@ class ImportProduct extends Component {
       });
     } else {
       const resCurrentCompany = await fetchData.account.getCurrentCompany();
+      const currentUserId = resCurrentCompany?.company?.id || "";
       const currentUserName = resCurrentCompany?.company?.companyName || "";
       console.log(resCurrentCompany, "currentUserName=======")
      
@@ -540,6 +549,7 @@ class ImportProduct extends Component {
           dataInsert: {
             ...previousState.dataInsert,
             importer: currentUserName,
+            importerId: currentUserId,
           },
         };
       });
@@ -575,9 +585,11 @@ class ImportProduct extends Component {
   };
 
   onConfirm = async (toggleModal, closePopup) => {
-    const { dataInsert, editId } = this.state;
+    // Get latest data from form component via ref
+    const formData = this.formRef?.state || this.state.dataInsert;
+    const { editId } = this.state;
     const errorInserts = this.checkDataInsert(true);
-    console.log("dataInsert:", dataInsert);
+    console.log("formData:", formData);
     
     // Check validation
     if (Object.keys(errorInserts).length > 0) {
@@ -586,7 +598,7 @@ class ImportProduct extends Component {
     }
 
     // Validate GRDetails is not empty
-    if (!dataInsert.grDetails || dataInsert.grDetails.length === 0) {
+    if (!formData.grDetails || formData.grDetails.length === 0) {
       toast.error("Vui lòng thêm chi tiết phiếu nhập!");
       return;
     }
@@ -597,18 +609,19 @@ class ImportProduct extends Component {
       let res;
 
       // Use FormData instead of JSON
-      const formData = new FormData();
-      
+      const formPayload = new FormData();
+      console.log(formData.importer, "formData.importerId=======");
       // Add simple fields
-      formData.append("GRTime", moment(dataInsert.creationDate).toISOString());
-      formData.append("PartnerID", dataInsert.supplierId || "");
-      formData.append("ReceiptPerson", dataInsert.importer || "");
-      formData.append("Note", dataInsert.note || "");
-      formData.append("GRType", dataInsert.importTypeId ? parseInt(dataInsert.importTypeId) : 0);
+      formPayload.append("GRTime", moment(formData.creationDate).toISOString());
+      formPayload.append("PartnerID", formData.supplierId || "");
+      formPayload.append("ReceiptPerson", formData.importerId || "");
+      formPayload.append("ReceiptPersonName", formData.importer || "");
+      formPayload.append("Note", formData.note || "");
+      formPayload.append("GRType", formData.importTypeId ? parseInt(formData.importTypeId) : 0);
       
       // Add GRDetails as JSON string
-      formData.append("GRDetails", JSON.stringify(
-        (dataInsert.grDetails || []).map(detail => ({
+      formPayload.append("GRDetails", JSON.stringify(
+        (formData.grDetails || []).map(detail => ({
           ID: detail.id || "",
           MaterialID: detail.ingredientId || detail.productId || "",
           UnitID: detail.unit || "",
@@ -620,15 +633,15 @@ class ImportProduct extends Component {
         }))
       ));
 
-      console.log("formData:", formData);
+      console.log("formPayload:", formPayload);
 
       if (editId) {
         // Update - add ID
-        formData.append("ID", editId);
-        res = await fetchData.goodReceived.edit(formData);
+        formPayload.append("ID", editId);
+        res = await fetchData.goodReceived.edit(formPayload);
       } else {
         // Create
-        res = await fetchData.goodReceived.add(formData);
+        res = await fetchData.goodReceived.add(formPayload);
       }
 
       if (res && res.status === 200) {
@@ -743,6 +756,36 @@ class ImportProduct extends Component {
 
         const importTypeId = detailData.grType === 0 ? "2" : "1";
 
+        // Map grMores to grDetails format
+        let grDetails = [];
+        if (detailData.grMores && Array.isArray(detailData.grMores)) {
+          grDetails = detailData.grMores.map((item, index) => {
+            // Get warehouse name from WAREHOUSE_LIST
+            let warehouseName = "";
+            if (this.state.WAREHOUSE_LIST && this.state.WAREHOUSE_LIST.length > 0) {
+              const warehouse = this.state.WAREHOUSE_LIST.find(w => String(w.id) === String(item.warehouseID));
+              warehouseName = warehouse ? warehouse.name : "";
+            }
+
+            return {
+              id: item.id || `detail_${Date.now()}_${index}`,
+              ingredientId: item.materialID || "",
+              productId: item.materialID || "",
+              warehouseId: item.warehouseID || "",
+              quantity: item.quantity || 0,
+              price: item.unitPrice || 0,
+              vat: item.perVAT || 0,
+              unit: item.unitID || "", // Store unitId
+              unitName: item.unitName || "", // Store unitName for display
+              amount: item.amount || 0,
+              ingredientName: item.materialName || "",
+              productName: item.materialName || "",
+              warehouseName: warehouseName || "", // Get from WAREHOUSE_LIST
+              refQRCode: item.refQRCode || "",
+            };
+          });
+        }
+
         const initialData = {
           id: item.id,
           importTypeId: importTypeId,
@@ -750,15 +793,16 @@ class ImportProduct extends Component {
           creationDate: detailData.grTime
             ? moment(detailData.grTime).toDate()
             : new Date(),
-          supplierId: supplierId,
+          supplierId: detailData.partnerID,
           supplier: detailData.receiptPersonName || item.supplier || "",
           importer:
             detailData.confirmedByName ||
-            detailData.receiptPersonName ||
+            detailData.receiptPerson ||
             item.importer ||
             "",
           note: detailData.note || "",
           status: detailData.status || item.status || 0,
+          grDetails: grDetails,
         };
 
         this.setState(
@@ -1008,6 +1052,7 @@ class ImportProduct extends Component {
                       }
                       moduleBody={
                         <InsertOrUpdate
+                          ref={(ref) => (this.formRef = ref)}
                           id={editId}
                           dataInsert={dataInsert}
                           errors={errorInserts}

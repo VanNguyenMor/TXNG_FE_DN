@@ -64,43 +64,15 @@ class InsertOrUpadte extends Component {
   }
 
   async componentDidMount() {
-    const { onHandleChangeValue, id } = this.props;
-
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
-    }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
-      }
-    );
-
     this.focusInput();
   }
 
   componentDidUpdate(prevProps) {
-    const { onHandleChangeValue, dataInsert, SUPPLIER_LIST } = this.props;
+    const { dataInsert } = this.props;
 
-    // When dataInsert prop changes (from parent edit data), update form state directly
-    if (dataInsert && JSON.stringify(prevProps.dataInsert) !== JSON.stringify(dataInsert)) {
+    if (dataInsert?.id && prevProps.dataInsert?.id !== dataInsert.id) {
       this.setState((prevState) => {
-        const newState = { ...prevState, ...dataInsert };
-        
-        // Log the matched supplier if found
-        if (SUPPLIER_LIST && SUPPLIER_LIST.length > 0 && dataInsert.supplierId) {
-          const matchedSupplier = SUPPLIER_LIST.find(
-            s => s.id === dataInsert.supplierId || String(s.id) === String(dataInsert.supplierId)
-          );
-        }
-        
-        return newState;
+        return { ...prevState, ...dataInsert };
       });
     }
   }
@@ -118,7 +90,6 @@ class InsertOrUpadte extends Component {
   onChangeSelect = (name) => (value) => {
     const { SUPPLIER_LIST } = this.props;
     
-    // If changing supplier, auto-fill the supplier name
     let stateUpdate = {
       [name]: value,
       ...(name === "importTypeId"
@@ -130,12 +101,11 @@ class InsertOrUpadte extends Component {
             vat: "",
             price: "",
             unit: "",
-            grDetails: [], // Reset detail list when changing type
+            grDetails: [],
           }
         : {}),
     };
 
-    // Auto-fill supplier name when supplierId is selected
     if (name === "supplierId" && value && SUPPLIER_LIST && SUPPLIER_LIST.length > 0) {
       const selectedSupplier = SUPPLIER_LIST.find(
         s => String(s.id) === String(value)
@@ -146,22 +116,33 @@ class InsertOrUpadte extends Component {
     }
 
     this.setState(
-      (prevState) => ({
-        ...prevState,
-        ...stateUpdate,
-      }),
+      (prevState) => {
+        const newState = {
+          ...prevState,
+          ...stateUpdate,
+        };
+        return newState;
+      },
       () => {
-        // Fetch unit when ingredient or product is selected
         if (name === "ingredientId" || name === "productId") {
           this.fetchUnitForItem(name, value);
-        }
-        // Update parent component
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
         }
       }
     );
   };
+   onChangeValue = (name) => (e) => {
+    let value = e && e.target ? e.target.value : e;
+
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          [name]: value,
+        };
+      }
+    );
+  };
+
 
   fetchUnitForItem = async (fieldName, itemId) => {
     if (!itemId) {
@@ -174,51 +155,32 @@ class InsertOrUpadte extends Component {
       let unitId = "";
       
       if (fieldName === "ingredientId") {
-        // Fetch unit for ingredient/material
         const { INGREDIENT_LIST } = this.props;
         if (INGREDIENT_LIST && Array.isArray(INGREDIENT_LIST)) {
           const ingredient = INGREDIENT_LIST.find(item => String(item.id) === String(itemId));
           if (ingredient) {
             unitName = ingredient.unit || "";
-            unitId = ingredient.unitId || ingredient.id || ""; // Try to get unitId, fallback to item id
+            unitId = ingredient.unitId || ingredient.id || ""; 
           }
         }
       } else if (fieldName === "productId") {
-        // Fetch unit for product
         const { PRODUCT_LIST } = this.props;
         if (PRODUCT_LIST && Array.isArray(PRODUCT_LIST)) {
           const product = PRODUCT_LIST.find(item => String(item.id) === String(itemId));
           if (product) {
             unitName = product.unit || "";
-            unitId = product.unitId || product.id || ""; // Try to get unitId, fallback to item id
+            unitId = product.unitId || product.id || ""; 
           }
         }
       }
 
-      this.setState({ unit: unitId || unitName }); // Prioritize unitId
+      this.setState({ unit: unitId || unitName });
     } catch (error) {
       console.error("Error fetching unit:", error);
     }
   };
 
-  onChangeValue = (name) => (e) => {
-    let value = e && e.target ? e.target.value : e;
-
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          [name]: value,
-        };
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
-  };
-
+ 
   onChangeSelectType = () => {
     this.resetFieldValue();
   };
@@ -228,14 +190,7 @@ class InsertOrUpadte extends Component {
   };
 
   handleFileChange = (files) => {
-    this.setState(
-      { file: files[0]?.name || "" },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
+    this.setState({ file: files[0]?.name || "" });
   };
 
   toggleModal = (state) => {
@@ -277,8 +232,7 @@ class InsertOrUpadte extends Component {
       return;
     }
 
-    // Get unitId - try to find from lists
-    let unitId = unit; // Default to unit (which should be unitId from fetchUnitForItem)
+    let unitId = unit; 
     let unitName = unit;
     
     if (ingredientId && INGREDIENT_LIST) {
@@ -494,7 +448,7 @@ class InsertOrUpadte extends Component {
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
               value={supplierId}
-              defaultValue={null}
+              defaultValue={supplierId}
               labelMark={null}
               className="wrap-insert-or-update-zone-item-select"
               name="supplierId"
@@ -575,7 +529,7 @@ class InsertOrUpadte extends Component {
                   <div className="wrap-insert-or-update-zone-item-box">
                     <Select
                       value={ingredientId}
-                      defaultValue={null}
+                      defaultValue={ingredientId}
                       labelMark={null}
                       className="wrap-insert-or-update-zone-item-select"
                       name="ingredientId"
@@ -601,7 +555,7 @@ class InsertOrUpadte extends Component {
                     <div className="wrap-insert-or-update-zone-item-box">
                       <Select
                         value={productId}
-                        defaultValue={null}
+                        defaultValue={productId}
                         labelMark={null}
                         className="wrap-insert-or-update-zone-item-select"
                         name="productId"
@@ -627,7 +581,7 @@ class InsertOrUpadte extends Component {
               <div className="wrap-insert-or-update-zone-item-box">
                 <Select
                   value={warehouseId}
-                  defaultValue={null}
+                  defaultValue={warehouseId}
                   labelMark={null}
                   className="wrap-insert-or-update-zone-item-select"
                   name="warehouseId"
@@ -748,7 +702,6 @@ class InsertOrUpadte extends Component {
           </div>
         )}
 
-        {/* Display details list */}
         {this.state.grDetails && this.state.grDetails.length > 0 && (
           <div style={{ marginTop: "30px", marginBottom: "20px" }}>
             <h4>Danh sách chi tiết phiếu nhập</h4>
@@ -772,7 +725,7 @@ class InsertOrUpadte extends Component {
                       <td>{item.ingredientName || item.productName}</td>
                       <td>{item.warehouseName}</td>
                       <td style={{ textAlign: "right" }}>{item.quantity}</td>
-                      <td>{item.unit}</td>
+                      <td>{item.unitName}</td>
                       <td style={{ textAlign: "right" }}>{formatMoney(item.price)}</td>
                       <td style={{ textAlign: "right" }}>{item.vat}</td>
                       <td style={{ textAlign: "right" }}>{formatMoney(item.amount)}</td>
