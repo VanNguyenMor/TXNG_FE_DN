@@ -880,7 +880,7 @@ export const fetchData = {
       try {
         const result = await callApi("post", GOOD_RECEIVED.getListGoodReceived, payload);
         console.log("📥 Good Received List API Response:", result);
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("❌ Error fetching good received list:", error);
         return null;
@@ -891,6 +891,14 @@ export const fetchData = {
       try {
         const endpoint = GOOD_RECEIVED.getDetailGoodReceived.replace("{id}", id);
         const result = await callApi("get", endpoint);
+        // Handle nested data structure: res.data.data.goodsReceipt
+        if (result?.data?.data?.goodsReceipt) {
+          return result.data.data;
+        } else if (result?.data?.goodsReceipt) {
+          return result.data;
+        } else if (result?.goodsReceipt) {
+          return result;
+        }
         return result?.data || null;
       } catch (error) {
         console.error("❌ Error fetching good received detail:", error);

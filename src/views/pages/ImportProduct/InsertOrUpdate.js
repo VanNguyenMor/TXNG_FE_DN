@@ -26,25 +26,29 @@ class InsertOrUpadte extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
+    // Init state from props.dataInsert if available, otherwise use default
+    const defaultState = {
+      id: null,
+      receiptNumber: "",
+      creationDate: "",
+      supplier: "",
+      importer: "",
+      note: "",
+      status: 0,
+      // Legacy fields for backwards compatibility
       importTypeId: null,
       ingredientId: null,
       supplierId: null,
       productId: null,
       warehouseId: null,
-
-      id: null,
-      receiptNumber: "",
-      creationDate: "",
-      importer: "",
-      note: "",
       file: "",
       unit: "",
       quantity: 0,
       vat: 0,
       price: 0,
-      status: 0,
     };
+
+    this.state = props.dataInsert ? { ...defaultState, ...props.dataInsert } : defaultState;
   }
 
   componentWillUnmount() {
@@ -80,21 +84,16 @@ class InsertOrUpadte extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { id, onHandleChangeValue } = this.props;
+    const { onHandleChangeValue, dataInsert } = this.props;
 
-    // When editing, update form with item data
-    if (id && id !== prevProps.id) {
-      this.setState(
-        (prevState) => ({
-          ...prevState,
-          id: id,
-        }),
-        () => {
-          if (onHandleChangeValue) {
-            onHandleChangeValue(this.state);
-          }
-        }
-      );
+    // When dataInsert prop changes (from parent edit data), update form state directly
+    if (dataInsert && JSON.stringify(prevProps.dataInsert) !== JSON.stringify(dataInsert)) {
+      console.log("🔄 componentDidUpdate: dataInsert changed from parent:", dataInsert);
+      this.setState((prevState) => {
+        const newState = { ...prevState, ...dataInsert };
+        console.log("📝 New form state:", newState);
+        return newState;
+      });
     }
   }
 

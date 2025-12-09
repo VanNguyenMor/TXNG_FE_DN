@@ -98,7 +98,7 @@ class ImportProduct extends Component {
       endItem: LIMIT_ITEM_IN_PAGE,
       totalElement: 0,
       listLength: 0,
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate()),
       toDate: new Date(),
       currentPage: 0,
       filter: {
@@ -108,7 +108,14 @@ class ImportProduct extends Component {
         page: null,
         limit: null,
       },
-      dataInsert: {},
+      dataInsert: {
+        receiptNumber: "",
+        creationDate: new Date(),
+        supplier: "",
+        importer: "",
+        note: "",
+        status: 0,
+      },
       errorInserts: {},
       isShowForEdit: false,
       editId: null,
@@ -116,8 +123,9 @@ class ImportProduct extends Component {
       deleteId: null,
       popupMessage: null,
       STATUS_OPTIONS: [
-        { id: 0, name: "Chưa duyệt" },
-        { id: 1, name: "Đã duyệt" },
+        { id: 0, name: "Mới tạo" },
+        { id: 1, name: "Chưa duyệt" },
+        { id: 2, name: "Đã duyệt" },
       ],
       SUPPLIER_LIST: [
         { id: 1, name: "Nhà cung cấp A" },
@@ -146,6 +154,9 @@ class ImportProduct extends Component {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
     this.fetchSummary();
+    
+    /* Load suppliers */
+    this.loadSuppliers();
 
     getListTypeZoneProperty({
       search: "",
@@ -163,6 +174,32 @@ class ImportProduct extends Component {
     });
   }
 
+  loadSuppliers = async () => {
+    try {
+      // Fetch suppliers from API using partner endpoint
+      const suppliers = await fetchData.partner.getList({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      });
+      
+      let supplierList = [];
+      if (suppliers && Array.isArray(suppliers)) {
+        supplierList = suppliers.map(item => ({
+          id: item.id || item.ID,
+          name: item.partnerName || item.PartnerName || item.name || "",
+        }));
+      }
+      
+      this.setState({ SUPPLIER_LIST: supplierList.length > 0 ? supplierList : this.state.SUPPLIER_LIST });
+    } catch (error) {
+      console.error("❌ Error loading suppliers:", error);
+      // Keep default suppliers if API fails
+    }
+  };
+
   fetchSummary = async (data) => {
     this.setState({ isLoaded: true });
 
@@ -170,12 +207,21 @@ class ImportProduct extends Component {
       const { limit, fromDate, toDate, filter } = this.state;
 
       // Build payload matching mobile app structure exactly
+      let fromDateString = "";
+      let toDateString = "";
+      
+      if (fromDate && moment(fromDate).isValid()) {
+        fromDateString = moment(fromDate).format("YYYY-MM-DD");
+      }
+      
+      if (toDate && moment(toDate).isValid()) {
+        toDateString = moment(toDate).format("YYYY-MM-DD");
+      }
+      
       const payload = {
-        fromDate: fromDate ? moment(fromDate).format("YYYY-MM-DD") : "",
-        toDate: toDate ? moment(toDate).format("YYYY-MM-DD") : "",
-        status: filter?.filter !== "" && filter?.filter !== null 
-          ? parseInt(filter.filter) 
-          : null,
+        fromDate: fromDateString,
+        toDate: toDateString,
+        status: filter?.filter ? parseInt(filter.filter) : null,
         search: filter?.search || "",
         filter: filter?.filter || "",
         orderBy: filter?.orderBy || "",
@@ -212,37 +258,6 @@ class ImportProduct extends Component {
       }
 
       console.log("📦 Parsed goodsReceipts:", goodReceivedList);
-
-      // If no data from API, use mock data for testing UI
-      if (goodReceivedList.length === 0) {
-        console.warn("⚠️ API returned empty list, using mock data for testing");
-        goodReceivedList = [
-          {
-            id: 1,
-            grCode: "GR001",
-            grTime: "2025-12-01T10:30:00",
-            partnerName: "Công ty A",
-            confirmedByName: "Nguyễn A",
-            status: 0,
-          },
-          {
-            id: 2,
-            grCode: "GR002",
-            grTime: "2025-12-02T14:45:00",
-            partnerName: "Công ty B",
-            confirmedByName: "Trần B",
-            status: 1,
-          },
-          {
-            id: 3,
-            grCode: "GR003",
-            grTime: "2025-12-03T09:15:00",
-            partnerName: "Công ty C",
-            confirmedByName: "Lê C",
-            status: 0,
-          },
-        ];
-      }
 
       let collapseList = [];
 
@@ -513,12 +528,50 @@ class ImportProduct extends Component {
     );
   };
 
-  onEditData = (item) => () => {
-    this.setState({
-      isShowForEdit: true,
-      editId: item.id,
-      dataInsert: item,
-    });
+  onEditData = (item) => async () => {
+    if (!item || !item.id) return;
+
+    this.setState({ isLoaded: true });
+
+    try {
+      // Load detail data from API
+      const detailResponse = await fetchData.goodReceived.getDetail(item.id);
+
+      if (detailResponse) {
+        // Handle nested structure: detailResponse can have goodsReceipt
+        const detailData = detailResponse.goodsReceipt || detailResponse;
+        
+        // Map API response to form data
+        const initialData = {
+          id: item.id,
+          receiptNumber: detailData.grCode || item.receiptNumber || "",
+          creationDate: detailData.grTime ? moment(detailData.grTime).toDate() : new Date(),
+          supplier: detailData.partnerName || item.supplier || "",
+          importer: detailData.confirmedByName || detailData.receiptPersonName || item.importer || "",
+          note: detailData.note || "",
+          status: detailData.status || item.status || 0,
+        };
+
+        console.log("Detail data loaded:", detailData);
+        console.log("Initialized form data:", initialData);
+
+        this.setState({
+          isShowForEdit: true,
+          editId: item.id,
+          dataInsert: initialData,
+          isLoaded: false,
+        }, () => {
+          console.log("State updated with initialData:", this.state.dataInsert);
+        });
+      } else {
+        toast.error("Không tải được dữ liệu chi tiết!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("❌ Error loading good received detail:", error);
+      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+      this.setState({ isLoaded: false });
+    }
   };
 
   onDeleteData = (id) => () => {
@@ -584,7 +637,7 @@ class ImportProduct extends Component {
     return line;
   };
 
-  renderTable = (data, isDisableEdit, isDisableDelete) => {
+  renderTable = (data, isDisableEdit, isDisableDelete, STATUS_OPTIONS) => {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
     let parentid = [];
@@ -625,13 +678,8 @@ class ImportProduct extends Component {
             <span style={{ color: `${e.color}` }}>{e.supplier}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.importer}</span>
-          </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>
-              {e.status === 1
-                ? IMPORT_EXPORT_PRODUCT_STATUS.ACTIVE
-                : IMPORT_EXPORT_PRODUCT_STATUS.DEACTIVE}
+              {STATUS_OPTIONS.find(opt => opt.id === e.status)?.name || "Không xác định"}
             </span>
           </td>
           <td>
@@ -650,7 +698,7 @@ class ImportProduct extends Component {
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
                           <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
+                            Xem chi tiết
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
@@ -703,6 +751,7 @@ class ImportProduct extends Component {
       UNIT_LIST,
       fromDate,
       toDate,
+      dataInsert,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -755,6 +804,7 @@ class ImportProduct extends Component {
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
+                          dataInsert={dataInsert}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
                           STATUS_OPTIONS={STATUS_OPTIONS}
@@ -878,7 +928,8 @@ class ImportProduct extends Component {
                             this.renderTable(
                               data,
                               isDisableEdit,
-                              isDisableDelete
+                              isDisableDelete,
+                              STATUS_OPTIONS
                             )}
                         </tbody>
                       </Table>
@@ -931,6 +982,7 @@ class ImportProduct extends Component {
               moduleBody={
                 <InsertOrUpdate
                   id={editId}
+                  dataInsert={dataInsert}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
                   STATUS_OPTIONS={STATUS_OPTIONS}

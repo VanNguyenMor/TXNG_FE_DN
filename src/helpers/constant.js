@@ -874,7 +874,6 @@ export const IMPORT_PRODUCT = [
   "Số phiếu",
   "Thời gian",
   "Nhà cung cấp",
-  "Người nhập",
   "Trạng thái",
 ];
 
