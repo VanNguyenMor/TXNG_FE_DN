@@ -33,6 +33,7 @@ class InsertOrUpadte extends Component {
       creationDate: "",
       supplier: "",
       importer: "",
+      importerId: "",
       note: "",
       status: 0,
       importTypeId: null,
@@ -50,7 +51,9 @@ class InsertOrUpadte extends Component {
       isAddingDetail: false,
     };
 
-    this.state = props.dataInsert ? { ...defaultState, ...props.dataInsert } : defaultState;
+    this.state = props.dataInsert
+      ? { ...defaultState, ...props.dataInsert }
+      : defaultState;
   }
 
   componentWillUnmount() {
@@ -70,10 +73,17 @@ class InsertOrUpadte extends Component {
   componentDidUpdate(prevProps) {
     const { dataInsert } = this.props;
 
-    if (dataInsert?.id && prevProps.dataInsert?.id !== dataInsert.id) {
-      this.setState((prevState) => {
-        return { ...prevState, ...dataInsert };
-      });
+    // Sync state with props when editing (has id) - do this every time props change during edit
+    if (dataInsert?.id) {
+      // Always update form state when in edit mode and props have changed
+      if (
+        prevProps.dataInsert?.id !== dataInsert.id ||
+        JSON.stringify(prevProps.dataInsert) !== JSON.stringify(dataInsert)
+      ) {
+        this.setState((prevState) => {
+          return { ...prevState, ...dataInsert };
+        });
+      }
     }
   }
 
@@ -89,7 +99,7 @@ class InsertOrUpadte extends Component {
 
   onChangeSelect = (name) => (value) => {
     const { SUPPLIER_LIST } = this.props;
-    
+
     let stateUpdate = {
       [name]: value,
       ...(name === "importTypeId"
@@ -106,9 +116,14 @@ class InsertOrUpadte extends Component {
         : {}),
     };
 
-    if (name === "supplierId" && value && SUPPLIER_LIST && SUPPLIER_LIST.length > 0) {
+    if (
+      name === "supplierId" &&
+      value &&
+      SUPPLIER_LIST &&
+      SUPPLIER_LIST.length > 0
+    ) {
       const selectedSupplier = SUPPLIER_LIST.find(
-        s => String(s.id) === String(value)
+        (s) => String(s.id) === String(value)
       );
       if (selectedSupplier) {
         stateUpdate.supplier = selectedSupplier.name || "";
@@ -130,19 +145,16 @@ class InsertOrUpadte extends Component {
       }
     );
   };
-   onChangeValue = (name) => (e) => {
+  onChangeValue = (name) => (e) => {
     let value = e && e.target ? e.target.value : e;
 
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          [name]: value,
-        };
-      }
-    );
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        [name]: value,
+      };
+    });
   };
-
 
   fetchUnitForItem = async (fieldName, itemId) => {
     if (!itemId) {
@@ -153,23 +165,27 @@ class InsertOrUpadte extends Component {
     try {
       let unitName = "";
       let unitId = "";
-      
+
       if (fieldName === "ingredientId") {
         const { INGREDIENT_LIST } = this.props;
         if (INGREDIENT_LIST && Array.isArray(INGREDIENT_LIST)) {
-          const ingredient = INGREDIENT_LIST.find(item => String(item.id) === String(itemId));
+          const ingredient = INGREDIENT_LIST.find(
+            (item) => String(item.id) === String(itemId)
+          );
           if (ingredient) {
             unitName = ingredient.unit || "";
-            unitId = ingredient.unitId || ingredient.id || ""; 
+            unitId = ingredient.unitId || ingredient.id || "";
           }
         }
       } else if (fieldName === "productId") {
         const { PRODUCT_LIST } = this.props;
         if (PRODUCT_LIST && Array.isArray(PRODUCT_LIST)) {
-          const product = PRODUCT_LIST.find(item => String(item.id) === String(itemId));
+          const product = PRODUCT_LIST.find(
+            (item) => String(item.id) === String(itemId)
+          );
           if (product) {
             unitName = product.unit || "";
-            unitId = product.unitId || product.id || ""; 
+            unitId = product.unitId || product.id || "";
           }
         }
       }
@@ -180,7 +196,6 @@ class InsertOrUpadte extends Component {
     }
   };
 
- 
   onChangeSelectType = () => {
     this.resetFieldValue();
   };
@@ -208,41 +223,46 @@ class InsertOrUpadte extends Component {
 
   // Handle adding detail to list
   onAddDetail = () => {
-    const { ingredientId, productId, warehouseId, quantity, price, vat, unit } = this.state;
+    const { ingredientId, productId, warehouseId, quantity, price, vat, unit } =
+      this.state;
     const { INGREDIENT_LIST, PRODUCT_LIST } = this.props;
-    
+
     // Validation
     if (!ingredientId && !productId) {
       alert("Vui lòng chọn nguyên liệu hoặc sản phẩm");
       return;
     }
-    
+
     if (!warehouseId) {
       alert("Vui lòng chọn kho hàng");
       return;
     }
-    
+
     if (!quantity || Number(quantity) <= 0) {
       alert("Vui lòng nhập số lượng > 0");
       return;
     }
-    
+
     if (!unit) {
       alert("Vui lòng chọn nguyên liệu/sản phẩm để tự động lấy đơn vị tính");
       return;
     }
 
-    let unitId = unit; 
+    let unitId = unit;
     let unitName = unit;
-    
+
     if (ingredientId && INGREDIENT_LIST) {
-      const ingredient = INGREDIENT_LIST.find(i => String(i.id) === String(ingredientId));
+      const ingredient = INGREDIENT_LIST.find(
+        (i) => String(i.id) === String(ingredientId)
+      );
       if (ingredient) {
         unitId = ingredient.unitId || unit;
         unitName = ingredient.unit || unit;
       }
     } else if (productId && PRODUCT_LIST) {
-      const product = PRODUCT_LIST.find(p => String(p.id) === String(productId));
+      const product = PRODUCT_LIST.find(
+        (p) => String(p.id) === String(productId)
+      );
       if (product) {
         unitId = product.unitId || unit;
         unitName = product.unit || unit;
@@ -258,8 +278,8 @@ class InsertOrUpadte extends Component {
       quantity: Number(quantity),
       price: Number(price),
       vat: Number(vat),
-      unit: unitId,  // Store unitId
-      unitName: unitName,  // Store unitName for display
+      unit: unitId, // Store unitId
+      unitName: unitName, // Store unitName for display
       amount: this.calculateTotalAmount(quantity, price, vat),
       // Store names for display
       ingredientName: this.getItemName("ingredient", ingredientId),
@@ -268,38 +288,43 @@ class InsertOrUpadte extends Component {
     };
 
     // Add to list
-    this.setState((prevState) => ({
-      grDetails: [...prevState.grDetails, detailItem],
-      // Reset form fields
-      ingredientId: null,
-      productId: null,
-      warehouseId: null,
-      quantity: 0,
-      price: 0,
-      vat: 0,
-      unit: "",
-    }), () => {
-      // Update parent component with new state
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(this.state);
+    this.setState(
+      (prevState) => ({
+        grDetails: [...prevState.grDetails, detailItem],
+        // Reset form fields
+        ingredientId: null,
+        productId: null,
+        warehouseId: null,
+        quantity: 0,
+        price: 0,
+        vat: 0,
+        unit: "",
+      }),
+      () => {
+        // Update parent component with new state
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
-    });
+    );
   };
 
   // Helper method to get item name from ID
   getItemName = (type, itemId) => {
     if (!itemId) return "";
-    
+
     if (type === "ingredient") {
       const { INGREDIENT_LIST } = this.props;
       if (INGREDIENT_LIST && Array.isArray(INGREDIENT_LIST)) {
-        const item = INGREDIENT_LIST.find(i => String(i.id) === String(itemId));
+        const item = INGREDIENT_LIST.find(
+          (i) => String(i.id) === String(itemId)
+        );
         return item ? item.name : itemId;
       }
     } else if (type === "product") {
       const { PRODUCT_LIST } = this.props;
       if (PRODUCT_LIST && Array.isArray(PRODUCT_LIST)) {
-        const item = PRODUCT_LIST.find(i => String(i.id) === String(itemId));
+        const item = PRODUCT_LIST.find((i) => String(i.id) === String(itemId));
         return item ? item.name : itemId;
       }
     }
@@ -309,10 +334,12 @@ class InsertOrUpadte extends Component {
   // Helper method to get warehouse name from ID
   getWarehouseName = (warehouseId) => {
     if (!warehouseId) return "";
-    
+
     const { WAREHOUSE_LIST } = this.props;
     if (WAREHOUSE_LIST && Array.isArray(WAREHOUSE_LIST)) {
-      const warehouse = WAREHOUSE_LIST.find(w => String(w.id) === String(warehouseId));
+      const warehouse = WAREHOUSE_LIST.find(
+        (w) => String(w.id) === String(warehouseId)
+      );
       return warehouse ? warehouse.name : warehouseId;
     }
     return warehouseId;
@@ -320,14 +347,17 @@ class InsertOrUpadte extends Component {
 
   // Handle delete detail from list
   onDeleteDetail = (detailId) => {
-    this.setState((prevState) => ({
-      grDetails: prevState.grDetails.filter(item => item.id !== detailId),
-    }), () => {
-      // Update parent component with new state
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(this.state);
+    this.setState(
+      (prevState) => ({
+        grDetails: prevState.grDetails.filter((item) => item.id !== detailId),
+      }),
+      () => {
+        // Update parent component with new state
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
-    });
+    );
   };
 
   render() {
@@ -360,7 +390,6 @@ class InsertOrUpadte extends Component {
       id,
     } = this.props;
     const isIngredient = Number(importTypeId) === 1;
-
     return (
       <div className="wrap-insert-or-update-zone">
         <div className="wrap-insert-or-update-zone-item">
@@ -390,14 +419,13 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-            
-              <Input className="input-group-alternative css-border-input"
+              <Input
+                className="input-group-alternative css-border-input"
                 onChange={this.onChangeValue("receiptNumber")}
                 type="text"
                 value={receiptNumber}
                 readOnly
               />
-            
             </InputGroup>
 
             <p className="form-error-message">{errors.receiptNumber || ""}</p>
@@ -426,6 +454,7 @@ class InsertOrUpadte extends Component {
                   inputProps={{
                     placeholder: "Ngày lập phiếu",
                     name: "creationDate",
+                    disabled: status === 2 ? true : false,
                   }}
                   value={creationDate}
                   timeFormat={false}
@@ -455,6 +484,7 @@ class InsertOrUpadte extends Component {
               title="Chọn nhà cung cấp"
               data={SUPPLIER_LIST}
               labelName="name"
+              isDisable={status === 2 ? true : false}
               val="id"
               handleChange={this.onChangeSelect("supplierId")}
             />
@@ -463,16 +493,13 @@ class InsertOrUpadte extends Component {
           </div>
         </div>
 
-        <div
-          className="wrap-insert-or-update-zone-item"
-        
-        >
+        <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
             Người nhập&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <Input 
+              <Input
                 value={importer}
                 readOnly
                 type="text"
@@ -489,11 +516,12 @@ class InsertOrUpadte extends Component {
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <Input 
+              <Input
                 value={note}
                 onChange={this.onChangeValue("note")}
                 type="text"
                 className="wrap-insert-or-update-zone-item-input"
+                readOnly={status === 2 ? true : false}
               />
             </InputGroup>
 
@@ -513,11 +541,13 @@ class InsertOrUpadte extends Component {
               name="relatedDocuments"
               multiple={true}
               onChange={(e) => this.handleFileChange(e.target.files)}
+              readOnly={status === 2 ? true : false}
             />
           </div>
         </div>
         <hr style={{ paddingTop: 5, marginBottom: 0, paddingBottom: 5 }} />
-        {importTypeId !== null && !id && (
+
+        {importTypeId !== null && status !== 2 ? (
           <div>
             <h3>Chi tiết phiếu nhập</h3>
             {isIngredient ? (
@@ -536,6 +566,7 @@ class InsertOrUpadte extends Component {
                       title="Chọn nguyên liệu"
                       data={INGREDIENT_LIST}
                       labelName="name"
+                      isDisable={status === 2 ? true : false}
                       val="id"
                       handleChange={this.onChangeSelect("ingredientId")}
                     />
@@ -560,6 +591,7 @@ class InsertOrUpadte extends Component {
                         className="wrap-insert-or-update-zone-item-select"
                         name="productId"
                         title="Chọn sản phẩm"
+                        isDisable={status === 2 ? true : false}
                         data={PRODUCT_LIST}
                         labelName="name"
                         val="id"
@@ -587,6 +619,7 @@ class InsertOrUpadte extends Component {
                   name="warehouseId"
                   title="Chọn kho hàng"
                   data={WAREHOUSE_LIST}
+                  isDisable={status === 2 ? true : false}
                   labelName="name"
                   val="id"
                   handleChange={this.onChangeSelect("warehouseId")}
@@ -601,10 +634,11 @@ class InsertOrUpadte extends Component {
               </label>
               <div className="wrap-insert-or-update-zone-item-box">
                 <InputGroup className="input-group-alternative css-border-input">
-                  <input
+                  <Input
                     value={quantity}
                     onChange={this.onChangeValue("quantity")}
                     type="number"
+                    readOnly={status === 2 ? true : false}
                     className="wrap-insert-or-update-zone-item-input"
                   />
                 </InputGroup>
@@ -618,7 +652,7 @@ class InsertOrUpadte extends Component {
               </label>
               <div className="wrap-insert-or-update-zone-item-box">
                 <InputGroup className="input-group-alternative css-border-input">
-                  <Input 
+                  <Input
                     value={unit}
                     readOnly={true}
                     type="text"
@@ -636,7 +670,8 @@ class InsertOrUpadte extends Component {
               </label>
               <div className="wrap-insert-or-update-zone-item-box">
                 <InputGroup className="input-group-alternative css-border-input">
-                  <input
+                  <Input
+                    readOnly={status === 2 ? true : false}
                     value={formatMoney(price)}
                     onChange={(e) => {
                       const parsed = parseMoney(e.target.value);
@@ -656,7 +691,8 @@ class InsertOrUpadte extends Component {
               </label>
               <div className="wrap-insert-or-update-zone-item-box">
                 <InputGroup className="input-group-alternative css-border-input">
-                  <input
+                  <Input
+                    readOnly={status === 2 ? true : false}
                     value={vat}
                     onChange={this.onChangeValue("vat")}
                     type="number"
@@ -700,13 +736,22 @@ class InsertOrUpadte extends Component {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
 
         {this.state.grDetails && this.state.grDetails.length > 0 && (
           <div style={{ marginTop: "30px", marginBottom: "20px" }}>
             <h4>Danh sách chi tiết phiếu nhập</h4>
-            <div style={{ overflowX: "auto", border: "1px solid #ddd", borderRadius: "4px" }}>
-              <table className="table table-bordered table-hover" style={{ fontSize: "13px", marginBottom: "0" }}>
+            <div
+              style={{
+                overflowX: "auto",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+              }}
+            >
+              <table
+                className="table table-bordered table-hover"
+                style={{ fontSize: "13px", marginBottom: "0" }}
+              >
                 <thead className="bg-light">
                   <tr>
                     <th style={{ width: "25%" }}>Tên hàng</th>
@@ -716,7 +761,7 @@ class InsertOrUpadte extends Component {
                     <th style={{ width: "15%" }}>Giá</th>
                     <th style={{ width: "10%" }}>VAT %</th>
                     <th style={{ width: "12%" }}>Thành tiền</th>
-                    <th style={{ width: "6%" }}>Xóa</th>
+                    {status !== 2 ? <th style={{ width: "6%" }}>Xóa</th> : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -726,18 +771,24 @@ class InsertOrUpadte extends Component {
                       <td>{item.warehouseName}</td>
                       <td style={{ textAlign: "right" }}>{item.quantity}</td>
                       <td>{item.unitName}</td>
-                      <td style={{ textAlign: "right" }}>{formatMoney(item.price)}</td>
-                      <td style={{ textAlign: "right" }}>{item.vat}</td>
-                      <td style={{ textAlign: "right" }}>{formatMoney(item.amount)}</td>
-                      <td style={{ textAlign: "center" }}>
-                        <button
-                          type="button"
-                          onClick={() => this.onDeleteDetail(item.id)}
-                          className="btn btn-sm btn-danger"
-                        >
-                          X
-                        </button>
+                      <td style={{ textAlign: "right" }}>
+                        {formatMoney(item.price)}
                       </td>
+                      <td style={{ textAlign: "right" }}>{item.vat}</td>
+                      <td style={{ textAlign: "right" }}>
+                        {formatMoney(item.amount)}
+                      </td>
+                      {status !== 2 ? (
+                        <td style={{ textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => this.onDeleteDetail(item.id)}
+                            className="btn btn-sm btn-danger"
+                          >
+                            X
+                          </button>
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>

@@ -585,11 +585,23 @@ class ImportProduct extends Component {
   };
 
   onConfirm = async (toggleModal, closePopup) => {
-    // Get latest data from form component via ref
     const formData = this.formRef?.state || this.state.dataInsert;
     const { editId } = this.state;
-    const errorInserts = this.checkDataInsert(true);
+    
+    const importerId = formData.importerId || this.state.dataInsert.importerId || "";
+    
+    const errorInserts = {};
+    
+    if (!formData.supplier || String(formData.supplier).trim() === "") {
+      errorInserts.supplier = "Nhà cung cấp không được bỏ trống";
+    }
+
+    if (!formData.importer || String(formData.importer).trim() === "") {
+      errorInserts.importer = "Người nhập không được bỏ trống";
+    }
+    
     console.log("formData:", formData);
+    console.log("importerId:", importerId);
     
     // Check validation
     if (Object.keys(errorInserts).length > 0) {
@@ -608,13 +620,12 @@ class ImportProduct extends Component {
     try {
       let res;
 
-      // Use FormData instead of JSON
       const formPayload = new FormData();
-      console.log(formData.importer, "formData.importerId=======");
+      console.log(formData.importer, "formData.importer=======");
       // Add simple fields
       formPayload.append("GRTime", moment(formData.creationDate).toISOString());
       formPayload.append("PartnerID", formData.supplierId || "");
-      formPayload.append("ReceiptPerson", formData.importerId || "");
+      formPayload.append("ReceiptPerson", importerId || "");
       formPayload.append("ReceiptPersonName", formData.importer || "");
       formPayload.append("Note", formData.note || "");
       formPayload.append("GRType", formData.importTypeId ? parseInt(formData.importTypeId) : 0);
@@ -756,11 +767,9 @@ class ImportProduct extends Component {
 
         const importTypeId = detailData.grType === 0 ? "2" : "1";
 
-        // Map grMores to grDetails format
         let grDetails = [];
         if (detailData.grMores && Array.isArray(detailData.grMores)) {
           grDetails = detailData.grMores.map((item, index) => {
-            // Get warehouse name from WAREHOUSE_LIST
             let warehouseName = "";
             if (this.state.WAREHOUSE_LIST && this.state.WAREHOUSE_LIST.length > 0) {
               const warehouse = this.state.WAREHOUSE_LIST.find(w => String(w.id) === String(item.warehouseID));
@@ -775,12 +784,12 @@ class ImportProduct extends Component {
               quantity: item.quantity || 0,
               price: item.unitPrice || 0,
               vat: item.perVAT || 0,
-              unit: item.unitID || "", // Store unitId
-              unitName: item.unitName || "", // Store unitName for display
+              unit: item.unitID || "", 
+              unitName: item.unitName || "", 
               amount: item.amount || 0,
               ingredientName: item.materialName || "",
               productName: item.materialName || "",
-              warehouseName: warehouseName || "", // Get from WAREHOUSE_LIST
+              warehouseName: warehouseName || "", 
               refQRCode: item.refQRCode || "",
             };
           });
@@ -795,6 +804,7 @@ class ImportProduct extends Component {
             : new Date(),
           supplierId: detailData.partnerID,
           supplier: detailData.receiptPersonName || item.supplier || "",
+          importerId: detailData.confirmedByID || detailData.receiptPerson || "",
           importer:
             detailData.confirmedByName ||
             detailData.receiptPerson ||
@@ -1042,11 +1052,11 @@ class ImportProduct extends Component {
               ) : (
                 <Row>
                   <div className="col">
-                    {/* Header */}
                     <HeaderTable
                       dataReload={() => this.handleDataReload()}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
+                      isReadOnly={dataInsert.status === 2}
                       moduleTitle={
                         isShowForEdit ? "Sửa phiếu nhập" : "Thêm phiếu nhập"
                       }
