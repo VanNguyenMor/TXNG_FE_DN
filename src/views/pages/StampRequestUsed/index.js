@@ -273,25 +273,25 @@ class BusinessInformation extends Component {
       // Parse quantity to ensure it's a valid number
       const parsedQuantity = parseInt(dataInsert.quantity) || 0;
       
-      const payload = {
-        Id: dataInsert.id || null,
-        Quantity: parsedQuantity,
-        StampTemplateID: dataInsert.stampRange || "",
-        IsPrint: dataInsert.printMethod === 1 ? true : false,
-        Note: dataInsert.notes || "",
-        FileUpload: "",
-        Files: [],
-        Amount: 0,
-      };
+      // Build FormData instead of JSON
+      const formData = new FormData();
+      formData.append("Id", dataInsert.id || "");
+      formData.append("Quantity", parsedQuantity);
+      formData.append("StampTemplateID", dataInsert.stampRange || "");
+      formData.append("IsPrint", "false");
+      formData.append("Note", dataInsert.notes || "");
+      formData.append("FileUpload", "");
+      formData.append("Files", "[]");
+      formData.append("Amount", 0);
 
-      console.log("📤 Saving stamp request with payload:", payload);
+      console.log("📤 Saving stamp request with FormData");
 
       // Call API
       let result;
       if (dataInsert.id) {
         // Update
         console.log("🔄 Updating stamp request ID:", dataInsert.id);
-        result = await fetchData.stampRequest.edit(payload);
+        result = await fetchData.stampRequest.editFormData(formData);
         console.log("📥 Update response:", result);
         if (result && result.status === 200) {
           toast.success("Cập nhật xin cấp tem thành công!");
@@ -303,7 +303,7 @@ class BusinessInformation extends Component {
       } else {
         // Create
         console.log("➕ Creating new stamp request");
-        result = await fetchData.stampRequest.add(payload);
+        result = await fetchData.stampRequest.addFormData(formData);
         console.log("📥 Create response:", result);
         if (result && result.status === 200) {
           toast.success("Thêm xin cấp tem thành công!");

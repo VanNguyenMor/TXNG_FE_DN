@@ -216,7 +216,6 @@ class Product extends Component {
   }
 
   componentDidMount() {
-    console.log("🚀 Product Component Mounted");
     const { getListTypeZoneProperty } = this.props;
     
     /* Fetch Summary - load all data without date filter */
@@ -246,26 +245,20 @@ class Product extends Component {
     });
 
     // Fetch danh sách nhật ký (traces)
-    console.log("📞 Gọi fetchDiaryOptions()");
     this.fetchDiaryOptions();
 
     // Fetch danh sách phân loại (categories)
-    console.log("📞 Gọi fetchClassifyOptions()");
     this.fetchClassifyOptions();
 
     // Fetch danh sách dải tem (stamp templates)
-    console.log("📞 Gọi fetchStampTemplateOptions()");
     this.fetchStampTemplateOptions();
   }
 
   fetchDiaryOptions = async () => {
     try {
-      console.log("🔄 Bắt đầu fetch danh sách nhật ký từ API: batch/gettraces");
       const result = await fetchData.consignments.getListDiaryComboBox();
-      console.log("📥 API Response nhật ký:", result);
       
       if (result && Array.isArray(result)) {
-        console.log("✅ Có dữ liệu, đang format...");
         // Format dữ liệu từ API thành DIARY_OPTIONS
         const formattedDiaries = result.map((item) => ({
           id: item.id || item.ID,
@@ -278,29 +271,22 @@ class Product extends Component {
           unit: item.unitName || item.unit || "",
         }));
         
-        console.log("📋 Formatted DIARY_OPTIONS:", formattedDiaries);
         this.setState((previousState) => ({
           ...previousState,
           DIARY_OPTIONS: formattedDiaries,
         }), () => {
-          console.log("✨ State DIARY_OPTIONS updated:", this.state.DIARY_OPTIONS);
         });
       } else {
-        console.warn("⚠️ API trả về data không phải array hoặc rỗng:", result);
       }
     } catch (error) {
-      console.error("❌ Lỗi fetch danh sách nhật ký:", error);
     }
   }
 
   fetchClassifyOptions = async () => {
     try {
-      console.log("🔄 Bắt đầu fetch danh sách phân loại từ API: batch/getbatchcategories");
       const result = await fetchData.consignments.getListClassifyComboBox();
-      console.log("📥 API Response phân loại:", result);
       
       if (result && Array.isArray(result)) {
-        console.log("✅ Có dữ liệu phân loại, đang format...");
         // Format dữ liệu từ API thành CLASSIFY_OPTIONS
         // API trả về { id, description }
         const formattedClassifies = result.map((item) => ({
@@ -308,26 +294,20 @@ class Product extends Component {
           title: item.description || item.name || item.title || item.categoryName || "",
         }));
         
-        console.log("📋 Formatted CLASSIFY_OPTIONS:", formattedClassifies);
         this.setState((previousState) => ({
           ...previousState,
           CLASSIFY_OPTIONS: formattedClassifies,
         }), () => {
-          console.log("✨ State CLASSIFY_OPTIONS updated:", this.state.CLASSIFY_OPTIONS);
         });
       } else {
-        console.warn("⚠️ API phân loại trả về data không phải array hoặc rỗng:", result);
       }
     } catch (error) {
-      console.error("❌ Lỗi fetch danh sách phân loại:", error);
     }
   }
 
   fetchStampTemplateOptions = async () => {
     try {
-      console.log("🔄 Bắt đầu fetch danh sách dải tem từ API: stampranges/getstamprange");
       const result = await fetchData.consignments.getListStampTemplate();
-      console.log("📥 API Response dải tem:", result);
       
       // API returns { status, message, data: { stampRanges: [...] } }
       let stampRanges = [];
@@ -341,7 +321,6 @@ class Product extends Component {
       }
       
       if (stampRanges && stampRanges.length > 0) {
-        console.log("✅ Có dữ liệu dải tem, đang format...", stampRanges);
         // Format dữ liệu từ API thành TEM_OPTIONS
         // Mỗi dải tem hiển thị: "startNum - endNum" (ví dụ: "281 - 281" hoặc "277 - 278")
         const formattedStamps = stampRanges.map((stamp) => ({
@@ -349,22 +328,18 @@ class Product extends Component {
           title: `${stamp.startNum} - ${stamp.endNum}`,
         }));
         
-        console.log("📋 Formatted TEM_OPTIONS:", formattedStamps);
         this.setState((previousState) => ({
           ...previousState,
           TEM_OPTIONS: formattedStamps,
         }), () => {
-          console.log("✨ State TEM_OPTIONS updated:", this.state.TEM_OPTIONS);
         });
       } else {
-        console.warn("⚠️ API dải tem trả về data không phải array hoặc rỗng:", result);
         this.setState((previousState) => ({
           ...previousState,
           TEM_OPTIONS: [],
         }));
       }
     } catch (error) {
-      console.error("❌ Lỗi fetch danh sách dải tem:", error);
       this.setState((previousState) => ({
         ...previousState,
         TEM_OPTIONS: [],

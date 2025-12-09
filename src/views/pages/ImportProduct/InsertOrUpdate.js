@@ -58,7 +58,7 @@ class InsertOrUpadte extends Component {
   }
 
   async componentDidMount() {
-    const { onHandleChangeValue } = this.props;
+    const { onHandleChangeValue, id } = this.props;
 
     if (onHandleChangeValue) {
       onHandleChangeValue(this.state);
@@ -77,6 +77,25 @@ class InsertOrUpadte extends Component {
     );
 
     this.focusInput();
+  }
+
+  componentDidUpdate(prevProps) {
+    const { id, onHandleChangeValue } = this.props;
+
+    // When editing, update form with item data
+    if (id && id !== prevProps.id) {
+      this.setState(
+        (prevState) => ({
+          ...prevState,
+          id: id,
+        }),
+        () => {
+          if (onHandleChangeValue) {
+            onHandleChangeValue(this.state);
+          }
+        }
+      );
+    }
   }
 
   focusInput = () => {

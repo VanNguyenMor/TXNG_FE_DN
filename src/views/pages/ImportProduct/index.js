@@ -27,6 +27,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactDatetime from "react-datetime";
 
+import { fetchData } from "helpers/fetchData";
+import moment from "moment";
+
 // reactstrap components
 import {
   Card,
@@ -142,15 +145,7 @@ class ImportProduct extends Component {
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary();
 
     getListTypeZoneProperty({
       search: "",
@@ -168,41 +163,129 @@ class ImportProduct extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
-
+  fetchSummary = async (data) => {
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
+    try {
+      const { limit, fromDate, toDate, filter } = this.state;
+
+      // Build payload matching mobile app structure exactly
+      const payload = {
+        fromDate: fromDate ? moment(fromDate).format("YYYY-MM-DD") : "",
+        toDate: toDate ? moment(toDate).format("YYYY-MM-DD") : "",
+        status: filter?.filter !== "" && filter?.filter !== null 
+          ? parseInt(filter.filter) 
+          : null,
+        search: filter?.search || "",
+        filter: filter?.filter || "",
+        orderBy: filter?.orderBy || "",
+        page: 0,
+        limit: limit,
+        init: true,
+      };
+
+      console.log("🔍 Fetching with payload:", payload);
+      
+      const res = await fetchData.goodReceived.getList(payload);
+      
+      if (!res) {
+        console.warn("⚠️ No response from API");
+        this.setState({ isLoaded: false, data: [], collapseList: [] });
+        return;
+      }
+
+      console.log("📊 API Response:", res);
+
+      let goodReceivedList = [];
+      
+      // Handle nested data structure: res.data.data.goodsReceipts
+      if (res?.data?.data?.goodsReceipts && Array.isArray(res.data.data.goodsReceipts)) {
+        goodReceivedList = res.data.data.goodsReceipts;
+      } else if (res?.goodsReceipts && Array.isArray(res.goodsReceipts)) {
+        goodReceivedList = res.goodsReceipts;
+      } else if (res?.data?.goodsReceipts && Array.isArray(res.data.goodsReceipts)) {
+        goodReceivedList = res.data.goodsReceipts;
+      } else if (res?.data && Array.isArray(res.data)) {
+        goodReceivedList = res.data;
+      } else if (Array.isArray(res)) {
+        goodReceivedList = res;
+      }
+
+      console.log("📦 Parsed goodsReceipts:", goodReceivedList);
+
+      // If no data from API, use mock data for testing UI
+      if (goodReceivedList.length === 0) {
+        console.warn("⚠️ API returned empty list, using mock data for testing");
+        goodReceivedList = [
+          {
+            id: 1,
+            grCode: "GR001",
+            grTime: "2025-12-01T10:30:00",
+            partnerName: "Công ty A",
+            confirmedByName: "Nguyễn A",
+            status: 0,
+          },
+          {
+            id: 2,
+            grCode: "GR002",
+            grTime: "2025-12-02T14:45:00",
+            partnerName: "Công ty B",
+            confirmedByName: "Trần B",
+            status: 1,
+          },
+          {
+            id: 3,
+            grCode: "GR003",
+            grTime: "2025-12-03T09:15:00",
+            partnerName: "Công ty C",
+            confirmedByName: "Lê C",
+            status: 0,
+          },
+        ];
+      }
+
       let collapseList = [];
-      const data = (res.data || {}).data || {};
 
-      let newData = [...this.state.data];
+      let tableData = goodReceivedList.map((item, index) => ({
+        id: item.id || item.ID,
+        receiptNumber: item.grCode || item.ReceiptNumber || item.receiptNumber || "",
+        creationDate: item.grTime 
+          ? moment(item.grTime).format("DD/MM/YYYY") 
+          : item.creationDate
+          ? moment(item.creationDate).format("DD/MM/YYYY")
+          : "",
+        supplier: item.partnerName || item.Supplier || item.supplier || "",
+        importer: item.confirmedByName || item.Importer || item.importer || "",
+        status: item.status || item.Status || 0,
+        parentID: "",
+        index: index + 1,
+        color: "",
+      }));
 
-      newData.forEach((item, key) => {
+      tableData.forEach((item, key) => {
         collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
       });
 
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
+      const total = tableData.length | 0;
+      const beginItem = 0;
+      const endItem = Math.min(limit, total);
 
       this.setState({
-        data: newData,
+        data: tableData,
         listLength: total,
-        totalPage: Math.ceil(length / limit),
-        isLoaded: false,
+        totalElement: endItem,
+        beginItem: beginItem,
+        endItem: endItem,
+        currentPage: 0,
+        totalPage: Math.ceil(total / limit),
         collapseList: collapseList,
+        isLoaded: false,
       });
-    });
+    } catch (error) {
+      console.error("❌ Error fetching good received list:", error);
+      toast.error("Lỗi khi tải danh sách nhập hàng!");
+      this.setState({ isLoaded: false, data: [], collapseList: [] });
+    }
   };
 
   closeStatusModal = () => {
@@ -266,19 +349,43 @@ class ImportProduct extends Component {
     this.setState({ filter });
   };
 
-  handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
+  handleFromDateChange = (date) => {
+    this.setState({ fromDate: date });
+  };
+
+  handleToDateChange = (date) => {
+    this.setState({ toDate: date });
+  };
+
+  handleDataReload = () => {
+    // Reset all filters
+    this.setState({
+      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      toDate: new Date(),
+      filter: {
         search: "",
-        filter,
-        fromDate,
-        toDate,
+        filter: "",
         orderBy: "",
         page: null,
         limit: null,
-      })
-    );
+      },
+    }, () => {
+      // Reload data after state reset
+      this.fetchSummary();
+    });
+  };
+
+  handleSubmitSearchForm = () => {
+    const { fromDate, toDate, filter } = this.state;
+
+    // Show alert if no filters selected
+    if (!fromDate && !toDate && (!filter.filter || filter.filter === "")) {
+      toast.warning("Vui lòng chọn ít nhất một bộ lọc!");
+      return;
+    }
+
+    // Call fetchSummary which will use the current state
+    this.fetchSummary();
   };
 
   handleModal = (stutus, openModal, closeModal) => {
@@ -309,25 +416,79 @@ class ImportProduct extends Component {
     if (!isCheck) {
       return {};
     }
-    const { dataInsert, data, editId, currentRow } = this.state;
-    const receiptNumber = dataInsert.receiptNumber;
-
+    const { dataInsert } = this.state;
     const errorInserts = {};
 
-    if (!receiptNumber) {
+    if (!dataInsert.receiptNumber || dataInsert.receiptNumber.trim() === "") {
       errorInserts.receiptNumber = "Số phiếu không được bỏ trống";
+    }
+
+    if (!dataInsert.supplier || dataInsert.supplier.trim() === "") {
+      errorInserts.supplier = "Nhà cung cấp không được bỏ trống";
+    }
+
+    if (!dataInsert.importer || dataInsert.importer.trim() === "") {
+      errorInserts.importer = "Người nhập không được bỏ trống";
+    }
+
+    if (dataInsert.status === null || dataInsert.status === undefined) {
+      errorInserts.status = "Trạng thái không được bỏ trống";
     }
 
     return errorInserts;
   };
 
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
+  onConfirm = async (toggleModal, closePopup) => {
+    const { dataInsert, editId } = this.state;
+    const errorInserts = this.checkDataInsert(true);
 
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
+    // Check validation
+    if (Object.keys(errorInserts).length > 0) {
+      toast.error("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      let res;
+      
+      if (editId) {
+        // Update
+        res = await fetchData.goodReceived.edit(dataInsert);
+      } else {
+        // Create
+        res = await fetchData.goodReceived.add(dataInsert);
+      }
+
+      if (res && res.status === 200) {
+        toast.success(
+          editId ? "Cập nhật dữ liệu thành công!" : "Thêm dữ liệu thành công!"
+        );
+
+        if (toggleModal) {
+          toggleModal();
+        }
+
+        // Reset form
+        this.setState({
+          dataInsert: {},
+          isShowForEdit: false,
+          editId: null,
+          isLoaded: false,
+        });
+
+        // Reload data
+        this.fetchSummary();
+      } else {
+        const message = getErrorMessageServer(res);
+        toast.error(message || "Thao tác thất bại!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("❌ Error saving good received:", error);
+      toast.error("Thao tác thất bại!");
+      this.setState({ isLoaded: false });
     }
   };
 
@@ -352,16 +513,19 @@ class ImportProduct extends Component {
     );
   };
 
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
+  onEditData = (item) => () => {
+    this.setState({
+      isShowForEdit: true,
+      editId: item.id,
+      dataInsert: item,
     });
   };
 
   onDeleteData = (id) => () => {
-    alert("Xóa thành công");
+    this.setState({
+      deleteId: id,
+      warningPopupModal: true,
+    });
   };
 
   toggleModalPopupDelete = () => {
@@ -373,37 +537,31 @@ class ImportProduct extends Component {
     });
   };
 
-  handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
+  handleDeleteRow = async () => {
+    const { deleteId } = this.state;
+
+    try {
+      const res = await fetchData.goodReceived.delete(deleteId);
+
+      if (res && res.status === 200) {
+        this.setState({
           warningPopupModal: false,
-        };
-      });
+        });
 
-      const data = res.data;
-
-      if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
-
-        this.setState({ message: "Xóa dữ liệu thành công" });
         toast.success("Xoá dữ liệu thành công!");
+        
+        // Reload data
+        this.fetchSummary();
       } else {
         const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa dữ liệu thất bại" });
-        this.toggleModal("popupMessage");
+        toast.error(message || "Xóa dữ liệu thất bại!");
+        this.setState({ warningPopupModal: false });
       }
-    });
+    } catch (error) {
+      console.error("❌ Error deleting good received:", error);
+      toast.error("Xóa dữ liệu thất bại!");
+      this.setState({ warningPopupModal: false });
+    }
   };
 
   toggleModal = (state, type) => {
@@ -465,6 +623,9 @@ class ImportProduct extends Component {
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>{e.supplier}</span>
+          </td>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.importer}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>
@@ -584,15 +745,7 @@ class ImportProduct extends Component {
                     {/* Header */}
                     <HeaderTable
                       dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
+                        this.handleDataReload()
                       }
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}

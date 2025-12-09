@@ -17,6 +17,7 @@ import {
   SUMMARY_REPORT,
   CONSIGNMENTS,
   STAMP_REQUEST,
+  GOOD_RECEIVED,
 } from "./endpoint";
 
 // Helper to extract product/material groups from API response
@@ -814,9 +815,27 @@ export const fetchData = {
       }
     },
 
+    addFormData: async (formData) => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.addStampRequest, formData, true);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
     edit: async (payload) => {
       try {
         const result = await callApi("post", STAMP_REQUEST.editStampRequest, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    editFormData: async (formData) => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.editStampRequest, formData, true);
         return result;
       } catch (error) {
         throw error;
@@ -852,6 +871,58 @@ export const fetchData = {
       } catch (error) {
         console.error("❌ Error in getListStampTemplate:", error);
         return null;
+      }
+    },
+  },
+
+  goodReceived: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", GOOD_RECEIVED.getListGoodReceived, payload);
+        console.log("📥 Good Received List API Response:", result);
+        return result?.data || null;
+      } catch (error) {
+        console.error("❌ Error fetching good received list:", error);
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = GOOD_RECEIVED.getDetailGoodReceived.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("❌ Error fetching good received detail:", error);
+        return null;
+      }
+    },
+
+    add: async (payload) => {
+      try {
+        const result = await callApi("post", GOOD_RECEIVED.addGoodReceived, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    edit: async (payload) => {
+      try {
+        const result = await callApi("post", GOOD_RECEIVED.editGoodReceived, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = GOOD_RECEIVED.deleteGoodReceived.replace("{id}", id);
+        const result = await callApi("delete", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
       }
     },
   },

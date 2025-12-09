@@ -223,7 +223,7 @@ class ShowEditData extends Component {
           </Col>
         </Row>
 
-        <Row className="mb-2">
+        {/* <Row className="mb-2">
           <Col md="12">
             <div className={`${classes.rowItem} ${classes.alignTop}`}>
               <Label className="form-control-label">Phương thức in</Label>
@@ -263,7 +263,7 @@ class ShowEditData extends Component {
               </p>
             </div>
           </Col>
-        </Row>
+        </Row> */}
 
         <Row className="mb-2">
           <Col md="12">

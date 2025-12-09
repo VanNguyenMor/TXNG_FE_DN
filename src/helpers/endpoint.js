@@ -134,6 +134,14 @@ export const STAMP_REQUEST = {
   requestProvideStamp: "requestprovidestamp/requestprovincestamp?id={id}",
 };
 
+export const GOOD_RECEIVED = {
+  getListGoodReceived: "goodsreceivednote/getall",
+  getDetailGoodReceived: "goodsreceivednote/get?id={id}",
+  addGoodReceived: "goodsreceivednote/create",
+  editGoodReceived: "goodsreceivednote/update",
+  deleteGoodReceived: "goodsreceivednote/delete/{id}",
+};
+
 export const PAYLOAD = {
   defaultPayLoad: {
     search: "",
