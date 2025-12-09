@@ -82,7 +82,8 @@ class BusinessInformation extends Component {
       totalPage: 0,
       filter: {
         search: "",
-        filter: "",
+        statusFilter: "",
+        effectFilter: "",
         orderBy: "",
         page: null,
         limit: null,
@@ -148,7 +149,9 @@ class BusinessInformation extends Component {
     try {
       const payload = data ? JSON.parse(data) : {};
       
+      
       const res = await fetchData.stampRequest.getList(payload);
+      
       
       if (!res) {
         this.setState({ isLoaded: false, data: [], collapseList: [] });
@@ -170,7 +173,7 @@ class BusinessInformation extends Component {
       const { limit } = this.state;
       let collapseList = [];
 
-      const tableData = stampRequests.map((item, index) => ({
+      let tableData = stampRequests.map((item, index) => ({
         id: item.id || item.ID,
         requestDate: item.requestedDate 
           ? moment(item.requestedDate).format("DD/MM/YYYY") 
@@ -186,6 +189,14 @@ class BusinessInformation extends Component {
         index: index + 1,
         color: "",
       }));
+
+      if (payload.status !== null && payload.status !== undefined) {
+        tableData = tableData.filter(item => item.currentStatus === payload.status);
+      }
+
+      if (payload.requestedUsedStatus !== null && payload.requestedUsedStatus !== undefined) {
+        tableData = tableData.filter(item => item.effect === payload.requestedUsedStatus);
+      }
 
       tableData.forEach((item) => {
         collapseList.push({ id: item.id, collapse: false });
@@ -410,7 +421,8 @@ class BusinessInformation extends Component {
   clearFilter = () => {
     let clearFilter = {
       search: "",
-      filter: "",
+      statusFilter: "",
+      effectFilter: "",
       orderBy: "",
       page: null,
       limit: null,
@@ -421,23 +433,54 @@ class BusinessInformation extends Component {
   handleChangeSelectFilter = (value, name) => {
     let { filter } = this.state;
 
-    filter[name] = value;
+    filter[name] = value ? String(value) : "";
     this.setState({ filter });
   };
 
-  handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
+  handleDataReload = () => {
+    const resetFilter = {
+      search: "",
+      statusFilter: "",
+      effectFilter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    };
+    
+    this.setState({ filter: resetFilter }, () => {
+      this.fetchSummary(JSON.stringify({
         search: "",
-        filter,
-        fromDate,
-        toDate,
         orderBy: "",
         page: null,
         limit: null,
-      })
-    );
+      }));
+    });
+  };
+
+  handleSubmitSearchForm = () => {
+    const { filter } = this.state;
+    
+    if (!filter.statusFilter && !filter.effectFilter) {
+      alert("Vui lòng chọn ít nhất một tiêu chí tìm kiếm!");
+      return;
+    }
+    
+    const payload = {
+      search: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    };
+    
+    if (filter.statusFilter !== null && filter.statusFilter !== undefined && filter.statusFilter !== "") {
+      payload.status = parseInt(filter.statusFilter);
+    }
+    
+    if (filter.effectFilter !== null && filter.effectFilter !== undefined && filter.effectFilter !== "") {
+      payload.requestedUsedStatus = parseInt(filter.effectFilter);
+    }
+    
+    this.fetchSummary(JSON.stringify(payload));
   };
 
   handleModal = (status, openModal, closeModal) => {
@@ -466,52 +509,6 @@ class BusinessInformation extends Component {
       .map((item) => (item.collapse = !item.collapse));
 
     this.setState({ collapseList });
-  };
-  checkDataInsert = (isCheck) => {
-    if (!isCheck) {
-      return {};
-    }
-    const { dataInsert, data, editId, currentRow } = this.state;
-    const title = dataInsert.title;
-
-    const errorInserts = {};
-
-    if (!title) {
-      errorInserts.title = "Số phiếu không được bỏ trống";
-    }
-
-    return errorInserts;
-  };
-
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
-    console.log(dataInsert);
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
-    }
-  };
-
-  onHandleChangeValue = (data) => {
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          dataInsert: data,
-        };
-      },
-      () => {
-        const errorInserts = this.checkDataInsert();
-
-        this.setState((previousState) => {
-          return {
-            ...previousState,
-            errorInserts,
-          };
-        });
-      }
-    );
   };
 
   onShowHistoryModal = (e) => () => {
@@ -804,6 +801,7 @@ class BusinessInformation extends Component {
       currentHistoryData,
       STATUS_OPTIONS,
       EFFECT_OPTIONS,
+      filter,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -844,17 +842,7 @@ class BusinessInformation extends Component {
                 <Row>
                   <div className="col">
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
-                      }
+                      dataReload={this.handleDataReload}
                       readOnly={isShowForHistoryList}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
@@ -882,11 +870,12 @@ class BusinessInformation extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
+                                  name="statusFilter"
                                   title="Lọc theo trạng thái"
                                   data={STATUS_OPTIONS}
                                   labelName="title"
                                   val="id"
+                                  value={filter.statusFilter ? parseInt(filter.statusFilter) : null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -898,11 +887,12 @@ class BusinessInformation extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
+                                  name="effectFilter"
                                   title="Lọc theo cấp phép"
                                   data={EFFECT_OPTIONS}
                                   labelName="title"
                                   val="id"
+                                  value={filter.effectFilter ? parseInt(filter.effectFilter) : null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>

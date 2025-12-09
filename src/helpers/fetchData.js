@@ -759,39 +759,27 @@ export const fetchData = {
 
     getListDiaryComboBox: async () => {
       try {
-        console.log("🌐 Calling API: batch/gettraces");
         const result = await callApi("get", CONSIGNMENTS.getListDiaryComboBox);
-        console.log("✅ API batch/gettraces response:", result);
-        // API might return nested data, try to extract array
         return result?.data?.traces || result?.data || null;
       } catch (error) {
-        console.error("❌ API batch/gettraces error:", error);
         return null;
       }
     },
 
     getListClassifyComboBox: async () => {
       try {
-        console.log("🌐 Calling API: batch/getbatchcategories");
         const result = await callApi("get", CONSIGNMENTS.getListClassifyComboBox);
-        console.log("✅ API batch/getbatchcategories response:", result);
-        // API returns { data: { batchCategories: [...] } }
         return result?.data?.batchCategories || result?.data || null;
       } catch (error) {
-        console.error("❌ API batch/getbatchcategories error:", error);
         return null;
       }
     },
 
     getListStampTemplate: async () => {
       try {
-        console.log("🌐 Calling API: stamptemplate/getall");
         const result = await callApi("get", CONSIGNMENTS.getListStampTemplate);
-        console.log("✅ API stamptemplate/getall response:", result);
-        // API might return nested data in various formats
         return result?.data?.stampTemplates || result?.data?.stamps || result?.data || null;
       } catch (error) {
-        console.error("❌ API stamptemplate/getall error:", error);
         return null;
       }
     },
@@ -800,74 +788,56 @@ export const fetchData = {
   stampRequest: {
     getList: async (payload = {}) => {
       try {
-        console.log("🌐 Calling API: requestprovidestamp/getall", payload);
         const result = await callApi("post", STAMP_REQUEST.getListStampRequest, payload);
-        console.log("✅ API requestprovidestamp/getall response:", result);
         return result?.data || null;
       } catch (error) {
-        console.error("❌ Lỗi fetch danh sách xin cấp tem:", error);
         return null;
       }
     },
 
     getDetail: async (id) => {
       try {
-        console.log("🌐 Calling API: requestprovidestamp/get/" + id);
         const endpoint = STAMP_REQUEST.getDetailStampRequest.replace("{id}", id);
         const result = await callApi("get", endpoint);
-        console.log("✅ API requestprovidestamp/get response:", result);
         return result?.data || null;
       } catch (error) {
-        console.error("❌ Lỗi fetch chi tiết xin cấp tem:", error);
         return null;
       }
     },
 
     add: async (payload) => {
       try {
-        console.log("🌐 Calling API: requestprovidestamp/create", payload);
         const result = await callApi("post", STAMP_REQUEST.addStampRequest, payload);
-        console.log("✅ API requestprovidestamp/create response:", result);
         return result;
       } catch (error) {
-        console.error("❌ Lỗi thêm xin cấp tem:", error);
         throw error;
       }
     },
 
     edit: async (payload) => {
       try {
-        console.log("🌐 Calling API: requestprovidestamp/update", payload);
         const result = await callApi("post", STAMP_REQUEST.editStampRequest, payload);
-        console.log("✅ API requestprovidestamp/update response:", result);
         return result;
       } catch (error) {
-        console.error("❌ Lỗi cập nhật xin cấp tem:", error);
         throw error;
       }
     },
 
     delete: async (id) => {
       try {
-        console.log("🌐 Calling API: requestprovidestamp/delete/" + id);
         const endpoint = STAMP_REQUEST.deleteStampRequest.replace("{id}", id);
         const result = await callApi("delete", endpoint);
-        console.log("✅ API requestprovidestamp/delete response:", result);
         return result;
       } catch (error) {
-        console.error("❌ Lỗi xóa xin cấp tem:", error);
         throw error;
       }
     },
 
     getListProduct: async () => {
       try {
-        console.log("🌐 Calling API: product/getall");
         const result = await callApi("get", STAMP_REQUEST.getListProductComboBox);
-        console.log("✅ API product/getall response:", result);
         return result?.data || null;
       } catch (error) {
-        console.error("❌ Lỗi fetch danh sách sản phẩm:", error);
         return null;
       }
     },
