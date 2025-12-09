@@ -116,27 +116,48 @@ class InsertOrUpadte extends Component {
   };
 
   onChangeSelect = (name) => (value) => {
+    const { SUPPLIER_LIST } = this.props;
+    
+    // If changing supplier, auto-fill the supplier name
+    let stateUpdate = {
+      [name]: value,
+      ...(name === "importTypeId"
+        ? {
+            ingredientId: null,
+            productId: null,
+            warehouseId: null,
+            quantity: "",
+            vat: "",
+            price: "",
+            unit: "",
+            grDetails: [], // Reset detail list when changing type
+          }
+        : {}),
+    };
+
+    // Auto-fill supplier name when supplierId is selected
+    if (name === "supplierId" && value && SUPPLIER_LIST && SUPPLIER_LIST.length > 0) {
+      const selectedSupplier = SUPPLIER_LIST.find(
+        s => String(s.id) === String(value)
+      );
+      if (selectedSupplier) {
+        stateUpdate.supplier = selectedSupplier.name || "";
+      }
+    }
+
     this.setState(
       (prevState) => ({
         ...prevState,
-        [name]: value,
-        ...(name === "importTypeId"
-          ? {
-              ingredientId: null,
-              productId: null,
-              warehouseId: null,
-              quantity: "",
-              vat: "",
-              price: "",
-              unit: "",
-              grDetails: [], // Reset detail list when changing type
-            }
-          : {}),
+        ...stateUpdate,
       }),
       () => {
         // Fetch unit when ingredient or product is selected
         if (name === "ingredientId" || name === "productId") {
           this.fetchUnitForItem(name, value);
+        }
+        // Update parent component
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
         }
       }
     );
@@ -150,14 +171,16 @@ class InsertOrUpadte extends Component {
 
     try {
       let unitName = "";
+      let unitId = "";
       
       if (fieldName === "ingredientId") {
         // Fetch unit for ingredient/material
         const { INGREDIENT_LIST } = this.props;
         if (INGREDIENT_LIST && Array.isArray(INGREDIENT_LIST)) {
           const ingredient = INGREDIENT_LIST.find(item => String(item.id) === String(itemId));
-          if (ingredient && ingredient.unit) {
-            unitName = ingredient.unit;
+          if (ingredient) {
+            unitName = ingredient.unit || "";
+            unitId = ingredient.unitId || ingredient.id || ""; // Try to get unitId, fallback to item id
           }
         }
       } else if (fieldName === "productId") {
@@ -165,13 +188,14 @@ class InsertOrUpadte extends Component {
         const { PRODUCT_LIST } = this.props;
         if (PRODUCT_LIST && Array.isArray(PRODUCT_LIST)) {
           const product = PRODUCT_LIST.find(item => String(item.id) === String(itemId));
-          if (product && product.unit) {
-            unitName = product.unit;
+          if (product) {
+            unitName = product.unit || "";
+            unitId = product.unitId || product.id || ""; // Try to get unitId, fallback to item id
           }
         }
       }
 
-      this.setState({ unit: unitName });
+      this.setState({ unit: unitId || unitName }); // Prioritize unitId
     } catch (error) {
       console.error("Error fetching unit:", error);
     }
@@ -186,6 +210,11 @@ class InsertOrUpadte extends Component {
           ...previousState,
           [name]: value,
         };
+      },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
     );
   };
@@ -199,7 +228,14 @@ class InsertOrUpadte extends Component {
   };
 
   handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
+    this.setState(
+      { file: files[0]?.name || "" },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
   };
 
   toggleModal = (state) => {
@@ -218,6 +254,7 @@ class InsertOrUpadte extends Component {
   // Handle adding detail to list
   onAddDetail = () => {
     const { ingredientId, productId, warehouseId, quantity, price, vat, unit } = this.state;
+    const { INGREDIENT_LIST, PRODUCT_LIST } = this.props;
     
     // Validation
     if (!ingredientId && !productId) {
@@ -240,6 +277,24 @@ class InsertOrUpadte extends Component {
       return;
     }
 
+    // Get unitId - try to find from lists
+    let unitId = unit; // Default to unit (which should be unitId from fetchUnitForItem)
+    let unitName = unit;
+    
+    if (ingredientId && INGREDIENT_LIST) {
+      const ingredient = INGREDIENT_LIST.find(i => String(i.id) === String(ingredientId));
+      if (ingredient) {
+        unitId = ingredient.unitId || unit;
+        unitName = ingredient.unit || unit;
+      }
+    } else if (productId && PRODUCT_LIST) {
+      const product = PRODUCT_LIST.find(p => String(p.id) === String(productId));
+      if (product) {
+        unitId = product.unitId || unit;
+        unitName = product.unit || unit;
+      }
+    }
+
     // Create detail item
     const detailItem = {
       id: `detail_${Date.now()}`,
@@ -249,7 +304,8 @@ class InsertOrUpadte extends Component {
       quantity: Number(quantity),
       price: Number(price),
       vat: Number(vat),
-      unit,
+      unit: unitId,  // Store unitId
+      unitName: unitName,  // Store unitName for display
       amount: this.calculateTotalAmount(quantity, price, vat),
       // Store names for display
       ingredientName: this.getItemName("ingredient", ingredientId),
@@ -268,7 +324,12 @@ class InsertOrUpadte extends Component {
       price: 0,
       vat: 0,
       unit: "",
-    }));
+    }), () => {
+      // Update parent component with new state
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue(this.state);
+      }
+    });
   };
 
   // Helper method to get item name from ID
@@ -307,7 +368,12 @@ class InsertOrUpadte extends Component {
   onDeleteDetail = (detailId) => {
     this.setState((prevState) => ({
       grDetails: prevState.grDetails.filter(item => item.id !== detailId),
-    }));
+    }), () => {
+      // Update parent component with new state
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue(this.state);
+      }
+    });
   };
 
   render() {
@@ -375,7 +441,7 @@ class InsertOrUpadte extends Component {
                 onChange={this.onChangeValue("receiptNumber")}
                 type="text"
                 value={receiptNumber}
-                readOnly={id}
+                readOnly
               />
             
             </InputGroup>

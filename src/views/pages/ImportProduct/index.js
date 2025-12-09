@@ -231,6 +231,7 @@ class ImportProduct extends Component {
             item.groupName ||
             "",
           unit: item.unitName || item.unit || item.Unit || "",
+          unitId: String(item.unitId || item.UnitID || item.unitID || ""),
         }));
       }
 
@@ -282,6 +283,7 @@ class ImportProduct extends Component {
           id: String(item.id || item.ID || ""),
           name: item.productName || item.ProductName || item.name || "",
           unit: item.unitName || item.unit || item.Unit || "",
+          unitId: String(item.unitId || item.UnitID || item.unitID || ""),
         }));
       }
 
@@ -528,9 +530,10 @@ class ImportProduct extends Component {
         };
       });
     } else {
-     const resCurrentCompany = await fetchData.account.getCurrentCompany();
-     const currentUserName = resCurrentCompany?.company?.companyName || "";
-     console.log(resCurrentCompany, "currentUserName=======")
+      const resCurrentCompany = await fetchData.account.getCurrentCompany();
+      const currentUserName = resCurrentCompany?.company?.companyName || "";
+      console.log(resCurrentCompany, "currentUserName=======")
+     
       this.setState((previousState) => {
         return {
           ...previousState,
@@ -560,15 +563,11 @@ class ImportProduct extends Component {
     const { dataInsert } = this.state;
     const errorInserts = {};
 
-    if (!dataInsert.receiptNumber || dataInsert.receiptNumber.trim() === "") {
-      errorInserts.receiptNumber = "Số phiếu không được bỏ trống";
-    }
-
-    if (!dataInsert.supplier || dataInsert.supplier.trim() === "") {
+    if (!dataInsert.supplier || String(dataInsert.supplier).trim() === "") {
       errorInserts.supplier = "Nhà cung cấp không được bỏ trống";
     }
 
-    if (!dataInsert.importer || dataInsert.importer.trim() === "") {
+    if (!dataInsert.importer || String(dataInsert.importer).trim() === "") {
       errorInserts.importer = "Người nhập không được bỏ trống";
     }
 
@@ -578,10 +577,17 @@ class ImportProduct extends Component {
   onConfirm = async (toggleModal, closePopup) => {
     const { dataInsert, editId } = this.state;
     const errorInserts = this.checkDataInsert(true);
-
+    console.log("dataInsert:", dataInsert);
+    
     // Check validation
     if (Object.keys(errorInserts).length > 0) {
       toast.error("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    // Validate GRDetails is not empty
+    if (!dataInsert.grDetails || dataInsert.grDetails.length === 0) {
+      toast.error("Vui lòng thêm chi tiết phiếu nhập!");
       return;
     }
 
@@ -590,15 +596,39 @@ class ImportProduct extends Component {
     try {
       let res;
 
-      // If create, set status to 0
-      const dataToSubmit = editId ? dataInsert : { ...dataInsert, status: 0 };
+      // Use FormData instead of JSON
+      const formData = new FormData();
+      
+      // Add simple fields
+      formData.append("GRTime", moment(dataInsert.creationDate).toISOString());
+      formData.append("PartnerID", dataInsert.supplierId || "");
+      formData.append("ReceiptPerson", dataInsert.importer || "");
+      formData.append("Note", dataInsert.note || "");
+      formData.append("GRType", dataInsert.importTypeId ? parseInt(dataInsert.importTypeId) : 0);
+      
+      // Add GRDetails as JSON string
+      formData.append("GRDetails", JSON.stringify(
+        (dataInsert.grDetails || []).map(detail => ({
+          ID: detail.id || "",
+          MaterialID: detail.ingredientId || detail.productId || "",
+          UnitID: detail.unit || "",
+          Quantity: detail.quantity || 0,
+          UnitPrice: detail.price || 0,
+          PerVAT: detail.vat || 0,
+          WarehouseID: detail.warehouseId || "",
+          RefQRCode: detail.refQRCode || "",
+        }))
+      ));
+
+      console.log("formData:", formData);
 
       if (editId) {
-        // Update
-        res = await fetchData.goodReceived.edit(dataToSubmit);
+        // Update - add ID
+        formData.append("ID", editId);
+        res = await fetchData.goodReceived.edit(formData);
       } else {
         // Create
-        res = await fetchData.goodReceived.add(dataToSubmit);
+        res = await fetchData.goodReceived.add(formData);
       }
 
       if (res && res.status === 200) {
