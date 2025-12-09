@@ -182,7 +182,7 @@ class BusinessInformation extends Component {
         stampRange: item.startNum && item.endNum 
           ? `${item.startNum} - ${item.endNum}` 
           : item.stampRange || item.StampRange || "-",
-        printMethod: item.isPrint === true ? "Yêu cầu in" : "Tự in",
+        printMethod: item.isPrint === true ? "Tự in" : "Yêu cầu in",
         effect: item.requestedUsedStatus || item.RequestedUsedStatus || 0,
         currentStatus: item.status || item.Status || 0,
         parentID: "",
@@ -230,15 +230,16 @@ class BusinessInformation extends Component {
 
       if (detailData) {
         const request = detailData.request || detailData;
+        console.log("Detail data from API:", request);
         const initialData = {
           id: item.id,
           quantity: request.quantity || request.Quantity || 0,
-          productId: request.productId || request.ProductId || null,
-          printMethod: request.printMethod || 0,
-          stampRange: request.stampRange || request.StampRange || "",
-          notes: request.notes || request.Notes || "",
+          stampRange: request.stampTemplateID || request.StampTemplateID || "",
+          printMethod: request.isPrint === true ? 1 : 0,
+          notes: request.note || request.Note || "",
           status: request.status || request.Status || 0,
         };
+        console.log("Initialized data:", initialData);
 
         this.setState({
           isShowForDetail: true,
@@ -269,20 +270,29 @@ class BusinessInformation extends Component {
     this.setState({ isLoaded: true });
 
     try {
+      // Parse quantity to ensure it's a valid number
+      const parsedQuantity = parseInt(dataInsert.quantity) || 0;
+      
       const payload = {
-        id: dataInsert.id || null,
-        quantity: dataInsert.quantity || 0,
-        productId: dataInsert.productId || null,
-        printMethod: dataInsert.printMethod || 0,
-        stampRange: dataInsert.stampRange || "",
-        notes: dataInsert.notes || "",
+        Id: dataInsert.id || null,
+        Quantity: parsedQuantity,
+        StampTemplateID: dataInsert.stampRange || "",
+        IsPrint: dataInsert.printMethod === 1 ? true : false,
+        Note: dataInsert.notes || "",
+        FileUpload: "",
+        Files: [],
+        Amount: 0,
       };
+
+      console.log("📤 Saving stamp request with payload:", payload);
 
       // Call API
       let result;
       if (dataInsert.id) {
         // Update
+        console.log("🔄 Updating stamp request ID:", dataInsert.id);
         result = await fetchData.stampRequest.edit(payload);
+        console.log("📥 Update response:", result);
         if (result && result.status === 200) {
           toast.success("Cập nhật xin cấp tem thành công!");
         } else {
@@ -292,7 +302,9 @@ class BusinessInformation extends Component {
         }
       } else {
         // Create
+        console.log("➕ Creating new stamp request");
         result = await fetchData.stampRequest.add(payload);
+        console.log("📥 Create response:", result);
         if (result && result.status === 200) {
           toast.success("Thêm xin cấp tem thành công!");
         } else {
@@ -372,14 +384,9 @@ class BusinessInformation extends Component {
       errors.quantity = "Số lượng không được trống và phải lớn hơn 0";
     }
 
-    // Validate product
-    if (!dataInsert.productId) {
-      errors.productId = "Vui lòng chọn sản phẩm";
-    }
-
-    // Validate stamp range
+    // Validate stamp template
     if (!dataInsert.stampRange) {
-      errors.stampRange = "Vui lòng chọn dải tem";
+      errors.stampRange = "Vui lòng chọn mẫu in tem";
     }
 
     return errors;

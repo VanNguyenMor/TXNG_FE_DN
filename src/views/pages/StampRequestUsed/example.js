@@ -3,566 +3,101 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
+  TextInput,
+  Keyboard,
   Image,
-  Animated,
-  Easing,
-  Platform,
+  Dimensions,
 } from 'react-native';
-import RNPickerSelect from 'react-native-picker-select';
-import moment from 'moment';
-import RNQRGenerator from 'rn-qr-generator';
-import RNPrint from 'react-native-print';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import DocumentPicker from 'react-native-document-picker';
+import FileViewer from 'react-native-file-viewer';
+import RNFS from 'react-native-fs';
+import RenderHtml from 'react-native-render-html';
+import {ICONS} from '../../../assets/imgs';
+
+import FormDelete from '../../components/formDelete';
 
 import _Toast from '../../bases/controls/toast';
 
-import NumberFromTo from '../../components/numberFromTo';
-
 import BoxMainContainer from '../../containers/components/boxMain';
 
-import {checkOneClaim} from '../../utils/user';
-
-import {ICONS} from '../../../assets/imgs';
-
-import style from './style';
-
-import {DEFAULTS, KEY_NAVIGATIONS, PAGINATIONS} from '../../constants/config';
-
-import {manageItemConstant} from '../../states/manageItem';
-
-import {
-  CLAIMS,
-  STAMP_STATUSES_BROWSE,
-  STAMP_STATUSES_LICENSE,
-  STAMP_STATUSES,
-} from '../../constants/data';
+import {getErrorMessageServer} from '../../utils/errorMessageServer';
 
 import DatePicker from '../../bases/controls/datePicker';
 
-import FormQuestion from '../../components/formQuestion';
+import style from './style';
 
-import ModalComponent from '../../components/modal';
+import {CLAIMS, STATUS_STAMP_REQUESTS} from '../../constants/data';
 
+import {manageItemConstant} from '../../states/manageItem';
+
+import {ModalSelect} from '../../bases/controls/select';
+
+import {
+  DELAYS,
+  EXTENSION_FILE_WORD,
+  EXTENSION_FILE_EXCEL,
+  EXTENSION_FILE_PDF,
+  EXTENSION_FILE_IMAGE,
+} from '../../constants/config';
+
+import {
+  numberWithCommas,
+  validExtensionFileImage,
+  getFileName,
+  replaceHtml,
+} from '../../bases/helper';
+
+import {Guid} from 'guid-typescript';
+
+import _Image from '../../bases/controls/image';
 import {COLORS} from '../../constants/theme';
+import moment from 'moment';
+import {ScrollView} from 'react-native-gesture-handler';
+import FileUpload from '../../components/fileUpload';
 import {AuthenticateView} from '../../utils/auth';
-import FormDelete from '../../components/formDelete';
-import {getErrorMessageServer} from '../../utils/errorMessageServer';
-import {numberWithCommas} from '../../bases/helper';
 
-class Print extends Component {
+class AddConsignment extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      isQR: false,
-    };
-  }
-  componentDidMount() {}
-  onUpdate = () => {
-    const {isQR} = this.state;
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        isQR: !isQR,
-      };
-    });
-  };
-
-  onSubmit = () => {
-    const {isQR} = this.state;
-    if (isQR) {
-      this.props.onPrintListQR();
-    } else {
-      this.props.onPrintListStamp();
-    }
-  };
-
-  render() {
-    const {isQR, size, number} = this.state;
-    const CustomCheckbox = ({title, isList}) => {
-      let styleTrue = {
-        backgroundColor: isQR ? COLORS.primary : COLORS.white,
-      };
-      let styleFalse = {
-        backgroundColor: isQR ? COLORS.white : COLORS.primary,
-      };
-      return (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={style.checkbox}
-          onPress={this.onUpdate}>
-          <View style={style.outCheckbox}>
-            <View style={[style.inCheckbox, isList ? styleFalse : styleTrue]} />
-          </View>
-          <Text>{title}</Text>
-        </TouchableOpacity>
-      );
-    };
-    return (
-      <View style={style.print}>
-        <View style={style.printFlex}>
-          <View style={style.checkbox}>
-            <CustomCheckbox title="Danh sách mã tem" isList={true} />
-            <CustomCheckbox title="Danh sách mã QR" isList={false} />
-          </View>
-        </View>
-        <TouchableOpacity
-          onPress={this.onSubmit}
-          activeOpacity={0.8}
-          style={style.confirmFunctionItem}>
-          <Text style={style.confirmFunctionItemText}>ĐỒNG Ý</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-}
-
-class ProductItem extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      animationTranslateX: new Animated.Value(0),
-      claim: true,
-    };
-
-    this.pageXStart = 0;
-    this.pageXEnd = 0;
-    this.pageYStart = 0;
-    this.pageYEnd = 0;
-    this.increase = 0;
-    this.isDelete = false;
-    this.isRequestConfirm = false;
-    this.isRequestManageItem = false;
-    this.isPrint = false;
-  }
-
-  async componentDidMount() {
-    let claim = await checkOneClaim([CLAIMS.manageItem.delete]);
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        claim,
-      };
-    });
-  }
-
-  onTouchStart = e => {
-    this.pageXStart = e.nativeEvent.pageX;
-    this.pageXEnd = 0;
-    this.pageYStart = e.nativeEvent.pageY;
-    this.pageYEnd = 0;
-    this.increase = 0;
-    this.isDelete = false;
-    this.isRequestConfirm = false;
-    this.isRequestManageItem = false;
-    this.isPrint = false;
-  };
-
-  onTouchMove = e => {
-    const pageXEndOld = this.pageXEnd;
-
-    if (pageXEndOld != 0 && Math.abs(pageXEndOld - e.nativeEvent.pageX) <= 2) {
-      return;
-    }
-
-    this.pageXEnd = e.nativeEvent.pageX;
-    this.pageYEnd = e.nativeEvent.pageY;
-
-    if (Math.abs(this.pageXStart - this.pageXEnd) > DEFAULTS.offSetMinSwipe) {
-      const listProductRef = this.props.listProductRef;
-
-      if (listProductRef) {
-        listProductRef.setNativeProps({scrollEnabled: false});
-      }
-
-      if (pageXEndOld > this.pageXEnd) {
-        this.increase -= DEFAULTS.offSetIncreaseSwipe;
-      } else {
-        this.increase += DEFAULTS.offSetIncreaseSwipe;
-      }
-
-      Animated.timing(this.state.animationTranslateX, {
-        toValue: this.increase,
-        duration: 5,
-        delay: 0,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }).start();
-
-      if (this.increase < -66 || this.increase > 0) {
-        Animated.timing(this.state.animationTranslateX, {
-          toValue: this.increase < -66 ? -66 : 0,
-          duration: 5,
-          delay: 0,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }).start();
-      }
-    }
-  };
-
-  onTouchEnd = id => e => {
-    if (
-      this.isDelete ||
-      this.isRequestConfirm ||
-      this.isRequestManageItem ||
-      this.isPrint
-    ) {
-      return;
-    }
-
-    this.pageXEnd = e.nativeEvent.pageX;
-    this.pageYEnd = e.nativeEvent.pageY;
-
-    if (
-      Math.abs(this.pageXStart - this.pageXEnd) <=
-        DEFAULTS.offSetMinSwipeEdit &&
-      Math.abs(this.pageYStart - this.pageYEnd) <= DEFAULTS.offSetMinSwipeEdit
-    ) {
-      this.props.onEdit(id);
-
-      this.increase = 0;
-      this.pageXStart = 0;
-      this.pageYStart = 0;
-      this.pageYEnd = 0;
-      this.pageXEnd = 0;
-      this.isDelete = false;
-      this.isRequestConfirm = false;
-      this.isRequestManageItem = false;
-      this.isPrint = false;
-      return;
-    }
-
-    if (this.increase <= DEFAULTS.offSetMinSwipeExpand) {
-      this.increase = -66;
-    } else {
-      this.increase = 0;
-    }
-
-    Animated.timing(this.state.animationTranslateX, {
-      toValue: this.increase,
-      duration: 5,
-      delay: 0,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start(() => {
-      const listProductRef = this.props.listProductRef;
-      if (listProductRef) {
-        listProductRef.setNativeProps({scrollEnabled: true});
-      }
-    });
-
-    this.increase = 0;
-    this.pageXStart = 0;
-    this.pageYStart = 0;
-    this.pageYEnd = 0;
-    this.pageXEnd = 0;
-    this.isDelete = false;
-    this.isRequestConfirm = false;
-    this.isRequestManageItem = false;
-    this.isPrint = false;
-  };
-
-  onDelete = id => () => {
-    this.isDelete = true;
-    this.props.onDelete(id).then(() => {
-      this.isDelete = false;
-    });
-  };
-  onRequestConfirm = item => () => {
-    this.isRequestConfirm = true;
-    this.props.onRequestConfirm(item).then(() => {
-      this.isRequestConfirm = false;
-    });
-  };
-  onRequestManageItem = (id, status, requestedUsedStatus, isUsed) => () => {
-    this.isRequestManageItem = true;
-    this.props.onRequestManageItem(id, status, requestedUsedStatus, isUsed)();
-  };
-
-  onPaymentManageItem = id => () => {
-    this.isRequestManageItem = true;
-    this.props.onPaymentManageItem(id)();
-  };
-
-  onPrintQRCode = item => () => {
-    this.isPrint = true;
-    // this.props.onPrintQRCode(item).then(() => {
-    //   this.isPrint = false;
-    // });
-    this.props.onPrintQRCode(item);
-    setTimeout(() => {
-      this.isPrint = false;
-    }, 0);
-  };
-
-  onPrintListStamp2 = item => () => {
-    this.isPrint = true;
-    this.props.onPrintListStamp2(item);
-    setTimeout(() => {
-      this.isPrint = false;
-    }, 0);
-  };
-
-  render() {
-    const {item, isConfirm} = this.props;
-    const {claim} = this.state;
-    const {status, requestedUsedStatus, isPrint} = item;
-
-    let titleBrowse = STAMP_STATUSES[status || 0].titleBrowse;
-    let titleLicense = STAMP_STATUSES[requestedUsedStatus || 0].titleLicense;
-
-    let colorBrowse = STAMP_STATUSES[status || 0].color;
-    let styleBrowse = {color: colorBrowse, borderColor: colorBrowse};
-    let colorLicense = STAMP_STATUSES[requestedUsedStatus || 0].color;
-    let styleLicense = {color: colorLicense, borderColor: colorLicense};
-
-    let showDeliveryDate = status == 2 && requestedUsedStatus != 3;
-    let showRequestBrowse = status == 0 && requestedUsedStatus == 0;
-    let showRequestBrowseFile = status == 3 && requestedUsedStatus == 0;
-    let showRequestLicense =
-      (status == 2 && requestedUsedStatus == 0) ||
-      (status == 2 && requestedUsedStatus == 3);
-    let showDelete =
-      (status == 0 && requestedUsedStatus == 0) ||
-      (status == 3 && requestedUsedStatus == 0);
-    let showPrint = status == 2 && requestedUsedStatus == 2 && isPrint;
-
-    let showPaymentButton = status == 4 && isPrint == false;
-    return (
-      <>
-        {isConfirm ? (
-          <View
-            onTouchEnd={this.onTouchEnd(item.id)}
-            onTouchMove={claim && showDelete ? this.onTouchMove : null}
-            onTouchStart={this.onTouchStart}
-            style={style.bodyItem}>
-            <Animated.View
-              style={[
-                style.bodyItemInfo,
-                {
-                  transform: [
-                    {
-                      translateX: this.state.animationTranslateX,
-                    },
-                  ],
-                },
-              ]}>
-              <View style={style.bodyItemInfoWrap}>
-                <Text style={style.bodyItemInfoName}>
-                  Ngày yêu cầu:{' '}
-                  {moment(item.requestedDate).format('DD/MM/YYYY')}
-                </Text>
-                <Text style={style.bodyItemInfoDescription}>
-                  SL yêu cầu:{' '}
-                  {item.quantity ? numberWithCommas(item.quantity, '.') : 0}
-                </Text>
-                <Text style={style.bodyItemInfoDescription}>
-                  Dải tem từ: {item.startNum} - {item.endNum}
-                </Text>
-                {/* {item.requestedDate && (
-              <Text style={style.bodyItemInfoDescription}>
-                Ngày yêu cầu: {moment().format('DD/MM/YYYY')}
-              </Text>
-            )} */}
-                <Text style={style.bodyItemInfoDescription}>
-                  Hình thức: {isPrint ? 'Tự in' : 'Yêu cầu in'}
-                </Text>
-                {showDeliveryDate && item.deliveryDate && (
-                  <Text style={style.bodyItemInfoDescription}>
-                    Ngày trả tem:{' '}
-                    {moment(item.deliveryDate).format('DD/MM/YYYY')}
-                  </Text>
-                )}
-                {/* <Text style={style.bodyItemInfoDescription}>
-              Người xử lý: {item.confirmedBy}
-            </Text> */}
-                {status == 3 && item.reason && (
-                  <Text style={style.bodyItemInfoDescription}>
-                    Lý do không duyệt: {item.reason}
-                  </Text>
-                )}
-                {requestedUsedStatus == 3 && item.requestedUsedReason && (
-                  <Text style={style.bodyItemInfoDescription}>
-                    Lý do không cấp phép: {item.requestedUsedReason}
-                  </Text>
-                )}
-                <View style={style.wrap}>
-                  <Text style={[style.bodyItemInfoStatus, {...styleBrowse}]}>
-                    {titleBrowse}
-                  </Text>
-                  <Text
-                    style={[
-                      style.bodyItemInfoStatus,
-                      style.marginFilter,
-                      {...styleLicense},
-                    ]}>
-                    {titleLicense}
-                  </Text>
-                </View>
-              </View>
-              {/* {showRequestBrowse && (
-                <TouchableOpacity
-                  onPress={this.onRequestConfirm(item)}
-                  activeOpacity={0.8}
-                  style={style.bodyItemLock}>
-                  <ICONS.requestConfirm width={24} height={24} />
-                </TouchableOpacity>
-              )} */}
-              {showRequestBrowseFile && (
-                <TouchableOpacity
-                  onPress={this.onRequestManageItem(
-                    item.id,
-                    status,
-                    requestedUsedStatus,
-                    false,
-                  )}
-                  activeOpacity={0.8}
-                  style={style.bodyItemLock}>
-                  <ICONS.requestConfirm width={24} height={24} />
-                </TouchableOpacity>
-              )}
-              {isPrint && showRequestLicense && (
-                <TouchableOpacity
-                  onPress={this.onRequestManageItem(
-                    item.id,
-                    status,
-                    requestedUsedStatus,
-                    true,
-                  )}
-                  activeOpacity={0.8}
-                  style={style.bodyItemLock}>
-                  <ICONS.requestConfirm2 width={24} height={24} />
-                </TouchableOpacity>
-              )}
-              {showPrint && (
-                <TouchableOpacity
-                  onPress={this.onPrintQRCode(item)}
-                  activeOpacity={0.8}
-                  style={[style.bodyItemLock, style.marginRightQRCode]}>
-                  <ICONS.qrCodeBlue
-                    color={COLORS.primary}
-                    width={24}
-                    height={24}
-                  />
-                </TouchableOpacity>
-              )}
-              {showPaymentButton && (
-                <TouchableOpacity
-                  onPress={this.onPaymentManageItem(item.id)}
-                  activeOpacity={0.8}
-                  style={style.bodyItemLock}>
-                  <ICONS.requestConfirm width={24} height={24} />
-                </TouchableOpacity>
-              )}
-            </Animated.View>
-            <View style={style.bodyItemFunction}>
-              <AuthenticateView
-                claims={[CLAIMS.manageItem.delete]}
-                checkType={0}>
-                <TouchableOpacity
-                  onPress={this.onDelete(item.id)}
-                  activeOpacity={0.8}
-                  style={style.bodyItemDelete}>
-                  <ICONS.trashWhite width={24} height={24} />
-                </TouchableOpacity>
-              </AuthenticateView>
-            </View>
-          </View>
-        ) : (
-          <View
-            onTouchEnd={this.onTouchEnd(item.id)}
-            onTouchMove={claim && status != 2 ? this.onTouchMove : null}
-            onTouchStart={this.onTouchStart}
-            style={style.bodyItem}>
-            <Animated.View
-              style={[
-                style.bodyItemInfo,
-                {
-                  transform: [
-                    {
-                      translateX: this.state.animationTranslateX,
-                    },
-                  ],
-                },
-              ]}>
-              <View style={style.bodyItemInfoWrap}>
-                <Text style={style.bodyItemInfoName}>
-                  Ngày yêu cầu:{' '}
-                  {moment(item.requestedDate).format('DD/MM/YYYY')}
-                </Text>
-                <Text style={style.bodyItemInfoDescription}>
-                  SL yêu cầu:{' '}
-                  {item.quantity ? numberWithCommas(item.quantity, '.') : 0}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={this.onPrintQRCode(item)}
-                activeOpacity={0.8}
-                style={[style.bodyItemLock, style.marginRightQRCode]}>
-                <ICONS.qrCodeBlue
-                  color={COLORS.primary}
-                  width={24}
-                  height={24}
-                />
-              </TouchableOpacity>
-            </Animated.View>
-            <View style={style.bodyItemFunction}>
-              <AuthenticateView
-                claims={[CLAIMS.manageItem.delete]}
-                checkType={0}>
-                <TouchableOpacity
-                  onPress={this.onDelete(item.id)}
-                  activeOpacity={0.8}
-                  style={style.bodyItemDelete}>
-                  <ICONS.trashWhite width={24} height={24} />
-                </TouchableOpacity>
-              </AuthenticateView>
-            </View>
-          </View>
-        )}
-      </>
-    );
-  }
-}
-
-class ManageItem extends Component {
-  constructor(props) {
-    super(props);
-
-    // const currentDateTime = new Date();
-
-    // const startDateTime = currentDateTime;
-
-    // startDateTime.setDate(1);
-
-    // const endDateTime = new Date(currentDateTime.getFullYear(), currentDateTime.getMonth() + 1, 0);
-
-    const currentDateTime = new Date();
-
-    const previousDateTime = new Date().setDate(currentDateTime.getDate() - 30);
 
     this.state = {
       isVisible: false,
-      statusBrowse: '',
-      statusLicense: null,
-      dateStart: previousDateTime,
-      dateEnd: currentDateTime,
-      page: 0,
-      limit: PAGINATIONS.manageItem,
+      id: '',
+      dateRequest: new Date(),
+      deliveryDate: '',
+      quantity: '',
+      status: -1,
+      productName: '',
+      avatar: '',
+      productId: null,
+      // quantityPerQR: '',
+      stampTemplates: [],
+      stampTemplateChoose: null,
+      files: [],
+      checkbox: null,
+      priceStamp: 0,
+      amount: 0,
+      fileUpload: '',
+      partnerName: '',
+      isPrint: false,
+      requestedUsedStatus: 0,
+      reason: '',
+      requestedUsedReason: '',
+      fileUploadUsed: '',
+      filesUpload: [],
+      dataConfig: {},
       isConfirm: false,
+      note: '',
+      size: '',
     };
-
-    this.listFactoryRef = null;
-    this.isLoadingManageItem = false;
-    this.scrollYManageItem = 0;
-    this.refDatePicker = null;
-    this.refNumberFromTo = null;
+    this.stampTemplate = null;
+    this.inputQuantity = null;
+    this.inputQuantityPerQR = null;
     this.refFormDelete = null;
-    this.refToast = null;
-    this.refFormQuestion = null;
-    this.refModalComponentRef = null;
+    this.refDatePicker = null;
+    this.refModalSelect = null;
+    this.timeout = 0;
   }
 
   componentDidMount() {
@@ -573,91 +108,284 @@ class ManageItem extends Component {
           isVisible: true,
         };
       });
-      const {ManageItemOperations} = this.props;
-      ManageItemOperations.getConfig(async config => {
+      // this.props.ManageItemOperations.getListProductComboBox(
+      //   {
+      //     fieldID: '',
+      //     productCode: '',
+      //     productName: '',
+      //     orderBy: '',
+      //     filter: '',
+      //     page: null,
+      //     limit: null,
+      //     // status: '1',
+      //     isLocked: 1,
+      //   },
+      //   res => {
+      this.props.ManageItemOperations.getConfig(config => {
         let dataConfig = config?.data || {};
-
         let isConfirm = dataConfig?.isConfirm || false;
-
-        this.isLoadingManageItem = false;
-
-        const res = await this.getListManageItem(0, true);
-
-        if (res.status != 200) {
-          _Toast.error('Thông báo', 'Lấy danh sách tem thất bại');
-        }
-
-        this.setState(previousState => {
-          return {
-            ...previousState,
-            isVisible: false,
-            isConfirm,
-          };
+        this.props.ManageItemOperations.getListStampTemplate({}, res => {
+          const stampTemplates = (res.data || {}).data || [];
+          this.setState(previousState => {
+            return {
+              ...previousState,
+              stampTemplates,
+              dataConfig,
+              isConfirm,
+              isVisible: false,
+            };
+          });
+          const {route} = this.props;
+          if (route.params) {
+            if (route.params.id) {
+              // const products = (res.data || {}).products || [];
+              this.getDetailManageItem(route.params.id);
+            }
+          }
         });
       });
+      //   },
+      // );
     });
   }
 
-  numberFromToSetRef = ref => {
-    this.refNumberFromTo = ref;
-  };
-
-  formQuestionSetRef = ref => {
-    this.refFormQuestion = ref;
+  modalSelectSetRef = ref => {
+    this.refModalSelect = ref;
   };
 
   datePickerSetRef = ref => {
     this.refDatePicker = ref;
   };
 
-  modalSetRef = ref => {
-    this.refModalComponentRef = ref;
+  formDeleteSetRef = ref => {
+    this.refFormDelete = ref;
   };
 
-  getListManageItem = (page, init = true) => {
+  onNextQuantityPerQR = () => {
+    if (this.inputQuantityPerQR) {
+      this.inputQuantityPerQR.focus();
+    }
+  };
+
+  getDetailManageItem = id => {
+    const {ManageItemOperations} = this.props;
+
     this.setState(previousState => {
       return {
         ...previousState,
         isVisible: true,
       };
     });
-    return new Promise(resolve => {
-      if (this.isLoadingManageItem) {
-        return resolve({
-          status: 200,
-        });
-      }
-      this.isLoadingManageItem = true;
 
-      const {limit, statusLicense} = this.state;
-      const {ManageItemOperations} = this.props;
-      ManageItemOperations.getListManageItem(
+    ManageItemOperations.getDetailManageItem({id}, res => {
+      this.setState(previousState => {
+        return {
+          ...previousState,
+          isVisible: false,
+        };
+      });
+
+      const data = res.data;
+
+      console.log('data', data);
+
+      if (!data) {
+        _Toast.success('Thông báo', 'Lấy thông tin cấp phát tem thất bại');
+
+        const timeOut = setTimeout(() => {
+          this.props.navigation.goBack();
+
+          clearTimeout(timeOut);
+        }, DELAYS.navigationInsertOrUpdateToScreen);
+
+        return;
+      }
+
+      const fileUpload = (data.fileUpload || '').split(';').filter(p => p);
+      const fileUploadUsed = (data.fileUploadUsed || '')
+        .split(';')
+        .filter(p => p);
+
+      if (!data) {
+        _Toast.success('Thông báo', 'Lấy thông tin cấp phát tem thất bại');
+
+        return;
+      }
+
+      const files = fileUpload.map(p => {
+        return {
+          id: Guid.create().toString(),
+          name: p,
+          uri: p,
+        };
+      });
+
+      const filesUpload = fileUploadUsed.map(p => {
+        return {
+          id: Guid.create().toString(),
+          name: p,
+          uri: p,
+        };
+      });
+
+      // const product = products.find(p => p.id == data.productID);
+
+      this.setState(previousState => {
+        return {
+          ...previousState,
+          quantity: (data.quantity || '').toString(),
+          id: data.id,
+          status: data.status,
+          // productId: data.productID,
+          // productName: data.productName,
+          // quantityPerQR: (data.quantity || '').toString(),
+          stampTemplateChoose: {
+            id: data.stampTemplateID,
+          },
+          files,
+          checkbox: data.isPrint ? 'notRequest' : 'request',
+          amount: data.amount,
+          fileUpload: data.fileUpload,
+          dateRequest: data.requestedDate,
+          deliveryDate: data.deliveryDate,
+          reason: data.reason,
+          requestedUsedReason: data.requestedUsedReason,
+          partnerName: data.partnerName,
+          isPrint: data.isPrint,
+          requestedUsedStatus: data.requestedUsedStatus,
+          fileUploadUsed: data.fileUploadUsed,
+          filesUpload,
+          avatar: data.avatar,
+          note: data.note,
+          size: data.size,
+        };
+      });
+    });
+  };
+
+  onAdd = () => {
+    const {ManageItemOperations} = this.props;
+    const {
+      id,
+      quantity,
+      productId,
+      stampTemplateChoose,
+      // quantityPerQR,
+      files,
+      checkbox,
+      priceStamp,
+      fileUpload,
+      reason,
+      isConfirm,
+      note,
+      size,
+    } = this.state;
+
+    Keyboard.dismiss();
+
+    const _quantity = parseInt(quantity);
+    // const _quantityPerQR = parseInt(quantityPerQR);
+    const _priceStamp = parseInt(priceStamp);
+    const stampTemplateId = (stampTemplateChoose || {}).id;
+
+    if (!_quantity) {
+      _Toast.error('Thông báo', 'Bạn vui lòng nhập số lượng');
+
+      return;
+    }
+
+    if (_quantity <= 0) {
+      _Toast.error('Thông báo', 'Bạn vui lòng nhập số lượng lớn hơn 0');
+
+      return;
+    }
+
+    if (_quantity > 100000) {
+      _Toast.error('Thông báo', 'Bạn vui lòng nhập số lượng nhỏ hơn 100000');
+
+      return;
+    }
+
+    // if (!productId) {
+    //   _Toast.error('Thông báo', 'Bạn vui lòng chọn sản phẩm');
+
+    //   return;
+    // }
+
+    // if (!_quantityPerQR) {
+    //   _Toast.error('Thông báo', 'Bạn vui lòng nhập số lượng tem mỗi mã QR');
+
+    //   return;
+    // }
+
+    // if (_quantityPerQR <= 0) {
+    //   _Toast.error('Thông báo', 'Bạn vui lòng nhập số lượng tem mỗi mã QR');
+
+    //   return;
+
+    // }
+    if (!checkbox && isConfirm) {
+      _Toast.error('Thông báo', 'Bạn muốn tự in hay yêu cầu in?');
+
+      return;
+    }
+
+    if (!stampTemplateId && isConfirm) {
+      _Toast.error('Thông báo', 'Bạn vui lòng chọn mẫu tem');
+
+      return;
+    }
+
+    const stringFiles = files
+      .filter(p => p.name)
+      .map(p => p.name)
+      .join(',');
+
+    const _files = files.filter(p => p.name && p.uri && p.type);
+
+    // if (_files.length <= 0 && fileUpload == '' && isConfirm) {
+    //   _Toast.error('Thông báo', 'Bạn vui lòng chọn hồ sơ đính kèm');
+    //   return;
+    // }
+
+    let amount = 0;
+    let temp = _priceStamp * _quantity || 0;
+
+    if (checkbox == 'request') {
+      amount = temp;
+    }
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        isVisible: true,
+      };
+    });
+
+    console.log('data', {
+      quantity: quantity,
+      stampTemplateID: stampTemplateId,
+      fileUpload: stringFiles,
+      files: _files,
+      isPrint: checkbox ? (checkbox == 'notRequest' ? true : false) : false,
+      amount,
+      note,
+    });
+
+    if (id) {
+      ManageItemOperations.editManageItem(
         {
-          search: '',
-          filter: this.state.statusBrowse.toString(),
-          orderBy: '',
-          page,
-          limit,
-          init,
-          requestedUsedStatus: statusLicense,
+          id,
+          // requested: quantity,
+          // productID: productId,
+          quantity: quantity,
+          stampTemplateID: stampTemplateId,
+          fileUpload: _files.length <= 0 ? fileUpload : stringFiles,
+          files: _files,
+          isPrint: checkbox ? (checkbox == 'notRequest' ? true : false) : false,
+          amount: parseInt(amount),
+          note,
         },
         res => {
-          const manageItems = ((res.data || {}).data || {}).stamps || [];
-          if (manageItems.length > 0) {
-            this.setState(
-              previousState => {
-                return {
-                  ...previousState,
-                  page,
-                };
-              },
-              () => {
-                this.isLoadingManageItem = false;
-              },
-            );
-          } else {
-            this.isLoadingManageItem = false;
-          }
           this.setState(previousState => {
             return {
               ...previousState,
@@ -665,886 +393,888 @@ class ManageItem extends Component {
             };
           });
 
-          resolve(res);
+          if (res.status && res.status == 200) {
+            _Toast.success('Thông báo', 'Sửa cấp phát tem thành công');
+
+            const timeOut = setTimeout(() => {
+              this.props.navigation.goBack();
+
+              clearTimeout(timeOut);
+            }, DELAYS.navigationInsertOrUpdateToScreen);
+          } else {
+            const message = getErrorMessageServer(res);
+            _Toast.error('Thông báo', message || 'Sửa cấp phát tem thất bại');
+          }
         },
       );
-    });
-  };
-
-  onAdd = () => {
-    this.props.navigation.navigate(KEY_NAVIGATIONS.addManageItem);
-  };
-
-  onEdit = id => () => {
-    this.props.navigation.navigate(KEY_NAVIGATIONS.addManageItem, {id});
-  };
-
-  onRequestManageItem = (id, status, requestedUsedStatus, isUsed) => () => {
-    this.props.navigation.navigate(KEY_NAVIGATIONS.requestManageItem, {
-      id,
-      status,
-      requestedUsedStatus,
-      isUsed,
-    });
-  };
-
-  onPaymentManageItem = id => () => {
-    this.props.navigation.navigate(KEY_NAVIGATIONS.paymentManageItem, {
-      id,
-    });
-  };
-
-  onChangeStatusBrowse = value => {
-    this.setState(
-      previousState => {
-        return {
-          ...previousState,
-          statusBrowse: value,
-        };
-      },
-      () => {
-        this.getListManageItem(0, true);
-      },
-    );
-  };
-
-  onChangeStatusLicense = value => {
-    this.setState(
-      previousState => {
-        return {
-          ...previousState,
-          statusLicense: value,
-        };
-      },
-      () => {
-        this.getListManageItem(0, true);
-      },
-    );
-  };
-
-  // printQRCode = async data => {
-  //   data = data || {};
-  //   this.setState(previousState => {
-  //     return {
-  //       ...previousState,
-  //       isVisible: true,
-  //     };
-  //   });
-
-  //   const from = data.from - 1;
-  //   const to = data.to;
-
-  //   const stampsSplit = data.stamps.slice(from, to);
-
-  //   let qrCodeImageStrings = '';
-  //   let generateQRCode = null;
-
-  //   let newPage = 0;
-
-  //   for (let i = 0; i < stampsSplit.length; i++) {
-  //     generateQRCode = await RNQRGenerator.generate({
-  //       value: stampsSplit[i].qrCode,
-  //       height: 250,
-  //       width: 250,
-  //       base64: true,
-  //       backgroundColor: 'white',
-  //       color: 'black',
-  //       correctionLevel: 'L',
-  //       padding: {
-  //         top: 5,
-  //         bottom: 5,
-  //         left: 5,
-  //         right: 5,
-  //       },
-  //     });
-
-  //     if (generateQRCode && (generateQRCode || {}).base64) {
-  //       if (newPage == 0) {
-  //         qrCodeImageStrings += `<div class="page"><div class="page-item">
-  //       <img class="page-item-image" src="data:image/png;base64, ${generateQRCode.base64}" />
-  //       <p class="page-item-title">${stampsSplit[i].stampID}</p>
-  //   </div>`;
-
-  //         newPage++;
-  //       } else if (newPage == 9 || i == stampsSplit.length - 1) {
-  //         qrCodeImageStrings += `<div class="page-item">
-  //       <img class="page-item-image" src="data:image/png;base64, ${generateQRCode.base64}" />
-  //       <p class="page-item-title">${stampsSplit[i].stampID}</p>
-  //   </div></div>`;
-
-  //         newPage = 0;
-  //       } else {
-  //         qrCodeImageStrings += `<div class="page-item">
-  //           <img class="page-item-image" src="data:image/png;base64, ${generateQRCode.base64}" />
-  //           <p class="page-item-title">${stampsSplit[i].stampID}</p>
-  //       </div>`;
-
-  //         newPage++;
-  //       }
-  //     }
-  //   }
-
-  //   if (qrCodeImageStrings) {
-  //     const currentDateTime = moment();
-
-  //     const fileName =
-  //       'Danh_Sach_QRCode_' + currentDateTime.format('DD_MM_YYYY_HH_mm_ss');
-
-  //     const printHTML = await RNHTMLtoPDF.convert({
-  //       html: `<html>
-  //                       <head>
-  //                           <style>
-  //                               * {
-  //                                   padding: 0px;
-  //                                   margin: 0px;
-  //                                   box-sizing: border-box;
-  //                               }
-  //                               .page {
-  //                                   width: 100%;
-  //                                   height: 100vh;
-  //                                   display: flex;
-  //                                   justify-content: center;
-  //                                   text-align: center;
-  //                                   flex-direction: row;
-  //                                   flex-wrap: wrap;
-  //                               }
-  //                               .page-item {
-  //                                   width: calc(100% / 3);
-  //                                   height: calc(100% / 3);
-  //                                   padding: 2.5px;
-  //                               }
-  //                               .page-item-image {
-  //                                   width: 100%;
-  //                                   height: 70%;
-  //                               }
-  //                               .page-item-title {
-  //                                   font-size: 16px;
-  //                                   color: #000000;
-  //                                   margin-top: 2.5px;
-  //                                   text-align: center;
-  //                                   word-break: break-all;
-  //                                   width: 100%;
-  //                               }
-  //                           </style>
-  //                       </head>
-  //                       <body>
-  //                           <div>
-  //                               ${qrCodeImageStrings}
-  //                           </div>
-  //                       </body>`,
-  //       fileName,
-  //       base64: false,
-  //     });
-
-  //     if (printHTML && (printHTML || {}).filePath) {
-  //       await RNPrint.print({filePath: printHTML.filePath, jobName: fileName});
-  //     }
-
-  //     // await RNPrint.print({
-  //     //     html: `<html>
-  //     //     <head>
-  //     //         <style>
-  //     //             * {
-  //     //                 padding: 0;
-  //     //                 margin: 0;
-  //     //                 box-sizing: border-box;
-  //     //             }
-
-  //     //             .wrap {
-  //     //                 display: flex;
-  //     //                 justify-content: center;
-  //     //                 align-items: center;
-  //     //                 text-align: center;
-  //     //                 flex-direction: row;
-  //     //                 flex-wrap: wrap;
-  //     //             }
-
-  //     //             .item {
-  //     //                 width: calc(100% / 3);
-  //     //                 aspect-ratio: 1;
-  //     //                 padding: 5px;
-  //     //             }
-
-  //     //             .item-image {
-  //     //                 width: 100%;
-  //     //                 height: 80%;
-  //     //             }
-
-  //     //             .item-title {
-  //     //                 font-size: 30px;
-  //     //                 color: #000000;
-  //     //                 margin-top: 10px;
-  //     //                 text-align: center;
-  //     //                 word-break: break-all;
-  //     //                 width: 100%;
-  //     //             }
-  //     //         </style>
-  //     //     </head>
-  //     //     <body>
-  //     //         <div class="wrap">
-  //     //             ${qrCodeImageStrings}
-  //     //         </div>
-  //     //     </body>`
-  //     // });
-  //   } else {
-  //     _Toast.error(
-  //       'Thông báo',
-  //       'Có chút trục trặc trong quá trình xuất PDF. Xin vui lòng thử lại',
-  //     );
-  //   }
-
-  //   this.setState(previousState => {
-  //     return {
-  //       ...previousState,
-  //       isVisible: false,
-  //     };
-  //   });
-  // };
-
-  // onPrintQRCode = item => () => {
-  //   if (!item) {
-  //     _Toast.error(
-  //       'Thông báo',
-  //       'Hệ thống hiện không tìm thấy cấp phát tem này',
-  //     );
-  //     return;
-  //   }
-
-  //   if (!item.id) {
-  //     _Toast.error(
-  //       'Thông báo',
-  //       'Hệ thống hiện không tìm thấy cấp phát tem này',
-  //     );
-  //     return;
-  //   }
-
-  //   this.setState(previousState => {
-  //     return {
-  //       ...previousState,
-  //       isVisible: true,
-  //     };
-  //   });
-
-  //   this.props.ManageItemOperations.getListQRCodeStamp(
-  //     {
-  //       requestId: item.id,
-  //       page: null,
-  //       limit: null,
-  //     },
-  //     async res => {
-  //       const status = (res || {}).status;
-
-  //       if (status != 200) {
-  //         _Toast.error('Thông báo', 'Lấy danh sách QR Code thất bại');
-
-  //         this.setState(previousState => {
-  //           return {
-  //             ...previousState,
-  //             isVisible: false,
-  //           };
-  //         });
-
-  //         return;
-  //       }
-
-  //       this.setState(previousState => {
-  //         return {
-  //           ...previousState,
-  //           isVisible: false,
-  //         };
-  //       });
-
-  //       const stamps = (res.data || {}).stamps || [];
-
-  //       if (stamps.length <= 0) {
-  //         _Toast.error('Thông báo', 'Không có QRCode để in');
-
-  //         return;
-  //       }
-
-  //       const lengthStamp = item.requested || 0;
-
-  //       if (stamps.length == 1) {
-  //         this.printQRCode({
-  //           from: 1,
-  //           to: 1,
-  //           stamps,
-  //         });
-  //       } else {
-  //         NumberFromTo.open(
-  //           async data => {
-  //             this.printQRCode({
-  //               ...data,
-  //               stamps,
-  //             });
-  //           },
-  //           null,
-  //           1,
-  //           lengthStamp,
-  //           1,
-  //           lengthStamp,
-  //           '',
-  //           '',
-  //           'IN TEM',
-  //           this.refNumberFromTo,
-  //         );
-  //       }
-  //     },
-  //   );
-  // };
-  //
-
-  //Block
-
-  printListStamp = async data => {
-    const {isConfirm} = this.state;
-
-    let temp = (data?.listStamp || '').split(';');
-    let listStamp = temp.join('<br/>');
-
-    let template = '';
-
-    if (isConfirm) {
-      template = `<p class="item-title" >Mẫu tem</p><img class="item-image"  src="${data.template}" />`;
-    }
-
-    await RNPrint.print({
-      html: `<html>
-          <head>
-              <style>
-                  * {
-                      padding: 0;
-                      margin: 0;
-                      box-sizing: border-box;
-                  }
-                  .wrap {
-                      display: flex;
-                      flex-direction: row;
-                      flex-wrap: wrap;
-                      display: flex;
-                  }
-                  .item-image {
-                      width: 100%;
-                      height: 80%;
-                      margin-bottom: 20px;
-                  }
-                  .item-title {
-                      font-size: 40px;
-                      color: #e67e22;
-                      margin-top: 10px;
-                      word-break: break-all;
-                      width: 100%;
-                      margin-bottom: 20px;
-                  }
-                  .item-link {
-                    font-size: 25px;
-                    color: #000000;
-                    margin-top: 10px;
-                    word-break: break-all;
-                    width: 100%;
-                    margin-bottom: 15px;
-                }
-              </style>
-          </head>
-          <body>
-              <div class="wrap">
-                  ${template}
-                  <p class="item-title" >Danh sách mẫu tem. Số lượng: ${data.quantity}</p>
-                  <p class="item-link" >${listStamp}</p>
-              </div>
-          </body>`,
-    });
-  };
-
-  printListQR = async data => {
-    const {isConfirm} = this.state;
-
-    let template = '';
-
-    if (isConfirm) {
-      template = `<p class="item-title" >Mẫu tem</p><img class="item-image"  src="${data.template}" />`;
-    }
-
-    let temp = (data?.listStamp || '').split(';');
-    let listQR = temp.filter(item => item != '');
-    // let listQR = tempSelect.map(item => {
-    //   let qrCode = item;
-    //   const key = 'qr=';
-    //   let check = item.includes(key);
-    //   if (check) {
-    //     let index = item.indexOf(key);
-    //     qrCode = item.slice(index + 3);
-    //   }
-    //   return qrCode;
-    // });
-    let qrCodeImageStrings = '';
-    let generateQRCode = null;
-    let newPage = 0;
-
-    let widthItem = 16;
-    let heightItem = 16;
-
-    let rowCount = 10;
-
-    let indexRowCount = 0;
-
-    let stylePageItemTitle = '';
-
-    for (let i = 0; i < listQR.length; i++) {
-      generateQRCode = await RNQRGenerator.generate({
-        value: listQR[i],
-        height: 250,
-        width: 250,
-        base64: true,
-        backgroundColor: 'white',
-        color: 'black',
-        correctionLevel: 'H',
-        padding: {
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0,
-        },
-      });
-
-      let index = listQR[i].indexOf('/?qr=');
-      let result = listQR[i].slice(index + 5);
-
-      if (generateQRCode && (generateQRCode || {}).base64) {
-        if (indexRowCount == 0) {
-          qrCodeImageStrings += '<div class="page-break">';
-        }
-
-        indexRowCount++;
-
-        qrCodeImageStrings += `<div class="page-item">
-        <img class="page-item-image" src="data:image/png;base64, ${generateQRCode.base64}" />
-        <p class="page-item-title">${result}</p>
-        </div>`;
-
-        if (indexRowCount == rowCount) {
-          qrCodeImageStrings += '</div>';
-
-          indexRowCount = 0;
-        }
-      }
-    }
-
-    if (qrCodeImageStrings) {
-      const currentDateTime = moment();
-
-      const fileName =
-        'Danh_Sach_QRCode_' + currentDateTime.format('DD_MM_YYYY_HH_mm_ss');
-
-      if (Platform.OS != 'ios') {
-        stylePageItemTitle = 'margin-top: 1mm;';
-      }
-
-      const printHTML = await RNHTMLtoPDF.convert({
-        html: `<html>
-                        <head>
-                            <style>
-                                * {
-                                    padding: 0px;
-                                    margin: 0px;
-                                    box-sizing: border-box;
-                                }
-                                .page {
-                                    width: 100%;
-                                }
-                                .page-break {
-                                    width: 100%;
-                                    display: flex;
-                                    align-items: center;
-                                    flex-direction: row;
-                                    flex-wrap: wrap;
-                                }
-                                .page-item {
-                                    width: ${widthItem}mm;
-                                    height: auto;
-                                    margin: 2mm;
-                                    display: flex;
-                                    justify-content: center;
-                                    align-items: center;
-                                    flex-direction: column;
-                                    text-align: center;
-                                }
-                                .page-item-image {
-                                    width: ${widthItem}mm;
-                                    height: ${heightItem}mm;
-                                }
-                                .page-item-title {
-                                    font-size: 1.5mm;
-                                    color: #000000;
-                                    text-align: center;
-                                    word-break: break-all;
-                                    ${stylePageItemTitle};
-                                }
-                                .item-image {
-                                    width: 100%;
-                                    margin-bottom: 20px;
-                                }
-                                .item-title {
-                                    font-size: 40px;
-                                    color: #e67e22;
-                                    word-break: break-all;
-                                    width: 100%;
-                                    margin-bottom: 10px;
-                                    margin-top: 10px;
-                                    margin-left: 20px;
-                                }
-                                </style>
-                        </head>
-                        <body>
-                            <div>
-                                ${template}
-                                <p class="item-title" >Danh sách mẫu tem. Số lượng: ${data.quantity}</p>
-                                <div class="page">
-                                    ${qrCodeImageStrings}
-                                </div>
-                            </div>
-                        </body>`,
-        fileName,
-        base64: false,
-      });
-
-      if (printHTML && (printHTML || {}).filePath) {
-        console.log('printHTML.filePath', printHTML.filePath);
-        console.log('fileName', fileName);
-
-        await RNPrint.print({filePath: printHTML.filePath, jobName: fileName});
-      }
     } else {
-      _Toast.error(
-        'Thông báo',
-        'Có chút trục trặc trong quá trình xuất PDF. Xin vui lòng thử lại',
-      );
-    }
-  };
+      if (isConfirm) {
+        ManageItemOperations.addManageItem(
+          {
+            // requested: quantity,
+            // productID: productId,
+            quantity: quantity,
+            stampTemplateID: stampTemplateId,
+            fileUpload: stringFiles,
+            files: _files,
+            isPrint: checkbox
+              ? checkbox == 'notRequest'
+                ? true
+                : false
+              : false,
+            amount,
+            note,
+            size,
+          },
+          res => {
+            console.log('res', res);
 
-  onPrintListStamp = item => () => {
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        isVisible: true,
-      };
-    });
+            this.setState(previousState => {
+              return {
+                ...previousState,
+                isVisible: false,
+              };
+            });
 
-    this.props.ManageItemOperations.printStamp(item.id, res => {
-      const data = res.data || {};
+            if (res.status && res.status == 200) {
+              _Toast.success('Thông báo', 'Thêm cấp phát tem thành công');
 
-      console.log(res);
+              const timeOut = setTimeout(() => {
+                this.props.navigation.goBack();
 
-      this.setState(previousState => {
-        return {
-          ...previousState,
-          isVisible: false,
-        };
-      });
-
-      this.printListStamp(data);
-    });
-  };
-
-  onPrintListStamp2 = item => {
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        isVisible: true,
-      };
-    });
-
-    this.props.ManageItemOperations.printStamp(item.id, res => {
-      const data = res.data || {};
-
-      this.setState(previousState => {
-        return {
-          ...previousState,
-          isVisible: false,
-        };
-      });
-
-      this.printListStamp(data);
-    });
-  };
-
-  onPrintListQR = item => () => {
-    this.setState(previousState => {
-      return {
-        ...previousState,
-        isVisible: true,
-      };
-    });
-
-    this.props.ManageItemOperations.printStamp(item.id, res => {
-      console.log(res);
-
-      const data = res.data || {};
-
-      this.setState(previousState => {
-        return {
-          ...previousState,
-          isVisible: false,
-        };
-      });
-
-      this.printListQR(data);
-    });
-  };
-
-  onPrintQRCode = item => {
-    ModalComponent.open(
-      <Print
-        onPrintListStamp={this.onPrintListStamp(item)}
-        onPrintListQR={this.onPrintListQR(item)}
-      />,
-      'Chọn hình thức in tem',
-      this.refModalComponentRef,
-      () => {},
-    );
-  };
-
-  onInfinitingManageItem = event => {
-    if (this.isLoadingManageItem) {
-      return;
-    }
-
-    const height = Math.ceil(
-      event.nativeEvent.contentSize.height -
-        event.nativeEvent.layoutMeasurement.height,
-    );
-    this.scrollYManageItem = Math.ceil(event.nativeEvent.contentOffset.y);
-
-    if (height - this.scrollYManageItem <= DEFAULTS.offSetScrollInfinite) {
-      this.isLoadingManageItem = false;
-      this.getListManageItem(this.state.page + 1, false);
-    }
-  };
-  onDelete = id => {
-    return new Promise(_resolve => {
-      if (!id) {
-        _Toast.error('Thông báo', 'Cấp phát tem không tồn tại');
-        return;
-      }
-
-      FormDelete.open(result => {
-        if (result.result) {
-          this.setState(previousState => {
-            return {
-              ...previousState,
-              isVisible: true,
-            };
-          });
-          this.props.ManageItemOperations.deleteManageItem({id}, res => {
-            if (res.status == 200) {
-              _Toast.success('Thông báo', 'Xóa cấp phát tem thành công');
-              this.isLoadingManageItem = false;
-              this.getListManageItem(0, true);
-              this.setState(previousState => {
-                return {
-                  ...previousState,
-                  isVisible: false,
-                };
-              });
+                clearTimeout(timeOut);
+              }, DELAYS.navigationInsertOrUpdateToScreen);
             } else {
               const message = getErrorMessageServer(res);
 
-              _Toast.error('Thông báo', message || 'Xóa cấp phát tem thất bại');
-
-              this.setState(previousState => {
-                return {
-                  ...previousState,
-                  isVisible: false,
-                };
-              });
+              _Toast.error(
+                'Thông báo',
+                message || 'Thêm cấp phát tem thất bại',
+              );
             }
-          });
-        }
-      }, this.refFormDelete);
+          },
+        );
+      } else {
+        ManageItemOperations.requestProvideStamp(
+          {
+            quantity: quantity,
+          },
+          res => {
+            this.setState(previousState => {
+              return {
+                ...previousState,
+                isVisible: false,
+              };
+            });
+
+            if (res.status && res.status == 200) {
+              _Toast.success('Thông báo', 'Thêm cấp phát tem thành công');
+
+              const timeOut = setTimeout(() => {
+                this.props.navigation.goBack();
+
+                clearTimeout(timeOut);
+              }, DELAYS.navigationInsertOrUpdateToScreen);
+            } else {
+              const message = getErrorMessageServer(res);
+
+              _Toast.error(
+                'Thông báo',
+                message || 'Thêm cấp phát tem thất bại',
+              );
+            }
+          },
+        );
+      }
+    }
+  };
+
+  onChangeValue = name => value => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        [name]: value,
+      };
     });
   };
 
-  onRequestConfirm = item => {
-    return new Promise(resolve => {
-      if (!item) {
-        _Toast.error('Thông báo', 'Hệ thống không tìm thấy tem này');
+  onChangeQuantity = () => value => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        quantity: value,
+      };
+    });
+    if (this.timeout) clearTimeout(this.timeout);
+    this.timeout = setTimeout(() => {
+      let priceStamp = 0;
+      this.props.ManageItemOperations.getPriceStamp(value, res => {
+        priceStamp = res?.data || 0;
+        this.setState(previousState => {
+          return {
+            ...previousState,
+            priceStamp,
+          };
+        });
+      });
+    }, 300);
+  };
 
-        return resolve(false);
-      }
+  onDelete = () => {
+    const {id} = this.state;
 
-      if (!item.id) {
-        _Toast.error('Thông báo', 'Hệ thống không tìm thấy tem này');
+    if (!id) {
+      _Toast.error('Thông báo', 'Cấp phát tem không tồn tại');
 
-        return resolve(false);
-      }
+      const timeOut = setTimeout(() => {
+        this.props.navigation.goBack();
 
-      FormQuestion.open(
-        result => {
-          if (result.result) {
-            this.props.ManageItemOperations.requestManageItem(
-              {id: item.id},
-              res => {
-                const status = (res || {}).status;
+        clearTimeout(timeOut);
+      }, DELAYS.navigationInsertOrUpdateToScreen);
 
-                if (status == 200) {
-                  this.isLoadingManageItem = false;
+      return;
+    }
 
-                  this.getListManageItem(0, true);
+    FormDelete.open(result => {
+      if (result.result) {
+        this.setState(previousState => {
+          return {
+            ...previousState,
+            isVisible: true,
+          };
+        });
 
-                  return resolve(true);
-                } else {
-                  const message = getErrorMessageServer(res);
-                  _Toast.error(
-                    'Thông báo',
-                    message || 'Yêu cầu duyệt thất bại',
-                  );
-                  return resolve(false);
-                }
-              },
-            );
+        this.props.ManageItemOperations.deleteManageItem({id}, res => {
+          if (res.status == 200) {
+            _Toast.success('Thông báo', 'Xóa cấp phát tem thành công');
+
+            this.setState(previousState => {
+              return {
+                ...previousState,
+                isVisible: false,
+              };
+            });
+
+            const timeOut = setTimeout(() => {
+              this.props.navigation.goBack();
+
+              clearTimeout(timeOut);
+            }, DELAYS.navigationInsertOrUpdateToScreen);
           } else {
-            return resolve(false);
+            const message = getErrorMessageServer(res);
+
+            _Toast.error('Thông báo', message || 'Xóa cấp phát tem thất bại');
+
+            this.setState(previousState => {
+              return {
+                ...previousState,
+                isVisible: false,
+              };
+            });
           }
-        },
-        'THÔNG BÁO',
-        'Bạn có chắc chắn muốn yêu cầu duyệt thông tin này ?',
-        this.refFormQuestion,
-      );
-    });
+        });
+      }
+    }, this.refFormDelete);
   };
 
-  onEdit = id => {
-    this.props.navigation.navigate(KEY_NAVIGATIONS.addManageItem, {id});
-  };
+  onPopupProduct = () => {
+    let products = [];
 
-  formDeleteSetRef = ref => {
-    this.refFormDelete = ref;
-  };
-
-  render() {
-    const {ManageItemReducer} = this.props;
-    const {statusBrowse, statusLicense, isVisible, isConfirm} = this.state;
-
-    let manageItems = [];
-
-    if (ManageItemReducer.get(manageItemConstant.KEYS.manageItems).toJS) {
-      manageItems = ManageItemReducer.get(
-        manageItemConstant.KEYS.manageItems,
+    if (
+      (
+        this.props.ManageItemReducer.get(
+          manageItemConstant.KEYS.productComboBoxs,
+        ) || {}
+      ).toJS
+    ) {
+      products = this.props.ManageItemReducer.get(
+        manageItemConstant.KEYS.productComboBoxs,
       ).toJS();
     }
 
-    // console.log('manageItems', manageItems);
+    ModalSelect.open(
+      this.onChangeProduct,
+      products,
+      this.state.productId,
+      {label: 'productName', value: 'id'},
+      'Chọn sản phẩm',
+      'Tìm kiếm',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      this.refModalSelect,
+      false,
+    );
+  };
+
+  onChangeProduct = item => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        productName: item.productName,
+        productId: item.id,
+      };
+    });
+  };
+
+  onChooseStampTemplate = item => () => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        stampTemplateChoose: item,
+      };
+    });
+  };
+
+  onRemoveFile = id => () => {
+    let files = [...this.state.files];
+
+    files = files.filter(p => p.id != id);
+
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        files,
+      };
+    });
+  };
+  checkFile = (All_DATA, name) => {
+    const fileName = getFileName(name);
+    return All_DATA.includes(fileName);
+  };
+  onShowFile = url => () => {
+    let check = url.startsWith('http');
+    if (check) {
+      let extension = url.split(/[#?]/)[0].split('.').pop().trim();
+      const localFile = `${RNFS.DocumentDirectoryPath}/temporaryfile.${extension}`;
+      const options = {
+        fromUrl: url,
+        toFile: localFile,
+      };
+      RNFS.downloadFile(options)
+        .promise.then(() => FileViewer.open(localFile))
+        .then(() => {
+          // console.log('Success');
+        })
+        .catch(error => {
+          // console.log('Error');
+        });
+    } else {
+      FileViewer.open(url);
+    }
+  };
+  onChooseFile = () => {
+    DocumentPicker.pickMultiple({
+      allowMultiSelection: true,
+      type: DocumentPicker.types.allFiles,
+      presentationStyle: 'fullScreen',
+      mode: 'open',
+    })
+      .then(res => {
+        const data = res || [];
+
+        if (data.length > 0) {
+          const files = [...this.state.files];
+
+          for (let i = 0; i < data.length; i++) {
+            files.push({
+              id: Guid.create().toString(),
+              uri: data[i].uri,
+              type: data[i].type,
+              name: data[i].name,
+            });
+          }
+
+          this.setState(previousState => {
+            return {
+              ...previousState,
+              files,
+            };
+          });
+        }
+      })
+      .catch(err => {
+        if (DocumentPicker.isCancel(err)) {
+        }
+      });
+  };
+  onCheckboxRequest = () => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        checkbox: 'request',
+      };
+    });
+  };
+  onCheckboxNotRequest = () => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        checkbox: 'notRequest',
+      };
+    });
+  };
+  setFiles = value => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        files: value,
+      };
+    });
+  };
+  setFilesUpload = value => {
+    this.setState(previousState => {
+      return {
+        ...previousState,
+        filesUpload: value,
+      };
+    });
+  };
+  onGetAmount = () => {
+    const {quantity, quantityPerQR, priceStamp, amount} = this.state;
+    const _amount = parseInt(amount);
+    const _quantity = parseInt(quantity);
+    const _quantityPerQR = parseInt(quantityPerQR);
+    const _priceStamp = parseInt(priceStamp);
+    let currentAmount = _quantity * _quantityPerQR * _priceStamp;
+    if (_amount != currentAmount) {
+      return numberWithCommas(currentAmount);
+    } else {
+      return numberWithCommas(_amount);
+    }
+  };
+
+  render() {
+    const {
+      productName,
+      status,
+      id,
+      isVisible,
+      quantity,
+      stampTemplates,
+      stampTemplateChoose,
+      quantityPerQR,
+      files,
+      checkbox,
+      priceStamp,
+      amount,
+      dateRequest,
+      deliveryDate,
+      reason,
+      requestedUsedReason,
+      partnerName,
+      isPrint,
+      requestedUsedStatus,
+      filesUpload,
+      avatar,
+      dataConfig,
+      isConfirm,
+      note,
+      size,
+    } = this.state;
+
+    let disable = status == 2;
+
+    let isUpdate =
+      !id ||
+      (status == 0 && requestedUsedStatus == 0) ||
+      (status == 3 && requestedUsedStatus == 0);
+
+    let stamp = stampTemplates.find(e => e.id == stampTemplateChoose?.id);
+
+    const CustomText = ({title, content}) => {
+      return (
+        <View style={style.customText}>
+          <ICONS.check_stamp width={24} height={24} stroke={COLORS.primary} />
+          <Text style={style.txtNormal}>
+            {title}: {}
+            <Text style={style.txtBold}>{content}</Text>
+          </Text>
+        </View>
+      );
+    };
+    const {width} = Dimensions.get('window').width;
 
     return (
       <BoxMainContainer
+        modalSelectSetRef={this.modalSelectSetRef}
+        datePickerSetRef={this.datePickerSetRef}
         formDeleteSetRef={this.formDeleteSetRef}
-        formQuestionSetRef={this.formQuestionSetRef}
-        modalSetRef={this.modalSetRef}
         isVisibleLoadingCenter={isVisible}
         isShowBackHeader={true}
         isScrollEnabled={false}
         styleBody={style.boxMainBody}
         isShowInfo={true}
-        isShowQRCodeButton={true}
+        isShowQRCodeButton={false}
         isShowHeader={true}
-        isShowVersion={true}
-        isShowVersionName={true}>
-        <View style={style.header}>
-          <Text style={style.title}>YÊU CẦU CẤP TEM</Text>
-          {/* <TouchableOpacity activeOpacity={0.8} style={style.searchButton}>
-            <ICONS.search width={24} height={24} />
-          </TouchableOpacity> */}
-          <AuthenticateView claims={[CLAIMS.manageItem.add]} checkType={0}>
-            <TouchableOpacity
-              onPress={this.onAdd}
-              activeOpacity={0.8}
-              style={style.addButton}>
-              <ICONS.add width={24} height={24} />
-            </TouchableOpacity>
-          </AuthenticateView>
-        </View>
-        {isConfirm && (
-          <View style={style.rowFilter}>
-            <View style={style.filter}>
-              <Text style={style.filterStatusLabel}>Trạng thái duyệt</Text>
-              <RNPickerSelect
-                useNativeAndroidPickerStyle={false}
-                fixAndroidTouchableBug={true}
-                placeholder={{
-                  label: 'Chọn trạng thái',
-                  inputLabel: 'Chọn trạng thái',
-                  value: null,
-                  ...style.filterItemSelectPlaceHolder,
-                }}
-                value={statusBrowse}
-                style={{
-                  inputIOSContainer: style.filterItemSelectContainerIOS,
-                  inputAndroidContainer: style.filterItemSelectContainerAndroid,
-                  inputAndroid: style.filterItemSelectInputAndroid,
-                  inputIOS: style.filterItemSelectInputIOS,
-                  iconContainer: style.filterItemSelectIcon,
-                }}
-                onValueChange={this.onChangeStatusBrowse}
-                items={STAMP_STATUSES_BROWSE}
-                Icon={() => <ICONS.caretDown2 width={16} height={16} />}
+        isShowVersion={false}
+        isShowVersionName={false}>
+        <Text style={style.title}>QUẢN LÝ TEM</Text>
+        {isUpdate ? (
+          <>
+            <KeyboardAwareScrollView
+              showsVerticalScrollIndicator={false}
+              automaticallyAdjustContentInsets={false}
+              keyboardDismissMode="interactive"
+              keyboardShouldPersistTaps="handled"
+              style={style.form}>
+              {/* <View style={style.formItem}>
+                <Text style={style.formItemLabel}>Sản phẩm</Text>
+                <TouchableOpacity
+                  disabled={disable}
+                  onPress={this.onPopupProduct}
+                  activeOpacity={0.8}
+                  style={[
+                    style.formItemSelect,
+                    disable ? style.disableBackgroundColor : null,
+                  ]}>
+                  <Text style={style.formItemSelectText}>{productName}</Text>
+                  {disable ? null : (
+                    <View style={style.formItemSelectIcon}>
+                      <ICONS.caretDown2 width={16} height={16} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View> */}
+              {isConfirm ? (
+                <>
+                  <View style={style.formItem}>
+                    <Text
+                      style={[
+                        style.formItemLabel,
+                        style.formItemLabelRequired,
+                      ]}>
+                      Số lượng tem
+                    </Text>
+                    <TextInput
+                      editable={!disable}
+                      value={quantity}
+                      onChangeText={this.onChangeQuantity()}
+                      keyboardType="number-pad"
+                      onSubmitEditing={this.onNextQuantityPerQR}
+                      maxLength={255}
+                      ref={input => (this.inputQuantity = input)}
+                      blurOnSubmit={false}
+                      returnKeyType="done"
+                      returnKeyLabel="Xong"
+                      style={[
+                        style.formItemInput,
+                        disable ? style.disableBackgroundColor : null,
+                      ]}
+                    />
+                  </View>
+                  <View style={style.formItem}>
+                    <Text
+                      style={[
+                        style.formItemLabel,
+                        style.formItemLabelRequired,
+                      ]}>
+                      Kích thước tem
+                    </Text>
+                    <TextInput
+                      editable={!disable}
+                      value={size}
+                      onChangeText={this.onChangeValue('size')}
+                      maxLength={255}
+                      ref={input => (this.inputQuantityPerQR = input)}
+                      blurOnSubmit={false}
+                      returnKeyType="done"
+                      returnKeyLabel="Xong"
+                      style={[
+                        style.formItemInput,
+                        disable ? style.disableBackgroundColor : null,
+                      ]}
+                    />
+                  </View>
+                  <View style={style.checkbox}>
+                    <TouchableOpacity
+                      disabled={disable}
+                      style={style.wrapCheckbox}
+                      onPress={this.onCheckboxRequest}>
+                      <View
+                        style={[
+                          style.checkboxSelect,
+                          {
+                            backgroundColor:
+                              checkbox == 'request'
+                                ? COLORS.primary
+                                : COLORS.white,
+                          },
+                        ]}
+                      />
+                    </TouchableOpacity>
+                    <Text
+                      style={style.formItemLabel}
+                      onPress={disable ? null : this.onCheckboxRequest}>
+                      Yêu cầu in
+                    </Text>
+                    <View style={style.block} />
+                    <TouchableOpacity
+                      disabled={disable}
+                      style={style.wrapCheckbox}
+                      onPress={this.onCheckboxNotRequest}>
+                      <View
+                        style={[
+                          style.checkboxSelect,
+                          {
+                            backgroundColor:
+                              checkbox == 'notRequest'
+                                ? COLORS.primary
+                                : COLORS.white,
+                          },
+                        ]}
+                      />
+                    </TouchableOpacity>
+                    <Text
+                      onPress={disable ? null : this.onCheckboxNotRequest}
+                      style={style.formItemLabel}>
+                      Tự in
+                    </Text>
+                  </View>
+                  {checkbox == 'request' && (
+                    <View style={style.formItem}>
+                      <Text style={style.formItemLabel}>
+                        Số tiền phải thanh toán
+                      </Text>
+                      <View style={style.priceStamp}>
+                        <Text style={style.txtPriceStamp}>
+                          {amount
+                            ? numberWithCommas(amount)
+                            : numberWithCommas(quantity * priceStamp)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                  <View style={style.formItem}>
+                    <Text
+                      style={[
+                        style.formItemLabel,
+                        style.formItemLabelRequired,
+                      ]}>
+                      Mẫu in tem
+                    </Text>
+                    <View style={style.formItemStampTemplate}>
+                      {stampTemplates.map((item, index) => {
+                        return (
+                          <TouchableOpacity
+                            disabled={disable}
+                            delayPressIn={0}
+                            activeOpacity={0.8}
+                            onPress={this.onChooseStampTemplate(item)}
+                            key={`stamp-template-${index}`}
+                            style={{
+                              ...style.formItemStampTemplateItem,
+                              ...((stampTemplateChoose || {}).id == item.id
+                                ? style.formItemStampTemplateItemActive
+                                : {}),
+                            }}>
+                            <Image
+                              resizeMode="cover"
+                              style={style.formItemStampTemplateItemImage}
+                              source={{uri: item.template || ''}}
+                            />
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                  {/* <View style={style.formItem}>
+                    <Text
+                      style={[
+                        style.formItemLabel,
+                        style.formItemLabelRequired,
+                      ]}>
+                      Hồ sơ đính kèm
+                    </Text>
+                    <RenderHtml
+                      contentWidth={width}
+                      source={{
+                        html: replaceHtml(
+                          dataConfig?.attachmentStamps,
+                          '<p>',
+                          '<p style="margin-bottom:0px;color:#707070">',
+                        ),
+                      }}
+                    />
+                    <FileUpload
+                      files={files}
+                      setFiles={this.setFiles}
+                      onChooseFile={this.onChooseFile}
+                      onRemoveFile={this.onRemoveFile}
+                    />
+                    {status == 3 && (
+                      <Text style={[style.txtNormal, style.txtMargin]}>
+                        Lý do không duyệt: {}
+                        <Text style={style.txtBold}>{reason}</Text>
+                      </Text>
+                    )}
+                  </View> */}
+
+                  <View style={style.formItem}>
+                    <Text style={style.formItemLabel}>Ghi chú</Text>
+                    <TextInput
+                      editable={!disable}
+                      value={note}
+                      onChangeText={this.onChangeValue('note')}
+                      maxLength={255}
+                      style={[
+                        style.formItemInputNote,
+                        disable ? style.disableBackgroundColor : null,
+                      ]}
+                      multiline={true}
+                    />
+                  </View>
+                  <View style={style.formItem}>
+                    <Text style={style.formItemLabelNote}>
+                      Nếu quý khách có yêu cầu in thêm số lượng tem mỗi mã QR
+                      thì nhập thông tin như sau vào ghi chú : Số lượng tem mỗi
+                      mã QR là : .... con
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={style.formItem}>
+                    <Text
+                      style={[
+                        style.formItemLabel,
+                        style.formItemLabelRequired,
+                      ]}>
+                      Số lượng tem
+                    </Text>
+                    <TextInput
+                      editable={!disable}
+                      value={quantity}
+                      onChangeText={this.onChangeQuantity()}
+                      keyboardType="number-pad"
+                      onSubmitEditing={this.onNextQuantityPerQR}
+                      maxLength={255}
+                      ref={input => (this.inputQuantityPerQR = input)}
+                      blurOnSubmit={false}
+                      returnKeyType="done"
+                      returnKeyLabel="Xong"
+                      style={[
+                        style.formItemInput,
+                        disable ? style.disableBackgroundColor : null,
+                      ]}
+                    />
+                  </View>
+                  {/* <View style={style.formItem}>
+                    <Text
+                      style={[
+                        style.formItemLabel,
+                        style.formItemLabelRequired,
+                      ]}>
+                      Kích thước tem
+                    </Text>
+                    <TextInput
+                      editable={!disable}
+                      value={size}
+                      onChangeText={this.onChangeValue('size')}
+                      keyboardType="number-pad"
+                      maxLength={255}
+                      ref={input => (this.inputQuantity = input)}
+                      blurOnSubmit={false}
+                      returnKeyType="done"
+                      returnKeyLabel="Xong"
+                      style={[
+                        style.formItemInput,
+                        disable ? style.disableBackgroundColor : null,
+                      ]}
+                    />
+                  </View> */}
+                </>
+              )}
+            </KeyboardAwareScrollView>
+            {id ? (
+              <AuthenticateView claims={[CLAIMS.manageItem.edit]} checkType={0}>
+                <View style={style.function}>
+                  <TouchableOpacity
+                    onPress={this.onAdd}
+                    activeOpacity={0.8}
+                    style={style.functionUpdate}>
+                    <ICONS.save width={18} height={18} />
+                    <Text style={style.functionUpdateText}>CẬP NHẬT</Text>
+                  </TouchableOpacity>
+                </View>
+              </AuthenticateView>
+            ) : (
+              <AuthenticateView claims={[CLAIMS.manageItem.add]} checkType={0}>
+                <View style={style.function}>
+                  <TouchableOpacity
+                    onPress={this.onAdd}
+                    activeOpacity={0.8}
+                    style={style.functionUpdate}>
+                    <ICONS.save width={18} height={18} />
+                    <Text style={style.functionUpdateText}>CẬP NHẬT</Text>
+                  </TouchableOpacity>
+                </View>
+              </AuthenticateView>
+            )}
+          </>
+        ) : (
+          <KeyboardAwareScrollView
+            showsVerticalScrollIndicator={false}
+            automaticallyAdjustContentInsets={false}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            style={style.form}>
+            {isConfirm ? (
+              <>
+                {/* <View style={style.wrapImage}>
+              <View>
+                <Image
+                  source={avatar ? {uri: avatar} : ICONS.noImage}
+                  style={style.imgProduct}
+                  resizeMode="contain"
+                />
+                <Text style={style.txtProduct}>{productName}</Text>
+              </View>
+              <Image
+                resizeMode="center"
+                style={style.imgStamp}
+                source={{uri: stamp.template || ''}}
               />
-            </View>
-            <View style={[style.filter, style.marginFilter]}>
-              <Text style={style.filterStatusLabel}>Trạng thái cấp phép</Text>
-              <RNPickerSelect
-                useNativeAndroidPickerStyle={false}
-                fixAndroidTouchableBug={true}
-                placeholder={{
-                  label: 'Chọn trạng thái',
-                  inputLabel: 'Chọn trạng thái',
-                  value: null,
-                  ...style.filterItemSelectPlaceHolder,
-                }}
-                value={statusLicense}
-                style={{
-                  inputIOSContainer: style.filterItemSelectContainerIOS,
-                  inputAndroidContainer: style.filterItemSelectContainerAndroid,
-                  inputAndroid: style.filterItemSelectInputAndroid,
-                  inputIOS: style.filterItemSelectInputIOS,
-                  iconContainer: style.filterItemSelectIcon,
-                }}
-                onValueChange={this.onChangeStatusLicense}
-                items={STAMP_STATUSES_LICENSE}
-                Icon={() => <ICONS.caretDown2 width={16} height={16} />}
-              />
-            </View>
-          </View>
-        )}
-        <View style={style.body}>
-          <ScrollView
-            style={style.filter}
-            onScroll={this.onInfinitingManageItem}
-            ref={ref => (this.listProductRef = ref)}
-            showsVerticalScrollIndicator={false}>
-            <View style={style.bodyWrap}>
-              {manageItems.map((item, index) => {
-                return (
-                  <ProductItem
-                    key={index}
-                    item={item}
-                    listProductRef={this.listProductRef}
-                    onEdit={this.onEdit}
-                    onPrintQRCode={this.onPrintQRCode}
-                    onDelete={this.onDelete}
-                    onRequestConfirm={this.onRequestConfirm}
-                    onRequestManageItem={this.onRequestManageItem}
-                    isConfirm={isConfirm}
-                    onPrintListStamp2={this.onPrintListStamp2}
-                    onPaymentManageItem={this.onPaymentManageItem}
+            </View> */}
+                <Image
+                  resizeMode="center"
+                  style={style.imgStamp}
+                  source={{uri: stamp.template || ''}}
+                />
+                <CustomText
+                  title="Số lượng mã QR"
+                  content={numberWithCommas(quantity, '.')}
+                />
+                <CustomText
+                  title="Ngày yêu cầu"
+                  content={moment(dateRequest).format('DD/MM/YYYY')}
+                />
+                {deliveryDate && (
+                  <CustomText
+                    title="Ngày trả tem"
+                    content={moment(deliveryDate).format('DD/MM/YYYY')}
                   />
-                );
-              })}
-            </View>
-          </ScrollView>
-        </View>
+                )}
+                <CustomText
+                  title="Hình thức"
+                  content={checkbox == 'request' ? 'Yêu cầu in' : 'Tự in'}
+                />
+                {isPrint ? null : (
+                  <>
+                    {status == 1 || status == 3 ? null : partnerName ? (
+                      <CustomText
+                        title="Đơn vị in tem"
+                        content={partnerName || ''}
+                      />
+                    ) : null}
+                    <CustomText
+                      title="Số tiền mỗi con tem"
+                      content={numberWithCommas(amount / quantity) + ' đ'}
+                    />
+                    <CustomText
+                      title="Số tiền phải thanh toán"
+                      content={numberWithCommas(amount) + ' đ'}
+                    />
+                  </>
+                )}
+                <CustomText title="Hồ sơ đính kèm yêu cầu cấp tem" content="" />
+                <View style={style.childrenCustomText}>
+                  <RenderHtml
+                    contentWidth={width}
+                    source={{
+                      html: replaceHtml(
+                        dataConfig?.attachmentStamps,
+                        '<p>',
+                        '<p style="margin-bottom:0px;color:#707070">',
+                      ),
+                    }}
+                  />
+                </View>
+                <CustomText title="Tệp đính kèm yêu cầu cấp tem" content="" />
+                <FileUpload
+                  files={files}
+                  setFiles={this.setFiles}
+                  onChooseFile={this.onChooseFile}
+                  onRemoveFile={this.onRemoveFile}
+                  isHide={true}
+                />
+                <CustomText title="Ghi chú" content={note} />
+                {requestedUsedStatus ? (
+                  <>
+                    <CustomText
+                      title="Hồ sơ đính kèm yêu cấp phép sử dụng tem"
+                      content=""
+                    />
+                    <View style={style.childrenCustomText}>
+                      <RenderHtml
+                        contentWidth={width}
+                        source={{
+                          html: replaceHtml(
+                            dataConfig?.attachmentUsed,
+                            '<p>',
+                            '<p style="margin-bottom:0px;color:#707070">',
+                          ),
+                        }}
+                      />
+                    </View>
+                    <CustomText
+                      title="Tệp đính kèm yêu cầu cấp phép sử dụng tem"
+                      content=""
+                    />
+                    <FileUpload
+                      files={filesUpload}
+                      setFiles={this.setFilesUpload}
+                      onChooseFile={this.onChooseFile}
+                      onRemoveFile={this.onRemoveFile}
+                      isHide={true}
+                    />
+                  </>
+                ) : null}
+                {status == 3 && (
+                  <CustomText
+                    title="Lý do không duyệt yêu cầu cấp tem"
+                    content={reason}
+                  />
+                )}
+                {requestedUsedStatus == 3 && (
+                  <CustomText
+                    title="Lý do không duyệt yêu cầu cấp phép sử dụng tem"
+                    content={requestedUsedReason}
+                  />
+                )}
+              </>
+            ) : (
+              <View style={style.formItem}>
+                <Text style={style.formItemLabel}>Số lượng tem</Text>
+                <TextInput
+                  editable={!disable}
+                  value={quantity}
+                  onChangeText={this.onChangeQuantity()}
+                  keyboardType="number-pad"
+                  onSubmitEditing={this.onNextQuantityPerQR}
+                  maxLength={255}
+                  ref={input => (this.inputQuantity = input)}
+                  blurOnSubmit={false}
+                  returnKeyType="done"
+                  returnKeyLabel="Xong"
+                  style={[
+                    style.formItemInput,
+                    disable ? style.disableBackgroundColor : null,
+                  ]}
+                />
+              </View>
+            )}
+          </KeyboardAwareScrollView>
+        )}
       </BoxMainContainer>
     );
   }
 }
 
-export default ManageItem;
+export default AddConsignment;

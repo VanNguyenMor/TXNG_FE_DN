@@ -12,7 +12,6 @@ class ShowEditData extends Component {
     this.state = {
       id: null,
       quantity: 0,
-      productId: null,
       stampRange: "",
       printMethod: 0,
       notes: "",
@@ -38,7 +37,6 @@ class ShowEditData extends Component {
     await this.loadProductList();
     await this.loadStampTemplateList();
 
-    // Get data from props if editing
     if (this.props.dataInsert) {
       this.setState(this.props.dataInsert);
     }
@@ -51,7 +49,6 @@ class ShowEditData extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Update state when props change
     if (
       this.props.dataInsert &&
       JSON.stringify(prevProps.dataInsert) !==
@@ -73,23 +70,27 @@ class ShowEditData extends Component {
         : products?.data || [];
 
       this.setState({ productList });
-      console.log("✅ Loaded product list:", productList);
     } catch (error) {
-      console.error("❌ Error loading product list:", error);
     }
   };
 
   loadStampTemplateList = async () => {
     try {
-      const templates = await fetchData.stampRequest.getListStampTemplate?.();
-      const stampTemplateList = Array.isArray(templates)
-        ? templates
-        : templates?.templates || [];
-
+      const templates = await fetchData.stampRequest.getListStampTemplate();
+      
+      // Handle different response formats
+      let stampTemplateList = [];
+      if (Array.isArray(templates)) {
+        stampTemplateList = templates;
+      } else if (templates && typeof templates === 'object') {
+        // If it's an object, check for common array properties
+        stampTemplateList = templates.data || templates.stamps || templates.stampTemplates || [];
+      }
+      
       this.setState({ stampTemplateList });
-      console.log("✅ Loaded stamp template list:", stampTemplateList);
     } catch (error) {
-      console.error("❌ Error loading stamp template list:", error);
+      console.error("❌ Error loading stamp templates:", error);
+      this.setState({ stampTemplateList: [] });
     }
   };
 
@@ -157,11 +158,9 @@ class ShowEditData extends Component {
   render() {
     const {
       quantity,
-      productId,
       stampRange,
       printMethod,
       notes,
-      productList,
       stampTemplateList,
     } = this.state;
     const { errors } = this.props;
@@ -169,32 +168,6 @@ class ShowEditData extends Component {
     return (
       <div id="detailLoggingAccordion">
         <Row className="mb-2">
-          <Col md="6">
-            <div className={`${classes.rowItem} ${classes.alignTop}`}>
-              <Label className="form-control-label">Sản phẩm</Label>
-
-              <div className={classes.inputArea}>
-                <InputGroup className="input-group-alternative css-border-input">
-                  <Input
-                    type="select"
-                    name="productId"
-                    value={productId || ""}
-                    onChange={this.onChangeValue("productId")}
-                  >
-                    <option value="">-- Chọn sản phẩm --</option>
-                    {productList.map((item) => (
-                      <option key={item.id || item.ID} value={item.id || item.ID}>
-                        {item.productName || item.ProductName || item.name}
-                      </option>
-                    ))}
-                  </Input>
-                </InputGroup>
-                <p className="form-error-message margin-bottom-0">
-                  {errors?.productId || ""}
-                </p>
-              </div>
-            </div>
-          </Col>
           <Col md="6">
             <div className={`${classes.rowItem} ${classes.alignTop}`}>
               <Label className="form-control-label">Số lượng tem xin cấp</Label>
@@ -215,12 +188,9 @@ class ShowEditData extends Component {
               </div>
             </div>
           </Col>
-        </Row>
-
-        <Row className="mb-2">
           <Col md="6">
             <div className={`${classes.rowItem} ${classes.alignTop}`}>
-              <Label className="form-control-label">Dải tem</Label>
+              <Label className="form-control-label">Mẫu in tem</Label>
 
               <div className={classes.inputArea}>
                 <InputGroup className="input-group-alternative css-border-input">
@@ -230,15 +200,19 @@ class ShowEditData extends Component {
                     value={stampRange || ""}
                     onChange={this.onChangeValue("stampRange")}
                   >
-                    <option value="">-- Chọn dải tem --</option>
-                    {stampTemplateList.map((item) => (
-                      <option
-                        key={item.id || item.ID}
-                        value={item.stampRangeName || item.StampRangeName || item.name}
-                      >
-                        {item.stampRangeName || item.StampRangeName || item.name}
-                      </option>
-                    ))}
+                    <option value="">-- Chọn mẫu in tem --</option>
+                    {Array.isArray(stampTemplateList) && stampTemplateList.length > 0 ? (
+                      stampTemplateList.map((item) => (
+                        <option
+                          key={item.id || item.ID}
+                          value={item.id || item.ID}
+                        >
+                          {item.name || item.Name || item.stampRangeName || item.StampRangeName}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">-- Không có mẫu in tem --</option>
+                    )}
                   </Input>
                 </InputGroup>
                 <p className="form-error-message margin-bottom-0">
@@ -247,7 +221,10 @@ class ShowEditData extends Component {
               </div>
             </div>
           </Col>
-          <Col md="6">
+        </Row>
+
+        <Row className="mb-2">
+          <Col md="12">
             <div className={`${classes.rowItem} ${classes.alignTop}`}>
               <Label className="form-control-label">Phương thức in</Label>
 

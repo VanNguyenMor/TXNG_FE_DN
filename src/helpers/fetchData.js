@@ -841,6 +841,19 @@ export const fetchData = {
         return null;
       }
     },
+
+    getListStampTemplate: async () => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.getListStampTemplate, {});
+        
+        const data = result?.data || null;
+        
+        return data;
+      } catch (error) {
+        console.error("❌ Error in getListStampTemplate:", error);
+        return null;
+      }
+    },
   },
 };
 
