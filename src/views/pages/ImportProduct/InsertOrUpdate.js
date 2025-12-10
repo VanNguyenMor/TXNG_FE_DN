@@ -749,7 +749,7 @@ class InsertOrUpadte extends Component {
               }}
             >
               <table
-                className="table table-bordered table-hover"
+                className={`table table-bordered table-hover ${classes.scrollTable}`}
                 style={{ fontSize: "13px", marginBottom: "0" }}
               >
                 <thead className="bg-light">

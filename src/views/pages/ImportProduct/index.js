@@ -473,9 +473,16 @@ class ImportProduct extends Component {
 
   handleDataReload = () => {
     // Reset all filters
+    const today = new Date();
+    const fromDateValue = new Date(
+      today.getFullYear(),
+      today.getMonth() - 1,
+      today.getDate()
+    );
+    
     this.setState(
       {
-        fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+        fromDate: fromDateValue,
         toDate: new Date(),
         filter: {
           search: "",
