@@ -15,7 +15,13 @@ import {
   PRODUCT_HISTORIES,
   SCANS,
   SUMMARY_REPORT,
+  CONSIGNMENTS,
+  STAMP_REQUEST,
+  GOOD_RECEIVED,
+  PARTNER,
+  WAREHOUSE_MANAGEMENT,
 } from "./endpoint";
+import { USER_LIST_ACCOUNT_LIST } from "../apis/index";
 
 // Helper to extract product/material groups from API response
 // Response can have different structures: .productGroups, .materialGroups, or nested .data.productGroups
@@ -681,5 +687,381 @@ export const fetchData = {
       }
     },
   },
-};
 
+  consignments: {
+    getListConsignment: async (params) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.getListConsignment, params);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách lô hàng:", error);
+        return null;
+      }
+    },
+
+    getDetailConsignment: async (id) => {
+      try {
+        const endpoint = CONSIGNMENTS.getDetailConsignment.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy chi tiết lô hàng:", error);
+        return null;
+      }
+    },
+
+    addConsignment: async (data) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.addConsignment, data);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi thêm lô hàng:", error);
+        return null;
+      }
+    },
+
+    editConsignment: async (data) => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.editConsignment, data);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi cập nhật lô hàng:", error);
+        return null;
+      }
+    },
+
+    deleteConsignment: async (params) => {
+      try {
+        const endpoint = CONSIGNMENTS.deleteConsignment.replace("{id}", params.id);
+        const result = await callApi("delete", endpoint);
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi xóa lô hàng:", error);
+        return null;
+      }
+    },
+
+    getListProductComboBox: async () => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.getListProductComboBox, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+        return null;
+      }
+    },
+
+    getListWarehouseForUpdate: async () => {
+      try {
+        const result = await callApi("post", CONSIGNMENTS.getListWarehouseForUpdate, {});
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách kho hàng:", error);
+        return null;
+      }
+    },
+
+    getListDiaryComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListDiaryComboBox);
+        return result?.data?.traces || result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getListClassifyComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListClassifyComboBox);
+        return result?.data?.batchCategories || result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getListStampTemplate: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListStampTemplate);
+        return result?.data?.stampTemplates || result?.data?.stamps || result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  stampRequest: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.getListStampRequest, payload);
+        return result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = STAMP_REQUEST.getDetailStampRequest.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    add: async (payload) => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.addStampRequest, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    addFormData: async (formData) => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.addStampRequest, formData, true);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    edit: async (payload) => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.editStampRequest, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    editFormData: async (formData) => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.editStampRequest, formData, true);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = STAMP_REQUEST.deleteStampRequest.replace("{id}", id);
+        const result = await callApi("delete", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    getListProduct: async () => {
+      try {
+        const result = await callApi("get", STAMP_REQUEST.getListProductComboBox);
+        return result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getListStampTemplate: async () => {
+      try {
+        const result = await callApi("post", STAMP_REQUEST.getListStampTemplate, {});
+        
+        const data = result?.data || null;
+        
+        return data;
+      } catch (error) {
+        console.error("❌ Error in getListStampTemplate:", error);
+        return null;
+      }
+    },
+  },
+
+  goodReceived: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", GOOD_RECEIVED.getListGoodReceived, payload);
+        return result || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = GOOD_RECEIVED.getDetailGoodReceived.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        // Handle nested data structure: res.data.data.goodsReceipt
+        if (result?.data?.data?.goodsReceipt) {
+          return result.data.data;
+        } else if (result?.data?.goodsReceipt) {
+          return result.data;
+        } else if (result?.goodsReceipt) {
+          return result;
+        }
+        return result?.data || null;
+      } catch (error) {
+        console.error("❌ Error fetching good received detail:", error);
+        return null;
+      }
+    },
+
+    add: async (payload) => {
+      try {
+        const result = await callApi("post", GOOD_RECEIVED.addGoodReceived, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    edit: async (payload) => {
+      try {
+        const result = await callApi("post", GOOD_RECEIVED.editGoodReceived, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = GOOD_RECEIVED.deleteGoodReceived.replace("{id}", id);
+        const result = await callApi("delete", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+  },
+
+  partner: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", PARTNER.getListPartner, payload);
+        if (result && result.data && result.data.partners) {
+          return result.data.partners;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = PARTNER.getDetailPartner.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    add: async (payload) => {
+      try {
+        const result = await callApi("post", PARTNER.addPartner, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    edit: async (payload) => {
+      try {
+        const result = await callApi("post", PARTNER.editPartner, payload);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = PARTNER.deletePartner.replace("{id}", id);
+        const result = await callApi("delete", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+  },
+
+  user: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", USER_LIST_ACCOUNT_LIST, payload);
+        if (result && result.data && result.data.users) {
+          return result.data.users;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  material: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", MATERIAL_MANAGEMENT.getMaterialGroupList, payload);
+        if (result && result.data && result.data.materialGroups) {
+          return result.data.materialGroups;
+        }
+        if (result && result.data && Array.isArray(result.data)) {
+          return result.data;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  warehouse: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", WAREHOUSE_MANAGEMENT.getListComboBox, payload);
+        if (result && result.data && result.data.wareHouses) {
+          return result.data.wareHouses;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  product: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", PRODUCT_MANAGEMENT.getListProductManagement, payload);
+        if (result && result.data && result.data.products) {
+          return result.data.products;
+        }
+        if (result && result.data && Array.isArray(result.data)) {
+          return result.data;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+};

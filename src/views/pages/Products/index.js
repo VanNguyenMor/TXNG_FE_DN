@@ -42,6 +42,8 @@ import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { PRODUCTS } from "../../../helpers/constant";
+import { fetchData } from "helpers/fetchData.js";
+import moment from "moment";
 
 class Product extends Component {
   constructor(props) {
@@ -109,8 +111,10 @@ class Product extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-      toDate: new Date(),
+      // fromDate và toDate init là empty
+      fromDate: "",
+      toDate: "",
+      collapseList: [],
 
       STATUS_OPTIONS: [
         { id: 0, title: "Mới tạo" },
@@ -119,46 +123,9 @@ class Product extends Component {
         { id: 3, title: "Không duyệt" },
         { id: 4, title: "Chờ duyệt lại" },
       ],
-      DIARY_OPTIONS: [
-        {
-          id: 1,
-          title: "Nhật ký 1",
-          createdAt: "23/06/2025",
-          quantity: 50,
-          location: "Kho A",
-          product: "Phân bón NPK",
-          unit: "kg",
-        },
-        {
-          id: 2,
-          title: "Nhật ký 2",
-          createdAt: "21/06/2025",
-          quantity: 20,
-          location: "Kho B",
-          product: "Phân bón NPKS",
-          unit: "tấn",
-        },
-      ],
-      CLASSIFY_OPTIONS: [
-        {
-          id: 1,
-          title: "Phân loại 1",
-        },
-        {
-          id: 2,
-          title: "Phân loại 2",
-        },
-      ],
-      TEM_OPTIONS: [
-        {
-          id: 1,
-          title: "Dải tem 1",
-        },
-        {
-          id: 2,
-          title: "Dải tem 2",
-        },
-      ],
+      DIARY_OPTIONS: [], // Sẽ được load từ API batch/gettraces
+      CLASSIFY_OPTIONS: [], // Sẽ được load từ API batch/getbatchcategories
+      TEM_OPTIONS: [], // Sẽ được load từ API stamptemplate/getall
       PROVINCE_OPTIONS: [
         { id: 1, title: "Hà Nội" },
         { id: 2, title: "Hồ Chí Minh" },
@@ -248,9 +215,10 @@ class Product extends Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     const { getListTypeZoneProperty } = this.props;
-    /* Fetch Summary */
+    
+    /* Fetch Summary - load all data without date filter */
     this.fetchSummary(
       JSON.stringify({
         search: "",
@@ -275,43 +243,241 @@ class Product extends Component {
         };
       });
     });
+
+    // Fetch danh sách nhật ký (traces)
+    this.fetchDiaryOptions();
+
+    // Fetch danh sách phân loại (categories)
+    this.fetchClassifyOptions();
+
+    // Fetch danh sách dải tem (stamp templates)
+    this.fetchStampTemplateOptions();
+  }
+
+  fetchDiaryOptions = async () => {
+    try {
+      const result = await fetchData.consignments.getListDiaryComboBox();
+      
+      if (result && Array.isArray(result)) {
+        // Format dữ liệu từ API thành DIARY_OPTIONS
+        const formattedDiaries = result.map((item) => ({
+          id: item.id || item.ID,
+          title: item.traceName || item.name || item.title || "",
+          traceName: item.traceName || "",
+          createdAt: item.createdDate || item.CreatedDate || "",
+          quantity: item.quantity || item.Quantity || 0,
+          location: item.planZoneName || item.location || "",
+          product: item.productName || item.product || "",
+          unit: item.unitName || item.unit || "",
+        }));
+        
+        this.setState((previousState) => ({
+          ...previousState,
+          DIARY_OPTIONS: formattedDiaries,
+        }), () => {
+        });
+      } else {
+      }
+    } catch (error) {
+    }
+  }
+
+  fetchClassifyOptions = async () => {
+    try {
+      const result = await fetchData.consignments.getListClassifyComboBox();
+      
+      if (result && Array.isArray(result)) {
+        // Format dữ liệu từ API thành CLASSIFY_OPTIONS
+        // API trả về { id, description }
+        const formattedClassifies = result.map((item) => ({
+          id: item.id || item.ID,
+          title: item.description || item.name || item.title || item.categoryName || "",
+        }));
+        
+        this.setState((previousState) => ({
+          ...previousState,
+          CLASSIFY_OPTIONS: formattedClassifies,
+        }), () => {
+        });
+      } else {
+      }
+    } catch (error) {
+    }
+  }
+
+  fetchStampTemplateOptions = async () => {
+    try {
+      const result = await fetchData.consignments.getListStampTemplate();
+      
+      // API returns { status, message, data: { stampRanges: [...] } }
+      let stampRanges = [];
+      
+      if (result && result.stampRanges && Array.isArray(result.stampRanges)) {
+        stampRanges = result.stampRanges;
+      } else if (result && result.data && result.data.stampRanges && Array.isArray(result.data.stampRanges)) {
+        stampRanges = result.data.stampRanges;
+      } else if (Array.isArray(result)) {
+        stampRanges = result;
+      }
+      
+      if (stampRanges && stampRanges.length > 0) {
+        // Format dữ liệu từ API thành TEM_OPTIONS
+        // Mỗi dải tem hiển thị: "startNum - endNum" (ví dụ: "281 - 281" hoặc "277 - 278")
+        const formattedStamps = stampRanges.map((stamp) => ({
+          id: stamp.id,
+          title: `${stamp.startNum} - ${stamp.endNum}`,
+        }));
+        
+        this.setState((previousState) => ({
+          ...previousState,
+          TEM_OPTIONS: formattedStamps,
+        }), () => {
+        });
+      } else {
+        this.setState((previousState) => ({
+          ...previousState,
+          TEM_OPTIONS: [],
+        }));
+      }
+    } catch (error) {
+      this.setState((previousState) => ({
+        ...previousState,
+        TEM_OPTIONS: [],
+      }));
+    }
   }
 
   fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
-
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
-      let collapseList = [];
-      const data = (res.data || {}).data || {};
+    const { limit } = this.state;
+    
+    // Parse filter parameters from data
+    let filterParams = {
+      page: 0,
+      limit: limit,
+      search: "",
+      filter: "",
+      orderBy: "",
+    };
 
-      let newData = [...this.state.data];
+    if (data) {
+      try {
+        const parsedData = typeof data === "string" ? JSON.parse(data) : data;
+        filterParams = {
+          page: parsedData.page || 0,
+          limit: parsedData.limit || limit,
+          search: parsedData.search || "",
+          filter: parsedData.filter || "",
+          orderBy: parsedData.orderBy || "",
+          fromDate: parsedData.fromDate,
+          toDate: parsedData.toDate,
+        };
+      } catch (e) {
+        console.error("Error parsing filter params:", e);
+      }
+    }
 
-      newData.forEach((item, key) => {
-        collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
+    // Call Consignment API (batch/getlist)
+    fetchData.consignments
+      .getListConsignment(filterParams)
+      .then((res) => {
+        // Handle null/undefined response
+        if (!res) {
+          this.setState({ isLoaded: false, data: [], collapseList: [] });
+          return;
+        }
+
+        // API returns { batchs: [...] }
+        let reports = res?.batchs || [];
+        
+        // Ensure reports is an array
+        if (!Array.isArray(reports)) {
+          reports = [];
+        }
+
+        // Apply client-side filtering if needed
+        if (filterParams.filter && reports.length > 0) {
+          reports = reports.filter((item) => {
+            return item.Status === parseInt(filterParams.filter);
+          });
+        }
+
+        // Apply date filtering
+        if ((filterParams.fromDate || filterParams.toDate) && reports.length > 0) {
+          reports = reports.filter((item) => {
+            // Use RequestedDate instead of CreatedDate
+            if (!item.RequestedDate) return true;
+            
+            // Parse item.RequestedDate (format: 2025-11-19T15:19:26.813)
+            const requestedDate = moment(item.RequestedDate);
+            
+            // Parse fromDate (format: "DD-MM-YYYY" string)
+            let fromDate = null;
+            if (filterParams.fromDate) {
+              fromDate = moment(filterParams.fromDate, "DD-MM-YYYY");
+            }
+            
+            // Parse toDate (format: "DD-MM-YYYY" string)
+            let toDate = null;
+            if (filterParams.toDate) {
+              toDate = moment(filterParams.toDate, "DD-MM-YYYY");
+            }
+
+            let isValid = true;
+            if (fromDate && fromDate.isValid()) {
+              isValid = isValid && requestedDate.isSameOrAfter(fromDate, "day");
+            }
+            if (toDate && toDate.isValid()) {
+              isValid = isValid && requestedDate.isSameOrBefore(toDate, "day");
+            }
+            return isValid;
+          });
+        }
+
+        let collapseList = [];
+        if (Array.isArray(reports)) {
+          reports.forEach((item) => {
+            collapseList.push({ id: item.ID, collapse: false });
+          });
+        }
+
+        const total = reports.length | 0;
+        const length = reports.length;
+
+        // Transform API data to match table format
+        const tableData = reports.map((item, index) => ({
+          id: item.ID,
+          batchNumber: item.BatchNum,
+          productId: item.ProductName,
+          quantity: item.Quantity || 0,
+          unit: item.UnitName || "kg",
+          requestDate: item.RequestedDate
+            ? moment(item.RequestedDate).format("DD/MM/YYYY HH:mm")
+            : "",
+          status: item.Status || 0,
+          parentID: "",
+          index: index + 1,
+          color: "",
+        }));
+
+        this.setState({
+          data: tableData,
+          listLength: total,
+          totalPage: Math.ceil(length / limit),
+          isLoaded: false,
+          collapseList: collapseList,
+          totalElement: total,
+          beginItem: 0,
+          endItem: limit,
+          currentPage: 1,
+        });
+      })
+      .catch((error) => {
+        console.error("Lỗi fetch dữ liệu:", error);
+        this.setState({ isLoaded: false });
+        toast.error("Lỗi khi tải dữ liệu");
       });
-
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
-
-      this.setState({
-        data: newData,
-        listLength: total,
-        totalPage: Math.ceil(length / limit),
-        isLoaded: false,
-        collapseList: collapseList,
-      });
-    });
   };
 
   closeStatusModal = () => {
@@ -375,12 +541,19 @@ class Product extends Component {
     this.setState({ filter });
   };
 
-  handleSubmitSearchForm = () => {
+  applyFilters = () => {
     const { fromDate, toDate, filter } = this.state;
+    
+    // If all filters are empty, reset and reload all
+    if (!fromDate && !toDate && (!filter || !filter.filter)) {
+      this.handleSubmitSearchForm();
+      return;
+    }
+    
     this.fetchSummary(
       JSON.stringify({
         search: "",
-        filter,
+        filter: filter && filter.filter ? filter.filter : "",
         fromDate,
         toDate,
         orderBy: "",
@@ -390,20 +563,39 @@ class Product extends Component {
     );
   };
 
+  handleSubmitSearchForm = () => {
+    // Reset filters to default
+    this.setState({
+      fromDate: "",
+      toDate: "",
+      filter: {
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      },
+    }, () => {
+      // After state updated, fetch all data
+      this.fetchSummary(
+        JSON.stringify({
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+    });
+  };
+
   handleModal = (stutus, openModal, closeModal) => {
     if (stutus || this.state.isShowForEdit) {
+      this.onCloseModal();
       closeModal();
     } else {
       openModal();
     }
-
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        isShowForEdit: false,
-        editId: null,
-      };
-    });
   };
   toggle = (el, val) => {
     let { collapseList } = this.state;
@@ -418,25 +610,149 @@ class Product extends Component {
     if (!isCheck) {
       return {};
     }
-    const { dataInsert, data, editId, currentRow } = this.state;
-    const batchNumber = dataInsert.batchNumber;
-
+    const { dataInsert } = this.state;
     const errorInserts = {};
 
-    if (!batchNumber) {
-      errorInserts.batchNumber = "Số phiếu không được bỏ trống";
+    // Validate required fields
+    if (!dataInsert.batchNumber) {
+      errorInserts.batchNumber = "Số lô hàng không được bỏ trống";
+    }
+
+    if (!dataInsert.diaryId) {
+      errorInserts.diaryId = "Vui lòng chọn nhật ký";
+    }
+
+    if (!dataInsert.quantity || dataInsert.quantity < 1) {
+      errorInserts.quantity = "Số lượng phải lớn hơn 0";
+    }
+
+    if (!dataInsert.classifyId) {
+      errorInserts.classifyId = "Vui lòng chọn phân loại";
+    }
+
+    if (!dataInsert.temId) {
+      errorInserts.temId = "Vui lòng chọn dải tem";
+    }
+
+    if (!dataInsert.fromVal && dataInsert.fromVal !== 0) {
+      errorInserts.fromVal = "Vui lòng nhập dải tem từ";
+    }
+
+    if (!dataInsert.toVal && dataInsert.toVal !== 0) {
+      errorInserts.toVal = "Vui lòng nhập dải tem đến";
+    }
+
+    // Validate market selection
+    if (!dataInsert.marketId || (dataInsert.marketId !== 1 && dataInsert.marketId !== 2)) {
+      errorInserts.marketId = "Vui lòng chọn thị trường";
+    }
+
+    // Validate province/country based on market selection
+    if (dataInsert.marketId === 1 && !dataInsert.provinceId) {
+      errorInserts.provinceId = "Vui lòng chọn tỉnh/thành phố";
+    }
+
+    if (dataInsert.marketId === 2 && !dataInsert.countryId) {
+      errorInserts.countryId = "Vui lòng chọn nước";
     }
 
     return errorInserts;
   };
 
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
-    console.log(dataInsert);
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
+  onConfirm = async (toggleModal, closePopup) => {
+    const { dataInsert, editId } = this.state;
+
+    // Validate data
+    const errorInserts = this.checkDataInsert(true);
+    if (Object.keys(errorInserts).length > 0) {
+      this.setState({ errorInserts });
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      const formData = new FormData();
+
+      // Add ID if editing
+      if (dataInsert.id) {
+        formData.append("Id", dataInsert.id);
+      }
+
+      // Append form data
+      formData.append("BatchNum", dataInsert.batchNumber || "");
+      formData.append("DiaryID", dataInsert.diaryId || "");
+      formData.append("ClassifyID", dataInsert.classifyId || "");
+      formData.append("TemID", dataInsert.temId || "");
+      formData.append("Quantity", dataInsert.quantity || 1);
+      formData.append("Location", dataInsert.placeVal || "");
+      formData.append("ProductName", dataInsert.productVal || "");
+      formData.append("Notes", dataInsert.noteVal || "");
+      formData.append("UnitID", dataInsert.unitVal || "");
+      formData.append("FromValue", dataInsert.fromVal || "");
+      formData.append("ToValue", dataInsert.toVal || "");
+      formData.append("MarketID", dataInsert.marketId || null);
+      formData.append("ProvinceID", dataInsert.provinceId || null);
+      formData.append("CountryID", dataInsert.countryId || null);
+      formData.append("WarehouseID", dataInsert.warehouseId || null);
+
+      // Append file if exists
+      if (dataInsert.file && dataInsert.file instanceof File) {
+        formData.append("File", dataInsert.file);
+      }
+
+      // Call API
+      let result;
+      if (dataInsert.id) {
+        // Update
+        result = await fetchData.consignments.editConsignment(formData);
+      } else {
+        // Create
+        result = await fetchData.consignments.addConsignment(formData);
+      }
+
+      if (result) {
+        const message = dataInsert.id
+          ? "Cập nhật lô hàng thành công!"
+          : "Thêm lô hàng thành công!";
+        toast.success(message);
+
+        // Close modal and refresh data
+        if (toggleModal) {
+          toggleModal();
+        }
+
+        // Reset form
+        this.setState({
+          isShowForEdit: false,
+          editId: null,
+          dataInsert: {},
+          errorInserts: {},
+          isLoaded: false,
+        });
+
+        // Reload data
+        this.fetchSummary(
+          JSON.stringify({
+            search: "",
+            filter: "",
+            orderBy: "",
+            page: null,
+            limit: null,
+          })
+        );
+      } else {
+        toast.error(
+          dataInsert.id
+            ? "Cập nhật lô hàng thất bại!"
+            : "Thêm lô hàng thất bại!"
+        );
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lưu lô hàng:", error);
+      toast.error("Có lỗi xảy ra, vui lòng thử lại!");
+      this.setState({ isLoaded: false });
     }
   };
 
@@ -449,7 +765,7 @@ class Product extends Component {
         };
       },
       () => {
-        const errorInserts = this.checkDataInsert();
+        const errorInserts = this.checkDataInsert(false);
 
         this.setState((previousState) => {
           return {
@@ -461,12 +777,61 @@ class Product extends Component {
     );
   };
 
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
+  onCloseModal = () => {
+    this.setState({
+      isShowForEdit: false,
+      editId: null,
+      dataInsert: {},
+      errorInserts: {},
     });
+  };
+
+  onEditData = (item) => async () => {
+    if (!item || !item.id) return;
+
+    this.setState({ isLoaded: true });
+
+    try {
+      // Load detail data from API
+      const detailData = await fetchData.consignments.getDetailConsignment(item.id);
+
+      if (detailData) {
+        const batch = detailData.batch || detailData;
+        const initialData = {
+          id: item.id,
+          batchId: batch.batchID || batch.BatchID || "",
+          diaryId: batch.diaryID || batch.DiaryID || null,
+          classifyId: batch.classifyID || batch.ClassifyID || null,
+          temId: batch.temID || batch.TemID || null,
+          batchNumber: batch.batchNumber || batch.BatchNum || "",
+          placeVal: batch.location || batch.Location || "",
+          productVal: batch.productName || batch.ProductName || "",
+          noteVal: batch.notes || batch.Notes || "",
+          unitVal: batch.unitID || batch.UnitID || batch.unitName || batch.UnitName || "",
+          quantity: batch.quantity || batch.Quantity || 1,
+          fromVal: batch.fromValue || batch.FromValue || "",
+          toVal: batch.toValue || batch.ToValue || "",
+          marketId: batch.marketID || batch.MarketID || null,
+          provinceId: batch.provinceID || batch.ProvinceID || null,
+          countryId: batch.countryID || batch.CountryID || null,
+          warehouseId: batch.warehouseID || batch.WarehouseID || null,
+        };
+
+        this.setState({
+          isShowForEdit: true,
+          editId: item.id,
+          dataInsert: initialData,
+          isLoaded: false,
+        });
+      } else {
+        toast.error("Không tải được dữ liệu chi tiết!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải chi tiết lô hàng:", error);
+      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+      this.setState({ isLoaded: false });
+    }
   };
 
   onDeleteData = (id) => () => {
@@ -538,16 +903,16 @@ class Product extends Component {
   showTitleWithStatus = (id) => {
     const { STATUS_OPTIONS } = this.state;
 
-    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
+    let queue = Array.isArray(STATUS_OPTIONS) ? [...STATUS_OPTIONS] : [];
 
-    while (queue.length > 0) {
+    while (queue && queue.length > 0) {
       const status = queue.shift();
 
       if (status && status.id === id) {
         return status.title;
       }
 
-      if (status && status.children && status.children.length > 0) {
+      if (status && status.children && Array.isArray(status.children) && status.children.length > 0) {
         queue.push(...status.children);
       }
     }
@@ -557,6 +922,15 @@ class Product extends Component {
 
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
+    
+    // Ensure data is an array
+    if (!Array.isArray(data)) {
+      data = [];
+    }
+    if (!Array.isArray(collapseList)) {
+      return [];
+    }
+    
     let list = [];
     let parentid = [];
     let autoIndex = 0;
@@ -566,7 +940,7 @@ class Product extends Component {
 
     const cb = (e, key, array) => {
       const renderClass =
-        e.parentID.length === 0
+        (!e.parentID || e.parentID.length === 0)
           ? `${classes.treeParent}`
           : `${classes.treeChild}${
               parentid.includes(e.parentID)
@@ -621,18 +995,18 @@ class Product extends Component {
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
                           <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
+                            Xem chi tiết
                           </DropdownItem>
                         )}
-                        {isDisableEdit == true ||
+                        {/* {isDisableEdit == true ||
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
-                        )}
-                        {isDisableDelete == true ? null : (
+                        )} */}
+                        {/* {isDisableDelete == true ? null : (
                           <DropdownItem onClick={this.onDeleteData(e.id)}>
                             Xoá
                           </DropdownItem>
-                        )}
+                        )} */}
                       </DropdownMenu>
                     </ButtonDropdown>
                   )}
@@ -642,7 +1016,9 @@ class Product extends Component {
         </tr>
       );
       autoIndex++;
-      e.children && e.children.forEach(cb);
+      if (e.children && Array.isArray(e.children)) {
+        e.children.forEach(cb);
+      }
     };
 
     data.forEach(cb);
@@ -675,6 +1051,7 @@ class Product extends Component {
       WAREHOUSE_OPTIONS,
       fromDate,
       toDate,
+      filter,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -716,27 +1093,43 @@ class Product extends Component {
                   <div className="col">
                     {/* Header */}
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
+                      dataReload={() => {
+                        this.setState({
+                          fromDate: "",
+                          toDate: "",
+                          filter: {
                             search: "",
                             filter: "",
                             orderBy: "",
                             page: null,
                             limit: null,
-                          })
-                        )
-                      }
+                          },
+                        }, () => {
+                          this.fetchSummary(
+                            JSON.stringify({
+                              search: "",
+                              filter: "",
+                              orderBy: "",
+                              page: null,
+                              limit: null,
+                            })
+                          );
+                        });
+                      }}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
-                        isShowForEdit ? "Sửa phiếu nhập" : "Thêm phiếu nhập"
+                        isShowForEdit ? "Sửa lô hàng" : "Thêm lô hàng"
                       }
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
+                          initialData={isShowForEdit ? this.state.dataInsert : null}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
+                          onLoadDetailData={(data) => {
+                            this.setState({ dataInsert: data });
+                          }}
                           STATUS_OPTIONS={STATUS_OPTIONS}
                           DIARY_OPTIONS={DIARY_OPTIONS}
                           CLASSIFY_OPTIONS={CLASSIFY_OPTIONS}
@@ -772,13 +1165,12 @@ class Product extends Component {
                                   value={fromDate || ""}
                                   timeFormat={false}
                                   dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
+                                  onChange={(value) => {
+                                    const newFromDate = value
+                                      ? value.format("DD-MM-YYYY")
+                                      : "";
+                                    this.setState({ fromDate: newFromDate });
+                                  }}
                                 />
                               </div>
                             </div>
@@ -796,13 +1188,12 @@ class Product extends Component {
                                   value={toDate || ""}
                                   timeFormat={false}
                                   dateFormat="DD-MM-YYYY"
-                                  onChange={(value) =>
-                                    this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
-                                    })
-                                  }
+                                  onChange={(value) => {
+                                    const newToDate = value
+                                      ? value.format("DD-MM-YYYY")
+                                      : "";
+                                    this.setState({ toDate: newToDate });
+                                  }}
                                 />
                               </div>
                             </div>
@@ -812,11 +1203,13 @@ class Product extends Component {
                               </label>
                               <div>
                                 <Select
+                                  key={filter && filter.filter ? filter.filter : "empty"}
                                   name="filter"
                                   title="Lọc theo trạng thái"
                                   data={STATUS_OPTIONS}
                                   labelName="title"
                                   val="id"
+                                  defaultValue={filter && filter.filter ? filter.filter : null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -831,7 +1224,7 @@ class Product extends Component {
                                 type="button"
                                 size="md"
                                 onClick={() => {
-                                  this.handleSubmitSearchForm();
+                                  this.applyFilters();
                                 }}
                               >
                                 <img src={SearchImg} alt="Tìm kiếm" />
@@ -913,6 +1306,7 @@ class Product extends Component {
               moduleBody={
                 <InsertOrUpdate
                   id={editId}
+                  initialData={null}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
                   STATUS_OPTIONS={STATUS_OPTIONS}

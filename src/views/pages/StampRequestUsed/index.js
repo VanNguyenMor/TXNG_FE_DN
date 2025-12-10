@@ -22,6 +22,8 @@ import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction"
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
+import { fetchData } from "helpers/fetchData";
+import moment from "moment";
 
 // reactstrap components
 import {
@@ -47,29 +49,8 @@ class BusinessInformation extends Component {
   constructor(props) {
     super(props);
 
-    const dataMock = [
-      {
-        id: 1,
-        requestDate: "2025-10-04",
-        totalRequestedQuantity: 20,
-        stampRange: null,
-        printMethod: "Yêu cầu in",
-        effect: 1,
-        currentStatus: 1,
-      },
-      {
-        id: 2,
-        requestDate: "2025-10-03",
-        totalRequestedQuantity: 30,
-        stampRange: "4341 - 4370",
-        printMethod: "Tự in",
-        effect: 1,
-        currentStatus: 1,
-      },
-    ];
-
     this.state = {
-      data: dataMock,
+      data: [],
       detail: [],
       update: [],
       create: [],
@@ -97,9 +78,12 @@ class BusinessInformation extends Component {
       listLength: 0,
       createNewModal: false,
       currentPage: 0,
+      collapseList: [],
+      totalPage: 0,
       filter: {
         search: "",
-        filter: "",
+        statusFilter: "",
+        effectFilter: "",
         orderBy: "",
         page: null,
         limit: null,
@@ -115,12 +99,17 @@ class BusinessInformation extends Component {
       warningBlockProductModal: false,
       blockProductId: null,
       STATUS_OPTIONS: [
-        { id: 0, title: "Chờ duyệt" },
-        { id: 1, title: "Đã duyệt" },
+        { id: 0, title: "Mới tạo" },
+        { id: 1, title: "Chờ duyệt" },
+        { id: 2, title: "Đã duyệt" },
+        { id: 3, title: "Không duyệt" },
+        { id: 4, title: "Đã duyệt yêu cầu" },
       ],
       EFFECT_OPTIONS: [
         { id: 0, title: "Chưa hiệu lực" },
-        { id: 1, title: "Có hiệu lực" },
+        { id: 1, title: "Chờ cấp phép" },
+        { id: 2, title: "Có hiệu lực" },
+        { id: 3, title: "Không cấp phép" },
       ],
     };
   }
@@ -154,41 +143,248 @@ class BusinessInformation extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
-
+  fetchSummary = async (data) => {
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
+    try {
+      const payload = data ? JSON.parse(data) : {};
+      
+      
+      const res = await fetchData.stampRequest.getList(payload);
+      
+      
+      if (!res) {
+        this.setState({ isLoaded: false, data: [], collapseList: [] });
+        return;
+      }
+
+      let stampRequests = [];
+      
+      if (res.data && res.data.stamps && Array.isArray(res.data.stamps)) {
+        stampRequests = res.data.stamps;
+      } else if (res.stamps && Array.isArray(res.stamps)) {
+        stampRequests = res.stamps;
+      } else if (Array.isArray(res)) {
+        stampRequests = res;
+      } else if (res.data && Array.isArray(res.data)) {
+        stampRequests = res.data;
+      }
+
       const { limit } = this.state;
       let collapseList = [];
-      const data = (res.data || {}).data || {};
 
-      let newData = [...this.state.data];
+      let tableData = stampRequests.map((item, index) => ({
+        id: item.id || item.ID,
+        requestDate: item.requestedDate 
+          ? moment(item.requestedDate).format("DD/MM/YYYY") 
+          : "",
+        totalRequestedQuantity: item.quantity || item.Quantity || 0,
+        stampRange: item.startNum && item.endNum 
+          ? `${item.startNum} - ${item.endNum}` 
+          : item.stampRange || item.StampRange || "-",
+        printMethod: item.isPrint === true ? "Tự in" : "Yêu cầu in",
+        effect: item.requestedUsedStatus || item.RequestedUsedStatus || 0,
+        currentStatus: item.status || item.Status || 0,
+        parentID: "",
+        index: index + 1,
+        color: "",
+      }));
 
-      newData.forEach((item, key) => {
+      if (payload.status !== null && payload.status !== undefined) {
+        tableData = tableData.filter(item => item.currentStatus === payload.status);
+      }
+
+      if (payload.requestedUsedStatus !== null && payload.requestedUsedStatus !== undefined) {
+        tableData = tableData.filter(item => item.effect === payload.requestedUsedStatus);
+      }
+
+      tableData.forEach((item) => {
         collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
       });
 
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
+      const total = tableData.length | 0;
+      const length = tableData.length;
 
       this.setState({
-        data: newData,
+        data: tableData,
         listLength: total,
         totalPage: Math.ceil(length / limit),
         isLoaded: false,
         collapseList: collapseList,
       });
+
+    } catch (error) {
+      toast.error("Lỗi khi tải danh sách xin cấp tem");
+      this.setState({ isLoaded: false });
+    }
+  };
+
+  onEditData = (item) => async () => {
+    if (!item || !item.id) return;
+
+    this.setState({ isLoaded: true });
+
+    try {
+      // Load detail data from API
+      const detailData = await fetchData.stampRequest.getDetail(item.id);
+
+      if (detailData) {
+        const request = detailData.request || detailData;
+        console.log("Detail data from API:", request);
+        const initialData = {
+          id: item.id,
+          quantity: request.quantity || request.Quantity || 0,
+          stampRange: request.stampTemplateID || request.StampTemplateID || "",
+          printMethod: request.isPrint === true ? 1 : 0,
+          notes: request.note || request.Note || "",
+          status: request.status || request.Status || 0,
+        };
+        console.log("Initialized data:", initialData);
+
+        this.setState({
+          isShowForDetail: true,
+          editId: item.id,
+          dataInsert: initialData,
+          isLoaded: false,
+        });
+      } else {
+        toast.error("Không tải được dữ liệu chi tiết!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải chi tiết xin cấp tem:", error);
+      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+      this.setState({ isLoaded: false });
+    }
+  };
+
+  onConfirm = async (toggleModal, closePopup) => {
+    const { dataInsert, editId } = this.state;
+
+    const errorInserts = this.checkDataInsert(true);
+    if (Object.keys(errorInserts).length > 0) {
+      this.setState({ errorInserts });
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      // Parse quantity to ensure it's a valid number
+      const parsedQuantity = parseInt(dataInsert.quantity) || 0;
+      
+      // Build FormData instead of JSON
+      const formData = new FormData();
+      formData.append("Id", dataInsert.id || "");
+      formData.append("Quantity", parsedQuantity);
+      formData.append("StampTemplateID", dataInsert.stampRange || "");
+      formData.append("IsPrint", "false");
+      formData.append("Note", dataInsert.notes || "");
+      formData.append("FileUpload", "");
+      formData.append("Files", "[]");
+      formData.append("Amount", 0);
+
+
+      // Call API
+      let result;
+      if (dataInsert.id) {
+        // Update
+        result = await fetchData.stampRequest.editFormData(formData);
+        if (result && result.status === 200) {
+          toast.success("Cập nhật xin cấp tem thành công!");
+        } else {
+          toast.error("Cập nhật xin cấp tem thất bại!");
+          this.setState({ isLoaded: false });
+          return;
+        }
+      } else {
+        // Create
+        result = await fetchData.stampRequest.addFormData(formData);
+        if (result && result.status === 200) {
+          toast.success("Thêm xin cấp tem thành công!");
+        } else {
+          toast.error("Thêm xin cấp tem thất bại!");
+          this.setState({ isLoaded: false });
+          return;
+        }
+      }
+
+      // Close modal and refresh data
+      if (toggleModal) {
+        toggleModal();
+      }
+
+      // Reset form
+      this.setState({
+        isShowForDetail: false,
+        editId: null,
+        dataInsert: {},
+        errorInserts: {},
+        isLoaded: false,
+      });
+
+      // Reload data
+      this.fetchSummary(
+        JSON.stringify({
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+    } catch (error) {
+      console.error("Lỗi khi lưu xin cấp tem:", error);
+      toast.error("Có lỗi xảy ra, vui lòng thử lại!");
+      this.setState({ isLoaded: false });
+    }
+  };
+
+  onHandleChangeValue = (data) => {
+    this.setState(
+      (previousState) => {
+        return {
+          ...previousState,
+          dataInsert: data,
+        };
+      },
+      () => {
+        const errorInserts = this.checkDataInsert(false);
+
+        this.setState((previousState) => {
+          return {
+            ...previousState,
+            errorInserts,
+          };
+        });
+      }
+    );
+  };
+
+  onCloseModal = () => {
+    this.setState({
+      isShowForDetail: false,
+      editId: null,
+      dataInsert: {},
+      errorInserts: {},
     });
+  };
+
+  checkDataInsert = (isSubmit = false) => {
+    const { dataInsert } = this.state;
+    let errors = {};
+
+    // Validate quantity
+    if (!dataInsert.quantity || dataInsert.quantity <= 0) {
+      errors.quantity = "Số lượng không được trống và phải lớn hơn 0";
+    }
+
+    // Validate stamp template
+    if (!dataInsert.stampRange) {
+      errors.stampRange = "Vui lòng chọn mẫu in tem";
+    }
+
+    return errors;
   };
 
   closeStatusModal = () => {
@@ -202,27 +398,17 @@ class BusinessInformation extends Component {
   };
 
   handlePageClick = (data) => {
-    let { limit, beginItem, endItem } = this.state;
+    let { limit } = this.state;
     let selected = data.selected;
     let offset = Math.ceil(selected * limit);
-    let total = 0;
 
-    beginItem = offset;
-    endItem = offset + limit;
-
-    this.state.data.map(
-      (item, key) => key >= beginItem && key < endItem && total++
-    );
-
-    if (selected > 0) {
-      total = selected * limit + total;
-    } else total = total;
+    let beginItem = offset;
+    let endItem = offset + limit;
 
     this.setState({
       beginItem: beginItem,
       endItem: endItem,
-      currentPage: selected + 1,
-      totalElement: total,
+      currentPage: selected,
     });
   };
 
@@ -237,7 +423,8 @@ class BusinessInformation extends Component {
   clearFilter = () => {
     let clearFilter = {
       search: "",
-      filter: "",
+      statusFilter: "",
+      effectFilter: "",
       orderBy: "",
       page: null,
       limit: null,
@@ -248,23 +435,54 @@ class BusinessInformation extends Component {
   handleChangeSelectFilter = (value, name) => {
     let { filter } = this.state;
 
-    filter[name] = value;
+    filter[name] = value ? String(value) : "";
     this.setState({ filter });
   };
 
-  handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
+  handleDataReload = () => {
+    const resetFilter = {
+      search: "",
+      statusFilter: "",
+      effectFilter: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    };
+    
+    this.setState({ filter: resetFilter }, () => {
+      this.fetchSummary(JSON.stringify({
         search: "",
-        filter,
-        fromDate,
-        toDate,
         orderBy: "",
         page: null,
         limit: null,
-      })
-    );
+      }));
+    });
+  };
+
+  handleSubmitSearchForm = () => {
+    const { filter } = this.state;
+    
+    if (!filter.statusFilter && !filter.effectFilter) {
+      alert("Vui lòng chọn ít nhất một tiêu chí tìm kiếm!");
+      return;
+    }
+    
+    const payload = {
+      search: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    };
+    
+    if (filter.statusFilter !== null && filter.statusFilter !== undefined && filter.statusFilter !== "") {
+      payload.status = parseInt(filter.statusFilter);
+    }
+    
+    if (filter.effectFilter !== null && filter.effectFilter !== undefined && filter.effectFilter !== "") {
+      payload.requestedUsedStatus = parseInt(filter.effectFilter);
+    }
+    
+    this.fetchSummary(JSON.stringify(payload));
   };
 
   handleModal = (status, openModal, closeModal) => {
@@ -294,52 +512,6 @@ class BusinessInformation extends Component {
 
     this.setState({ collapseList });
   };
-  checkDataInsert = (isCheck) => {
-    if (!isCheck) {
-      return {};
-    }
-    const { dataInsert, data, editId, currentRow } = this.state;
-    const title = dataInsert.title;
-
-    const errorInserts = {};
-
-    if (!title) {
-      errorInserts.title = "Số phiếu không được bỏ trống";
-    }
-
-    return errorInserts;
-  };
-
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
-    console.log(dataInsert);
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
-    }
-  };
-
-  onHandleChangeValue = (data) => {
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          dataInsert: data,
-        };
-      },
-      () => {
-        const errorInserts = this.checkDataInsert();
-
-        this.setState((previousState) => {
-          return {
-            ...previousState,
-            errorInserts,
-          };
-        });
-      }
-    );
-  };
 
   onShowHistoryModal = (e) => () => {
     this.setState((previousState) => {
@@ -353,16 +525,15 @@ class BusinessInformation extends Component {
     });
   };
 
-  onShowDetail = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForDetail: true,
-      };
-    });
+  onShowDetail = (item) => () => {
+    this.onEditData(item)();
   };
 
   onDeleteData = (id) => () => {
-    alert("Xóa thành công");
+    this.setState({
+      warningPopupModal: true,
+      deleteId: id,
+    });
   };
 
   toggleModalPopupDelete = () => {
@@ -374,18 +545,44 @@ class BusinessInformation extends Component {
     });
   };
 
-  handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
+  onAddNew = () => {
+    this.setState({
+      isShowForDetail: true,
+      editId: null,
+      dataInsert: {
+        id: null,
+        quantity: 0,
+        productId: null,
+        stampRange: "",
+        printMethod: 0,
+        notes: "",
+      },
+      errorInserts: {},
+    });
+  };
+
+  handleDeleteRow = async () => {
+    const { deleteId } = this.state;
+
+    if (!deleteId) {
+      this.setState({ warningPopupModal: false });
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      const result = await fetchData.stampRequest.delete(deleteId);
+
+      if (result && result.status === 200) {
+        this.setState({
           warningPopupModal: false,
-        };
-      });
+          message: "Xóa dữ liệu thành công",
+          isLoaded: false,
+        });
+        toast.success("Xóa dữ liệu thành công!");
 
-      const data = res.data;
-
-      if (data.status == 200) {
+        // Reload list
         this.fetchSummary(
           JSON.stringify({
             search: "",
@@ -395,16 +592,23 @@ class BusinessInformation extends Component {
             limit: null,
           })
         );
-
-        this.setState({ message: "Xóa dữ liệu thành công" });
-        toast.success("Xoá dữ liệu thành công!");
       } else {
-        const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa dữ liệu thất bại" });
-        this.toggleModal("popupMessage");
+        this.setState({
+          warningPopupModal: false,
+          message: "Xóa dữ liệu thất bại",
+          isLoaded: false,
+        });
+        toast.error("Xóa dữ liệu thất bại!");
       }
-    });
+    } catch (error) {
+      console.error("❌ Lỗi xóa xin cấp tem:", error);
+      this.setState({
+        warningPopupModal: false,
+        message: "Có lỗi xảy ra khi xóa",
+        isLoaded: false,
+      });
+      toast.error("Có lỗi xảy ra!");
+    }
   };
 
   toggleModal = (state, type) => {
@@ -471,65 +675,56 @@ class BusinessInformation extends Component {
   renderTable = (data, isDisableEdit, isDisableDelete) => {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
-    let parentid = [];
     let autoIndex = 0;
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
-    data.forEach((e) => parentid.push(e.id));
+    // Lọc dữ liệu theo pagination
+    const filteredData = Array.isArray(data) 
+      ? data.filter((item, key) => key >= beginItem && key < endItem)
+      : [];
 
-    const cb = (e, key, array) => {
-      const renderClass =
-        e.parentID.length === 0
-          ? `${classes.treeParent}`
-          : `${classes.treeChild}${
-              parentid.includes(e.parentID)
-                ? ` ${classes.childs}`
-                : ` ${classes.childsItem}`
-            }`;
+    // Render từng dòng của bảng
+    filteredData.forEach((e, index) => {
       list.push(
         <tr
-          key={autoIndex}
-          parentid={e.parentID}
+          key={`row-${e.id}`}
           currentid={e.id}
-          index={autoIndex}
+          index={index}
           className="table-hover-css"
         >
-          <td
-            className={`className='table-scale-col table-user-col-1' ${renderClass}`}
-          >
-            {autoIndex + 1}
+          <td className="table-scale-col table-user-col-1">
+            {beginItem + index + 1}
           </td>
           <td className="table-scale-col" style={{ textAlign: "left" }}>
-            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+            <span style={{ fontSize: "14px" }}>
               {e.requestDate}
             </span>
           </td>
 
           <td className="table-scale-col" style={{ textAlign: "left" }}>
-            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+            <span style={{ fontSize: "14px" }}>
               {e.totalRequestedQuantity}
             </span>
           </td>
 
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}`, fontSize: "14px" }}>
+          <td className="table-scale-col">
+            <span style={{ fontSize: "14px" }}>
               {e.stampRange ?? "-"}
             </span>
           </td>
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.printMethod}</span>
+          <td className="table-scale-col">
+            <span>{e.printMethod}</span>
           </td>
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}` }}>
+          <td className="table-scale-col">
+            <span>
               {this.showTitleWithStatus(e.currentStatus)}
             </span>
           </td>
-          <td className={renderClass}>
-            <span style={{ color: `${e.color}` }}>
+          <td className="table-scale-col">
+            <span>
               {this.showTitleWithEffect(e.effect)}
             </span>
           </td>
-          <td>
+          <td className="table-scale-col">
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
@@ -553,7 +748,7 @@ class BusinessInformation extends Component {
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
                         )}
-                        {isDisableDelete == true ? null : (
+                        {isDisableDelete == true || e.currentStatus == 2 || e.currentStatus == 4 ? null : (
                           <DropdownItem onClick={this.onDeleteData(e.id)}>
                             Xoá
                           </DropdownItem>
@@ -566,11 +761,8 @@ class BusinessInformation extends Component {
           </td>
         </tr>
       );
-      autoIndex++;
-      e.children && e.children.forEach(cb);
-    };
+    });
 
-    data.forEach(cb);
     return list;
   };
 
@@ -611,6 +803,7 @@ class BusinessInformation extends Component {
       currentHistoryData,
       STATUS_OPTIONS,
       EFFECT_OPTIONS,
+      filter,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -651,17 +844,7 @@ class BusinessInformation extends Component {
                 <Row>
                   <div className="col">
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
-                      }
+                      dataReload={this.handleDataReload}
                       readOnly={isShowForHistoryList}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
@@ -689,11 +872,12 @@ class BusinessInformation extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
+                                  name="statusFilter"
                                   title="Lọc theo trạng thái"
                                   data={STATUS_OPTIONS}
                                   labelName="title"
                                   val="id"
+                                  value={filter.statusFilter ? parseInt(filter.statusFilter) : null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -705,11 +889,12 @@ class BusinessInformation extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
+                                  name="effectFilter"
                                   title="Lọc theo cấp phép"
                                   data={EFFECT_OPTIONS}
                                   labelName="title"
                                   val="id"
+                                  value={filter.effectFilter ? parseInt(filter.effectFilter) : null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -740,27 +925,22 @@ class BusinessInformation extends Component {
                         <div>
                           {isShowForDetail ? (
                             <ShowEditData
-                              id={editId}
+                              dataInsert={this.state.dataInsert}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              EFFECT_OPTIONS={EFFECT_OPTIONS}
                             />
                           ) : isShowForHistoryList ? (
                             <ShowHistoryData
                               id={editId}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              EFFECT_OPTIONS={EFFECT_OPTIONS}
                               historyData={currentHistoryData}
                             />
                           ) : (
                             <ShowEditData
+                              dataInsert={{}}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
-                              STATUS_OPTIONS={STATUS_OPTIONS}
-                              EFFECT_OPTIONS={EFFECT_OPTIONS}
                             />
                           )}
                         </div>
@@ -799,7 +979,7 @@ class BusinessInformation extends Component {
                     {/* Pagination */}
                     {
                       // Page of Table
-                      Array.isArray(data) > 0 && (
+                      Array.isArray(data) && data.length > 0 && (
                         <Pagination
                           data={data}
                           listLength={listLength}

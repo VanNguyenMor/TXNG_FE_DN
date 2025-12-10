@@ -27,6 +27,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactDatetime from "react-datetime";
 
+import { fetchData } from "helpers/fetchData";
+import moment from "moment";
+
 // reactstrap components
 import {
   Card,
@@ -95,7 +98,11 @@ class ImportProduct extends Component {
       endItem: LIMIT_ITEM_IN_PAGE,
       totalElement: 0,
       listLength: 0,
-      fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      fromDate: new Date(
+        new Date().getFullYear(),
+        new Date().getMonth() - 1,
+        new Date().getDate()
+      ),
       toDate: new Date(),
       currentPage: 0,
       filter: {
@@ -105,7 +112,15 @@ class ImportProduct extends Component {
         page: null,
         limit: null,
       },
-      dataInsert: {},
+      dataInsert: {
+        receiptNumber: "",
+        creationDate: new Date(),
+        supplier: "",
+        importer: "",
+        importerId: "",
+        note: "",
+        status: 0,
+      },
       errorInserts: {},
       isShowForEdit: false,
       editId: null,
@@ -113,44 +128,41 @@ class ImportProduct extends Component {
       deleteId: null,
       popupMessage: null,
       STATUS_OPTIONS: [
-        { id: 0, name: "Chưa duyệt" },
-        { id: 1, name: "Đã duyệt" },
+        { id: 0, name: "Mới tạo" },
+        { id: 1, name: "Chưa duyệt" },
+        { id: 2, name: "Đã duyệt" },
       ],
-      SUPPLIER_LIST: [
-        { id: 1, name: "Nhà cung cấp A" },
-        { id: 2, name: "Nhà cung cấp B" },
-      ],
-      INGREDIENT_LIST: [
-        { id: 1, name: "Nguyên liệu A" },
-        { id: 2, name: "Nguyên liệu B" },
-      ],
-      PRODUCT_LIST: [
-        { id: 1, name: "Sản phẩm A" },
-        { id: 2, name: "Sản phẩm B" },
-      ],
-      WAREHOUSE_LIST: [
-        { id: 1, name: "Kho hàng A" },
-        { id: 2, name: "Kho hàng B" },
-      ],
+      SUPPLIER_LIST: [],
+      USER_LIST: [],
+      INGREDIENT_LIST: [],
+      PRODUCT_LIST: [],
+      WAREHOUSE_LIST: [],
       UNIT_LIST: [
         { id: 1, name: "Cái" },
         { id: 2, name: "Chiếc" },
       ],
     };
+
+    // Store suppliers in instance variable for quick access
+    this.loadedSuppliers = [];
   }
 
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary();
+
+    /* Load suppliers */
+    this.loadSuppliers();
+
+    /* Load materials */
+    this.loadMaterials();
+
+    /* Load warehouses */
+    this.loadWarehouses();
+
+    /* Load products */
+    this.loadProducts();
 
     getListTypeZoneProperty({
       search: "",
@@ -168,41 +180,226 @@ class ImportProduct extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
-
-    this.setState({ isLoaded: true });
-
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
-      let collapseList = [];
-      const data = (res.data || {}).data || {};
-
-      let newData = [...this.state.data];
-
-      newData.forEach((item, key) => {
-        collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
+  loadSuppliers = async () => {
+    try {
+      const suppliers = await fetchData.partner.getList({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
       });
 
-      newData = handleGenTree(newData, "name");
+      let supplierList = [];
+      if (suppliers && Array.isArray(suppliers)) {
+        supplierList = suppliers.map((item) => {
+          const supplierId =
+            item.id || item.ID || item.partnerID || item.partner_id || "";
+          return {
+            id: String(supplierId),
+            name: item.partnerName || item.PartnerName || item.name || "",
+          };
+        });
+      }
 
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
+      this.loadedSuppliers = supplierList;
 
       this.setState({
-        data: newData,
-        listLength: total,
-        totalPage: Math.ceil(length / limit),
-        isLoaded: false,
-        collapseList: collapseList,
+        SUPPLIER_LIST:
+          supplierList.length > 0 ? supplierList : this.state.SUPPLIER_LIST,
       });
-    });
+    } catch (error) {}
+  };
+
+  loadMaterials = async () => {
+    try {
+      const response = await fetchData.materialManagement.getAll();
+
+      let materialList = [];
+      // Handle API response structure: { data: { materials: [...] } }
+      let materials = [];
+      
+      if (response && response.data && Array.isArray(response.data.materials)) {
+        materials = response.data.materials;
+      } else if (response && Array.isArray(response)) {
+        materials = response;
+      } else if (response && response.materials && Array.isArray(response.materials)) {
+        materials = response.materials;
+      }
+
+      if (materials && Array.isArray(materials)) {
+        materialList = materials.map((item) => ({
+          id: String(item.id || item.ID || ""),
+          name:
+            item.materialName ||
+            item.name ||
+            item.MaterialName ||
+            item.groupName ||
+            "",
+          unit: item.unitName || item.unit || item.Unit || "",
+          unitId: String(item.unitID || item.unitId || item.UnitID || ""),
+        }));
+      }
+
+      this.setState({
+        INGREDIENT_LIST:
+          materialList.length > 0 ? materialList : this.state.INGREDIENT_LIST,
+      });
+    } catch (error) {
+      console.error("Error loading materials:", error);
+    }
+  };
+
+  loadWarehouses = async () => {
+    try {
+      const warehouses = await fetchData.warehouse.getList({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      });
+
+      let warehouseList = [];
+      if (warehouses && Array.isArray(warehouses)) {
+        warehouseList = warehouses.map((item) => ({
+          id: String(item.id || item.ID || ""),
+          name: item.warehouseName || item.WarehouseName || item.name || "",
+        }));
+      }
+
+      this.setState({
+        WAREHOUSE_LIST:
+          warehouseList.length > 0 ? warehouseList : this.state.WAREHOUSE_LIST,
+      });
+    } catch (error) {}
+  };
+
+  loadProducts = async () => {
+    try {
+      const products = await fetchData.product.getList({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      });
+
+      let productList = [];
+      if (products && Array.isArray(products)) {
+        productList = products.map((item) => ({
+          id: String(item.id || item.ID || ""),
+          name: item.productName || item.ProductName || item.name || "",
+          unit: item.unitName || item.unit || item.Unit || "",
+          unitId: String(item.unitId || item.UnitID || item.unitID || ""),
+        }));
+      }
+
+      this.setState({
+        PRODUCT_LIST:
+          productList.length > 0 ? productList : this.state.PRODUCT_LIST,
+      });
+    } catch (error) {}
+  };
+
+  fetchSummary = async (data) => {
+    this.setState({ isLoaded: true });
+
+    try {
+      const { limit, fromDate, toDate, filter } = this.state;
+
+      let fromDateString = "";
+      let toDateString = "";
+
+      if (fromDate && moment(fromDate).isValid()) {
+        fromDateString = moment(fromDate).format("YYYY-MM-DD");
+      }
+
+      if (toDate && moment(toDate).isValid()) {
+        toDateString = moment(toDate).format("YYYY-MM-DD");
+      }
+
+      const payload = {
+        fromDate: fromDateString,
+        toDate: toDateString,
+        status: filter?.filter ? parseInt(filter.filter) : null,
+        search: filter?.search || "",
+        filter: filter?.filter || "",
+        orderBy: filter?.orderBy || "",
+        page: 0,
+        limit: limit,
+        init: true,
+      };
+
+      const res = await fetchData.goodReceived.getList(payload);
+
+      if (!res) {
+        this.setState({ isLoaded: false, data: [], collapseList: [] });
+        return;
+      }
+
+      let goodReceivedList = [];
+
+      if (
+        res?.data?.data?.goodsReceipts &&
+        Array.isArray(res.data.data.goodsReceipts)
+      ) {
+        goodReceivedList = res.data.data.goodsReceipts;
+      } else if (res?.goodsReceipts && Array.isArray(res.goodsReceipts)) {
+        goodReceivedList = res.goodsReceipts;
+      } else if (
+        res?.data?.goodsReceipts &&
+        Array.isArray(res.data.goodsReceipts)
+      ) {
+        goodReceivedList = res.data.goodsReceipts;
+      } else if (res?.data && Array.isArray(res.data)) {
+        goodReceivedList = res.data;
+      } else if (Array.isArray(res)) {
+        goodReceivedList = res;
+      }
+
+      let collapseList = [];
+
+      let tableData = goodReceivedList.map((item, index) => ({
+        id: item.id || item.ID,
+        receiptNumber:
+          item.grCode || item.ReceiptNumber || item.receiptNumber || "",
+        creationDate: item.grTime
+          ? moment(item.grTime).format("DD/MM/YYYY")
+          : item.creationDate
+          ? moment(item.creationDate).format("DD/MM/YYYY")
+          : "",
+        supplier: item.partnerName || item.Supplier || item.supplier || "",
+        importer: item.confirmedByName || item.Importer || item.importer || "",
+        status: item.status || item.Status || 0,
+        parentID: "",
+        index: index + 1,
+        color: "",
+      }));
+
+      tableData.forEach((item, key) => {
+        collapseList.push({ id: item.id, collapse: false });
+      });
+
+      const total = tableData.length | 0;
+      const beginItem = 0;
+      const endItem = Math.min(limit, total);
+
+      this.setState({
+        data: tableData,
+        listLength: total,
+        totalElement: endItem,
+        beginItem: beginItem,
+        endItem: endItem,
+        currentPage: 0,
+        totalPage: Math.ceil(total / limit),
+        collapseList: collapseList,
+        isLoaded: false,
+      });
+    } catch (error) {
+      toast.error("Lỗi khi tải danh sách nhập hàng!");
+      this.setState({ isLoaded: false, data: [], collapseList: [] });
+    }
   };
 
   closeStatusModal = () => {
@@ -266,35 +463,106 @@ class ImportProduct extends Component {
     this.setState({ filter });
   };
 
-  handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter,
-        fromDate,
-        toDate,
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
+  handleFromDateChange = (date) => {
+    this.setState({ fromDate: date });
+  };
+
+  handleToDateChange = (date) => {
+    this.setState({ toDate: date });
+  };
+
+  handleDataReload = () => {
+    // Reset all filters
+    const today = new Date();
+    const fromDateValue = new Date(
+      today.getFullYear(),
+      today.getMonth() - 1,
+      today.getDate()
+    );
+    
+    this.setState(
+      {
+        fromDate: fromDateValue,
+        toDate: new Date(),
+        filter: {
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        },
+      },
+      () => {
+        // Reload data after state reset
+        this.fetchSummary();
+      }
     );
   };
 
-  handleModal = (stutus, openModal, closeModal) => {
-    if (stutus || this.state.isShowForEdit) {
-      closeModal();
-    } else {
-      openModal();
+  handleSubmitSearchForm = () => {
+    const { fromDate, toDate, filter } = this.state;
+
+    // Show alert if no filters selected
+    if (!fromDate && !toDate && (!filter.filter || filter.filter === "")) {
+      toast.warning("Vui lòng chọn ít nhất một bộ lọc!");
+      return;
     }
 
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        isShowForEdit: false,
-        editId: null,
-      };
-    });
+    // Call fetchSummary which will use the current state
+    this.fetchSummary();
+  };
+
+  handleModal = async (stutus, openModal, closeModal) => {
+    if (stutus || this.state.isShowForEdit) {
+      closeModal();
+      // Reset form data when closing modal
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          isShowForEdit: false,
+          editId: null,
+          dataInsert: {
+            receiptNumber: "",
+            creationDate: new Date(),
+            supplier: "",
+            importer: "",
+            importerId: "",
+            note: "",
+            status: 0,
+            importTypeId: null,
+            ingredientId: null,
+            supplierId: null,
+            productId: null,
+            warehouseId: null,
+            file: "",
+            unit: "",
+            quantity: 0,
+            vat: 0,
+            price: 0,
+            grDetails: [],
+          },
+          errorInserts: {},
+        };
+      });
+    } else {
+      const resCurrentCompany = await fetchData.account.getCurrentCompany();
+      const currentUserId = resCurrentCompany?.company?.id || "";
+      const currentUserName = resCurrentCompany?.company?.companyName || "";
+      console.log(resCurrentCompany, "currentUserName=======")
+     
+      this.setState((previousState) => {
+        return {
+          ...previousState,
+          dataInsert: {
+            ...previousState.dataInsert,
+            importer: currentUserName,
+            importerId: currentUserId,
+          },
+        };
+      });
+
+      openModal();
+    }
   };
   toggle = (el, val) => {
     let { collapseList } = this.state;
@@ -309,25 +577,119 @@ class ImportProduct extends Component {
     if (!isCheck) {
       return {};
     }
-    const { dataInsert, data, editId, currentRow } = this.state;
-    const receiptNumber = dataInsert.receiptNumber;
-
+    const { dataInsert } = this.state;
     const errorInserts = {};
 
-    if (!receiptNumber) {
-      errorInserts.receiptNumber = "Số phiếu không được bỏ trống";
+    if (!dataInsert.supplier || String(dataInsert.supplier).trim() === "") {
+      errorInserts.supplier = "Nhà cung cấp không được bỏ trống";
+    }
+
+    if (!dataInsert.importer || String(dataInsert.importer).trim() === "") {
+      errorInserts.importer = "Người nhập không được bỏ trống";
     }
 
     return errorInserts;
   };
 
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
+  onConfirm = async (toggleModal, closePopup) => {
+    const formData = this.formRef?.state || this.state.dataInsert;
+    const { editId } = this.state;
+    
+    const importerId = formData.importerId || this.state.dataInsert.importerId || "";
+    
+    const errorInserts = {};
+    
+    if (!formData.supplier || String(formData.supplier).trim() === "") {
+      errorInserts.supplier = "Nhà cung cấp không được bỏ trống";
+    }
 
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
+    if (!formData.importer || String(formData.importer).trim() === "") {
+      errorInserts.importer = "Người nhập không được bỏ trống";
+    }
+    
+    console.log("formData:", formData);
+    console.log("importerId:", importerId);
+    
+    // Check validation
+    if (Object.keys(errorInserts).length > 0) {
+      toast.error("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    // Validate GRDetails is not empty
+    if (!formData.grDetails || formData.grDetails.length === 0) {
+      toast.error("Vui lòng thêm chi tiết phiếu nhập!");
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      let res;
+
+      const formPayload = new FormData();
+      console.log(formData.importer, "formData.importer=======");
+      // Add simple fields
+      formPayload.append("GRTime", moment(formData.creationDate).toISOString());
+      formPayload.append("PartnerID", formData.supplierId || "");
+      formPayload.append("ReceiptPerson", importerId || "");
+      formPayload.append("ReceiptPersonName", formData.importer || "");
+      formPayload.append("Note", formData.note || "");
+      formPayload.append("GRType", formData.importTypeId ? parseInt(formData.importTypeId) : 0);
+      
+      // Add GRDetails as JSON string
+      formPayload.append("GRDetails", JSON.stringify(
+        (formData.grDetails || []).map(detail => ({
+          ID: detail.id || "",
+          MaterialID: detail.ingredientId || detail.productId || "",
+          UnitID: detail.unit || "",
+          Quantity: detail.quantity || 0,
+          UnitPrice: detail.price || 0,
+          PerVAT: detail.vat || 0,
+          WarehouseID: detail.warehouseId || "",
+          RefQRCode: detail.refQRCode || "",
+        }))
+      ));
+
+      console.log("formPayload:", formPayload);
+
+      if (editId) {
+        // Update - add ID
+        formPayload.append("ID", editId);
+        res = await fetchData.goodReceived.edit(formPayload);
+      } else {
+        // Create
+        res = await fetchData.goodReceived.add(formPayload);
+      }
+
+      if (res && res.status === 200) {
+        toast.success(
+          editId ? "Cập nhật dữ liệu thành công!" : "Thêm dữ liệu thành công!"
+        );
+
+        if (toggleModal) {
+          toggleModal();
+        }
+
+        // Reset form
+        this.setState({
+          dataInsert: {},
+          isShowForEdit: false,
+          editId: null,
+          isLoaded: false,
+        });
+
+        // Reload data
+        this.fetchSummary();
+      } else {
+        const message = getErrorMessageServer(res);
+        toast.error(message || "Thao tác thất bại!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("❌ Error saving good received:", error);
+      toast.error("Thao tác thất bại!");
+      this.setState({ isLoaded: false });
     }
   };
 
@@ -352,16 +714,138 @@ class ImportProduct extends Component {
     );
   };
 
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
-    });
+  onEditData = (item) => async () => {
+    if (!item || !item.id) return;
+
+    this.setState({ isLoaded: true });
+
+    try {
+      const detailResponse = await fetchData.goodReceived.getDetail(item.id);
+
+      if (detailResponse) {
+        const detailData = detailResponse.goodsReceipt || detailResponse;
+
+        let supplierId = "";
+
+        const supplierList =
+          this.loadedSuppliers && this.loadedSuppliers.length > 0
+            ? this.loadedSuppliers
+            : this.state.SUPPLIER_LIST;
+
+        if (supplierList && supplierList.length > 0) {
+          let matchedSupplier = supplierList.find(
+            (s) =>
+              String(s.id).toLowerCase() ===
+              String(detailData.partnerID).toLowerCase()
+          );
+
+          if (!matchedSupplier && detailData.receiptPersonName) {
+            matchedSupplier = supplierList.find(
+              (s) =>
+                s.name &&
+                s.name.toLowerCase().trim() ===
+                  detailData.receiptPersonName.toLowerCase().trim()
+            );
+          }
+
+          if (!matchedSupplier && detailData.receiptPersonName) {
+            const searchName = detailData.receiptPersonName
+              .toLowerCase()
+              .trim();
+            matchedSupplier = supplierList.find(
+              (s) => s.name && s.name.toLowerCase().includes(searchName)
+            );
+          }
+
+          if (!matchedSupplier && detailData.receiptPersonName) {
+            const searchName = detailData.receiptPersonName
+              .toLowerCase()
+              .trim();
+            matchedSupplier = supplierList.find(
+              (s) => s.name && searchName.includes(s.name.toLowerCase())
+            );
+          }
+
+          if (matchedSupplier) {
+            supplierId = String(matchedSupplier.id);
+          } else {
+          }
+        }
+
+        const importTypeId = detailData.grType === 0 ? "2" : "1";
+
+        let grDetails = [];
+        if (detailData.grMores && Array.isArray(detailData.grMores)) {
+          grDetails = detailData.grMores.map((item, index) => {
+            let warehouseName = "";
+            if (this.state.WAREHOUSE_LIST && this.state.WAREHOUSE_LIST.length > 0) {
+              const warehouse = this.state.WAREHOUSE_LIST.find(w => String(w.id) === String(item.warehouseID));
+              warehouseName = warehouse ? warehouse.name : "";
+            }
+
+            return {
+              id: item.id || `detail_${Date.now()}_${index}`,
+              ingredientId: item.materialID || "",
+              productId: item.materialID || "",
+              warehouseId: item.warehouseID || "",
+              quantity: item.quantity || 0,
+              price: item.unitPrice || 0,
+              vat: item.perVAT || 0,
+              unit: item.unitID || "", 
+              unitName: item.unitName || "", 
+              amount: item.amount || 0,
+              ingredientName: item.materialName || "",
+              productName: item.materialName || "",
+              warehouseName: warehouseName || "", 
+              refQRCode: item.refQRCode || "",
+            };
+          });
+        }
+
+        const initialData = {
+          id: item.id,
+          importTypeId: importTypeId,
+          receiptNumber: detailData.grCode || item.receiptNumber || "",
+          creationDate: detailData.grTime
+            ? moment(detailData.grTime).toDate()
+            : new Date(),
+          supplierId: detailData.partnerID,
+          supplier: detailData.receiptPersonName || item.supplier || "",
+          importerId: detailData.confirmedByID || detailData.receiptPerson || "",
+          importer:
+            detailData.confirmedByName ||
+            detailData.receiptPerson ||
+            item.importer ||
+            "",
+          note: detailData.note || "",
+          status: detailData.status || item.status || 0,
+          grDetails: grDetails,
+        };
+
+        this.setState(
+          {
+            isShowForEdit: true,
+            editId: item.id,
+            dataInsert: initialData,
+            isLoaded: false,
+          },
+          () => {}
+        );
+      } else {
+        toast.error("Không tải được dữ liệu chi tiết!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+      this.setState({ isLoaded: false });
+    }
   };
 
   onDeleteData = (id) => () => {
-    alert("Xóa thành công");
+    this.setState({
+      deleteId: id,
+      warningPopupModal: true,
+    });
   };
 
   toggleModalPopupDelete = () => {
@@ -373,37 +857,31 @@ class ImportProduct extends Component {
     });
   };
 
-  handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
+  handleDeleteRow = async () => {
+    const { deleteId } = this.state;
+
+    try {
+      const res = await fetchData.goodReceived.delete(deleteId);
+
+      if (res && res.status === 200) {
+        this.setState({
           warningPopupModal: false,
-        };
-      });
+        });
 
-      const data = res.data;
-
-      if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
-
-        this.setState({ message: "Xóa dữ liệu thành công" });
         toast.success("Xoá dữ liệu thành công!");
+
+        // Reload data
+        this.fetchSummary();
       } else {
         const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa dữ liệu thất bại" });
-        this.toggleModal("popupMessage");
+        toast.error(message || "Xóa dữ liệu thất bại!");
+        this.setState({ warningPopupModal: false });
       }
-    });
+    } catch (error) {
+      console.error("❌ Error deleting good received:", error);
+      toast.error("Xóa dữ liệu thất bại!");
+      this.setState({ warningPopupModal: false });
+    }
   };
 
   toggleModal = (state, type) => {
@@ -426,7 +904,7 @@ class ImportProduct extends Component {
     return line;
   };
 
-  renderTable = (data, isDisableEdit, isDisableDelete) => {
+  renderTable = (data, isDisableEdit, isDisableDelete, STATUS_OPTIONS) => {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
     let parentid = [];
@@ -468,9 +946,8 @@ class ImportProduct extends Component {
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>
-              {e.status === 1
-                ? IMPORT_EXPORT_PRODUCT_STATUS.ACTIVE
-                : IMPORT_EXPORT_PRODUCT_STATUS.DEACTIVE}
+              {STATUS_OPTIONS.find((opt) => opt.id === e.status)?.name ||
+                "Không xác định"}
             </span>
           </td>
           <td>
@@ -489,7 +966,7 @@ class ImportProduct extends Component {
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
                           <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
+                            Xem chi tiết
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
@@ -542,6 +1019,7 @@ class ImportProduct extends Component {
       UNIT_LIST,
       fromDate,
       toDate,
+      dataInsert,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -581,27 +1059,19 @@ class ImportProduct extends Component {
               ) : (
                 <Row>
                   <div className="col">
-                    {/* Header */}
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
-                      }
+                      dataReload={() => this.handleDataReload()}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
+                      isReadOnly={dataInsert.status === 2}
                       moduleTitle={
                         isShowForEdit ? "Sửa phiếu nhập" : "Thêm phiếu nhập"
                       }
                       moduleBody={
                         <InsertOrUpdate
+                          ref={(ref) => (this.formRef = ref)}
                           id={editId}
+                          dataInsert={dataInsert}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
                           STATUS_OPTIONS={STATUS_OPTIONS}
@@ -725,7 +1195,8 @@ class ImportProduct extends Component {
                             this.renderTable(
                               data,
                               isDisableEdit,
-                              isDisableDelete
+                              isDisableDelete,
+                              STATUS_OPTIONS
                             )}
                         </tbody>
                       </Table>
@@ -778,6 +1249,7 @@ class ImportProduct extends Component {
               moduleBody={
                 <InsertOrUpdate
                   id={editId}
+                  dataInsert={dataInsert}
                   errors={errorInserts}
                   onHandleChangeValue={this.onHandleChangeValue}
                   STATUS_OPTIONS={STATUS_OPTIONS}

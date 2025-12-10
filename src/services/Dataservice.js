@@ -62,7 +62,6 @@ export const get = async (url) => {
             deleteCookie('AUTHEN_INFO');
             window.location.href = '/';
           }
-          console.log(result);
         }
         );
         if (url.search('roleperminssion/getgridview/') > -1) {
