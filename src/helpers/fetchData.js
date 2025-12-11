@@ -713,6 +713,9 @@ export const fetchData = {
     addConsignment: async (data) => {
       try {
         const result = await callApi("post", CONSIGNMENTS.addConsignment, data);
+        if(result && result.status === 200){
+          return result
+        }
         return result?.data || null;
       } catch (error) {
         console.error("Lỗi khi thêm lô hàng:", error);
@@ -723,6 +726,9 @@ export const fetchData = {
     editConsignment: async (data) => {
       try {
         const result = await callApi("post", CONSIGNMENTS.editConsignment, data);
+        if(result && result.status === 200){
+          return result
+        }
         return result?.data || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật lô hàng:", error);
@@ -764,6 +770,15 @@ export const fetchData = {
     getListDiaryComboBox: async () => {
       try {
         const result = await callApi("get", CONSIGNMENTS.getListDiaryComboBox);
+        return result?.data?.traces || result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getListTraceHarvestForAddConsignmentComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListTraceHarvestForAddConsignmentComboBox);
         return result?.data?.traces || result?.data || null;
       } catch (error) {
         return null;

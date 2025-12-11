@@ -4,6 +4,7 @@ import Select from "components/Select";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import ReactDatetime from "react-datetime";
 import { fetchData } from "../../../helpers/fetchData";
+// using native alert for messages
 
 import {
   FormGroup,
@@ -41,6 +42,7 @@ class InsertOrUpadte extends Component {
       file: null,
       loading: false,
       errMessage: "",
+      companyCode: "",
       popupMessage: false,
       qrCodes: [],
       createdDate: new Date(), // Mặc định là ngày hôm nay
@@ -49,6 +51,7 @@ class InsertOrUpadte extends Component {
 
   componentDidMount() {
     this.initStateFromProps();
+    this.fetchCompanyCode();
     const { id } = this.props;
     if (id) {
       this.loadDetailData(id);
@@ -70,6 +73,40 @@ class InsertOrUpadte extends Component {
       };
     });
   }
+
+  fetchCompanyCode = async () => {
+    try {
+      // Try to get current company id first
+      const resCurrent = await fetchData.account.getCurrentCompany();
+      const companyId =
+        resCurrent?.company?.id || resCurrent?.data?.company?.id || null;
+
+      if (companyId) {
+        const info = await fetchData.infoCompany.detail(companyId);
+        const companyCode =
+          info?.companyCode || info?.taxCode || info?.CompanyCode || "";
+        if (companyCode) {
+          this.setState({ companyCode });
+          return;
+        }
+      }
+
+      // Fallback: try from props (store) if API did not return
+      const configSystemStore = this.props.ConfigSystemStore || this.props.configSetting || {};
+      const fallbackCode = configSystemStore.company_code || configSystemStore.companyCode || "";
+      if (fallbackCode) {
+        this.setState({ companyCode: fallbackCode });
+      }
+    } catch (error) {
+      console.error("Fetch company code error:", error);
+      // fallback to props/store
+      const configSystemStore = this.props.ConfigSystemStore || this.props.configSetting || {};
+      const fallbackCode = configSystemStore.company_code || configSystemStore.companyCode || "";
+      if (fallbackCode) {
+        this.setState({ companyCode: fallbackCode });
+      }
+    }
+  };
 
   // Initialize state from props (for edit mode)
   initStateFromProps = () => {
@@ -293,6 +330,88 @@ class InsertOrUpadte extends Component {
     this.setState({ [state]: !this.state[state] });
   };
 
+  // Handle add QR from a numeric range (similar to onAddStampRange sample)
+  handleAddQR = () => {
+    const {
+      // expected possible fields (fall back to similarly named fields if available)
+      stampRangeName,
+      numberFrom,
+      numberTo,
+      startNum,
+      endNum,
+      batchNumber,
+      productVal,
+      companyCode,
+    } = this.state;
+
+    // helper to show error: use native alert
+    const showError = (msg) => {
+      alert(msg);
+    };
+
+    // Normalize numeric inputs, support alternative field names
+    const _numFromRaw = numberFrom || this.state.numberFrom || this.state.fromVal || "";
+    const _numToRaw = numberTo || this.state.numberTo || this.state.toVal || "";
+    const _startRaw = startNum || this.state.startNum || this.state.fromVal || "";
+    const _endRaw = endNum || this.state.endNum || this.state.toVal || "";
+
+    // Use replaceComma helper if available
+    let replaceCommaFn = null;
+    try {
+      // eslint-disable-next-line global-require
+      replaceCommaFn = require("bases/helper").replaceComma;
+    } catch (e) {
+      try {
+        // try relative path
+        // eslint-disable-next-line global-require
+        replaceCommaFn = require("../../../../bases/helper").replaceComma;
+      } catch (err) {
+        replaceCommaFn = (v, r) => (v || "").toString().replace(/,/g, r);
+      }
+    }
+
+    const _numberFrom = Number(replaceCommaFn(_numFromRaw, ""));
+    const _numberTo = Number(replaceCommaFn(_numToRaw, ""));
+    const _startNum = Number(replaceCommaFn(_startRaw, ""));
+    const _endNum = Number(replaceCommaFn(_endRaw, ""));
+
+    if (!stampRangeName && !this.state.temId) {
+      showError("Bạn vui lòng chọn dải tem!");
+      return;
+    }
+
+    if (!_numFromRaw || !_numToRaw) {
+      showError("Bạn vui lòng nhập số từ/đến của dải tem!");
+      return;
+    }
+
+    if (
+      (!isNaN(_startNum) && (_numberFrom < _startNum || _numberTo < _startNum)) ||
+      (!isNaN(_endNum) && (_numberFrom > _endNum || _numberTo > _endNum))
+    ) {
+      showError("Ngoài phạm vi của dải tem!");
+      return;
+    }
+
+    // Build list of QR codes as strings: companyCode + zero-padded number (10 digits)
+    //const _companyCode = companyCode || this.props.companyCode || "";
+    const start = Math.min(_numberFrom, _numberTo);
+    const end = Math.max(_numberFrom, _numberTo);
+    const newListQRCodes = [];
+    for (let i = start; i <= end; i++) {
+      const name = companyCode + i.toString().padStart(10, "0");
+      newListQRCodes.push(name);
+    }
+
+    // Set to state (replace existing qrCodes with generated list)
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        qrCodes: newListQRCodes,
+      };
+    });
+  };
+
   render() {
     const {
       batchCode,
@@ -326,6 +445,7 @@ class InsertOrUpadte extends Component {
       STATUS_OPTIONS,
       INGREDIENT_LIST,
       DIARY_OPTIONS,
+      TRACEHARVEST_OPTIONS,
       CLASSIFY_OPTIONS,
       TEM_OPTIONS,
       COUNTRY_OPTIONS,
@@ -420,7 +540,7 @@ class InsertOrUpadte extends Component {
               name="diaryId"
               title="Chọn nhật ký"
               isDisable={isShowForEdit}
-              data={DIARY_OPTIONS}
+              data={TRACEHARVEST_OPTIONS}
               labelName="title"
               val="id"
               handleChange={this.onChangeSelect("diaryId")}
@@ -607,6 +727,7 @@ class InsertOrUpadte extends Component {
             <button
               class="btn btn-warning btn-sm btn-icon-only ml-auto"
               id="add-qr-btn"
+              onClick={this.handleAddQR}
             >
               <i class="fas fa-plus"></i>
             </button>
