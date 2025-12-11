@@ -116,6 +116,7 @@ export const CONSIGNMENTS = {
   getListClassifyComboBox: "batch/getbatchcategories",
   getListStampTemplate: "stampranges/getstamprange",
   getListWarehouseForUpdate: "warehouse/getall",
+  getListTraceHarvestForAddConsignmentComboBox: 'trace/getlistharvest',
   updateLock: "batch/lock?id={0}&warehouseId={1}",
   requireConfirm: "batch/requireconfirm?id={id}",
   confirm: "batch/requestconfirm?id={id}&warehouseId={warehouseId}",
