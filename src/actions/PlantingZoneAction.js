@@ -4,7 +4,8 @@ import {
     PLANTING_ZONE_CREATE,
     PLANTING_ZONE_UPDATE,
     PLANTING_ZONE_DELETE,
-    PLANTING_ZONE_DETAIL
+    PLANTING_ZONE_DETAIL,
+    GOOD_DELIVERY_GET_LIST
 } from "../apis";
 import {
     post, del, get, postFormData
@@ -30,6 +31,36 @@ export const platingZoneAction = {
                 dispatch({
                     type: PLANTING_ZONE_FETCH_LIST_SUCCESS,
                     data: res.data.plantingZones || []
+                });
+
+                resolve({
+                    ok: true,
+                    data: res
+                });
+            }).catch(err => {
+                dispatch({
+                    type: PLANTING_ZONE_FETCH_LIST_FAILURE,
+                    data: []
+                });
+
+                resolve({
+                    ok: false,
+                    data: err
+                });
+            });
+        });
+    },
+    getListGoodDeliveryNote: data => async (dispatch, _) => {
+        dispatch({
+            type: PLANTING_ZONE_FETCH_LIST_SUCCESS,
+            data: []
+        });
+
+        return new Promise(resolve => {
+            post(GOOD_DELIVERY_GET_LIST, data).then(res => {
+                dispatch({
+                    type: PLANTING_ZONE_FETCH_LIST_SUCCESS,
+                    data: res.data.goodsDeliveryNotes || []
                 });
 
                 resolve({

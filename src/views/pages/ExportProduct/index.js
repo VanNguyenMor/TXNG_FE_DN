@@ -27,6 +27,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactDatetime from "react-datetime";
 
+import { fetchData } from "helpers/fetchData";
+import moment from "moment";
+
 // reactstrap components
 import {
   Card,
@@ -97,11 +100,11 @@ class ExportProduct extends Component {
       listLength: 0,
       currentPage: 0,
       filter: {
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
+        FromDate: "2025-01-01",
+        ToDate: "2025-12-31",
+        Status: 1,
+        Page: 1,
+        Limit: 20,
       },
       fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
       toDate: new Date(),
@@ -154,15 +157,7 @@ class ExportProduct extends Component {
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary(this.state.filter);
 
     getListTypeZoneProperty({
       search: "",
@@ -181,23 +176,37 @@ class ExportProduct extends Component {
   }
 
   fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
+    const { getListGoodDeliveryNote } = this.props;
 
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
+    // Truyền payload trực tiếp thay vì JSON.stringify
+    getListGoodDeliveryNote(data).then((res) => {
       const { limit } = this.state;
       let collapseList = [];
-      const data = (res.data || {}).data || {};
+      const responseData = (res.data || {}).data || {};
 
-      let newData = [...this.state.data];
+      // Lấy danh sách goods delivery notes từ response
+      let goodsDeliveryNotes = responseData.goodsDeliveryNotes || responseData.goodsDelivery || [];
+      
+      // Map dữ liệu thành format phù hợp với table
+      let newData = goodsDeliveryNotes.map((item, index) => ({
+        id: item.id,
+        receiptNumber: item.grCode || item.code || `GDN${index + 1}`,
+        creationDate: item.grTime || item.createdDate,
+        supplier: item.partnerName || item.supplier || "",
+        importer: item.confirmedByName || item.importer || "",
+        status: item.status || 0,
+        // Thêm các field khác nếu cần
+      }));
 
       newData.forEach((item, key) => {
         collapseList.push({ id: item.id, collapse: false });
         item["parentID"] = item.parentID === null ? "" : item.parentID;
       });
 
-      newData = handleGenTree(newData, "name");
+      // Nếu không phải tree structure, bỏ handleGenTree
+      // newData = handleGenTree(newData, "name");
 
       newData.forEach((item, key) => {
         item["index"] = key + 1;
@@ -364,12 +373,47 @@ class ExportProduct extends Component {
     );
   };
 
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
-    });
+  onEditData = (id) => async () => {
+    if (!id) return;
+
+    this.setState({ isLoaded: true });
+
+    try {
+      // Gọi API goodsdeliverynote/get để lấy dữ liệu chi tiết
+      const detailResponse = await fetchData.goodReceived.getDetail(id);
+
+      if (detailResponse) {
+        const detailData = detailResponse.goodsReceipt || detailResponse;
+
+        // Map dữ liệu vào initialData - điều chỉnh theo response thực tế của goodsdeliverynote/get
+        const initialData = {
+          id: id,
+          receiptNumber: detailData.grCode || detailData.code || "",
+          creationDate: detailData.grTime ? moment(detailData.grTime).toDate() : new Date(),
+          supplier: detailData.receiptPersonName || detailData.supplier || "",
+          importer: detailData.confirmedByName || detailData.importer || "",
+          note: detailData.note || "",
+          status: detailData.status || 0,
+          // Thêm các field khác nếu cần
+        };
+
+        this.setState(
+          {
+            isShowForEdit: true,
+            editId: id,
+            dataInsert: initialData,
+            isLoaded: false,
+          },
+          () => {}
+        );
+      } else {
+        toast.error("Không tải được dữ liệu chi tiết!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+      this.setState({ isLoaded: false });
+    }
   };
 
   onDeleteData = (id) => () => {

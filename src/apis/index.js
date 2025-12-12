@@ -423,3 +423,6 @@ export const REPORTV2_PRINT_EXCEL_REPORT_LIST_ZONING_PLANTINGZONE_API = DOMAIN +
 
 export const REPORTV2_GET_REPORT_LIST_ZONING_PLANTINGZONE_BY_COMPANY_API = DOMAIN + API + REPORTADMINV2 + 'getReportListZoningPlantingZoneByCompany?fromDate={0}&toDate={1}&districtId={2}&wardId={3}&plantingZoneId={4}&taxCode={5}&conpanyName={6}&page={7}&limit={8}';
 export const REPORTV2_PRINT_EXCEL_REPORT_LIST_ZONING_PLANTINGZONE_BY_COMPANY_API = DOMAIN + API + REPORTADMINV2 + 'printExcelReportListZoningPlantingZoneByCompany?fromDate={0}&toDate={1}&districtId={2}&wardId={3}&plantingZoneId={4}&taxCode={5}&conpanyName={6}&page={7}&limit={8}';
+
+// GOOD DELIVERY NOTE API
+export const GOOD_DELIVERY_GET_LIST = DOMAIN + API + 'goodsdeliverynote/getall';
