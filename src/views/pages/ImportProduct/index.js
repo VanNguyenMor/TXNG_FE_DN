@@ -651,6 +651,13 @@ class ImportProduct extends Component {
         }))
       ));
 
+      // Add files if any (only for new files selected, not existing URL)
+      if (formData.files && Array.isArray(formData.files) && formData.files.length > 0) {
+        formData.files.forEach((file, index) => {
+          formPayload.append(`FilesFiles`, file);
+        });
+      }
+
       console.log("formPayload:", formPayload);
 
       if (editId) {
@@ -820,6 +827,7 @@ class ImportProduct extends Component {
           note: detailData.note || "",
           status: detailData.status || item.status || 0,
           grDetails: grDetails,
+          files: detailData.files || "", // Thay đổi thành string thay vì array
         };
 
         this.setState(

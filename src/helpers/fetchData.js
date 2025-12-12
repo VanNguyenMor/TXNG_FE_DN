@@ -89,7 +89,7 @@ export const fetchData = {
       try {
         const result = await callApi(
           "get",
-          `${PLANTING_ZONE.detailPlantingZone.replace("{id}", id)}`
+          `plantingzone/Get?id=${id}`
         );
         return result?.data || null;
       } catch (error) {
@@ -924,7 +924,7 @@ export const fetchData = {
 
     add: async (payload) => {
       try {
-        const result = await callApi("post", GOOD_RECEIVED.addGoodReceived, payload);
+        const result = await callApi("post", GOOD_RECEIVED.addGoodReceived, payload, true);
         return result;
       } catch (error) {
         throw error;
@@ -933,7 +933,7 @@ export const fetchData = {
 
     edit: async (payload) => {
       try {
-        const result = await callApi("post", GOOD_RECEIVED.editGoodReceived, payload);
+        const result = await callApi("post", GOOD_RECEIVED.editGoodReceived, payload, true);
         return result;
       } catch (error) {
         throw error;

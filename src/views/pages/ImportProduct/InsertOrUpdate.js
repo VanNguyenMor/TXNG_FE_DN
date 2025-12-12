@@ -42,6 +42,7 @@ class InsertOrUpadte extends Component {
       productId: null,
       warehouseId: null,
       file: "",
+      files: "", // Thay đổi thành string thay vì array
       unit: "",
       quantity: 0,
       vat: 0,
@@ -80,8 +81,19 @@ class InsertOrUpadte extends Component {
         prevProps.dataInsert?.id !== dataInsert.id ||
         JSON.stringify(prevProps.dataInsert) !== JSON.stringify(dataInsert)
       ) {
+        const newState = { ...dataInsert };
+        
+        // Handle files for display - files is a URL string
+        if (dataInsert.files && typeof dataInsert.files === 'string') {
+          // Extract filename from URL
+          const urlParts = dataInsert.files.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          newState.file = fileName;
+          newState.files = dataInsert.files; // Keep original URL string
+        }
+        
         this.setState((prevState) => {
-          return { ...prevState, ...dataInsert };
+          return { ...prevState, ...newState };
         });
       }
     }
@@ -205,7 +217,13 @@ class InsertOrUpadte extends Component {
   };
 
   handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
+    const fileNames = Array.from(files).map(file => file.name).join(", ");
+    this.setState({ file: fileNames, files: Array.from(files) }, () => {
+      // Update parent component with new state
+      if (this.props.onHandleChangeValue) {
+        this.props.onHandleChangeValue(this.state);
+      }
+    });
   };
 
   toggleModal = (state) => {
