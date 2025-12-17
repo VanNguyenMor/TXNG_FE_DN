@@ -20,6 +20,7 @@ import {
   GOOD_RECEIVED,
   PARTNER,
   WAREHOUSE_MANAGEMENT,
+  REPORT,
 } from "./endpoint";
 import { USER_LIST_ACCOUNT_LIST } from "../apis/index";
 
@@ -1041,6 +1042,56 @@ export const fetchData = {
         return null;
       }
     },
+    getListComboBox: async (payload = {}) => {
+      try {
+        const result = await callApi("get", MATERIAL_MANAGEMENT.getListComboBox, payload);
+        if (result && result.data && result.data.materials) {
+          return result.data.materials;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  product: {
+    getListComboBox: async (payload = {}) => {
+      try {
+        const result = await callApi("get", PRODUCT_MANAGEMENT.getListComboBox, payload);
+        if (result && result.data && result.data.products) {
+          return result.data.products;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
+    getListWithMaterialInventoryByWarehouseComboBox: async (warehouseId) => {
+      try {
+        const endpoint = PRODUCT_MANAGEMENT.getListWithMaterialInventoryByWarehouseComboBox.replace("{0}", warehouseId);
+        const result = await callApi("get", endpoint);
+        if (result && result.data && result.data.products) {
+          return result.data.products;
+        }
+        if (result && result.data && Array.isArray(result.data)) {
+          return result.data;
+        }
+        if (result && Array.isArray(result)) {
+          return result;
+        }
+        return null;
+      } catch (error) {
+        console.error("Error in getListWithMaterialInventoryByWarehouseComboBox:", error);
+        return null;
+      }
+    },
   },
 
   warehouse: {
@@ -1060,21 +1111,89 @@ export const fetchData = {
     },
   },
 
-  product: {
-    getList: async (payload = {}) => {
+  warehouse: {
+    getListComboBox: async (payload = {}) => {
       try {
-        const result = await callApi("post", PRODUCT_MANAGEMENT.getListProductManagement, payload);
-        if (result && result.data && result.data.products) {
-          return result.data.products;
-        }
-        if (result && result.data && Array.isArray(result.data)) {
-          return result.data;
+        const result = await callApi("post", WAREHOUSE_MANAGEMENT.getListComboBox, payload);
+        if (result && result.data && result.data.wareHouses) {
+          return result.data.wareHouses;
         }
         if (result && Array.isArray(result)) {
           return result;
         }
         return null;
       } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  report: {
+    getListReportInventoryWarehouseProductV2: async (payload) => {
+      try {
+        const result = await callApi("get", REPORT.getListReportInventoryWarehouseProductV2, payload);
+        return result || null;
+      } catch (error) {
+        console.error("❌ Error in getListReportInventoryWarehouseProductV2:", error);
+        return null;
+      }
+    },
+    getListReportInventoryWarehouseMaterialV2: async (payload) => {
+      try {
+        const result = await callApi("get", REPORT.getListReportInventoryWarehouseMaterialV2, payload);
+        return result || null;
+      } catch (error) {
+        console.error("❌ Error in getListReportInventoryWarehouseMaterialV2:", error);
+        return null;
+      }
+    },
+    getListReportInventoryAdjustWarehouseV2: async (payload) => {
+      try {
+        const result = await callApi(
+          "get",
+          REPORT.getListReportInventoryAdjustWarehouseV2,
+          payload
+        );
+        return result || null;
+      } catch (error) {
+        console.error(
+          "❌ Error in getListReportInventoryAdjustWarehouseV2:",
+          error
+        );
+        return null;
+      }
+    },
+    createReportInventoryTransferWarehouseV2: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          REPORT.createReportInventoryTransferWarehouseV2,
+          payload
+        );
+        return result || null;
+      } catch (error) {
+        console.error(
+          "❌ Error in createReportInventoryTransferWarehouseV2:",
+          error
+        );
+        return null;
+      }
+    },
+    getListReportInventoryTransferWarehouseV2: async (payload) => {
+      try {
+        const { page = 1, limit = 10, fromDate = "", toDate = "" } = payload;
+        const endpoint = REPORT.getListReportInventoryTransferWarehouseV2
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", fromDate)
+          .replace("{3}", toDate);
+        const result = await callApi("get", endpoint);
+        return result || null;
+      } catch (error) {
+        console.error(
+          "❌ Error in getListReportInventoryTransferWarehouseV2:",
+          error
+        );
         return null;
       }
     },

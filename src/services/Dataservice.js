@@ -31,9 +31,10 @@ function _getHeader() {
   return header;
 }
 
-export const get = async (url) => {
+export const get = async (url, params = {}) => {
   return await axios.get(url, {
     headers: getHeader(),
+    params: params,
     crossDomain: true
   })
     .then(res => {
