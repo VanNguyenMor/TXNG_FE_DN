@@ -11,7 +11,7 @@ export const callApi = async (
 
   switch (method.toLowerCase()) {
     case "get":
-      return await get(url);
+      return await get(url, payload);
     case "post":
       return await (isFormData
         ? postFormData(url, payload)

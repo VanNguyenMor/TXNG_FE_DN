@@ -11,6 +11,7 @@ import { InputGroup } from "reactstrap";
 import classes from "./index.module.css";
 import Select from "components/Select";
 import ReactDatetime from "react-datetime";
+import { fetchData } from "helpers/fetchData";
 
 class InsertOrUpadte extends Component {
   constructor(props) {
@@ -24,13 +25,13 @@ class InsertOrUpadte extends Component {
       warehouseImportId: null,
       noteVal: "",
       refuseVal: "",
+      PRODUCTS_OPTIONS: [],
       adjustedItems: [
         {
           stt: 1,
           productId: null,
-          productName: "Giày sondo",
-          unit: "kg",
-          quantity: 12,
+          unitId: null,
+          quantity: 0,
         },
       ],
     };
@@ -97,8 +98,38 @@ class InsertOrUpadte extends Component {
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
         }
+        
+        // Khi warehouseTranferId thay đổi, gọi API để lấy danh sách sản phẩm
+        if (name === "warehouseTranferId" && value) {
+          this.fetchProductsByWarehouse(value);
+        } else if (name === "warehouseTranferId" && !value) {
+          // Nếu không chọn kho, reset danh sách sản phẩm
+          this.setState({ PRODUCTS_OPTIONS: [] });
+        }
       }
     );
+  };
+
+  fetchProductsByWarehouse = (warehouseId) => {
+    if (!warehouseId) {
+      this.setState({ PRODUCTS_OPTIONS: [] });
+      return;
+    }
+
+    fetchData.product
+      .getListWithMaterialInventoryByWarehouseComboBox(warehouseId)
+      .then((res) => {
+        const products = res || [];
+        const options = products.map((item) => ({
+          id: item.id,
+          title: item.name || item.title || item.productName || "",
+        }));
+        this.setState({ PRODUCTS_OPTIONS: options });
+      })
+      .catch((error) => {
+        console.error("Error fetching products by warehouse:", error);
+        this.setState({ PRODUCTS_OPTIONS: [] });
+      });
   };
 
   onChangeValue = (name) => (e) => {
@@ -155,8 +186,7 @@ class InsertOrUpadte extends Component {
         const newItem = {
           stt: newStt,
           productId: null,
-          productName: "",
-          unit: "",
+          unitId: null,
           quantity: 0,
         };
         return {
@@ -211,8 +241,8 @@ class InsertOrUpadte extends Component {
   };
 
   renderAdjustmentTable = () => {
-    const { adjustedItems } = this.state;
-    const { errors, PRODUCTS_OPTIONS, UNIT_OPTIONS } = this.props;
+    const { adjustedItems, PRODUCTS_OPTIONS } = this.state;
+    const { errors, UNIT_OPTIONS } = this.props;
 
     return (
       <Card className="shadow mt-4">
@@ -236,7 +266,7 @@ class InsertOrUpadte extends Component {
                 <td>
                   <Select
                     value={item.productId}
-                    name="productName"
+                    name="productId"
                     data={PRODUCTS_OPTIONS}
                     labelName="title"
                     title="Chọn sản phẩm"
@@ -244,7 +274,7 @@ class InsertOrUpadte extends Component {
                     handleChange={(value) =>
                       this.handleItemValueChange(
                         index,
-                        "productName"
+                        "productId"
                       )({ target: { value } })
                     }
                     className="wrap-insert-or-update-zone-item-select"
@@ -252,8 +282,8 @@ class InsertOrUpadte extends Component {
                 </td>
                 <td>
                   <Select
-                    value={item.productId}
-                    name="unit"
+                    value={item.unitId}
+                    name="unitId"
                     data={UNIT_OPTIONS}
                     labelName="title"
                     title="Chọn đơn vị"
@@ -261,7 +291,7 @@ class InsertOrUpadte extends Component {
                     handleChange={(value) =>
                       this.handleItemValueChange(
                         index,
-                        "unit"
+                        "unitId"
                       )({ target: { value } })
                     }
                     className="wrap-insert-or-update-zone-item-select"

@@ -45,6 +45,7 @@ import {
 import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { fetchData } from "helpers/fetchData";
 
 class ImportManagement extends Component {
   constructor(props) {
@@ -147,15 +148,10 @@ class ImportManagement extends Component {
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary({
+      page: 1,
+      limit: this.state.limit,
+    });
 
     getListTypeZoneProperty({
       search: "",
@@ -173,41 +169,145 @@ class ImportManagement extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
+  fetchSummary = (params = {}) => {
+    const { filter, limit } = this.state;
+
+    // Parse params nếu là string
+    let parsedParams = params;
+    if (typeof params === "string") {
+      try {
+        parsedParams = JSON.parse(params);
+      } catch (e) {
+        parsedParams = {};
+      }
+    }
+
+    const formatDateParam = (value) => {
+      if (!value) return "";
+      if (typeof value === "string") {
+        // Nếu đã là string format DD-MM-YYYY, giữ nguyên
+        if (value.includes("-") && value.split("-").length === 3) {
+          return value;
+        }
+        return value;
+      }
+      if (typeof value.format === "function") {
+        return value.format("DD-MM-YYYY");
+      }
+      const dateObj = new Date(value);
+      if (Number.isNaN(dateObj.getTime())) return "";
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const year = dateObj.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+
+    const requestParams = {
+      page: parsedParams.page || filter.page || 1,
+      limit: parsedParams.limit || filter.limit || limit,
+      fromDate: formatDateParam(parsedParams.fromDate ?? this.state.fromDate),
+      toDate: formatDateParam(parsedParams.toDate ?? this.state.toDate),
+    };
 
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
-      let collapseList = [];
-      const data = (res.data || {}).data || {};
+    fetchData.report
+      .getListReportInventoryTransferWarehouseV2(requestParams)
+      .then((res) => {
+        const collapseList = [];
+        const responseData = (res?.data || {}).data || res?.data || {};
+        const rawItems =
+          responseData.items ||
+          responseData.inventoryTransfers ||
+          responseData.transferWarehouseItems ||
+          responseData.data ||
+          [];
 
-      let newData = [...this.state.data];
+        const itemsArray = Array.isArray(rawItems) ? rawItems : [];
 
-      newData.forEach((item, key) => {
-        collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
+        const newData = itemsArray.map((item, index) => {
+          const id = item.id || index + 1;
+          collapseList.push({ id, collapse: false });
+          return {
+            id,
+            fromDay:
+              item.fromDay ||
+              item.transferDate ||
+              item.createdAt ||
+              item.date ||
+              "",
+            warehouseTransfer:
+              item.warehouseTransfer ||
+              item.fromWarehouseName ||
+              item.fromWarehouse ||
+              item.warehouseTransferName ||
+              "",
+            warehouseImport:
+              item.warehouseImport ||
+              item.toWarehouseName ||
+              item.toWarehouse ||
+              item.warehouseImportName ||
+              "",
+            note: item.note || item.description || item.content || "",
+            executor:
+              item.executor ||
+              item.executorName ||
+              item.createdBy ||
+              item.creatorName ||
+              "",
+            approver:
+              item.approver ||
+              item.approverName ||
+              item.approvedBy ||
+              item.confirmer ||
+              "",
+            approvalDate:
+              item.approvalDate ||
+              item.approvedAt ||
+              item.confirmedAt ||
+              item.confirmDate ||
+              "",
+            status: item.status || item.statusId || 0,
+          };
+        });
+
+        newData.forEach((item, key) => {
+          item["index"] = key + 1;
+        });
+
+        const totalFromApi =
+          responseData.totalElement ||
+          responseData.totalElements ||
+          responseData.total ||
+          responseData.totalCount;
+        const computedTotal =
+          typeof totalFromApi === "number" ? totalFromApi : newData.length;
+        const totalPageFromApi =
+          responseData.totalPage ||
+          responseData.totalPages ||
+          responseData.pageCount;
+
+        this.setState({
+          data: newData,
+          listLength: computedTotal,
+          totalPage:
+            typeof totalPageFromApi === "number"
+              ? totalPageFromApi
+              : Math.ceil(
+                  computedTotal / (requestParams.limit || limit || 1)
+                ),
+          isLoaded: false,
+          collapseList: collapseList,
+          beginItem: 0,
+          endItem: requestParams.limit || limit,
+          totalElement: computedTotal,
+          currentPage: requestParams.page || 1,
+        });
+      })
+      .catch((error) => {
+        console.error("Error in fetchSummary:", error);
+        this.setState({ isLoaded: false });
       });
-
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
-
-      this.setState({
-        data: newData,
-        listLength: total,
-        totalPage: Math.ceil(length / limit),
-        isLoaded: false,
-        collapseList: collapseList,
-      });
-    });
   };
 
   closeStatusModal = () => {
@@ -273,17 +373,12 @@ class ImportManagement extends Component {
 
   handleSubmitSearchForm = () => {
     const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter,
-        fromDate,
-        toDate,
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary({
+      fromDate,
+      toDate,
+      page: 1,
+      limit: this.state.limit,
+    });
   };
 
   handleModal = (stutus, openModal, closeModal) => {
@@ -390,15 +485,10 @@ class ImportManagement extends Component {
       const data = res.data;
 
       if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
+        this.fetchSummary({
+          page: 1,
+          limit: this.state.limit,
+        });
 
         this.setState({ message: "Xóa dữ liệu thành công" });
         toast.success("Xoá dữ liệu thành công!");
@@ -617,15 +707,10 @@ class ImportManagement extends Component {
                     {/* Header */}
                     <HeaderTable
                       dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
+                        this.fetchSummary({
+                          page: 1,
+                          limit: this.state.limit,
+                        })
                       }
                       hideSearch={true}
                       hideCreate={true}

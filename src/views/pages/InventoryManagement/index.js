@@ -24,6 +24,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactDatetime from "react-datetime";
 
+import { fetchData } from "helpers/fetchData";
+
 // reactstrap components
 import {
   Card,
@@ -108,11 +110,14 @@ class InventoryManagement extends Component {
       currentPage: 0,
       filter: {
         search: "",
-        filter: "",
+        warehouseId: "",
+        itemId: "",
         orderBy: "",
         page: null,
         limit: null,
+        typeof: 1, // Mặc định chọn sản phẩm
       },
+      selectedWarehouseId: null, // Biến tạm lưu warehouseId khi chọn
       dataInsert: {},
       errorInserts: {},
       isShowForEdit: false,
@@ -184,15 +189,26 @@ class InventoryManagement extends Component {
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary({
+      search: "",
+      warehouseId: "",
+      itemId: "",
+      orderBy: "",
+      page: null,
+      limit: null,
+    });
+
+    // Fetch warehouse options
+    fetchData.warehouse.getListComboBox({}).then(res => {
+      const options = (res || []).map(item => ({ id: item.id, title: item.name || item.title || item.warehouseName }));
+      this.setState({ WAREHOUSE_OPTIONS: options });
+    });
+
+    // Fetch product options
+    fetchData.product.getListComboBox({}).then(res => {
+      const options = (res || []).map(item => ({ id: item.id, title: item.name || item.title || item.productName }));
+      this.setState({ PRODUCT_OPTIONS: options });
+    });
 
     getListTypeZoneProperty({
       search: "",
@@ -210,31 +226,79 @@ class InventoryManagement extends Component {
     });
   }
 
-  fetchSummary = (data) => {
+  fetchSummary = (params) => {
     const { getListPlantingZone } = this.props;
+    const { filter } = this.state;
 
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
+    // Chuẩn bị params cho API
+    const apiParams = {
+      page: params.page || filter.page || 1,
+      limit: params.limit || filter.limit || 10,
+      fromDate: params.fromDate || this.state.fromDate,
+      toDate: params.toDate || this.state.toDate,
+    };
+
+    // Chỉ thêm warehouseId nếu có giá trị
+    const warehouseId = params.warehouseId || filter.warehouseId;
+    if (warehouseId !== undefined && warehouseId !== null && warehouseId !== "") {
+      apiParams.warehouseId = warehouseId;
+    }
+
+    // Chỉ thêm productId/materialId nếu có giá trị
+    const itemId = params.itemId || filter.itemId;
+    if (itemId !== undefined && itemId !== null && itemId !== "") {
+      apiParams[filter.typeof === 1 ? 'productId' : 'materialId'] = itemId;
+    }
+
+    // Kiểm tra typeof để gọi API tương ứng
+    let apiCall;
+    if (filter.typeof === 1) {
+      // Sản phẩm
+      apiCall = fetchData.report.getListReportInventoryWarehouseProductV2(apiParams);
+    } else if (filter.typeof === 2) {
+      // Nguyên vật liệu
+      apiCall = fetchData.report.getListReportInventoryWarehouseMaterialV2(apiParams);
+    } else {
+      // Mặc định gọi API sản phẩm nếu typeof không hợp lệ
+      apiCall = fetchData.report.getListReportInventoryWarehouseProductV2(apiParams);
+    }
+
+    apiCall.then((res) => {
       const { limit } = this.state;
       let collapseList = [];
-      const data = (res.data || {}).data || {};
+      const responseData = (res.data || {}).data || {};
 
-      let newData = [...this.state.data];
-
-      newData.forEach((item, key) => {
-        collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
-      });
-
-      newData = handleGenTree(newData, "name");
+      // Xử lý dữ liệu theo API được gọi
+      let newData;
+      if (filter.typeof === 1 || filter.typeof === 2) {
+        // Xử lý response từ report APIs
+        const inventoryData = responseData.inventoryItems || responseData.items || [];
+        newData = inventoryData.map((item, index) => ({
+          id: item.id || index + 1,
+          warehouse: item.warehouseName || item.warehouse || "",
+          itemName: item.productName || item.materialName || item.itemName || "",
+          unit: item.unitName || item.unit || "",
+          beginningBalance: item.beginningBalance || item.openingBalance || 0,
+          inPeriod: item.inPeriod || item.receipt || 0,
+          endingBalance: item.endingBalance || item.closingBalance || 0,
+        }));
+      } else {
+        // Xử lý dữ liệu planting zone (giữ nguyên logic cũ)
+        newData = [...this.state.data];
+        newData.forEach((item, key) => {
+          collapseList.push({ id: item.id, collapse: false });
+          item["parentID"] = item.parentID === null ? "" : item.parentID;
+        });
+        newData = handleGenTree(newData, "name");
+      }
 
       newData.forEach((item, key) => {
         item["index"] = key + 1;
       });
 
       const total = newData.length | 0;
-
       const length = newData.length;
 
       this.setState({
@@ -244,6 +308,9 @@ class InventoryManagement extends Component {
         isLoaded: false,
         collapseList: collapseList,
       });
+    }).catch((error) => {
+      console.error("Error fetching data:", error);
+      this.setState({ isLoaded: false });
     });
   };
 
@@ -282,45 +349,71 @@ class InventoryManagement extends Component {
     });
   };
 
-  handleChangeFilter = (event) => {
-    let { filter } = this.state;
-    const ev = event.target;
-
-    filter[ev["name"]] = ev["value"];
-    this.setState({ filter });
-  };
-
   clearFilter = () => {
     let clearFilter = {
       search: "",
-      filter: "",
+      warehouseId: "",
+      itemId: "",
       orderBy: "",
       page: null,
       limit: null,
+      typeof: 1,
     };
-    this.setState({ filter: clearFilter });
+    this.setState({ filter: clearFilter, selectedWarehouseId: null });
   };
 
   handleChangeSelectFilter = (value, name) => {
-    let { filter } = this.state;
+    console.log("name", name, "value", value, "type", typeof value);
+    if (name === "warehouseId") {
+      // Lưu vào biến tạm selectedWarehouseId, đảm bảo là number hoặc null
+      const parsedValue = value && !isNaN(parseInt(value)) ? parseInt(value) : null;
+      this.setState({ selectedWarehouseId: parsedValue });
+    } else if (name === "typeof") {
+      // Khi chọn loại, cập nhật options cho combobox sản phẩm/nguyên liệu
+      const parsedValue = value && !isNaN(parseInt(value)) ? parseInt(value) : null;
+      let { filter } = this.state;
+      filter[name] = parsedValue;
+      this.setState({ filter });
 
-    filter[name] = value;
-    this.setState({ filter });
+      // Fetch options dựa trên loại
+      if (parsedValue === 1) {
+        // Sản phẩm
+        fetchData.product.getListComboBox({}).then(res => {
+          const options = (res || []).map(item => ({ id: item.id, title: item.name || item.title || item.productName }));
+          this.setState({ PRODUCT_OPTIONS: options });
+        });
+      } else if (parsedValue === 2) {
+        // Nguyên vật liệu
+        fetchData.material.getListComboBox({}).then(res => {
+          const options = (res || []).map(item => ({ id: item.id, title: item.name || item.title || item.materialName }));
+          this.setState({ PRODUCT_OPTIONS: options });
+        });
+      }
+    } else if (name === "itemId") {
+      // Giữ nguyên value là string cho itemId
+      let { filter } = this.state;
+      filter[name] = value;
+      this.setState({ filter });
+    } else {
+      let { filter } = this.state;
+      filter[name] = parseInt(value); // Đảm bảo value là number cho các trường khác
+      this.setState({ filter });
+    }
   };
 
   handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter,
-        fromDate,
-        toDate,
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    const { fromDate, toDate, filter, selectedWarehouseId } = this.state;
+    console.log("kho", selectedWarehouseId);
+    this.fetchSummary({
+      search: "",
+      warehouseId: selectedWarehouseId,
+      itemId: filter.itemId,
+      fromDate,
+      toDate,
+      orderBy: "",
+      page: null,
+      limit: null,
+    });
   };
 
   handleModal = (stutus, openModal, closeModal) => {
@@ -428,13 +521,14 @@ class InventoryManagement extends Component {
 
       if (data.status == 200) {
         this.fetchSummary(
-          JSON.stringify({
+          {
             search: "",
-            filter: "",
+            warehouseId: "",
+            itemId: "",
             orderBy: "",
             page: null,
             limit: null,
-          })
+          }
         );
 
         this.setState({ message: "Xóa dữ liệu thành công" });
@@ -626,15 +720,14 @@ class InventoryManagement extends Component {
                     {/* Header */}
                     <HeaderTable
                       dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
+                        this.fetchSummary({
+                          search: "",
+                          warehouseId: "",
+                          itemId: "",
+                          orderBy: "",
+                          page: null,
+                          limit: null,
+                        })
                       }
                       hideSearch={true}
                       hideCreate={true}
@@ -671,7 +764,7 @@ class InventoryManagement extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
+                                  name="warehouseId"
                                   title="Lọc theo kho hàng"
                                   data={WAREHOUSE_OPTIONS}
                                   labelName="title"
@@ -686,8 +779,8 @@ class InventoryManagement extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
+                                  name="typeof"
+                                  title="Lọc theo loại"
                                   data={TYPEOF_OPTIONS}
                                   labelName="title"
                                   val="id"
@@ -701,8 +794,8 @@ class InventoryManagement extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
-                                  title="Lọc theo kho hàng"
+                                  name="itemId"
+                                  title="Lọc theo nguyên liệu/sản phẩm"
                                   data={PRODUCT_OPTIONS}
                                   labelName="title"
                                   val="id"

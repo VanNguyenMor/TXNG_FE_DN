@@ -15,7 +15,6 @@ import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
 import MenuButton from "../../../assets/img/buttons/menu.png";
 import WarningPopup from "../../../components/WarningPopup";
 import PopupMessage from "../../../components/PopupMessage";
-import { handleGenTree } from "../../../helpers/trees";
 import Select from "../../../components/Select";
 import CreateNewPopup from "../../../components/CreateNewPopup";
 import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction";
@@ -42,6 +41,7 @@ import {
 import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { fetchData } from "helpers/fetchData";
 
 class AdjustmentManagement extends Component {
   constructor(props) {
@@ -160,15 +160,13 @@ class AdjustmentManagement extends Component {
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary();
+
+    // Fetch warehouse options
+    fetchData.warehouse.getListComboBox({}).then(res => {
+      const options = (res || []).map(item => ({ id: item.id, title: item.name || item.title || item.warehouseName }));
+      this.setState({ WAREHOUSE_OPTIONS: options });
+    });
 
     getListTypeZoneProperty({
       search: "",
@@ -186,41 +184,126 @@ class AdjustmentManagement extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
+  fetchSummary = (params = {}) => {
+    const { filter, limit } = this.state;
+
+    const formatDateParam = (value) => {
+      if (!value) return "";
+      if (typeof value === "string") return value;
+      if (typeof value.format === "function") {
+        return value.format("DD-MM-YYYY");
+      }
+      const dateObj = new Date(value);
+      if (Number.isNaN(dateObj.getTime())) return "";
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const year = dateObj.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+
+    const requestParams = {
+      page: params.page || filter.page || 1,
+      limit: params.limit || filter.limit || limit,
+      fromDate: formatDateParam(params.fromDate ?? this.state.fromDate),
+      toDate: formatDateParam(params.toDate ?? this.state.toDate),
+    };
+
+    const warehouseId = params.warehouseId ?? filter.filter;
+    if (warehouseId !== undefined && warehouseId !== null && warehouseId !== "") {
+      requestParams.warehouseId = warehouseId;
+    }
 
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
-      let collapseList = [];
-      const data = (res.data || {}).data || {};
+    fetchData.report
+      .getListReportInventoryAdjustWarehouseV2(requestParams)
+      .then((res) => {
+        const collapseList = [];
+        const responseData = (res?.data || {}).data || res?.data || {};
+        const rawItems =
+          responseData.items ||
+          responseData.inventoryAdjustments ||
+          responseData.data ||
+          [];
 
-      let newData = [...this.state.data];
+        const itemsArray = Array.isArray(rawItems) ? rawItems : [];
 
-      newData.forEach((item, key) => {
-        collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
+        const newData = itemsArray.map((item, index) => {
+          const id = item.id || index + 1;
+          collapseList.push({ id, collapse: false });
+          return {
+            id,
+            time:
+              item.time ||
+              item.adjustmentDate ||
+              item.createdAt ||
+              item.date ||
+              "",
+            warehouse:
+              item.warehouse ||
+              item.wareHouse ||
+              item.warehouseName ||
+              item.warehouseCode ||
+              "",
+            note: item.note || item.description || item.content || "",
+            executor:
+              item.executor ||
+              item.executorName ||
+              item.createdBy ||
+              item.creatorName ||
+              "",
+            approver:
+              item.approver ||
+              item.approverName ||
+              item.approvedBy ||
+              item.confirmer ||
+              "",
+            approvalDate:
+              item.approvalDate ||
+              item.approvedAt ||
+              item.confirmedAt ||
+              item.confirmDate ||
+              "",
+          };
+        });
+
+        newData.forEach((item, key) => {
+          item["index"] = key + 1;
+        });
+
+        const totalFromApi =
+          responseData.totalElement ||
+          responseData.totalElements ||
+          responseData.total ||
+          responseData.totalCount;
+        const computedTotal =
+          typeof totalFromApi === "number" ? totalFromApi : newData.length;
+        const totalPageFromApi =
+          responseData.totalPage ||
+          responseData.totalPages ||
+          responseData.pageCount;
+
+        this.setState({
+          data: newData,
+          listLength: computedTotal,
+          totalPage:
+            typeof totalPageFromApi === "number"
+              ? totalPageFromApi
+              : Math.ceil(
+                  computedTotal / (requestParams.limit || limit || 1)
+                ),
+          isLoaded: false,
+          collapseList: collapseList,
+          beginItem: 0,
+          endItem: requestParams.limit || limit,
+          totalElement: computedTotal,
+          currentPage: requestParams.page || 1,
+        });
+      })
+      .catch((error) => {
+        console.error("Error in fetchSummary:", error);
+        this.setState({ isLoaded: false });
       });
-
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
-      const length = newData.length;
-
-      this.setState({
-        data: newData,
-        listLength: total,
-        totalPage: Math.ceil(length / limit),
-        isLoaded: false,
-        collapseList: collapseList,
-      });
-    });
   };
 
   closeStatusModal = () => {
@@ -286,17 +369,12 @@ class AdjustmentManagement extends Component {
 
   handleSubmitSearchForm = () => {
     const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter,
-        fromDate,
-        toDate,
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary({
+      fromDate,
+      toDate,
+      warehouseId: filter.filter,
+      page: 1,
+    });
   };
 
   handleModal = (stutus, openModal, closeModal) => {
@@ -403,15 +481,7 @@ class AdjustmentManagement extends Component {
       const data = res.data;
 
       if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
+        this.fetchSummary();
 
         this.setState({ message: "Xóa dữ liệu thành công" });
         toast.success("Xoá dữ liệu thành công!");
@@ -601,17 +671,7 @@ class AdjustmentManagement extends Component {
                   <div className="col">
                     {/* Header */}
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
-                      }
+                      dataReload={() => this.fetchSummary()}
                       hideSearch={true}
                       moduleTitle={
                         isShowForEdit
