@@ -5,7 +5,8 @@ import {
     PLANTING_ZONE_UPDATE,
     PLANTING_ZONE_DELETE,
     PLANTING_ZONE_DETAIL,
-    GOOD_DELIVERY_GET_LIST
+    GOOD_DELIVERY_GET_LIST,
+    REPORT_GET_LIST_INVENTORY_TRANSFER_WAREHOUSE_V2
 } from "../apis";
 import {
     post, del, get, postFormData
@@ -190,6 +191,27 @@ export const platingZoneAction = {
     getDetailPlantingZone: data => async (dispatch, _) => {
         return new Promise(resolve => {
             const url = PLANTING_ZONE_DETAIL.replace('{0}', data.id);
+
+            get(url, data).then(res => {
+                resolve({
+                    ok: true,
+                    data: res
+                });
+            }).catch(err => {
+                resolve({
+                    ok: false,
+                    data: err
+                });
+            });
+        });
+    },
+    getListReportInventoryTransferWarehouseV2: data => async (dispatch, _) => {
+        return new Promise(resolve => {
+            const url = REPORT_GET_LIST_INVENTORY_TRANSFER_WAREHOUSE_V2
+                .replace('{0}', data.page)
+                .replace('{1}', data.limit)
+                .replace('{2}', data.fromDate)
+                .replace('{3}', data.toDate);
 
             get(url, data).then(res => {
                 resolve({

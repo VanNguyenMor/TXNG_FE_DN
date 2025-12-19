@@ -47,6 +47,8 @@ import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { getUrlCompanyAPI } from "utils/service.js";
 import axios from "axios";
 import { getCookie } from "helpers/cookie.js";
+import { fetchData } from "helpers/fetchData";
+import { callApi } from "utils/fetchAllData";
 
 class DeclarationInformations extends Component {
   constructor(props) {
@@ -215,6 +217,29 @@ class DeclarationInformations extends Component {
       })
     );
 
+    // Fetch job/field options from API
+    fetchData.infoCompany.getFieldByCompanyHaveAccess({}).then(res => {
+      // Handle different response structures
+      let dataArray = [];
+      if (Array.isArray(res)) {
+        dataArray = res;
+      } else if (res && Array.isArray(res.data)) {
+        dataArray = res.data;
+      } else if (res && res.fields && Array.isArray(res.fields)) {
+        dataArray = res.fields;
+      } else if (res && res.data && Array.isArray(res.data.fields)) {
+        dataArray = res.data.fields;
+      }
+      
+      const options = (dataArray || []).map(item => ({ 
+        id: item.id, 
+        title: item.name || item.title || item.fieldName 
+      }));
+      this.setState({ JOB_OPTIONS: options });
+    }).catch(error => {
+      console.error("Error fetching job options:", error);
+    });
+
     getListTypeZoneProperty({
       search: "",
       filter: "",
@@ -240,30 +265,40 @@ class DeclarationInformations extends Component {
   }
 
   fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
+    const { limit, filter } = this.state;
 
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
+    // Get fieldId and productId from filter
+    const fieldId = filter.filter || "";
+    const productId = filter.product || "";
+
+    // Build API URL with parameters
+    const apiEndpoint = `informationaccess/getgridviewv2?fieldId=${fieldId}&productId=${productId}`;
+
+    callApi("get", apiEndpoint).then((res) => {
       let collapseList = [];
-      const data = (res.data || {}).data || {};
+      
+      // Extract informSelectParents array from response
+      const informSelectParents = (res.data && res.data.informSelectParents) || [];
 
-      let newData = [...this.state.data];
+      // Map informSelectParents to table data structure
+      let newData = informSelectParents.map((item, key) => ({
+        id: item.id,
+        index: key + 1, // STT - tự động đếm
+        retrieve: item.name, // TÊN TRUY XUẤT
+        title: item.name,
+        loggingStatus: item.isChecked ? 1 : 0, // NHẬT KÝ
+        qrStatus: item.isShow ? 1 : 0, // QUÉT MÃ
+        parentID: item.parentID === null ? "" : item.parentID,
+        color: "#000",
+      }));
 
-      newData.forEach((item, key) => {
+      newData.forEach((item) => {
         collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
-      });
-
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
       });
 
       const total = newData.length | 0;
-
       const length = newData.length;
 
       this.setState({
@@ -273,6 +308,9 @@ class DeclarationInformations extends Component {
         isLoaded: false,
         collapseList: collapseList,
       });
+    }).catch((error) => {
+      console.error("Error fetching information access:", error);
+      this.setState({ isLoaded: false });
     });
   };
 
@@ -330,11 +368,54 @@ class DeclarationInformations extends Component {
     this.setState({ filter: clearFilter });
   };
 
-  handleChangeSelectFilter = (value, name) => {
+  handleChangeSelectFilter = async (value, name) => {
     let { filter } = this.state;
 
     filter[name] = value;
     this.setState({ filter });
+
+    // When field (ngành nghề) is selected, fetch products
+    if (name !== "filter") {
+      return;
+    }
+
+    const fieldID = (value && value.id) || value || "";
+    if (!fieldID) {
+      this.setState({ PRODUCT_OPTIONS: [] });
+      return;
+    }
+
+    const payload = {
+      fieldID: fieldID,
+      productCode: "",
+      productName: "",
+      orderBy: "",
+      page: 0,
+      limit: 1000,
+    };
+
+    try {
+      const res = await fetchData.product.getAllLock(payload);
+      console.log("Fetched products:", res);
+      let dataArray = [];
+      if (Array.isArray(res)) {
+        dataArray = res;
+      } else if (res && res.data && Array.isArray(res.data)) {
+        dataArray = res.data;
+      } else if (res && res.products && Array.isArray(res.products)) {
+        dataArray = res.products;
+      } else if (res && res.data && Array.isArray(res.data.products)) {
+        dataArray = res.data.products;
+      }
+
+      const options = (dataArray || []).map((item) => ({
+        id: item.id,
+        title: item.productName || item.name || item.title,
+      }));
+      this.setState({ PRODUCT_OPTIONS: options });
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
   };
 
   handleSubmitSearchForm = () => {
@@ -361,6 +442,40 @@ class DeclarationInformations extends Component {
     ) {
       closeModal && closeModal();
     } else {
+      // Fetch RETRIEVE_OPTIONS when opening modal
+      const { filter } = this.state;
+      const fieldId = filter.filter || "";
+      const productId = filter.product || "";
+
+      console.log("=== handleModal Debug ===");
+      console.log("fieldId:", fieldId);
+      console.log("productId:", productId);
+
+      if (fieldId && productId) {
+        const apiEndpoint = `informationaccess/getListProcessAccessForAdd?fieldId=${fieldId}&productId=${productId}`;
+        console.log("API Endpoint:", apiEndpoint);
+        
+        callApi("get", apiEndpoint).then((res) => {
+          console.log("API Response:", res);
+          console.log("res.data:", res.data);
+          
+          const dataArray = (res.data && res.data.data) || res.data || [];
+          console.log("dataArray:", dataArray);
+          
+          const options = (Array.isArray(dataArray) ? dataArray : []).map((item) => ({
+            id: item.id,
+            title: item.name || item.title,
+          }));
+          console.log("RETRIEVE_OPTIONS mapped:", options);
+          
+          this.setState({ RETRIEVE_OPTIONS: options });
+        }).catch((error) => {
+          console.error("Error fetching retrieve options:", error);
+        });
+      } else {
+        console.log("fieldId or productId is missing, cannot fetch retrieve options");
+      }
+
       openModal && openModal();
     }
 
@@ -398,13 +513,49 @@ class DeclarationInformations extends Component {
   };
 
   onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
-    console.log(dataInsert);
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
-    }
+    const { dataInsert, filter } = this.state;
+    
+    console.log("=== onConfirm Debug ===");
+    console.log("dataInsert:", dataInsert);
+
+    // Prepare payload for API
+    const payload = {
+      fieldID: filter.filter || "",
+      productID: filter.product || "",
+      informID: dataInsert.retrieveId || "",
+      name: dataInsert.name || "",
+      sortOrder: dataInsert.order || 0,
+      isChecked: false,
+      isShow: false,
+    };
+
+    console.log("API Payload:", payload);
+
+    // Call API
+    callApi("post", "informationaccess/create", payload)
+      .then((res) => {
+        console.log("API Response:", res);
+        
+        if (res.status === 200 || res.data?.status === 200) {
+          toast.success("Thêm mới thành công!");
+          
+          // Refresh data
+          this.fetchSummary();
+          
+          // Close modal
+          if (toggleModal) {
+            toggleModal();
+          }
+        } else {
+          const message = res.data?.message || "Thêm mới thất bại";
+          toast.error(message);
+        }
+      })
+      .catch((error) => {
+        console.error("Error creating information access:", error);
+        const message = error.response?.data?.message || "Thêm mới thất bại";
+        toast.error(message);
+      });
   };
 
   onHandleChangeValue = (data) => {
@@ -790,7 +941,7 @@ class DeclarationInformations extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
+                                  name="product"
                                   title="Sản phẩm"
                                   data={PRODUCT_OPTIONS}
                                   labelName="title"

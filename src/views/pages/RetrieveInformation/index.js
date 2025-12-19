@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
+import Datetime from "react-datetime";
+import moment from "moment";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
 import {
   DECLARATION_INFORMATION,
@@ -44,6 +46,8 @@ import {
 import InsertOrUpdate from "./InsertOrUpdate.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { fetchData } from "helpers/fetchData";
+import { callApi } from "utils/fetchAllData";
 
 class RetrieveInformation extends Component {
   constructor(props) {
@@ -99,6 +103,7 @@ class RetrieveInformation extends Component {
       filter: {
         search: "",
         filter: "",
+        product: "",
         orderBy: "",
         page: null,
         limit: null,
@@ -125,8 +130,8 @@ class RetrieveInformation extends Component {
         { id: 1, title: "Truy xuất 2" },
       ],
       PRODUCT_OPTIONS: [
-        { id: 0, title: "Sản phẩm 1" },
-        { id: 1, title: "Sản phẩm 2" },
+        { id: 0, productName: "Sản phẩm 1" },
+        { id: 1, productName: "Sản phẩm 2" },
       ],
       PLANTINGZONE_OPTIONS: [
         {
@@ -148,21 +153,38 @@ class RetrieveInformation extends Component {
           title: "Chọn nguyên liệu",
         },
       ],
+      fromDate: moment().add(-1, "months"),
+      toDate: moment(),
     };
   }
 
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary();
+
+    // Fetch job/field options
+    fetchData.infoCompany.getFieldByCompanyHaveAccess({}).then(res => {
+      // Handle different response structures
+      let dataArray = [];
+      if (Array.isArray(res)) {
+        dataArray = res;
+      } else if (res && Array.isArray(res.data)) {
+        dataArray = res.data;
+      } else if (res && res.fields && Array.isArray(res.fields)) {
+        dataArray = res.fields;
+      } else if (res && res.data && Array.isArray(res.data.fields)) {
+        dataArray = res.data.fields;
+      }
+      
+      const options = (dataArray || []).map(item => ({ 
+        id: item.id, 
+        title: item.name || item.title || item.fieldName 
+      }));
+      this.setState({ JOB_OPTIONS: options });
+    }).catch(error => {
+      console.error("Error fetching job options:", error);
+    });
 
     getListTypeZoneProperty({
       search: "",
@@ -180,32 +202,58 @@ class RetrieveInformation extends Component {
     });
   }
 
-  fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
+  fetchSummary = () => {
+    const { limit, currentPage, filter } = this.state;
 
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
-      const { limit } = this.state;
+    // Get fieldId and productId from filter
+    const fieldId = filter.filter || "";
+    const productId = filter.product || "";
+
+    console.log("=== fetchSummary Debug ===");
+    console.log("fieldId:", fieldId);
+    console.log("productId:", productId);
+    console.log("filter state:", filter);
+
+    // Build API URL with parameters
+    const apiEndpoint = `processaccess/getgridviewv2?fieldId=${fieldId}&productId=${productId}`;
+    console.log("API Endpoint:", apiEndpoint);
+
+    callApi("get", apiEndpoint).then((res) => {
+      console.log("API Response:", res);
+      console.log("res.data:", res.data);
+      console.log("res.data.data:", res.data && res.data.data);
+      
       let collapseList = [];
-      const data = (res.data || {}).data || {};
+      
+      // Extract informSelects array from response
+      const informSelects = (res.data && res.data.informSelects) || [];
+      console.log("informSelects:", informSelects);
+      console.log("informSelects length:", informSelects.length);
 
-      let newData = [...this.state.data];
+      // Map informSelects to table data structure
+      let newData = informSelects.map((item, key) => ({
+        id: item.id,
+        index: key + 1, // STT - tự động đếm
+        retrieve: item.name, // TÊN TRUY XUẤT
+        loggingStatus: item.isChecked ? 1 : 0, // NHẬT KÝ
+        qrStatus: item.isShow ? 1 : 0, // QUÉT MÃ
+        htFeedback: item.isShowEvaluated ? 1 : 0, // HT DÁNH GIÁ
+        parentID: item.parentID === null ? "" : item.parentID,
+        color: "#000",
+      }));
 
-      newData.forEach((item, key) => {
+      console.log("Mapped newData:", newData);
+
+      newData.forEach((item) => {
         collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
-      });
-
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
       });
 
       const total = newData.length | 0;
-
       const length = newData.length;
+
+      console.log("Setting state with data:", { data: newData, listLength: total, totalPage: Math.ceil(length / limit) });
 
       this.setState({
         data: newData,
@@ -214,6 +262,9 @@ class RetrieveInformation extends Component {
         isLoaded: false,
         collapseList: collapseList,
       });
+    }).catch((error) => {
+      console.error("Error fetching grid view report:", error);
+      this.setState({ isLoaded: false });
     });
   };
 
@@ -264,6 +315,7 @@ class RetrieveInformation extends Component {
     let clearFilter = {
       search: "",
       filter: "",
+      product: "",
       orderBy: "",
       page: null,
       limit: null,
@@ -271,26 +323,57 @@ class RetrieveInformation extends Component {
     this.setState({ filter: clearFilter });
   };
 
-  handleChangeSelectFilter = (value, name) => {
+  handleChangeSelectFilter = async (value, name) => {
     let { filter } = this.state;
 
     filter[name] = value;
     this.setState({ filter });
+
+    if (name !== "filter") {
+      return;
+    }
+
+    const fieldID = (value && value.id) || value || "";
+    if (!fieldID) {
+      this.setState({ PRODUCT_OPTIONS: [] });
+      return;
+    }
+
+    const payload = {
+      fieldID: fieldID,
+      productCode: "",
+      productName: "",
+      orderBy: "",
+      page: 0,
+      limit: 1000,
+    };
+
+    try {
+      const res = await fetchData.product.getAllLock(payload);
+      console.log("Fetched products:", res);
+      let dataArray = [];
+      if (Array.isArray(res)) {
+        dataArray = res;
+      } else if (res && res.data && Array.isArray(res.data)) {
+        dataArray = res.data;
+      } else if (res && res.products && Array.isArray(res.products)) {
+        dataArray = res.products;
+      } else if (res && res.data && Array.isArray(res.data.products)) {
+        dataArray = res.data.products;
+      }
+
+      const options = (dataArray || []).map((item) => ({
+        id: item.id,
+        productName: item.productName || item.name || item.title,
+      }));
+      this.setState({ PRODUCT_OPTIONS: options });
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
   };
 
   handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter,
-        fromDate,
-        toDate,
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary();
   };
 
   handleModal = (status, openModal, closeModal) => {
@@ -497,11 +580,10 @@ class RetrieveInformation extends Component {
       const renderClass =
         e.parentID.length === 0
           ? `${classes.treeParent}`
-          : `${classes.treeChild}${
-              parentid.includes(e.parentID)
-                ? ` ${classes.childs}`
-                : ` ${classes.childsItem}`
-            }`;
+          : `${classes.treeChild}${parentid.includes(e.parentID)
+            ? ` ${classes.childs}`
+            : ` ${classes.childsItem}`
+          }`;
       list.push(
         <tr
           key={autoIndex}
@@ -578,7 +660,7 @@ class RetrieveInformation extends Component {
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
-                        isDisableDelete == true ? null : (
+                          isDisableDelete == true ? null : (
                           <DropdownItem divider />
                         )}
                         {isDisableDelete == true ? null : (
@@ -618,6 +700,8 @@ class RetrieveInformation extends Component {
       listLength,
       totalPage,
       totalElement,
+      fromDate,
+      toDate,
       createNewModal,
       popupMessage,
       activeCreateSubmit,
@@ -668,29 +752,18 @@ class RetrieveInformation extends Component {
               ) : (
                 <Row>
                   <div className="col">
-                    {/* Header */}
                     <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
-                      }
+                      dataReload={() => this.fetchSummary()}
                       hideSearch={true}
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
                         isShowForDetail
                           ? "Chi tiết truy xuất thông tin"
                           : isShowForEdit
-                          ? "Cập nhật truy xuất thông tin"
-                          : isShowForWrite
-                          ? "Ghi nhật ký truy cập"
-                          : "Thêm/Cập nhật truy xuất thông tin"
+                            ? "Cập nhật truy xuất thông tin"
+                            : isShowForWrite
+                              ? "Ghi nhật ký truy cập"
+                              : "Thêm/Cập nhật truy xuất thông tin"
                       }
                       moduleBody={
                         <InsertOrUpdate
@@ -722,6 +795,30 @@ class RetrieveInformation extends Component {
                             style={{ marginBottom: "10px", flex: "wrap" }}
                           >
                             <div className="mg-div-search">
+                              <label className="form-control-label">Từ ngày</label>
+                              <Datetime
+                                className="form-control-alternative"
+                                timeFormat={false}
+                                dateFormat="DD/MM/YYYY"
+                                value={fromDate}
+                                onChange={(val) => {
+                                  this.setState({ fromDate: val });
+                                }}
+                              />
+                            </div>
+                            <div className="mg-div-search">
+                              <label className="form-control-label">Đến ngày</label>
+                              <Datetime
+                                className="form-control-alternative"
+                                timeFormat={false}
+                                dateFormat="DD/MM/YYYY"
+                                value={toDate}
+                                onChange={(val) => {
+                                  this.setState({ toDate: val });
+                                }}
+                              />
+                            </div>
+                            <div className="mg-div-search">
                               <label className="form-control-label">
                                 Ngành nghề
                               </label>
@@ -742,10 +839,10 @@ class RetrieveInformation extends Component {
                               </label>
                               <div>
                                 <Select
-                                  name="filter"
+                                  name="product"
                                   title="Sản phẩm"
                                   data={PRODUCT_OPTIONS}
-                                  labelName="title"
+                                  labelName="productName"
                                   val="id"
                                   handleChange={this.handleChangeSelectFilter}
                                 />

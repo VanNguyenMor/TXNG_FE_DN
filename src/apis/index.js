@@ -426,3 +426,4 @@ export const REPORTV2_PRINT_EXCEL_REPORT_LIST_ZONING_PLANTINGZONE_BY_COMPANY_API
 
 // GOOD DELIVERY NOTE API
 export const GOOD_DELIVERY_GET_LIST = DOMAIN + API + 'goodsdeliverynote/getall';
+export const REPORT_GET_LIST_INVENTORY_TRANSFER_WAREHOUSE_V2 = DOMAIN + API + 'report/getListReportInventoryTransferWarehouseV2?page={0}&limit={1}&fromDate={2}&toDate={3}';
