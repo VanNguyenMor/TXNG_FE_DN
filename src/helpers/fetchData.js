@@ -200,6 +200,15 @@ export const fetchData = {
         return null;
       }
     },
+    getFieldByCompanyHaveAccess: async (payload = {}) => {
+      try {
+        const result = await callApi("post", "field/getallbycompanyhaveaccess", payload);
+        return result?.data || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách field by company:", error);
+        return [];
+      }
+    },
     getProvinceComboBox: async () => {
       try {
         const result = await callApi(
@@ -1073,23 +1082,30 @@ export const fetchData = {
         return null;
       }
     },
-    getListWithMaterialInventoryByWarehouseComboBox: async (warehouseId) => {
+    getAllLock: async (payload = {}) => {
       try {
-        const endpoint = PRODUCT_MANAGEMENT.getListWithMaterialInventoryByWarehouseComboBox.replace("{0}", warehouseId);
-        const result = await callApi("get", endpoint);
-        if (result && result.data && result.data.products) {
+        const result = await callApi("post", PRODUCT_MANAGEMENT.getAllLock, payload);
+
+        // Prefer explicit structure: { status, message, data: { products: [...] } }
+        if (result && result.data && result.data.data && Array.isArray(result.data.data.products)) {
+          return result.data.data.products;
+        }
+        // Sometimes API may be { data: { products: [...] } } directly
+        if (result && result.data && Array.isArray(result.data.products)) {
           return result.data.products;
         }
+        // Or API may return array directly in data
         if (result && result.data && Array.isArray(result.data)) {
           return result.data;
         }
-        if (result && Array.isArray(result)) {
+        // Or full result is already an array
+        if (Array.isArray(result)) {
           return result;
         }
-        return null;
+        return [];
       } catch (error) {
-        console.error("Error in getListWithMaterialInventoryByWarehouseComboBox:", error);
-        return null;
+        console.error("Error fetching products with lock:", error);
+        return [];
       }
     },
   },
@@ -1163,31 +1179,13 @@ export const fetchData = {
         return null;
       }
     },
-    createReportInventoryTransferWarehouseV2: async (payload) => {
-      try {
-        const result = await callApi(
-          "post",
-          REPORT.createReportInventoryTransferWarehouseV2,
-          payload
-        );
-        return result || null;
-      } catch (error) {
-        console.error(
-          "❌ Error in createReportInventoryTransferWarehouseV2:",
-          error
-        );
-        return null;
-      }
-    },
     getListReportInventoryTransferWarehouseV2: async (payload) => {
       try {
-        const { page = 1, limit = 10, fromDate = "", toDate = "" } = payload;
-        const endpoint = REPORT.getListReportInventoryTransferWarehouseV2
-          .replace("{0}", page)
-          .replace("{1}", limit)
-          .replace("{2}", fromDate)
-          .replace("{3}", toDate);
-        const result = await callApi("get", endpoint);
+        const result = await callApi(
+          "get",
+          REPORT.getListReportInventoryTransferWarehouseV2,
+          payload
+        );
         return result || null;
       } catch (error) {
         console.error(

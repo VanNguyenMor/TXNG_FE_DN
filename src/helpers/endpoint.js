@@ -70,7 +70,7 @@ export const PRODUCT_MANAGEMENT = {
   updateLock: "product/lock/{id}",
   deleteProduct: "product/delete/{id}",
   getListComboBox: "product/getlistcombobox",
-  getListWithMaterialInventoryByWarehouseComboBox: "product/getListWithMaterialInventoryByWarehouseComboBox?warehouseId={0}",
+  getAllLock: "product/getalllock",
 };
 
 export const PRODUCT_HISTORIES = {
@@ -162,8 +162,7 @@ export const REPORT = {
   getListReportInventoryWarehouseProductV2: "report/getListReportInventoryWarehouseProductV2",
   getListReportInventoryWarehouseMaterialV2: "report/getListReportInventoryWarehouseMaterialV2",
   getListReportInventoryAdjustWarehouseV2: "report/getListReportInventoryAdjustWarehouseV2",
-  createReportInventoryTransferWarehouseV2: "report/createReportInventoryTransferWarehouseV2",
-  getListReportInventoryTransferWarehouseV2: "report/getListReportInventoryTransferWarehouseV2?page={0}&limit={1}&fromDate={2}&toDate={3}",
+  getListReportInventoryTransferWarehouseV2: "report/getListReportInventoryTransferWarehouseV2",
 };
 
 export const PAYLOAD = {
