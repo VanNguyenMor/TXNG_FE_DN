@@ -2,7 +2,7 @@
     margin-bottom: 10px;
 }
 
-.error, .error p {
+.error {
     color: red;
     font-size: 12px;
     line-height: 1;
@@ -10,25 +10,123 @@
     margin-bottom: 0;
 }
 
-.disbaleBtn {
-    background: #d1d1d1;
+.alertError {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 12px 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 13px;
 }
 
-.disbaleBtn span {
-    color: white;
+.alertError p {
+    margin: 0;
+}
+
+.alertWarning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 12px 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.alertWarning p {
+    margin: 0;
 }
 
 .moduleHeaderArea {
-    background: #09b2fd;
-    justify-content: center;
+    background: var(--color-blue);
+    border-bottom: 1px solid var(--color-blue-2);
+    border-radius: 5px 5px 0 0;
 }
 
-.moduleHeaderArea h5 {
+.moduleHeaderArea .modal-title {
     font-size: 1rem;
     color: white;
     text-transform: uppercase;
+    margin: 0;
+    padding: 0;
 }
 
-.type {
+.ruleBlock {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 12px;
+    margin-top: 15px;
+}
+
+.ruleTitle {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.ruleList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ruleList li {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+    padding: 4px 0;
+}
+
+.ruleList li i {
+    margin-right: 8px;
+    width: 16px;
     text-align: center;
+    color: #999;
+}
+
+.ruleValid {
+    color: #28a745;
+}
+
+.ruleValid i {
+    color: #28a745;
+}
+
+.statusSuccess {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 10px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    margin-top: 15px;
+}
+
+.statusError {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 10px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+    .moduleHeaderArea {
+        border-radius: 5px 5px 0 0;
+    }
+
+    .ruleBlock {
+        padding: 10px;
+    }
+
+    .ruleList li {
+        font-size: 12px;
+    }
 }
