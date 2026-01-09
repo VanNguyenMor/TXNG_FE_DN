@@ -64,6 +64,7 @@ ReactDOM.render(
       <ConnectedRouter history={history}>
         <BrowserRouter>
           <Switch>
+            <Route path="/reset-password" component={ResetPassword} />
             {
               localStorage.getItem('TOKEN') ? (
                 <Route path="/trang_chu" component={AdminLayout} />

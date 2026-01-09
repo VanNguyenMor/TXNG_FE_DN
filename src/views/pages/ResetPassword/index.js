@@ -5,8 +5,7 @@
 =========================================================
 
 * Product Page: https://www.creative-tim.com/product/argon-dashboard-react
-* Copyright 2021 Creative Tim (https://www.creative-tim.com)
-* Licensed under MIT (https://github.com/creativetimofficial/argon-dashboard-react/blob/master/LICENSE.md)
+* Copyright 2021 Creative Tim (https://github.com/creativetimofficial/argon-dashboard-react/blob/master/LICENSE)
 
 * Coded by Creative Tim
 
@@ -15,329 +14,314 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React, { Component } from "react";
-import compose from 'recompose/compose';
-import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import { PLEASE_CHECK_CONNECT } from "../../../services/Common";
-import { LOADING_TIME } from "../../../helpers/constant";
-import { bindActionCreators } from "redux";
-import { connect } from "react-redux";
-import { actionCreators } from "../../../actions/AuthenActions";
-import classes from './index.module.css';
-import '../../../assets/css/global/index.css';
-import Validate from "react-validate-form";
-import { rules, validations } from "../../../helpers/validation";
-import LoginImg from "../../../assets/img/buttons/logout.svg"
-
-// import Modal from '../../../components/modal';
-// import ForgotPassword from '../../pages/forgotPassword';
-
-// reactstrap components
+import React, { useEffect, useMemo, useState } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import {
-	Button,
-	Card,
-	CardBody,
-	FormGroup,
-	Form,
-	Input,
-	InputGroupAddon,
-	InputGroupText,
-	InputGroup,
-	Row,
-	Col,
-	Spinner
+  Button,
+  Card,
+  CardBody,
+  Col,
+  Container,
+  Form,
+  FormGroup,
+  Input,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
+  Row,
+  Spinner,
 } from "reactstrap";
 
 import Message, { TYPES } from "../../../components/message";
-import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import { checkLinkForgotPassword, changePasswordForForgotPassword } from "../../../services/resetPasswordService";
+import classes from "./index.module.css";
+import '../../../assets/css/global/index.css';
 
-class ResetPassword extends Component {
-	constructor(props) {
-		super(props);
+const PASSWORD_RULES = [
+  { key: "length", label: "Ít nhất 8 ký tự", validator: (v) => v.length >= 8 },
+  { key: "uppercase", label: "Có chữ hoa", validator: (v) => /[A-Z]/.test(v) },
+  { key: "lowercase", label: "Có chữ thường", validator: (v) => /[a-z]/.test(v) },
+  { key: "number", label: "Có số", validator: (v) => /\d/.test(v) },
+  { key: "special", label: "Có ký tự đặc biệt", validator: (v) => /[^A-Za-z0-9]/.test(v) },
+];
 
-		this.state = {
-			data: [],
-			isLoaded: null,
-			status: null,
-			username: '',
-			email: '',
-			numberphone: '',
-			message: '',
-			type: 1
-		};
-	}
+const ResetPassword = () => {
+  const history = useHistory();
+  const location = useLocation();
 
-	componentWillReceiveProps(nextProp) {
-		const { account } = nextProp;
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const username = queryParams.get("username") || "";
+  const shortLinkId = queryParams.get("shortLinkId") || "";
 
-		this.setState({
-			data: account.data.data,
-			isLoaded: account.data.isLoading,
-			status: account.data.status,
-			message: PLEASE_CHECK_CONNECT(account.data.message)
-		});
-	}
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(true);
+  const [statusMessage, setStatusMessage] = useState({ type: null, text: "" });
+  const [isLinkExpired, setIsLinkExpired] = useState(false);
+  const [linkValid, setLinkValid] = useState(false);
 
-	componentDidUpdate() {
-		// This method is called when the route parameters change
-		this.closeStatusModal();
-	}
+  const passwordRules = useMemo(
+    () => PASSWORD_RULES.map((rule) => ({ ...rule, valid: rule.validator(password) })),
+    [password]
+  );
 
-	handleUserLogin = (event) => {
-		const { onUserLogin } = this.props;
-		const { username, email, numberphone } = this.state;
+  const isPasswordValid = useMemo(() => passwordRules.every((rule) => rule.valid), [passwordRules]);
+  const isConfirmValid = password.length > 0 && confirmPassword === password;
+  const isMissingParams = !username || !shortLinkId;
+  const isSubmitDisabled = isMissingParams || !linkValid || !isPasswordValid || !isConfirmValid || loading || checkingLink;
 
-		event.preventDefault();
+  useEffect(() => {
+    document.title = "Đổi mật khẩu";
+  }, []);
 
-		if (username.trim().length > 0 && (email.trim().length > 0 || numberphone.trim().length > 0)) {
+  // Kiểm tra link khi component mount
+  useEffect(() => {
+    const verifyLink = async () => {
+      if (!username || !shortLinkId) {
+        setCheckingLink(false);
+        setIsLinkExpired(true);
+        return;
+      }
 
-			this.setState({ isLoaded: true });
+      try {
+        setCheckingLink(true);
+        const response = await checkLinkForgotPassword(username, shortLinkId);
+        if (response.status === 200) {
+          setLinkValid(true);
+          setIsLinkExpired(false);
+        }
+      } catch (error) {
+        const status = error?.status;
+        let message = error?.message || "Không thể kiểm tra link.";
 
-			onUserLogin(JSON.stringify({
-				username: username,
-				email: email,
-			}), res => {
-				this.setState({ isLoaded: false });
+        if (status === 410 || status === 404) {
+          message = "Liên kết đã hết hạn. Vui lòng yêu cầu gửi lại email đặt lại mật khẩu.";
+        } else if (status === 400 || status === 401) {
+          message = "Liên kết không hợp lệ hoặc đã được sử dụng.";
+        }
 
-				const data = res || {};
+        setIsLinkExpired(true);
+        setStatusMessage({ type: "error", text: message });
+      } finally {
+        setCheckingLink(false);
+      }
+    };
 
-				if (data.status == 200) {
-				} else {
-					const message = getErrorMessageServer(res);
+    verifyLink();
+  }, [username, shortLinkId]);
 
-					//Message.show(TYPES.ERROR, 'Thông báo', message || 'Sai tên tài khoản hoặc mật khẩu');
-				}
-			});
-		}
-	}
+  useEffect(() => {
+    // Prevent caching to avoid leaking reset tokens in intermediary storage.
+    const cacheMeta = document.createElement("meta");
+    cacheMeta.httpEquiv = "Cache-Control";
+    cacheMeta.content = "no-store";
+    document.head.appendChild(cacheMeta);
 
-	handleAccount = (event) => {
-		const ev = event.target;
+    return () => {
+      document.head.removeChild(cacheMeta);
+    };
+  }, []);
 
-		this.setState({ [ev['name']]: ev['value'] });
-	}
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isSubmitDisabled) {
+      return;
+    }
 
-	closeStatusModal = () => {
-		const { status } = this.state;
+    setLoading(true);
+    setStatusMessage({ type: null, text: "" });
 
-		if (status !== null) {
-			this.handleGoToHome();
+    try {
+      const response = await changePasswordForForgotPassword({
+        username,
+        shortLinkId,
+        password: password,
+        repeatPassword: confirmPassword,
+      });
 
-			setTimeout(() => {
-				this.setState({ status: null });
-			}, LOADING_TIME);
-		}
-	}
+      const successMessage = response.message || "Đổi mật khẩu thành công";
+      Message.show(TYPES.SUCCESS, "Thành công", successMessage);
+      setStatusMessage({ type: "success", text: successMessage });
 
-	/**
-	 * handleGoToHome: Handle Go To Home
-	 */
-	handleGoToHome = () => {
-		const { status } = this.state;
+      // Clear sensitive data from memory after successful use.
+      setPassword("");
+      setConfirmPassword("");
 
-		if (status) window.location.href = '/';
-	}
+      setTimeout(() => history.push("/nguoi_dung/login"), 1200);
+    } catch (error) {
+      const status = error?.status;
+      let message = error?.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại.";
 
-	onForgotPassword = e => {
-		// 
-	}
+      if (status === 410) {
+        message = "Liên kết đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu link mới.";
+        setIsLinkExpired(true);
+      } else if (status === 400 || status === 401) {
+        message = "Liên kết không hợp lệ hoặc đã được sử dụng. Vui lòng yêu cầu link mới.";
+        setIsLinkExpired(true);
+      } else if (status >= 500) {
+        message = "Hệ thống đang gặp sự cố. Vui lòng thử lại sau ít phút.";
+      }
 
-	onCloseModal = () => {
-		if (this.refModal) {
-			this.refModal.close();
+      Message.show(TYPES.ERROR, "Không thành công", message);
+      setStatusMessage({ type: "error", text: message });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-			if (this.refForgotPassword) {
-				this.refForgotPassword.resetForm();
-			}
-		}
-	}
+  return (
+    <Container>
+      <Row className="justify-content-center mt-5">
+        <Col lg="5" md="7" sm="10">
+          <Card className="bg-secondary shadow border-0">
+            <div className={`modal-header ${classes.moduleHeaderArea}`}>
+              <h5 className="modal-title">Đổi Mật Khẩu</h5>
+            </div>
 
-	setRefForgotPassword = ref => {
-		this.refForgotPassword = ref;
-	}
+            <CardBody className="px-lg-5 py-lg-5">
+              {checkingLink && (
+                <div className="text-center">
+                  <Spinner color="info" />
+                  <p className="mt-2">Đang kiểm tra liên kết...</p>
+                </div>
+              )}
 
-	handleSelectType = (val) => {
-		this.setState({ type: val });
-	}
+              {!checkingLink && isMissingParams && (
+                <div className={classes.alertError}>
+                  <p>Liên kết không hợp lệ. Vui lòng mở lại link từ email để tiếp tục.</p>
+                </div>
+              )}
 
-	render() {
-		const { status, username, email, numberphone, message, isLoaded, type } = this.state;
-		const statusPopup = { status: status, message: message };
+              {!checkingLink && isLinkExpired && (
+                <div className={classes.alertWarning}>
+                  <p>Liên kết không còn hiệu lực. Vui lòng yêu cầu gửi lại email đặt lại mật khẩu.</p>
+                </div>
+              )}
 
-		return (
-			isLoaded ? (
-				<Spinner style={{ width: '3rem', height: '3rem' }} />
-			) : (
-				<>
-					<Col lg="5" md="7">
-						<Card className="bg-secondary shadow border-0">
-							<div className={`modal-header ${classes.moduleHeaderArea}`}>
-								<h5 className="modal-title">
-									Quên mật khẩu
-								</h5>
-							</div>
+              {!checkingLink && linkValid && (
+                <Form role="form" onSubmit={handleSubmit} noValidate>
+                  <FormGroup className="mb-3">
+                    <label className={classes.label}>
+                      Mật Khẩu Mới <b style={{ color: 'red' }}>*</b>
+                    </label>
+                    <InputGroup className="input-group-alternative">
+                      <InputGroupAddon addonType="prepend">
+                        <InputGroupText>
+                          <i className="ni ni-lock-circle-open" />
+                        </InputGroupText>
+                      </InputGroupAddon>
+                      <Input
+                        placeholder="Nhập mật khẩu mới"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                        disabled={loading}
+                        aria-required="true"
+                      />
+                    </InputGroup>
+                    <Button
+                      type="button"
+                      size="sm"
+                      color="link"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      style={{ padding: '5px 0', marginTop: '5px' }}
+                    >
+                      <i className={`ni ni-${showPassword ? 'fat-remove' : 'fat-add'}`} />
+                      {showPassword ? " Ẩn" : " Hiện"}
+                    </Button>
+                    {password.length > 0 && !isPasswordValid && (
+                      <p className={classes.error}>Mật khẩu chưa đáp ứng đủ yêu cầu.</p>
+                    )}
+                  </FormGroup>
 
-							<CardBody className="px-lg-5 py-lg-5">
-								<Form role="form">
-									<FormGroup className={`mb-3 ${classes.type}`}>
-										<input type="radio" value={1} checked={type === 1 && true} onClick={() => this.handleSelectType(1)} />
-									  <label htmlFor="html">Gửi Email</label>
+                  <FormGroup className="mb-3">
+                    <label className={classes.label}>
+                      Xác Nhận Mật Khẩu <b style={{ color: 'red' }}>*</b>
+                    </label>
+                    <InputGroup className="input-group-alternative">
+                      <InputGroupAddon addonType="prepend">
+                        <InputGroupText>
+                          <i className="ni ni-lock-circle-open" />
+                        </InputGroupText>
+                      </InputGroupAddon>
+                      <Input
+                        placeholder="Nhập lại mật khẩu mới"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                        disabled={loading}
+                        aria-required="true"
+                      />
+                    </InputGroup>
+                    <Button
+                      type="button"
+                      size="sm"
+                      color="link"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      style={{ padding: '5px 0', marginTop: '5px' }}
+                    >
+                      <i className={`ni ni-${showConfirmPassword ? 'fat-remove' : 'fat-add'}`} />
+                      {showConfirmPassword ? " Ẩn" : " Hiện"}
+                    </Button>
+                    {Boolean(confirmPassword) && !isConfirmValid && (
+                      <p className={classes.error}>Mật khẩu xác nhận chưa khớp.</p>
+                    )}
+                  </FormGroup>
 
-									  <input type="radio" value={0} checked={type === 0 && true} onClick={() => this.handleSelectType(0)} />
-									  <label htmlFor="css">Gửi SMS</label>
-									</FormGroup>
+                  <div className={classes.ruleBlock}>
+                    <p className={classes.ruleTitle}>Mật khẩu cần đáp ứng:</p>
+                    <ul className={classes.ruleList}>
+                      {passwordRules.map((rule) => (
+                        <li key={rule.key} className={rule.valid ? classes.ruleValid : ""}>
+                          <i className={`ni ni-${rule.valid ? 'check-bold' : 'fat-add'}`} />
+                          {rule.label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-									<FormGroup className="mb-3">
-										<label
-											className="form-control-label"
-										>
-											Tên đăng nhập&nbsp;<b style={{ color: 'red' }}>*</b>
-										</label>
-										<Validate
-											validations={validations}
-											rules={rules}
-										>
-											{({ validate, errorMessages }) => (
-												<div>
-													<InputGroup className="input-group-alternative">
-														<InputGroupAddon addonType="prepend">
-															<InputGroupText>
-																<i className="ni ni-circle-08" />
-															</InputGroupText>
-														</InputGroupAddon>
-														<Input
-															name='username'
-															defaultValue={username}
-															placeholder="Tên đăng nhập"
-															required
-															type="text"
-															onChange={validate}
-															onKeyUp={(event) => this.handleAccount(event)}
-														/>
-													</InputGroup>
-													<p className={classes.error}>{errorMessages.username}</p>
-												</div>
-											)}
-										</Validate>
-									</FormGroup>
+                  {statusMessage.text && (
+                    <div
+                      className={statusMessage.type === "success" ? classes.statusSuccess : classes.statusError}
+                      role="status"
+                    >
+                      {statusMessage.text}
+                    </div>
+                  )}
 
-									<FormGroup className="mb-3">
-										<label
-											className="form-control-label"
-										>
-											Email&nbsp;<b style={{ color: 'red' }}>*</b>
-										</label>
-										<Validate
-											validations={validations}
-											rules={rules}
-										>
-											{({ validate, errorMessages }) => (
-												<div>
-													<InputGroup className="input-group-alternative">
-														<Input
-															type="email"
-															name="email"
-															defaultValue={email}
-															placeholder='Email'
-															required
-															onChange={validate}
-															onKeyUp={(event) => this.handleAccount(event)}
-														/>
-													</InputGroup>
-													<p className={classes.error}>{errorMessages.email}</p>
-												</div>
-											)}
-										</Validate>
-									</FormGroup>
-									
-									<FormGroup className="mb-3">
-										<label
-											className="form-control-label"
-										>
-											Điện thoại&nbsp;<b style={{ color: 'red' }}>*</b>
-										</label>
-										<Validate
-											validations={validations}
-											rules={rules}
-										>
-											{({ validate, errorMessages }) => (
-												<div>
-													<InputGroup className="input-group-alternative">
-														<Input
-															type="number"
-															name="numberphone"
-															defaultValue={numberphone}
-															placeholder='Điện thoại'
-															required
-															onChange={validate}
-															onKeyUp={(event) => this.handleAccount(event)}
-														/>
-													</InputGroup>
-													<p className={classes.error}>{errorMessages.numberphone}</p>
-												</div>
-											)}
-										</Validate>
-									</FormGroup>
+                  <div className="text-center">
+                    <Button
+                      color="info"
+                      type="submit"
+                      className="my-4"
+                      disabled={isSubmitDisabled}
+                    >
+                      {loading ? <Spinner size="sm" /> : "Đổi Mật Khẩu"}
+                    </Button>
+                  </div>
+                </Form>
+              )}
 
-									<div className="text-center">
-										<Button
-											type='submit'
-											// className={`my-4 btn-primary-cs auto-center ${username.trim().length > 0 && password.trim().length > 0 ? '' : 'disbale-btn-cs'}`}
-											className={`my-4 btn-success-cs auto-center`}
-											disabled={username.trim().length > 0 && (type === 1 && email.trim().length > 0 || type === 0 && numberphone.trim().length > 0) ? false : true}
-											onClick={(event) => this.onForgotPassword(event)}
-										>
-											<img src={LoginImg} alt="Gửi" />
-											Gửi
-										</Button>
-									</div>
-								</Form>
-							</CardBody>
-						</Card>
-						<Row className="mt-3">
-							<Col xs="6">
-								<a
-									className="text-white"
-									href="/nguoi_dung/login"
-								>
-									<small>{`< Đăng nhập`}</small>
-								</a>
-							</Col>
-						</Row>
-					</Col>
-					{/* <Modal excludes='text-light' ref={ref => this.refModal = ref}>
-						<ForgotPassword onClose={this.onCloseModal} setRef={this.setRefForgotPassword} />
-					</Modal> */}
-					{
-						//Set Alert Context
-						setAlertContext(statusPopup)
-					}
-
-					{
-						//Open Alert Context
-						openAlertContext(statusPopup)
-					}
-				</>
-			)
-		);
-	}
+              {!checkingLink && linkValid && (
+                <Row className="mt-3">
+                  <Col xs="12">
+                    <a className="text-muted text-center d-block" href="/nguoi_dung/login">
+                      <small>← Quay lại đăng nhập</small>
+                    </a>
+                  </Col>
+                </Row>
+              )}
+            </CardBody>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
 };
 
-const mapStateToProps = (state) => {
-	return {
-		account: state.AuthenStore
-	}
-}
-
-const mapDispatchToProps = (dispatch) => {
-	return {
-		onUserLogin: bindActionCreators(actionCreators.userLogin, dispatch)
-	}
-}
-
-export default compose(
-	connect(
-		mapStateToProps,
-		mapDispatchToProps
-	)
-)(ResetPassword);
+export default ResetPassword;
