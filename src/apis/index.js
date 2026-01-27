@@ -375,6 +375,10 @@ export const STAMPTEMPLATE_DELETE = DOMAIN + API + STAMPTEMPLATE;
 export const TRACE_LIST = DOMAIN + API + TRACE + 'getall';
 export const TRACE_GET = DOMAIN + API + TRACE + 'get?id=';
 export const TRACE_GET_HISTORY = DOMAIN + API + TRACE + 'gethistory';
+export const TRACE_GET_FIELDS = DOMAIN + API + TRACE + 'getfields';
+export const TRACE_GET_PRODUCT_BY_TRACE = DOMAIN + API + PRODUCTS + 'getbytrace?FieldId=';
+export const TRACE_DELETE = DOMAIN + API + TRACE + 'delete?id=';
+export const TRACE_COMPLETED = DOMAIN + API + TRACE + 'completed?id=';
 
 //PRODUCTS
 export const PRODUCTS_LIST = DOMAIN + API + PRODUCTS + 'getall';

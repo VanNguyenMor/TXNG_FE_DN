@@ -5,7 +5,7 @@ import { LOGGING_INFORMATION } from "../../../helpers/constant";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { actionZoneCreators } from "../../../actions/ZoneListActions";
-import { platingZoneAction } from "../../../actions/PlantingZoneAction";
+import { actionTrace } from "../../../actions/TraceActions";
 import { areaDataAction } from "../../../actions/AreaDataAction";
 import classes from "./index.module.css";
 import Pagination from "components/Pagination";
@@ -44,6 +44,9 @@ import InsertOrUpdate from "./InsertOrUpdate.js";
 import DetailLogging from "./DetailLogging.js";
 import WriteLogging from "./WriteLogging.js";
 
+import ViewModal from "./ViewModal.js";
+import ViewPopup from "../../../components/ViewPopup";
+
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 
 class LoggingInformation extends Component {
@@ -70,6 +73,9 @@ class LoggingInformation extends Component {
     ];
 
     this.state = {
+      viewModal: false,
+      dataTrace: {},
+      dataTraceInforms: [],
       data: dataMock,
       detail: [],
       update: [],
@@ -151,65 +157,61 @@ class LoggingInformation extends Component {
   }
 
   componentWillMount() {
-    const { getListTypeZoneProperty } = this.props;
+    const { requestGetListFieldComboBox } = this.props;
     /* Fetch Summary */
     this.fetchSummary(
       JSON.stringify({
-        search: "",
-        filter: "",
+        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+        endDate: new Date().toISOString(),
+        status: null,
+        field: "",
+        product: "",
         orderBy: "",
-        page: null,
-        limit: null,
+        page: 0,
+        limit: LIMIT_ITEM_IN_PAGE,
+        init: true
       })
     );
 
-    getListTypeZoneProperty({
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    }).then((res) => {
+    requestGetListFieldComboBox({}).then((res) => {
       this.setState((previousState) => {
         return {
           ...previousState,
-          dataTypeZone: ((res.data || {}).data || {}).plantingTypes || [],
+          JOB_OPTIONS: ((res.data || {}).data || {}).fields || [],
         };
       });
     });
   }
 
   fetchSummary = (data) => {
-    const { getListPlantingZone } = this.props;
+    const { requestListTrace } = this.props;
 
     this.setState({ isLoaded: true });
 
-    getListPlantingZone(data).then((res) => {
+    requestListTrace(data).then((res) => {
       const { limit } = this.state;
       let collapseList = [];
       const data = (res.data || {}).data || {};
+      const traces = data.traces || [];
 
-      let newData = [...this.state.data];
+      let newData = traces.map(item => ({
+        ...item,
+        id: item.ID,
+        title: item.ProductName,
+        code: item.NameCode,
+        plantingZoneId: item.PlantingZone,
+        icon: item.Avatar,
+        status: item.IsCompleted,
+        // Map other fields if necessary
+      }));
 
-      newData.forEach((item, key) => {
-        collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
-      });
-
-      newData = handleGenTree(newData, "name");
-
-      newData.forEach((item, key) => {
-        item["index"] = key + 1;
-      });
-
-      const total = newData.length | 0;
-
+      const total = newData.length | 0; // Or better if API returns total count
       const length = newData.length;
 
       this.setState({
         data: newData,
         listLength: total,
-        totalPage: Math.ceil(length / limit),
+        totalPage: Math.ceil(length / limit), // Usually API returns total elements to calculate page
         isLoaded: false,
         collapseList: collapseList,
       });
@@ -278,16 +280,18 @@ class LoggingInformation extends Component {
   };
 
   handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
+    const { fromDate, toDate, filter, limit } = this.state;
     this.fetchSummary(
       JSON.stringify({
-        search: "",
-        filter,
-        fromDate,
-        toDate,
+        startDate: fromDate ? new Date(fromDate).toISOString() : null,
+        endDate: toDate ? new Date(toDate).toISOString() : null,
+        status: null,
+        field: filter.field || "",
+        product: filter.product || "",
         orderBy: "",
-        page: null,
-        limit: null,
+        page: 0,
+        limit: limit,
+        init: false
       })
     );
   };
@@ -376,6 +380,36 @@ class LoggingInformation extends Component {
     });
   };
 
+  onHandleGet = (item) => {
+    const { requestGetTrace, requestGetHistoryTrace } = this.props;
+    // 1. Gọi API lấy thông tin chi tiết
+    const traceID = item.id || item.ID;
+    const companyID = item.CompanyID || item.companyId;
+
+    requestGetTrace(traceID + '&companyId=' + companyID).then(res => {
+      if (res.data && res.data.status === 200) {
+        this.setState({
+          dataTrace: res.data.data.trace || {}
+        });
+      }
+    });
+    // 2. Gọi API lấy lịch sử
+    const reqHistoryPayload = {
+      "companyID": companyID,
+      "traceID": traceID,
+      "page": 0,
+      "limit": 200
+    };
+    requestGetHistoryTrace(reqHistoryPayload).then(res => {
+      if (res.data && res.data.status === 200) {
+        this.setState({
+          dataTraceInforms: res.data.data.traceInforms || []
+        });
+      }
+    });
+    this.setState({ viewModal: true });
+  }
+
   onShowDetail = (id) => () => {
     this.setState((previousState) => {
       return {
@@ -406,7 +440,7 @@ class LoggingInformation extends Component {
   };
 
   handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
+    this.props.requestDeleteTrace(this.state.deleteId).then((res) => {
       this.setState((previousState) => {
         return {
           ...previousState,
@@ -417,15 +451,7 @@ class LoggingInformation extends Component {
       const data = res.data;
 
       if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
+        this.handleSubmitSearchForm();
 
         this.setState({ message: "Xóa dữ liệu thành công" });
         toast.success("Xoá dữ liệu thành công!");
@@ -510,13 +536,12 @@ class LoggingInformation extends Component {
 
     const cb = (e, key, array) => {
       const renderClass =
-        e.parentID.length === 0
+        !e.parentID || e.parentID.length === 0
           ? `${classes.treeParent}`
-          : `${classes.treeChild}${
-              parentid.includes(e.parentID)
-                ? ` ${classes.childs}`
-                : ` ${classes.childsItem}`
-            }`;
+          : `${classes.treeChild}${parentid.includes(e.parentID)
+            ? ` ${classes.childs}`
+            : ` ${classes.childsItem}`
+          }`;
       list.push(
         <tr
           key={autoIndex}
@@ -524,6 +549,8 @@ class LoggingInformation extends Component {
           currentid={e.id}
           index={autoIndex}
           className="table-hover-css"
+          onClick={() => this.onHandleGet(e)}
+          style={{ cursor: "pointer" }}
         >
           <td
             className={`className='table-scale-col table-user-col-1' ${renderClass}`}
@@ -583,7 +610,7 @@ class LoggingInformation extends Component {
                           </DropdownItem>
                         )}
                         {isDisableEdit == true ||
-                        isDisableDelete == true ? null : (
+                          isDisableDelete == true ? null : (
                           <DropdownItem divider />
                         )}
                         {isDisableDelete == true ? null : (
@@ -691,10 +718,10 @@ class LoggingInformation extends Component {
                         isShowForDetail
                           ? "Chi tiết nhật ký truy xuất"
                           : isShowForEdit
-                          ? "Cập nhật nhật ký truy xuất"
-                          : isShowForWrite
-                          ? "Ghi nhật ký truy cập"
-                          : "Thêm/Cập nhật nhật ký truy xuất"
+                            ? "Cập nhật nhật ký truy xuất"
+                            : isShowForWrite
+                              ? "Ghi nhật ký truy cập"
+                              : "Thêm/Cập nhật nhật ký truy xuất"
                       }
                       moduleBody={
                         <div>
@@ -945,6 +972,19 @@ class LoggingInformation extends Component {
               moduleBody={message}
               toggleModal={this.toggleModal}
             />
+
+            <ViewPopup
+              moduleTitle='Xem nhật ký'
+              viewModal={this.state.viewModal}
+              toggleModal={this.toggleModal}
+              moduleBody={
+                <ViewModal
+                  dataTrace={this.state.dataTrace}
+                  dataTraceInforms={this.state.dataTraceInforms}
+                />
+              }
+            />
+
             <ToastContainer position="top-center" autoClose={3000} />
           </div>
         }
@@ -966,7 +1006,7 @@ const mapDispatchToProps = (dispatch) => {
     ...bindActionCreators(actionZoneCreators, dispatch),
     ...bindActionCreators(typeZonePropertyAction, dispatch),
     ...bindActionCreators(areaDataAction, dispatch),
-    ...bindActionCreators(platingZoneAction, dispatch),
+    ...bindActionCreators(actionTrace, dispatch),
   };
 };
 
