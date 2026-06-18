@@ -13,7 +13,6 @@ import { areaDataAction } from "../../../actions/AreaDataAction";
 import classes from "./index.module.css";
 import Pagination from "components/Pagination";
 import HeaderTable from "components/HeaderTable";
-import HeadTitleTable from "components/HeadTitleTable";
 import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
 import MenuButton from "../../../assets/img/buttons/menu.png";
 import WarningPopup from "../../../components/WarningPopup";
@@ -199,6 +198,8 @@ class DeclarationInformations extends Component {
         { id: "image", title: "Hình ảnh", childInputs: [] },
         { id: "location", title: "Định vị", childInputs: [] },
       ],
+      selectedItems: [],
+      selectAll: false,
     };
   }
 
@@ -419,18 +420,7 @@ class DeclarationInformations extends Component {
   };
 
   handleSubmitSearchForm = () => {
-    const { fromDate, toDate, filter } = this.state;
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter,
-        fromDate,
-        toDate,
-        orderBy: "",
-        page: null,
-        limit: null,
-      })
-    );
+    this.fetchSummary();
   };
 
   handleModal = (status, openModal, closeModal) => {
@@ -514,46 +504,45 @@ class DeclarationInformations extends Component {
 
   onConfirm = (toggleModal, closePopup) => {
     const { dataInsert, filter } = this.state;
-    
-    console.log("=== onConfirm Debug ===");
-    console.log("dataInsert:", dataInsert);
+
+    const name = (dataInsert.name || "").trim();
+    if (!name) {
+      toast.error("Tên kê khai không được bỏ trống");
+      return;
+    }
 
     // Prepare payload for API
     const payload = {
       fieldID: filter.filter || "",
       productID: filter.product || "",
       informID: dataInsert.retrieveId || "",
-      name: dataInsert.name || "",
-      sortOrder: dataInsert.order || 0,
+      name: name,
+      sortOrder: Number(dataInsert.order) || 0,
       isChecked: false,
       isShow: false,
     };
 
-    console.log("API Payload:", payload);
-
     // Call API
     callApi("post", "informationaccess/create", payload)
       .then((res) => {
-        console.log("API Response:", res);
-        
-        if (res.status === 200 || res.data?.status === 200) {
+        if (res.status === 200 || (res.data && res.data.status === 200)) {
           toast.success("Thêm mới thành công!");
-          
+
           // Refresh data
           this.fetchSummary();
-          
+
           // Close modal
           if (toggleModal) {
             toggleModal();
           }
         } else {
-          const message = res.data?.message || "Thêm mới thất bại";
+          const message = (res.data && res.data.message) || "Thêm mới thất bại";
           toast.error(message);
         }
       })
       .catch((error) => {
         console.error("Error creating information access:", error);
-        const message = error.response?.data?.message || "Thêm mới thất bại";
+        const message = (error.response && error.response.data && error.response.data.message) || "Thêm mới thất bại";
         toast.error(message);
       });
   };
@@ -577,6 +566,28 @@ class DeclarationInformations extends Component {
         });
       }
     );
+  };
+
+  handleSelectItem = (id) => {
+    this.setState((prevState) => {
+      const { selectedItems } = prevState;
+      const exists = selectedItems.includes(id);
+      const newSelected = exists
+        ? selectedItems.filter((itemId) => itemId !== id)
+        : [...selectedItems, id];
+      return { selectedItems: newSelected, selectAll: newSelected.length === prevState.data.length };
+    });
+  };
+
+  handleSelectAll = () => {
+    this.setState((prevState) => {
+      const { selectAll, data } = prevState;
+      if (selectAll) {
+        return { selectAll: false, selectedItems: [] };
+      } else {
+        return { selectAll: true, selectedItems: data.map((item) => item.id) };
+      }
+    });
   };
 
   onEditData = (id) => () => {
@@ -695,7 +706,7 @@ class DeclarationInformations extends Component {
   };
 
   renderTable = (data, isDisableEdit, isDisableDelete) => {
-    const { beginItem, endItem, collapseList } = this.state;
+    const { beginItem, endItem, collapseList, selectedItems } = this.state;
     let list = [];
     let parentid = [];
     let autoIndex = 0;
@@ -720,6 +731,13 @@ class DeclarationInformations extends Component {
           index={autoIndex}
           className="table-hover-css"
         >
+          <td style={{ textAlign: "center", width: "40px" }}>
+            <input
+              type="checkbox"
+              checked={selectedItems.includes(e.id)}
+              onChange={() => this.handleSelectItem(e.id)}
+            />
+          </td>
           <td
             className={`className='table-scale-col table-user-col-1' ${renderClass}`}
           >
@@ -828,31 +846,37 @@ class DeclarationInformations extends Component {
       LOGGING_OPTIONS,
       LOGGING_DATA_TYPES,
       REFERENCE_LIST,
+      selectedItems,
+      selectAll,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
-    let isDisableAdd = true;
-    let isDisableEdit = true;
-    let isDisableDelete = true;
+    let isDisableAdd = false;
+    let isDisableEdit = false;
+    let isDisableDelete = false;
     let ACCOUNT_CLAIM_FF = [];
-    if (JSON.parse(localStorage.getItem("IS_ADMIN"))) {
-      isDisableAdd = false;
-      isDisableEdit = false;
-      isDisableDelete = false;
-    } else {
-      ACCOUNT_CLAIM_FF = localStorage
-        .getItem("ACCOUNT_CLAIM_FF")
+    if (!JSON.parse(localStorage.getItem("IS_ADMIN"))) {
+      ACCOUNT_CLAIM_FF = (localStorage.getItem("ACCOUNT_CLAIM_FF") || "")
         .split(",")
         .filter((x) => x != "");
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Add").map(
-        (y) => (isDisableAdd = false)
-      );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Edit").map(
-        (y) => (isDisableEdit = false)
-      );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Delete").map(
-        (y) => (isDisableDelete = false)
-      );
+      if (
+        ACCOUNT_CLAIM_FF.length > 0 &&
+        !ACCOUNT_CLAIM_FF.find((x) => x === "DeclarationInformations.Add")
+      ) {
+        isDisableAdd = true;
+      }
+      if (
+        ACCOUNT_CLAIM_FF.length > 0 &&
+        !ACCOUNT_CLAIM_FF.find((x) => x === "DeclarationInformations.Edit")
+      ) {
+        isDisableEdit = true;
+      }
+      if (
+        ACCOUNT_CLAIM_FF.length > 0 &&
+        !ACCOUNT_CLAIM_FF.find((x) => x === "DeclarationInformations.Delete")
+      ) {
+        isDisableDelete = true;
+      }
     }
 
     return (
@@ -978,12 +1002,29 @@ class DeclarationInformations extends Component {
                         className="align-items-center tablecs table-css-planting-zone"
                         responsive
                       >
-                        <HeadTitleTable
-                          headerTitle={headerTitle}
-                          classHeaderColumns={{
-                            0: "table-scale-col table-user-col-1",
-                          }}
-                        />
+                        <thead className="thead-dark">
+                          <tr>
+                            <th scope="col" style={{ textAlign: "center", width: "40px" }}>
+                              <input
+                                type="checkbox"
+                                checked={selectAll}
+                                onChange={this.handleSelectAll}
+                                title="Chọn tất cả"
+                              />
+                            </th>
+                            {headerTitle.map((item, key) => (
+                              <th
+                                scope="col"
+                                key={key}
+                                style={{ whiteSpace: "normal" }}
+                                className={`${key === 0 ? "table-scale-col table-user-col-1" : ""} font-bold font-size-15px`}
+                              >
+                                {item}
+                              </th>
+                            ))}
+                            <th scope="col" className="font-bold font-size-15px"></th>
+                          </tr>
+                        </thead>
                         <tbody>
                           {Array.isArray(data) &&
                             this.renderTable(

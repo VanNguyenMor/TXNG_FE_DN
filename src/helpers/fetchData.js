@@ -18,6 +18,10 @@ import {
   CONSIGNMENTS,
   STAMP_REQUEST,
   GOOD_RECEIVED,
+  GOOD_DELIVERY,
+  TRANSPORT,
+  VEHICLE,
+  COMPANY_CONFIG,
   PARTNER,
   WAREHOUSE_MANAGEMENT,
   REPORT,
@@ -74,6 +78,13 @@ export const fetchData = {
       );
       return result?.data || [];
     },
+    getByProvinceId: async (provinceId) => {
+      const result = await callApi(
+        "get",
+        `${WARD.getListWardByProvinceId.replace("{id}", provinceId)}`
+      );
+      return result?.data || [];
+    },
   },
 
   plantingType: {
@@ -84,6 +95,18 @@ export const fetchData = {
         PAYLOAD.defaultPayLoad
       );
       return result?.data || [];
+    },
+  },
+
+  zoneRole: {
+    getAll: async () => {
+      try {
+        const result = await callApi("post", "rolezone/getall", PAYLOAD.defaultPayLoad);
+        return result?.data?.zonerole || result?.data || [];
+      } catch (error) {
+        console.error("Loi khi lay danh sach nhom quyen:", error);
+        return [];
+      }
     },
   },
 
@@ -116,7 +139,7 @@ export const fetchData = {
           data,
           false
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi tạo Planting Zone:", error);
         return null;
@@ -129,7 +152,7 @@ export const fetchData = {
           PLANTING_ZONE.updatePlantingZone,
           payload
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật Planting Zone:", error);
         return null;
@@ -141,9 +164,46 @@ export const fetchData = {
           "delete",
           `${PLANTING_ZONE.deletePlantingZone.replace("{id}", id)}`
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi xóa Planting Zone:", error);
+        return null;
+      }
+    },
+    getListRoleByPlantingZone: async (id) => {
+      try {
+        const result = await callApi(
+          "get",
+          PLANTING_ZONE.getListRoleByPlantingZone.replace("{id}", id)
+        );
+        return result?.data?.plantingZoneRoles || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy nhóm quyền của vùng sản xuất:", error);
+        return [];
+      }
+    },
+    getListRolePlantingZone: async () => {
+      try {
+        const result = await callApi(
+          "get",
+          PLANTING_ZONE.getListRolePlantingZone
+        );
+        return result?.data?.roles || [];
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách nhóm quyền:", error);
+        return [];
+      }
+    },
+    updatePermission: async (payload) => {
+      try {
+        const result = await callApi(
+          "put",
+          PLANTING_ZONE.updatePermission,
+          payload
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi phân quyền vùng sản xuất:", error);
         return null;
       }
     },
@@ -169,7 +229,7 @@ export const fetchData = {
           INFO_COMPANY.updateInfoCompany,
           payload
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật InfoCompany:", error);
         return null;
@@ -271,6 +331,20 @@ export const fetchData = {
         return null;
       }
     },
+    getListWardByProvinceId: async (id) => {
+      try {
+        const result = await callApi(
+          "get",
+          `${INFO_COMPANY.getListWardByProvinceId.replace("{id}", id)}`,
+          {}
+        );
+
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin getListWardByProvinceId:", error);
+        return null;
+      }
+    },
   },
 
   productHistories: {
@@ -292,9 +366,10 @@ export const fetchData = {
         const result = await callApi(
           "post",
           PRODUCT_MANAGEMENT.createProduct,
-          payload
+          payload,
+          true
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi tạo sản phẩm:", error);
         return null;
@@ -305,9 +380,10 @@ export const fetchData = {
         const result = await callApi(
           "post",
           PRODUCT_MANAGEMENT.editProduct,
-          payload
+          payload,
+          true
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật sản phẩm:", error);
         return null;
@@ -433,12 +509,12 @@ export const fetchData = {
           "post",
           MATERIAL_MANAGEMENT.addMaterial,
           payload,
-          false
+          true
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi tạo nguyên vật liệu:", error);
-        return null;
+        return { status: false, message: error?.message || "Có lỗi xảy ra, vui lòng thử lại!" };
       }
     },
     update: async (payload) => {
@@ -446,12 +522,13 @@ export const fetchData = {
         const result = await callApi(
           "post",
           MATERIAL_MANAGEMENT.editMaterial,
-          payload
+          payload,
+          true
         );
-        return result?.data || null;
+        return result || null;
       } catch (error) {
         console.error("Lỗi khi cập nhật nguyên vật liệu:", error);
-        return null;
+        return { status: false, message: error?.message || "Có lỗi xảy ra, vui lòng thử lại!" };
       }
     },
 
@@ -565,15 +642,90 @@ export const fetchData = {
     },
     addBadStamp: async (payload) => {
       try {
-        const result = await callApi(
-          "post",
-          QR_MANAGEMENT.addBadStamp,
-          payload,
-          true
-        );
-        return result?.data || null;
+        // Trả về cả result (data + status + message) để nơi gọi kiểm tra status
+        return await callApi("post", QR_MANAGEMENT.addBadStamp, payload, true);
       } catch (error) {
         console.error("Lỗi khi tạo yêu cầu hủy tem:", error);
+        return null;
+      }
+    },
+    getQRHistory: async (
+      stampRequestId,
+      fromDate = "",
+      toDate = "",
+      page = 0,
+      limit = 200
+    ) => {
+      try {
+        const url = QR_MANAGEMENT.getQRHistory
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", stampRequestId)
+          .replace("{3}", fromDate || "")
+          .replace("{4}", toDate || "");
+        const result = await callApi("get", url);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy lịch sử QR:", error);
+        return null;
+      }
+    },
+    // Danh sách yêu cầu hủy tem của một dải tem (Xử lý tem)
+    getListManageQRBad: async (
+      stampRequestId,
+      fromDate = "",
+      toDate = "",
+      page = 0,
+      limit = 200
+    ) => {
+      try {
+        const url = QR_MANAGEMENT.getListManageQRBad
+          .replace("{0}", page)
+          .replace("{1}", limit)
+          .replace("{2}", stampRequestId)
+          .replace("{3}", fromDate || "")
+          .replace("{4}", toDate || "");
+        const result = await callApi("get", url);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách yêu cầu hủy tem:", error);
+        return null;
+      }
+    },
+    getDetailBadStamp: async (id) => {
+      try {
+        const url = QR_MANAGEMENT.getDetailBadStamp.replace("{0}", id);
+        const result = await callApi("get", url);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy chi tiết yêu cầu hủy tem:", error);
+        return null;
+      }
+    },
+    deleteManageQRBad: async (id) => {
+      try {
+        const url = QR_MANAGEMENT.deleteManageQRBad.replace("{0}", id);
+        return await callApi("delete", url);
+      } catch (error) {
+        console.error("Lỗi khi xóa yêu cầu hủy tem:", error);
+        return null;
+      }
+    },
+    confirmBadStamp: async (id) => {
+      try {
+        const url = QR_MANAGEMENT.confirmBadStamp.replace("{0}", id);
+        return await callApi("put", url);
+      } catch (error) {
+        console.error("Lỗi khi duyệt hủy tem:", error);
+        return null;
+      }
+    },
+    unConfirmBadStamp: async (id) => {
+      try {
+        const url = QR_MANAGEMENT.unConfirmBadStamp.replace("{0}", id);
+        return await callApi("put", url);
+      } catch (error) {
+        console.error("Lỗi khi không duyệt hủy tem:", error);
         return null;
       }
     },
@@ -780,9 +932,24 @@ export const fetchData = {
     getListWarehouseForUpdate: async () => {
       try {
         const result = await callApi("post", CONSIGNMENTS.getListWarehouseForUpdate, {});
-        return result?.data || null;
+        // BE trả về { data: { wareHouses: [...] } }
+        return result?.data?.wareHouses || result?.data || null;
       } catch (error) {
         console.error("Lỗi khi lấy danh sách kho hàng:", error);
+        return null;
+      }
+    },
+
+    // Khoá lô hàng (gán vào kho) - PUT batch/lock?id={0}&warehouseId={1}
+    updateLock: async (id, warehouseId) => {
+      try {
+        const endpoint = CONSIGNMENTS.updateLock
+          .replace("{0}", id)
+          .replace("{1}", warehouseId);
+        const result = await callApi("put", endpoint, { id, warehouseId });
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi khoá lô hàng:", error);
         return null;
       }
     },
@@ -792,6 +959,28 @@ export const fetchData = {
         const result = await callApi("get", CONSIGNMENTS.getListDiaryComboBox);
         return result?.data?.traces || result?.data || null;
       } catch (error) {
+        return null;
+      }
+    },
+
+    // Danh sách tỉnh/thành (giống mobile: location/getallprovince)
+    getListProvinceComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListProvinceComboBox);
+        return result?.data?.provinces || result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách tỉnh/thành:", error);
+        return null;
+      }
+    },
+
+    // Danh sách nước (giống mobile: location/nation)
+    getListNationComboBox: async () => {
+      try {
+        const result = await callApi("get", CONSIGNMENTS.getListNationComboBox);
+        return result?.data?.nations || result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách nước:", error);
         return null;
       }
     },
@@ -969,6 +1158,279 @@ export const fetchData = {
         throw error;
       }
     },
+
+    lock: async (id) => {
+      try {
+        const endpoint = GOOD_RECEIVED.lockGoodReceived.replace("{id}", id);
+        const result = await callApi("put", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    requireConfirm: async (id) => {
+      try {
+        const endpoint = GOOD_RECEIVED.requireConfirmGoodReceived.replace(
+          "{id}",
+          id
+        );
+        const result = await callApi("put", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    requestConfirm: async (id) => {
+      try {
+        const endpoint = GOOD_RECEIVED.requestConfirmGoodReceived.replace(
+          "{id}",
+          id
+        );
+        const result = await callApi("put", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    requestUnConfirm: async (id, reason, content1) => {
+      try {
+        const endpoint = GOOD_RECEIVED.requestUnConfirmGoodReceived
+          .replace("{id}", id)
+          .replace("{reason}", encodeURIComponent(reason || ""))
+          .replace("{content1}", encodeURIComponent(content1 || ""));
+        const result = await callApi("put", endpoint);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+  },
+
+  goodDelivery: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", GOOD_DELIVERY.getListGoodDelivery, payload);
+        return result || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = GOOD_DELIVERY.getDetailGoodDelivery.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        // Handle nested data structure: res.data.data.goodsDelivery
+        if (result?.data?.data?.goodsDelivery) {
+          return result.data.data;
+        } else if (result?.data?.goodsDelivery) {
+          return result.data;
+        } else if (result?.goodsDelivery) {
+          return result;
+        }
+        return result?.data || null;
+      } catch (error) {
+        console.error("❌ Error fetching good delivery detail:", error);
+        return null;
+      }
+    },
+
+    add: async (payload) => {
+      try {
+        return await callApi("post", GOOD_DELIVERY.addGoodDelivery, payload, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    edit: async (payload) => {
+      try {
+        return await callApi("post", GOOD_DELIVERY.editGoodDelivery, payload, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = GOOD_DELIVERY.deleteGoodDelivery.replace("{id}", id);
+        return await callApi("delete", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    lock: async (id) => {
+      try {
+        const endpoint = GOOD_DELIVERY.lockGoodDelivery.replace("{id}", id);
+        return await callApi("put", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    requireConfirm: async (id) => {
+      try {
+        const endpoint = GOOD_DELIVERY.requireConfirmGoodDelivery.replace("{id}", id);
+        return await callApi("put", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    requestConfirm: async (id) => {
+      try {
+        const endpoint = GOOD_DELIVERY.requestConfirmGoodDelivery.replace("{id}", id);
+        return await callApi("put", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    requestUnConfirm: async (id, reason, content1) => {
+      try {
+        const endpoint = GOOD_DELIVERY.requestUnConfirmGoodDelivery
+          .replace("{id}", id)
+          .replace("{reason}", encodeURIComponent(reason || ""))
+          .replace("{content1}", encodeURIComponent(content1 || ""));
+        return await callApi("put", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    // Tạo vận đơn từ phiếu xuất đã duyệt (multipart/form-data)
+    createTransportTicket: async (payload) => {
+      try {
+        return await callApi("post", GOOD_DELIVERY.createTransportTicket, payload, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    getListBatch: async (payload = {}) => {
+      try {
+        const result = await callApi(
+          "post",
+          GOOD_DELIVERY.getListBatchForAddGoodDelivery,
+          payload
+        );
+        return result?.data || result || null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  transport: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", TRANSPORT.getListTransport, payload);
+        return result || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = TRANSPORT.getDetailTransport.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("❌ Error fetching transport detail:", error);
+        return null;
+      }
+    },
+
+    lock: async (id) => {
+      try {
+        const endpoint = TRANSPORT.lockTransport.replace("{id}", id);
+        return await callApi("get", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = TRANSPORT.deleteTransport.replace("{id}", id);
+        return await callApi("delete", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+  },
+
+  vehicle: {
+    getList: async (payload = {}) => {
+      try {
+        const result = await callApi("post", VEHICLE.getListVehicle, payload);
+        return result || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const endpoint = VEHICLE.getDetailVehicle.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("❌ Error fetching vehicle detail:", error);
+        return null;
+      }
+    },
+
+    add: async (payload) => {
+      try {
+        return await callApi("post", VEHICLE.addVehicle, payload, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    edit: async (payload) => {
+      try {
+        return await callApi("post", VEHICLE.editVehicle, payload, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        const endpoint = VEHICLE.deleteVehicle.replace("{id}", id);
+        return await callApi("delete", endpoint);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    getListVehicleType: async (payload = {}) => {
+      try {
+        const result = await callApi("post", VEHICLE.getListVehicleType, payload);
+        return result?.data || result || null;
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+
+  companyConfig: {
+    get: async () => {
+      try {
+        const result = await callApi("get", COMPANY_CONFIG.get);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy cấu hình công ty:", error);
+        return null;
+      }
+    },
   },
 
   partner: {
@@ -1135,9 +1597,6 @@ export const fetchData = {
         return null;
       }
     },
-  },
-
-  warehouse: {
     getListComboBox: async (payload = {}) => {
       try {
         const result = await callApi("post", WAREHOUSE_MANAGEMENT.getListComboBox, payload);

@@ -321,6 +321,13 @@ class AddNewQRList extends Component {
                   size="md"
                   onClick={this.onAddQRRange}
                   className="btn-primary-cs"
+                  style={{
+                    width: "auto",
+                    minWidth: "160px",
+                    paddingLeft: "12px",
+                    paddingRight: "12px",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   <img src={IconAdd} alt="Thêm" style={{ marginRight: "5px" }} />
                   <span>Thêm dải mã QR</span>

@@ -1,4 +1,5 @@
 import System from './icons/menus/HeThong.png';
+import BusinessInformationsOrange from './icons/menus/QuanLyDoanhNghiep_Orange.svg';
 import Report from './icons/menus/BaoCao.png';
 import IndexManagement from './icons/menus/QuanLyDanhMuc.png';
 import CompanyManagement from './icons/menus/QuanLyDoanhNghiep.png';
@@ -141,6 +142,7 @@ const ICON_MENUS = {
     ProductTrace,
     Products,
     VerifiedCompany,
+    Partner: VerifiedCompany,
     ProductVerified,
     SupplierVerified,
     ManufactVerified,
@@ -159,6 +161,20 @@ const ICON_MENUS = {
     ReportProductByProvice,
     ReportListCompany,
     NationalPortalIntegrations: Access,
+    // Aliases for menu items missing icon mappings
+    SummaryReports: Report,
+    SummaryReport: Report,
+    BusinessInformations: BusinessInformationsOrange,
+    Transportations: Fields,
+    MaterialManagements: MaterialGroups,
+    ProductManagements: Products,
+    ImportProducts: ImportManagements,
+    ExportProducts: ExportManagements,
+    LoggingInformations: ProductTrace,
+    RetrieveInformations: Access,
+    DeclarationInformations: Informations,
+    StampRequestUseds: StampRequestsUsed,
+    QrCodeManagements: StampDetails,
 }
 
 export {

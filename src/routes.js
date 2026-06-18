@@ -81,6 +81,7 @@ import Unit from "views/pages/Unit";
 import Trace from "views/pages/Trace";
 import Products from "views/pages/Products";
 import Partner from "views/pages/Partner";
+import Partners from "views/pages/Partners";
 import ProductsVerify from "views/pages/ProductsVerify";
 import PartnerVerify from "views/pages/PartnerVerify";
 import PartnerManufactVerify from "views/pages/PartnerManufactVerify";
@@ -99,6 +100,9 @@ import ReportListCompany from "views/pages/ReportListCompany";
 import LoggingInformation from "views/pages/LoggingInformation";
 import DeclarationInformations from "views/pages/DeclarationInformations";
 import RetrieveInformation from "views/pages/RetrieveInformation";
+import Transportation from "views/pages/Transportation";
+import Transport from "views/pages/Transport";
+import Vehicle from "views/pages/Vehicle";
 
 import { NAVBAR_ITEM } from "./helpers/constant";
 
@@ -698,6 +702,30 @@ var routes = [
     layout: "/trang_chu",
     key: 12,
   },
+  {
+    path: "/van_chuyen",
+    name: NAVBAR_ITEM.TRANSPORTATION,
+    icon: "ni ni-delivery-fast text-blue",
+    component: Transportation,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
+    path: "/van_don",
+    name: NAVBAR_ITEM.TRANSPORT_ORDER,
+    icon: "ni ni-delivery-fast text-blue",
+    component: Transport,
+    layout: "/trang_chu",
+    key: 2,
+  },
+  {
+    path: "/phuong_tien",
+    name: NAVBAR_ITEM.VEHICLE,
+    icon: "ni ni-delivery-fast text-blue",
+    component: Vehicle,
+    layout: "/trang_chu",
+    key: 2,
+  },
   // Report
   // Auth
   {
@@ -896,6 +924,7 @@ const routeComponents = [
   { layout: LAYOUT_HOME, key: "ProductTrace", component: Trace },
   { layout: LAYOUT_HOME, key: "Products", component: Products },
   { layout: LAYOUT_HOME, key: "VerifiedCompany", component: Partner },
+  { layout: LAYOUT_HOME, key: "Partner", component: Partners },
   { layout: LAYOUT_HOME, key: "ProductVerified", component: ProductsVerify },
   { layout: LAYOUT_HOME, key: "SupplierVerified", component: PartnerVerify },
   {
@@ -1018,6 +1047,21 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "NationalPortalIntegrations",
     component: NationalPortalIntegration,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "Transportations",
+    component: Transportation,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "Transports",
+    component: Transport,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "Vehicles",
+    component: Vehicle,
   },
 ];
 

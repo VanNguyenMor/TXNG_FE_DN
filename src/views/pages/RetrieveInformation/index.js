@@ -1,7 +1,5 @@
 import React, { Component } from "react";
 import compose from "recompose/compose";
-import Datetime from "react-datetime";
-import moment from "moment";
 import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
 import {
   DECLARATION_INFORMATION,
@@ -16,7 +14,6 @@ import { areaDataAction } from "../../../actions/AreaDataAction";
 import classes from "./index.module.css";
 import Pagination from "components/Pagination";
 import HeaderTable from "components/HeaderTable";
-import HeadTitleTable from "components/HeadTitleTable";
 import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
 import MenuButton from "../../../assets/img/buttons/menu.png";
 import WarningPopup from "../../../components/WarningPopup";
@@ -41,9 +38,11 @@ import {
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
+  Modal,
 } from "reactstrap";
 
 import InsertOrUpdate from "./InsertOrUpdate.js";
+import PermissionModal from "./PermissionModal.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { fetchData } from "helpers/fetchData";
@@ -74,6 +73,8 @@ class RetrieveInformation extends Component {
 
     this.state = {
       data: dataMock,
+      informSelects: [],
+      informations: [],
       detail: [],
       update: [],
       create: [],
@@ -114,6 +115,7 @@ class RetrieveInformation extends Component {
       isShowForDetail: false,
       isShowForWrite: false,
       editId: null,
+      editData: null,
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
@@ -153,8 +155,17 @@ class RetrieveInformation extends Component {
           title: "Chọn nguyên liệu",
         },
       ],
-      fromDate: moment().add(-1, "months"),
-      toDate: moment(),
+      selectedItems: [],
+      selectAll: false,
+      // Phân quyền
+      permissionModal: false,
+      permissionItem: null,
+      roleComboBoxs: [],
+      traceRoles: [],
+      // Sửa STT
+      numberModal: false,
+      numberItem: null,
+      numberValue: "",
     };
   }
 
@@ -163,7 +174,17 @@ class RetrieveInformation extends Component {
     /* Fetch Summary */
     this.fetchSummary();
 
-    // Fetch job/field options
+    /* Danh sách nhóm quyền dùng cho phân quyền */
+    callApi("post", "role/getall", { page: 0, limit: 100 })
+      .then((res) => {
+        const roles = (res.data && res.data.roles) || [];
+        this.setState({ roleComboBoxs: roles });
+      })
+      .catch((error) => {
+        console.error("Error fetching roles:", error);
+      });
+
+    // Fetch job/field options (ngành nghề công ty có quyền truy cập)
     fetchData.infoCompany.getFieldByCompanyHaveAccess({}).then(res => {
       // Handle different response structures
       let dataArray = [];
@@ -176,12 +197,24 @@ class RetrieveInformation extends Component {
       } else if (res && res.data && Array.isArray(res.data.fields)) {
         dataArray = res.data.fields;
       }
-      
-      const options = (dataArray || []).map(item => ({ 
-        id: item.id, 
-        title: item.name || item.title || item.fieldName 
+
+      // Chịu được cả key thường lẫn PascalCase (id/ID, fieldName/FieldName)
+      const options = (dataArray || []).map((item) => ({
+        id: item.id != null ? item.id : item.ID,
+        title:
+          item.name || item.title || item.fieldName || item.FieldName,
       }));
+
       this.setState({ JOB_OPTIONS: options });
+
+      // Giống mobile setAccess: nếu chỉ có 1 ngành nghề thì tự chọn + nạp sản phẩm
+      if (options.length === 1 && options[0].id != null) {
+        const onlyFieldId = options[0].id;
+        this.setState((prev) => ({
+          filter: { ...prev.filter, filter: onlyFieldId, product: "" },
+        }));
+        this.fetchProductsByField(onlyFieldId);
+      }
     }).catch(error => {
       console.error("Error fetching job options:", error);
     });
@@ -221,41 +254,20 @@ class RetrieveInformation extends Component {
     console.log("API Endpoint:", apiEndpoint);
 
     callApi("get", apiEndpoint).then((res) => {
-      console.log("API Response:", res);
-      console.log("res.data:", res.data);
-      console.log("res.data.data:", res.data && res.data.data);
-      
-      let collapseList = [];
-      
-      // Extract informSelects array from response
+      // Giữ nguyên dữ liệu gốc để áp dụng đúng nghiệp vụ như mobile (setAccess)
       const informSelects = (res.data && res.data.informSelects) || [];
-      console.log("informSelects:", informSelects);
-      console.log("informSelects length:", informSelects.length);
+      const informations = (res.data && res.data.informations) || [];
 
-      // Map informSelects to table data structure
-      let newData = informSelects.map((item, key) => ({
-        id: item.id,
-        index: key + 1, // STT - tự động đếm
-        retrieve: item.name, // TÊN TRUY XUẤT
-        loggingStatus: item.isChecked ? 1 : 0, // NHẬT KÝ
-        qrStatus: item.isShow ? 1 : 0, // QUÉT MÃ
-        htFeedback: item.isShowEvaluated ? 1 : 0, // HT DÁNH GIÁ
-        parentID: item.parentID === null ? "" : item.parentID,
-        color: "#000",
-      }));
+      const newData = this.buildData(informSelects);
 
-      console.log("Mapped newData:", newData);
-
-      newData.forEach((item) => {
-        collapseList.push({ id: item.id, collapse: false });
-      });
+      const collapseList = newData.map((item) => ({ id: item.id, collapse: false }));
 
       const total = newData.length | 0;
       const length = newData.length;
 
-      console.log("Setting state with data:", { data: newData, listLength: total, totalPage: Math.ceil(length / limit) });
-
       this.setState({
+        informSelects,
+        informations,
         data: newData,
         listLength: total,
         totalPage: Math.ceil(length / limit),
@@ -266,6 +278,256 @@ class RetrieveInformation extends Component {
       console.error("Error fetching grid view report:", error);
       this.setState({ isLoaded: false });
     });
+  };
+
+  // Dựng dữ liệu hiển thị từ informSelects gốc, vẫn giữ lại toàn bộ field gốc
+  // (informID, isRequired, isGenerated, isEvaluated, sortOrder...) để xử lý nghiệp vụ.
+  buildData = (informSelects) => {
+    return (informSelects || []).map((item, key) => ({
+      ...item,
+      index: key + 1, // STT - tự động đếm
+      retrieve: item.name, // TÊN TRUY XUẤT
+      loggingStatus: item.isChecked ? 1 : 0, // NHẬT KÝ
+      qrStatus: item.isShow ? 1 : 0, // QUÉT MÃ
+      htFeedback: item.isShowEvaluated ? 1 : 0, // HT ĐÁNH GIÁ
+      parentID: item.parentID === null || item.parentID === undefined ? "" : item.parentID,
+      color: "#000",
+    }));
+  };
+
+  // Bắt buộc chọn ngành nghề + sản phẩm trước khi thao tác (giống mobile)
+  requireFieldProduct = () => {
+    const { filter } = this.state;
+    if (!filter.filter) {
+      toast.error("Bạn vui lòng chọn ngành nghề");
+      return false;
+    }
+    if (!filter.product) {
+      toast.error("Bạn vui lòng chọn sản phẩm");
+      return false;
+    }
+    return true;
+  };
+
+  // NHẬT KÝ (isChecked): toggle isChecked, đồng thời tắt isShow.
+  // Không cho bỏ tick nếu là mục bắt buộc (isRequired) và không phải mục tự tạo.
+  onToggleDiary = (row) => {
+    if (!this.requireFieldProduct()) return;
+
+    const informSelects = this.state.informSelects.map((x) => ({ ...x }));
+    const item = informSelects.find((p) => p.id === row.id);
+    if (!item) return;
+
+    if (!item.isGenerated) {
+      const information = this.state.informations.find((p) => p.id === item.informID);
+      if (information && information.isRequired && item.isChecked) {
+        return;
+      }
+    }
+
+    item.isChecked = !item.isChecked;
+    item.isShow = false;
+
+    this.setState({ informSelects, data: this.buildData(informSelects) });
+  };
+
+  // QUÉT MÃ (isShow): toggle isShow; khi bật thì ép bật Nhật ký (isChecked = true).
+  onToggleQRCode = (row) => {
+    if (!this.requireFieldProduct()) return;
+
+    const informSelects = this.state.informSelects.map((x) => ({ ...x }));
+    const item = informSelects.find((p) => p.id === row.id);
+    if (!item) return;
+
+    if (!item.isGenerated) {
+      const information = this.state.informations.find((p) => p.id === item.informID);
+      if (information && information.isRequired && item.isShow) {
+        return;
+      }
+    }
+
+    item.isShow = !item.isShow;
+    if (item.isShow) {
+      item.isChecked = true;
+    }
+
+    this.setState({ informSelects, data: this.buildData(informSelects) });
+  };
+
+  // HT ĐÁNH GIÁ (isShowEvaluated): chỉ áp dụng cho mục có isEvaluated.
+  onToggleEvaluated = (row) => {
+    if (!this.requireFieldProduct()) return;
+
+    const informSelects = this.state.informSelects.map((x) => ({ ...x }));
+    const item = informSelects.find((p) => p.id === row.id);
+    if (!item || !item.isEvaluated) return;
+
+    item.isShowEvaluated = !item.isShowEvaluated;
+
+    this.setState({ informSelects, data: this.buildData(informSelects) });
+  };
+
+  // Lưu toàn bộ thay đổi truy xuất (giống nút CẬP NHẬT trên mobile -> processaccess/updatev2)
+  onUpdate = () => {
+    const { filter, informSelects } = this.state;
+
+    if (!this.requireFieldProduct()) return;
+
+    const informationNotIsRequired = informSelects.filter(
+      (p) => !p.isRequired || p.isEvaluated
+    );
+
+    if (informationNotIsRequired.length <= 0) {
+      toast.error("Không có truy xuất để cập nhật");
+      return;
+    }
+
+    const items = informSelects.filter(
+      (p) =>
+        informationNotIsRequired.find((t) => t.informID == p.informID) ||
+        p.isGenerated
+    );
+
+    const body = {
+      fieldId: filter.filter,
+      productId: filter.product,
+      items,
+    };
+
+    this.setState({ isLoaded: true });
+
+    callApi("post", "processaccess/updatev2", body)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Cập nhật truy xuất thành công");
+          this.fetchSummary();
+        } else {
+          const message = getErrorMessageServer(res);
+          toast.error(message || "Cập nhật truy xuất thất bại");
+          this.setState({ isLoaded: false });
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating retrieve information:", error);
+        toast.error("Cập nhật truy xuất thất bại");
+        this.setState({ isLoaded: false });
+      });
+  };
+
+  // ===== Phân quyền =====
+  onOpenPermission = (item) => {
+    if (!item || !item.id) {
+      toast.error("Bạn vui lòng chọn truy xuất");
+      return;
+    }
+
+    callApi(
+      "get",
+      `processaccess/getlisttraceroles?informSelectID=${item.id}`
+    )
+      .then((res) => {
+        const traceRoles = Array.isArray(res.data) ? res.data : res.data || [];
+        this.setState({
+          permissionItem: item,
+          traceRoles: traceRoles || [],
+          permissionModal: true,
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching trace roles:", error);
+        toast.error("Lấy danh sách phân quyền thất bại");
+      });
+  };
+
+  togglePermissionModal = () => {
+    this.setState((prev) => ({ permissionModal: !prev.permissionModal }));
+  };
+
+  onConfirmPermission = (payload) => {
+    const { role1s, role2s, isApproveAll } = payload;
+
+    if (!role1s.roles || role1s.roles.length <= 0) {
+      toast.error("Bạn vui lòng chọn quyền cho người thực hiện");
+      return;
+    }
+    if (!role2s.roles || role2s.roles.length <= 0) {
+      toast.error("Bạn vui lòng chọn quyền cho người đánh giá");
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    callApi("post", "processaccess/providerole", {
+      informRole1: role1s,
+      informRole2: role2s,
+      isApproveAll,
+    })
+      .then((res) => {
+        this.setState({ isLoaded: false });
+        if (res && res.status == 200) {
+          toast.success("Phân quyền thành công");
+          this.setState({ permissionModal: false });
+        } else {
+          const message = getErrorMessageServer(res);
+          toast.error(message || "Phân quyền thất bại");
+        }
+      })
+      .catch((error) => {
+        console.error("Error providing role:", error);
+        this.setState({ isLoaded: false });
+        toast.error("Phân quyền thất bại");
+      });
+  };
+
+  // ===== Sửa STT (updateNumber) =====
+  onOpenNumberModal = (item) => {
+    this.setState({
+      numberItem: item,
+      numberValue: item && item.sortOrder ? String(item.sortOrder) : "",
+      numberModal: true,
+    });
+  };
+
+  toggleNumberModal = () => {
+    this.setState((prev) => ({ numberModal: !prev.numberModal }));
+  };
+
+  onConfirmNumber = () => {
+    const { numberItem, numberValue } = this.state;
+
+    const sortOrder = parseFloat(numberValue || "0") || 0;
+
+    if (!numberItem || !numberItem.id) {
+      toast.error("Bạn vui lòng chọn truy xuất");
+      return;
+    }
+    if (sortOrder <= 0) {
+      toast.error("Bạn vui lòng nhập số thứ tự và phải lớn hơn 0");
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    callApi("post", "processaccess/updateNumber", {
+      id: numberItem.id,
+      sortOrder,
+    })
+      .then((res) => {
+        if (res && res.status == 200) {
+          toast.success("Cập nhật truy xuất thành công");
+          this.setState({ numberModal: false });
+          this.fetchSummary();
+        } else {
+          const message = getErrorMessageServer(res);
+          toast.error(message || "Cập nhật truy xuất thất bại");
+          this.setState({ isLoaded: false });
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating sort order:", error);
+        toast.error("Cập nhật truy xuất thất bại");
+        this.setState({ isLoaded: false });
+      });
   };
 
   closeStatusModal = () => {
@@ -324,16 +586,29 @@ class RetrieveInformation extends Component {
   };
 
   handleChangeSelectFilter = async (value, name) => {
-    let { filter } = this.state;
+    const fieldID = (value && value.id) || value || "";
 
-    filter[name] = value;
-    this.setState({ filter });
-
+    // Chọn sản phẩm: chỉ cập nhật filter.product
     if (name !== "filter") {
+      this.setState((prev) => ({
+        filter: { ...prev.filter, [name]: value },
+      }));
       return;
     }
 
-    const fieldID = (value && value.id) || value || "";
+    // Đổi ngành nghề: cập nhật filter.filter, reset sản phẩm và nạp lại danh sách sản phẩm
+    this.setState((prev) => ({
+      filter: { ...prev.filter, filter: value, product: "" },
+      PRODUCT_OPTIONS: [],
+    }));
+
+    if (fieldID) {
+      await this.fetchProductsByField(fieldID);
+    }
+  };
+
+  // Lấy danh sách sản phẩm theo ngành nghề, dùng cho cả bộ lọc và form chi tiết/sửa
+  fetchProductsByField = async (fieldID) => {
     if (!fieldID) {
       this.setState({ PRODUCT_OPTIONS: [] });
       return;
@@ -350,7 +625,6 @@ class RetrieveInformation extends Component {
 
     try {
       const res = await fetchData.product.getAllLock(payload);
-      console.log("Fetched products:", res);
       let dataArray = [];
       if (Array.isArray(res)) {
         dataArray = res;
@@ -393,7 +667,49 @@ class RetrieveInformation extends Component {
       isShowForDetail: false,
       isShowForWrite: false,
       editId: null,
+      editData: null,
     });
+  };
+
+  // Lấy chi tiết 1 mục truy xuất theo id rồi map về dữ liệu cho form
+  loadDetail = (id, mode) => {
+    callApi("get", `processaccess/getDetailSetAccess?id=${id}`)
+      .then((res) => {
+        const informSelect = (res.data && res.data.informSelect) || res.data || {};
+
+        const editData = {
+          id: informSelect.id,
+          jobId: informSelect.fieldID,
+          productId: informSelect.productID,
+          name: informSelect.name,
+          order: informSelect.sortOrder,
+          imgUrlVal: informSelect.image,
+          isIsolationTest: !!informSelect.isQuarantine,
+          // 1: Nhập kho, 2: Đánh giá, 3: Chuyển giao
+          typeId: informSelect.isHarvest
+            ? 1
+            : informSelect.isEvaluated
+            ? 2
+            : informSelect.isHarvest2
+            ? 3
+            : null,
+        };
+
+        if (informSelect.fieldID) {
+          this.fetchProductsByField(informSelect.fieldID);
+        }
+
+        this.setState({
+          editId: id,
+          editData,
+          isShowForDetail: mode === "detail",
+          isShowForEdit: mode === "edit",
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching retrieve detail:", error);
+        toast.error("Lấy thông tin truy xuất thất bại");
+      });
   };
 
   toggle = (el, val) => {
@@ -422,13 +738,71 @@ class RetrieveInformation extends Component {
   };
 
   onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert } = this.state;
-    const formData = new FormData();
-    console.log(dataInsert);
-    alert("Thao tác thành công");
-    if (toggleModal) {
-      toggleModal();
+    const { dataInsert, filter, editId, isShowForDetail } = this.state;
+
+    // Xem chi tiết: chỉ đóng, không gửi gì
+    if (isShowForDetail) {
+      if (toggleModal) toggleModal();
+      return;
     }
+
+    // Ưu tiên ngành nghề/sản phẩm chọn trong form, nếu không có thì lấy theo bộ lọc đang tìm.
+    const fieldId = dataInsert.jobId || filter.filter || "";
+    const productId = dataInsert.productId || filter.product || "";
+    const name = (dataInsert.name || "").trim();
+
+    if (!fieldId) {
+      toast.error("Bạn vui lòng chọn ngành nghề");
+      return;
+    }
+    if (!productId) {
+      toast.error("Bạn vui lòng chọn sản phẩm");
+      return;
+    }
+    if (!name) {
+      toast.error("Tên truy xuất không được bỏ trống");
+      return;
+    }
+
+    // Khớp contract mobile (processaccess, multipart form-data).
+    // Trạng thái xử lý là loại trừ lẫn nhau: 1 = Nhập kho, 2 = Đánh giá, 3 = Chuyển giao.
+    const formData = new FormData();
+    formData.append("setAccessName", name);
+    formData.append("fieldId", fieldId);
+    formData.append("productId", productId);
+    formData.append("sortOrder", Number(dataInsert.order) || 0);
+    formData.append("checkQuarantine", dataInsert.isIsolationTest ? true : false);
+    formData.append("checkGoodReceived", dataInsert.typeId === 1);
+    formData.append("checkRating", dataInsert.typeId === 2);
+    formData.append("checkDelivery", dataInsert.typeId === 3);
+
+    const isEdit = !!editId;
+    if (isEdit) {
+      formData.append("id", editId);
+    }
+
+    const method = isEdit ? "put" : "post";
+    const endpoint = isEdit ? "processaccess/update" : "processaccess/create";
+    const successMsg = isEdit ? "Cập nhật thành công!" : "Thêm mới thành công!";
+    const failMsg = isEdit ? "Cập nhật thất bại" : "Thêm mới thất bại";
+
+    callApi(method, endpoint, formData, true)
+      .then((res) => {
+        if (res && res.status == 200) {
+          toast.success(successMsg);
+          this.fetchSummary();
+          if (toggleModal) {
+            toggleModal();
+          }
+        } else {
+          const message = getErrorMessageServer(res) || failMsg;
+          toast.error(message);
+        }
+      })
+      .catch((error) => {
+        console.error("Error saving retrieve information:", error);
+        toast.error(failMsg);
+      });
   };
 
   onHandleChangeValue = (data) => {
@@ -452,20 +826,34 @@ class RetrieveInformation extends Component {
     );
   };
 
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
+  handleSelectItem = (id) => {
+    this.setState((prevState) => {
+      const { selectedItems } = prevState;
+      const exists = selectedItems.includes(id);
+      const newSelected = exists
+        ? selectedItems.filter((itemId) => itemId !== id)
+        : [...selectedItems, id];
+      return { selectedItems: newSelected, selectAll: newSelected.length === prevState.data.length };
     });
   };
 
-  onShowDetail = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForDetail: true,
-      };
+  handleSelectAll = () => {
+    this.setState((prevState) => {
+      const { selectAll, data } = prevState;
+      if (selectAll) {
+        return { selectAll: false, selectedItems: [] };
+      } else {
+        return { selectAll: true, selectedItems: data.map((item) => item.id) };
+      }
     });
+  };
+
+  onEditData = (item) => () => {
+    this.loadDetail(item.id, "edit");
+  };
+
+  onShowDetail = (item) => () => {
+    this.loadDetail(item.id, "detail");
   };
 
   onShowWrite = (id) => () => {
@@ -477,7 +865,7 @@ class RetrieveInformation extends Component {
   };
 
   onDeleteData = (id) => () => {
-    alert("Xóa thành công");
+    this.setState({ deleteId: id, warningPopupModal: true });
   };
 
   toggleModalPopupDelete = () => {
@@ -490,36 +878,25 @@ class RetrieveInformation extends Component {
   };
 
   handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          warningPopupModal: false,
-        };
+    const { deleteId } = this.state;
+
+    callApi("delete", `processaccess/delete?id=${deleteId}`)
+      .then((res) => {
+        this.setState({ warningPopupModal: false });
+
+        if (res && res.status == 200) {
+          toast.success("Xoá dữ liệu thành công!");
+          this.fetchSummary();
+        } else {
+          const message = getErrorMessageServer(res);
+          toast.error(message || "Xóa dữ liệu thất bại");
+        }
+      })
+      .catch((error) => {
+        console.error("Error deleting retrieve information:", error);
+        this.setState({ warningPopupModal: false });
+        toast.error("Xóa dữ liệu thất bại");
       });
-
-      const data = res.data;
-
-      if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
-
-        this.setState({ message: "Xóa dữ liệu thành công" });
-        toast.success("Xoá dữ liệu thành công!");
-      } else {
-        const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa dữ liệu thất bại" });
-        this.toggleModal("popupMessage");
-      }
-    });
   };
 
   toggleModal = (state, type) => {
@@ -563,12 +940,8 @@ class RetrieveInformation extends Component {
     return "";
   };
 
-  handleClickStatus = (item, type) => {
-    alert(`Đã thao tác ${type} cho STT: ${item.stt}`);
-  };
-
   renderTable = (data, isDisableEdit, isDisableDelete) => {
-    const { beginItem, endItem, collapseList } = this.state;
+    const { beginItem, endItem, collapseList, selectedItems } = this.state;
     let list = [];
     let parentid = [];
     let autoIndex = 0;
@@ -592,8 +965,18 @@ class RetrieveInformation extends Component {
           index={autoIndex}
           className="table-hover-css"
         >
+          <td style={{ textAlign: "center", width: "40px" }}>
+            <input
+              type="checkbox"
+              checked={selectedItems.includes(e.id)}
+              onChange={() => this.handleSelectItem(e.id)}
+            />
+          </td>
           <td
             className={`className='table-scale-col table-user-col-1' ${renderClass}`}
+            style={{ cursor: "pointer", textDecoration: "underline" }}
+            title="Bấm để sửa thứ tự"
+            onClick={() => this.onOpenNumberModal(e)}
           >
             {autoIndex + 1}
           </td>
@@ -603,7 +986,7 @@ class RetrieveInformation extends Component {
 
           <td
             style={{ textAlign: "center", cursor: "pointer" }}
-            onClick={() => this.handleClickStatus(e, "loggingStatus")}
+            onClick={() => this.onToggleDiary(e)}
           >
             <span
               className={
@@ -616,7 +999,7 @@ class RetrieveInformation extends Component {
           </td>
           <td
             style={{ textAlign: "center", cursor: "pointer" }}
-            onClick={() => this.handleClickStatus(e, "qrStatus")}
+            onClick={() => this.onToggleQRCode(e)}
           >
             <span
               className={
@@ -628,17 +1011,22 @@ class RetrieveInformation extends Component {
             </span>
           </td>
           <td
-            style={{ textAlign: "center", cursor: "pointer" }}
-            onClick={() => this.handleClickStatus(e, "qrStatus")}
+            style={{
+              textAlign: "center",
+              cursor: e.isEvaluated ? "pointer" : "default",
+            }}
+            onClick={() => e.isEvaluated && this.onToggleEvaluated(e)}
           >
-            <span
-              className={
-                e.htFeedback ? "badge badge-success" : "badge badge-danger"
-              }
-              style={{ minWidth: "50px" }}
-            >
-              {e.htFeedback ? "Có đánh giá" : "Không đánh giá"}
-            </span>
+            {e.isEvaluated ? (
+              <span
+                className={
+                  e.htFeedback ? "badge badge-success" : "badge badge-danger"
+                }
+                style={{ minWidth: "50px" }}
+              >
+                {e.htFeedback ? "Có đánh giá" : "Không đánh giá"}
+              </span>
+            ) : null}
           </td>
           <td>
             {collapseList
@@ -654,19 +1042,26 @@ class RetrieveInformation extends Component {
                         <img src={MenuButton} />
                       </DropdownToggle>
                       <DropdownMenu>
-                        {isDisableEdit == true ? null : (
+                        <DropdownItem onClick={this.onShowDetail(e)}>
+                          Xem chi tiết
+                        </DropdownItem>
+                        {isDisableEdit == true || !e.isGenerated ? null : (
                           <DropdownItem onClick={this.onEditData(e)}>
-                            Xem chi tiết
+                            Sửa
                           </DropdownItem>
                         )}
-                        {isDisableEdit == true ||
-                          isDisableDelete == true ? null : (
-                          <DropdownItem divider />
+                        {isDisableEdit == true || !e.isEvaluated ? null : (
+                          <DropdownItem onClick={() => this.onOpenPermission(e)}>
+                            Phân quyền
+                          </DropdownItem>
                         )}
                         {isDisableDelete == true ? null : (
-                          <DropdownItem onClick={this.onDeleteData(e.id)}>
-                            Xoá
-                          </DropdownItem>
+                          <>
+                            <DropdownItem divider />
+                            <DropdownItem onClick={this.onDeleteData(e.id)}>
+                              Xoá
+                            </DropdownItem>
+                          </>
                         )}
                       </DropdownMenu>
                     </ButtonDropdown>
@@ -695,13 +1090,12 @@ class RetrieveInformation extends Component {
       status,
       headerTitle,
       data,
+      informSelects,
       message,
       isLoaded,
       listLength,
       totalPage,
       totalElement,
-      fromDate,
-      toDate,
       createNewModal,
       popupMessage,
       activeCreateSubmit,
@@ -713,31 +1107,37 @@ class RetrieveInformation extends Component {
       LOGGING_OPTIONS,
       LOGGING_DATA_TYPES,
       REFERENCE_LIST,
+      selectedItems,
+      selectAll,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
-    let isDisableAdd = true;
-    let isDisableEdit = true;
-    let isDisableDelete = true;
+    let isDisableAdd = false;
+    let isDisableEdit = false;
+    let isDisableDelete = false;
     let ACCOUNT_CLAIM_FF = [];
-    if (JSON.parse(localStorage.getItem("IS_ADMIN"))) {
-      isDisableAdd = false;
-      isDisableEdit = false;
-      isDisableDelete = false;
-    } else {
-      ACCOUNT_CLAIM_FF = localStorage
-        .getItem("ACCOUNT_CLAIM_FF")
+    if (!JSON.parse(localStorage.getItem("IS_ADMIN"))) {
+      ACCOUNT_CLAIM_FF = (localStorage.getItem("ACCOUNT_CLAIM_FF") || "")
         .split(",")
         .filter((x) => x != "");
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Add").map(
-        (y) => (isDisableAdd = false)
-      );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Edit").map(
-        (y) => (isDisableEdit = false)
-      );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Delete").map(
-        (y) => (isDisableDelete = false)
-      );
+      if (
+        ACCOUNT_CLAIM_FF.length > 0 &&
+        !ACCOUNT_CLAIM_FF.find((x) => x === "RetrieveInformation.Add")
+      ) {
+        isDisableAdd = true;
+      }
+      if (
+        ACCOUNT_CLAIM_FF.length > 0 &&
+        !ACCOUNT_CLAIM_FF.find((x) => x === "RetrieveInformation.Edit")
+      ) {
+        isDisableEdit = true;
+      }
+      if (
+        ACCOUNT_CLAIM_FF.length > 0 &&
+        !ACCOUNT_CLAIM_FF.find((x) => x === "RetrieveInformation.Delete")
+      ) {
+        isDisableDelete = true;
+      }
     }
 
     return (
@@ -768,6 +1168,8 @@ class RetrieveInformation extends Component {
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
+                          initialData={this.state.editData}
+                          isReadOnly={isShowForDetail}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
                           STATUS_OPTIONS={STATUS_OPTIONS}
@@ -795,30 +1197,6 @@ class RetrieveInformation extends Component {
                             style={{ marginBottom: "10px", flex: "wrap" }}
                           >
                             <div className="mg-div-search">
-                              <label className="form-control-label">Từ ngày</label>
-                              <Datetime
-                                className="form-control-alternative"
-                                timeFormat={false}
-                                dateFormat="DD/MM/YYYY"
-                                value={fromDate}
-                                onChange={(val) => {
-                                  this.setState({ fromDate: val });
-                                }}
-                              />
-                            </div>
-                            <div className="mg-div-search">
-                              <label className="form-control-label">Đến ngày</label>
-                              <Datetime
-                                className="form-control-alternative"
-                                timeFormat={false}
-                                dateFormat="DD/MM/YYYY"
-                                value={toDate}
-                                onChange={(val) => {
-                                  this.setState({ toDate: val });
-                                }}
-                              />
-                            </div>
-                            <div className="mg-div-search">
                               <label className="form-control-label">
                                 Ngành nghề
                               </label>
@@ -826,6 +1204,7 @@ class RetrieveInformation extends Component {
                                 <Select
                                   name="filter"
                                   title="Ngành nghề"
+                                  value={this.state.filter.filter || null}
                                   data={JOB_OPTIONS}
                                   labelName="title"
                                   val="id"
@@ -841,6 +1220,7 @@ class RetrieveInformation extends Component {
                                 <Select
                                   name="product"
                                   title="Sản phẩm"
+                                  value={this.state.filter.product || null}
                                   data={PRODUCT_OPTIONS}
                                   labelName="productName"
                                   val="id"
@@ -876,12 +1256,29 @@ class RetrieveInformation extends Component {
                         className="align-items-center tablecs table-css-planting-zone"
                         responsive
                       >
-                        <HeadTitleTable
-                          headerTitle={headerTitle}
-                          classHeaderColumns={{
-                            0: "table-scale-col table-user-col-1",
-                          }}
-                        />
+                        <thead className="thead-dark">
+                          <tr>
+                            <th scope="col" style={{ textAlign: "center", width: "40px" }}>
+                              <input
+                                type="checkbox"
+                                checked={selectAll}
+                                onChange={this.handleSelectAll}
+                                title="Chọn tất cả"
+                              />
+                            </th>
+                            {headerTitle.map((item, key) => (
+                              <th
+                                scope="col"
+                                key={key}
+                                style={{ whiteSpace: "normal" }}
+                                className={`${key === 0 ? "table-scale-col table-user-col-1" : ""} font-bold font-size-15px`}
+                              >
+                                {item}
+                              </th>
+                            ))}
+                            <th scope="col" className="font-bold font-size-15px"></th>
+                          </tr>
+                        </thead>
                         <tbody>
                           {Array.isArray(data) &&
                             this.renderTable(
@@ -892,6 +1289,31 @@ class RetrieveInformation extends Component {
                         </tbody>
                       </Table>
                     </Card>
+
+                    {/* Nút lưu thay đổi truy xuất (updatev2) */}
+                    {isDisableEdit === false &&
+                    Array.isArray(informSelects) &&
+                    informSelects.length > 0 &&
+                    informSelects.filter((p) => !p.isRequired || p.isGenerated)
+                      .length > 0 ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          margin: "15px 0",
+                        }}
+                      >
+                        <Button
+                          className="btn-success-cs"
+                          color="default"
+                          type="button"
+                          size="md"
+                          onClick={this.onUpdate}
+                        >
+                          <span>CẬP NHẬT</span>
+                        </Button>
+                      </div>
+                    ) : null}
 
                     {/* Pagination */}
                     {
@@ -959,6 +1381,63 @@ class RetrieveInformation extends Component {
               moduleBody={message}
               toggleModal={this.toggleModal}
             />
+
+            <PermissionModal
+              isOpen={this.state.permissionModal}
+              toggle={this.togglePermissionModal}
+              item={this.state.permissionItem}
+              roleComboBoxs={this.state.roleComboBoxs}
+              traceRoles={this.state.traceRoles}
+              onConfirm={this.onConfirmPermission}
+            />
+
+            {/* Modal sửa thứ tự (STT) */}
+            <Modal
+              className="modal-dialog-centered"
+              isOpen={this.state.numberModal}
+              toggle={this.toggleNumberModal}
+            >
+              <div className="modal-header">
+                <h5 className="modal-title">Chỉnh sửa thứ tự</h5>
+                <button
+                  type="button"
+                  className="close"
+                  onClick={this.toggleNumberModal}
+                >
+                  <span aria-hidden={true}>×</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <label className="form-control-label">STT</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="form-control"
+                  value={this.state.numberValue}
+                  onChange={(ev) =>
+                    this.setState({ numberValue: ev.target.value })
+                  }
+                />
+              </div>
+              <div className="modal-footer">
+                <Button
+                  color="secondary"
+                  type="button"
+                  onClick={this.toggleNumberModal}
+                >
+                  Đóng
+                </Button>
+                <Button
+                  className="btn-success-cs"
+                  color="default"
+                  type="button"
+                  onClick={this.onConfirmNumber}
+                >
+                  CẬP NHẬT
+                </Button>
+              </div>
+            </Modal>
+
             <ToastContainer position="top-center" autoClose={3000} />
           </div>
         }

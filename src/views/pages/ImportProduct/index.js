@@ -43,6 +43,7 @@ import {
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
+  Modal,
 } from "reactstrap";
 
 import InsertOrUpdate from "./InsertOrUpdate.js";
@@ -126,11 +127,24 @@ class ImportProduct extends Component {
       editId: null,
       warningPopupModal: false,
       deleteId: null,
+      approveWarningPopupModal: false,
+      approveId: null,
+      lockPopupModal: false,
+      lockId: null,
+      requireConfirmPopupModal: false,
+      requireConfirmId: null,
+      unConfirmPopupModal: false,
+      unConfirmId: null,
+      unConfirmReason: "",
+      unConfirmContent1: "",
+      confirmGR: false,
       popupMessage: null,
       STATUS_OPTIONS: [
         { id: 0, name: "Mới tạo" },
-        { id: 1, name: "Chưa duyệt" },
+        { id: 1, name: "Chờ duyệt" },
         { id: 2, name: "Đã duyệt" },
+        { id: 3, name: "Không duyệt" },
+        { id: 4, name: "Chờ duyệt lại" },
       ],
       SUPPLIER_LIST: [],
       USER_LIST: [],
@@ -164,6 +178,9 @@ class ImportProduct extends Component {
     /* Load products */
     this.loadProducts();
 
+    /* Load company config (confirmGR) */
+    this.loadCompanyConfig();
+
     getListTypeZoneProperty({
       search: "",
       filter: "",
@@ -179,6 +196,15 @@ class ImportProduct extends Component {
       });
     });
   }
+
+  loadCompanyConfig = async () => {
+    try {
+      const config = await fetchData.companyConfig.get();
+      this.setState({ confirmGR: config?.confirmGR || false });
+    } catch (error) {
+      this.setState({ confirmGR: false });
+    }
+  };
 
   loadSuppliers = async () => {
     try {
@@ -277,7 +303,7 @@ class ImportProduct extends Component {
 
   loadProducts = async () => {
     try {
-      const products = await fetchData.product.getList({
+      const products = await fetchData.product.getListComboBox({
         search: "",
         filter: "",
         orderBy: "",
@@ -535,6 +561,8 @@ class ImportProduct extends Component {
             productId: null,
             warehouseId: null,
             file: "",
+            files: [],
+            existingFiles: [],
             unit: "",
             quantity: 0,
             vat: 0,
@@ -651,9 +679,20 @@ class ImportProduct extends Component {
         }))
       ));
 
-      // Add files if any (only for new files selected, not existing URL)
-      if (formData.files && Array.isArray(formData.files) && formData.files.length > 0) {
-        formData.files.forEach((file, index) => {
+      // StrFile: danh sách chứng từ đã có được GIỮ LẠI (nối bằng ";"). Backend
+      // gán Files = StrFile, nên nếu không gửi thì các chứng từ cũ sẽ bị xóa.
+      const keptFiles = Array.isArray(formData.existingFiles)
+        ? formData.existingFiles.map((f) => f.url).filter(Boolean)
+        : [];
+      formPayload.append("StrFile", keptFiles.join(";"));
+
+      // FilesFiles: các tệp mới chọn để upload
+      if (
+        formData.files &&
+        Array.isArray(formData.files) &&
+        formData.files.length > 0
+      ) {
+        formData.files.forEach((file) => {
           formPayload.append(`FilesFiles`, file);
         });
       }
@@ -798,14 +837,45 @@ class ImportProduct extends Component {
               quantity: item.quantity || 0,
               price: item.unitPrice || 0,
               vat: item.perVAT || 0,
-              unit: item.unitID || "", 
-              unitName: item.unitName || "", 
+              unit: item.unitID || "",
+              unitName: item.unitName || "",
               amount: item.amount || 0,
               ingredientName: item.materialName || "",
               productName: item.materialName || "",
-              warehouseName: warehouseName || "", 
+              warehouseName: warehouseName || "",
               refQRCode: item.refQRCode || "",
             };
+          });
+
+          // Resolve unit name from the materialUnits list returned by the detail
+          // API (the GRDetail row only stores unitID, so its joined UnitName can
+          // be empty). Match each line's unitID against materialUnits, mirroring
+          // the mobile app. materialUnits comes alongside goodsReceipt in the
+          // detail response.
+          const materialUnits = Array.isArray(detailResponse.materialUnits)
+            ? detailResponse.materialUnits
+            : [];
+
+          grDetails.forEach((detail) => {
+            if (detail.unitName) return;
+
+            const materialID = detail.ingredientId || detail.productId;
+
+            // Prefer matching by both material and unit, fall back to unitID only.
+            const matchedUnit =
+              materialUnits.find(
+                (u) =>
+                  String(u.unitID) === String(detail.unit) &&
+                  (String(u.productID) === String(materialID) ||
+                    String(u.materialID) === String(materialID))
+              ) ||
+              materialUnits.find(
+                (u) => String(u.unitID) === String(detail.unit)
+              );
+
+            if (matchedUnit) {
+              detail.unitName = matchedUnit.unitName || "";
+            }
           });
         }
 
@@ -827,7 +897,18 @@ class ImportProduct extends Component {
           note: detailData.note || "",
           status: detailData.status || item.status || 0,
           grDetails: grDetails,
-          files: detailData.files || "", // Thay đổi thành string thay vì array
+          // Chứng từ đã đính kèm: chuỗi URL nối bằng ";" -> mảng { name, url }
+          existingFiles: (detailData.files || "")
+            .split(";")
+            .filter(Boolean)
+            .map((url) => {
+              const parts = url.split("/");
+              return {
+                url,
+                name: decodeURIComponent(parts[parts.length - 1] || url),
+              };
+            }),
+          files: [], // Tệp mới chọn để upload
         };
 
         this.setState(
@@ -892,6 +973,177 @@ class ImportProduct extends Component {
     }
   };
 
+  onApproveData = (id) => () => {
+    this.setState({
+      approveId: id,
+      approveWarningPopupModal: true,
+    });
+  };
+
+  toggleModalPopupApprove = () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        approveWarningPopupModal: false,
+      };
+    });
+  };
+
+  handleApproveRow = async () => {
+    const { approveId } = this.state;
+
+    try {
+      const res = await fetchData.goodReceived.requestConfirm(approveId);
+
+      if (res && res.status === 200) {
+        this.setState({
+          approveWarningPopupModal: false,
+        });
+
+        toast.success("Duyệt lô hàng thành công!");
+
+        // Reload data
+        this.fetchSummary();
+      } else {
+        const message = getErrorMessageServer(res);
+        toast.error(message || "Duyệt lô hàng thất bại!");
+        this.setState({ approveWarningPopupModal: false });
+      }
+    } catch (error) {
+      console.error("❌ Error approving good received:", error);
+      toast.error("Duyệt lô hàng thất bại!");
+      this.setState({ approveWarningPopupModal: false });
+    }
+  };
+
+  // ===== Khóa phiếu (status 0, khi công ty không bật duyệt -> chốt status 2) =====
+  onLockData = (id) => () => {
+    this.setState({
+      lockId: id,
+      lockPopupModal: true,
+    });
+  };
+
+  toggleModalPopupLock = () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        lockPopupModal: false,
+      };
+    });
+  };
+
+  handleLockRow = async () => {
+    const { lockId } = this.state;
+
+    try {
+      const res = await fetchData.goodReceived.lock(lockId);
+
+      if (res && res.status === 200) {
+        this.setState({ lockPopupModal: false });
+        toast.success("Khóa phiếu nhập thành công!");
+        this.fetchSummary();
+      } else {
+        const message = getErrorMessageServer(res);
+        toast.error(message || "Khóa phiếu nhập thất bại!");
+        this.setState({ lockPopupModal: false });
+      }
+    } catch (error) {
+      console.error("❌ Error locking good received:", error);
+      toast.error("Khóa phiếu nhập thất bại!");
+      this.setState({ lockPopupModal: false });
+    }
+  };
+
+  // ===== Yêu cầu duyệt (status 0/3 -> 1) =====
+  onRequireConfirm = (id) => () => {
+    this.setState({
+      requireConfirmId: id,
+      requireConfirmPopupModal: true,
+    });
+  };
+
+  toggleModalPopupRequireConfirm = () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        requireConfirmPopupModal: false,
+      };
+    });
+  };
+
+  handleRequireConfirmRow = async () => {
+    const { requireConfirmId } = this.state;
+
+    try {
+      const res = await fetchData.goodReceived.requireConfirm(requireConfirmId);
+
+      if (res && res.status === 200) {
+        this.setState({ requireConfirmPopupModal: false });
+        toast.success("Yêu cầu duyệt lô hàng thành công!");
+        this.fetchSummary();
+      } else {
+        const message = getErrorMessageServer(res);
+        toast.error(message || "Yêu cầu duyệt lô hàng thất bại!");
+        this.setState({ requireConfirmPopupModal: false });
+      }
+    } catch (error) {
+      console.error("❌ Error requiring confirm good received:", error);
+      toast.error("Yêu cầu duyệt lô hàng thất bại!");
+      this.setState({ requireConfirmPopupModal: false });
+    }
+  };
+
+  // ===== Không duyệt (status 0/1/4 -> 3) =====
+  onUnConfirm = (id) => () => {
+    this.setState({
+      unConfirmId: id,
+      unConfirmReason: "",
+      unConfirmContent1: "",
+      unConfirmPopupModal: true,
+    });
+  };
+
+  toggleModalPopupUnConfirm = () => {
+    this.setState((previousState) => {
+      return {
+        ...previousState,
+        unConfirmPopupModal: false,
+      };
+    });
+  };
+
+  handleUnConfirmRow = async () => {
+    const { unConfirmId, unConfirmReason, unConfirmContent1 } = this.state;
+
+    if (!unConfirmReason || unConfirmReason.trim() === "") {
+      toast.error("Vui lòng nhập lý do không duyệt!");
+      return;
+    }
+
+    try {
+      const res = await fetchData.goodReceived.requestUnConfirm(
+        unConfirmId,
+        unConfirmReason,
+        unConfirmContent1
+      );
+
+      if (res && res.status === 200) {
+        this.setState({ unConfirmPopupModal: false });
+        toast.success("Không duyệt lô hàng thành công!");
+        this.fetchSummary();
+      } else {
+        const message = getErrorMessageServer(res);
+        toast.error(message || "Không duyệt lô hàng thất bại!");
+        this.setState({ unConfirmPopupModal: false });
+      }
+    } catch (error) {
+      console.error("❌ Error un-confirming good received:", error);
+      toast.error("Không duyệt lô hàng thất bại!");
+      this.setState({ unConfirmPopupModal: false });
+    }
+  };
+
   toggleModal = (state, type) => {
     if (this.state[state] && type == 1) {
       return;
@@ -912,8 +1164,17 @@ class ImportProduct extends Component {
     return line;
   };
 
-  renderTable = (data, isDisableEdit, isDisableDelete, STATUS_OPTIONS) => {
-    const { beginItem, endItem, collapseList } = this.state;
+  renderTable = (
+    data,
+    isDisableEdit,
+    isDisableDelete,
+    STATUS_OPTIONS,
+    canConfirm,
+    canUnConfirm,
+    canRequireConfirm,
+    canLock
+  ) => {
+    const { beginItem, endItem, collapseList, confirmGR } = this.state;
     let list = [];
     let parentid = [];
     let autoIndex = 0;
@@ -930,6 +1191,20 @@ class ImportProduct extends Component {
                 ? ` ${classes.childs}`
                 : ` ${classes.childsItem}`
             }`;
+
+      // Approve workflow actions available for this row, based on status + claims.
+      // Status: 0 = Mới tạo, 1 = Chờ duyệt, 2 = Đã duyệt, 3 = Không duyệt, 4 = Chờ duyệt lại
+      const showRequireConfirm =
+        confirmGR && canRequireConfirm && (e.status === 0 || e.status === 3);
+      const showConfirm =
+        canConfirm && (e.status === 1 || e.status === 4);
+      const showUnConfirm =
+        canUnConfirm && (e.status === 1 || e.status === 4);
+      // Khóa phiếu: chỉ khi công ty KHÔNG bật duyệt và phiếu đang ở trạng thái mới tạo
+      const showLock = !confirmGR && canLock && e.status === 0;
+      const hasApproveAction =
+        showRequireConfirm || showConfirm || showUnConfirm || showLock;
+
       list.push(
         <tr
           key={autoIndex}
@@ -963,7 +1238,9 @@ class ImportProduct extends Component {
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
                 <div key={key}>
-                  {isDisableEdit == true && isDisableDelete == true ? null : (
+                  {isDisableEdit == true &&
+                  isDisableDelete == true &&
+                  !hasApproveAction ? null : (
                     <ButtonDropdown
                       isOpen={ele.collapse}
                       toggle={() => this.toggle(key, e.id)}
@@ -977,6 +1254,26 @@ class ImportProduct extends Component {
                             Xem chi tiết
                           </DropdownItem>
                         )}
+                        {showLock ? (
+                          <DropdownItem onClick={this.onLockData(e.id)}>
+                            Khóa phiếu
+                          </DropdownItem>
+                        ) : null}
+                        {showRequireConfirm ? (
+                          <DropdownItem onClick={this.onRequireConfirm(e.id)}>
+                            Yêu cầu duyệt
+                          </DropdownItem>
+                        ) : null}
+                        {showConfirm ? (
+                          <DropdownItem onClick={this.onApproveData(e.id)}>
+                            Duyệt
+                          </DropdownItem>
+                        ) : null}
+                        {showUnConfirm ? (
+                          <DropdownItem onClick={this.onUnConfirm(e.id)}>
+                            Không duyệt
+                          </DropdownItem>
+                        ) : null}
                         {isDisableEdit == true ||
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
@@ -1005,6 +1302,12 @@ class ImportProduct extends Component {
   render() {
     const {
       warningPopupModal,
+      approveWarningPopupModal,
+      lockPopupModal,
+      requireConfirmPopupModal,
+      unConfirmPopupModal,
+      unConfirmReason,
+      unConfirmContent1,
       editId,
       isShowForEdit,
       errorInserts,
@@ -1034,26 +1337,47 @@ class ImportProduct extends Component {
     let isDisableAdd = true;
     let isDisableEdit = true;
     let isDisableDelete = true;
+    // Approve workflow claims (match backend GoodReceipts.* claims)
+    let canConfirm = false;
+    let canUnConfirm = false;
+    let canRequireConfirm = false;
+    let canLock = false;
     let ACCOUNT_CLAIM_FF = [];
     if (JSON.parse(localStorage.getItem("IS_ADMIN"))) {
       isDisableAdd = false;
       isDisableEdit = false;
       isDisableDelete = false;
+      canConfirm = true;
+      canUnConfirm = true;
+      canLock = true;
     } else {
       ACCOUNT_CLAIM_FF = localStorage
         .getItem("ACCOUNT_CLAIM_FF")
         .split(",")
         .filter((x) => x != "");
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Add").map(
+      ACCOUNT_CLAIM_FF.filter((x) => x == "GoodReceipts.Add").map(
         (y) => (isDisableAdd = false)
       );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Edit").map(
+      ACCOUNT_CLAIM_FF.filter((x) => x == "GoodReceipts.Edit").map(
         (y) => (isDisableEdit = false)
       );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Delete").map(
+      ACCOUNT_CLAIM_FF.filter((x) => x == "GoodReceipts.Delete").map(
         (y) => (isDisableDelete = false)
       );
+      ACCOUNT_CLAIM_FF.filter((x) => x == "GoodReceipts.Confirm").map(
+        (y) => (canConfirm = true)
+      );
+      ACCOUNT_CLAIM_FF.filter((x) => x == "GoodReceipts.UnConfirm").map(
+        (y) => (canUnConfirm = true)
+      );
+      ACCOUNT_CLAIM_FF.filter((x) => x == "GoodReceipts.Lock").map(
+        (y) => (canLock = true)
+      );
     }
+
+    // Yêu cầu duyệt yêu cầu quyền tạo phiếu (backend RequireConfirm dùng quyền
+    // Create, tương ứng claim "GoodReceipts.Add")
+    canRequireConfirm = !isDisableAdd;
 
     return (
       <>
@@ -1117,9 +1441,9 @@ class ImportProduct extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      fromDate: value && value._isAMomentObject
+                                        ? value.toDate()
+                                        : value || "",
                                     })
                                   }
                                 />
@@ -1141,9 +1465,9 @@ class ImportProduct extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      toDate: value && value._isAMomentObject
+                                        ? value.toDate()
+                                        : value || "",
                                     })
                                   }
                                 />
@@ -1204,7 +1528,11 @@ class ImportProduct extends Component {
                               data,
                               isDisableEdit,
                               isDisableDelete,
-                              STATUS_OPTIONS
+                              STATUS_OPTIONS,
+                              canConfirm,
+                              canUnConfirm,
+                              canRequireConfirm,
+                              canLock
                             )}
                         </tbody>
                       </Table>
@@ -1249,6 +1577,100 @@ class ImportProduct extends Component {
               toggleModal={this.toggleModalPopupDelete}
               handleWarning={this.handleDeleteRow}
             />
+
+            <WarningPopup
+              moduleTitle="Thông báo"
+              moduleBody={
+                <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+                  Bạn có chắc muốn duyệt lô hàng này?
+                </p>
+              }
+              warningPopupModal={approveWarningPopupModal}
+              toggleModal={this.toggleModalPopupApprove}
+              handleWarning={this.handleApproveRow}
+            />
+
+            <WarningPopup
+              moduleTitle="Thông báo"
+              moduleBody={
+                <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+                  Bạn có chắc muốn yêu cầu duyệt lô hàng này?
+                </p>
+              }
+              warningPopupModal={requireConfirmPopupModal}
+              toggleModal={this.toggleModalPopupRequireConfirm}
+              handleWarning={this.handleRequireConfirmRow}
+            />
+
+            <WarningPopup
+              moduleTitle="Thông báo"
+              moduleBody={
+                <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
+                  Bạn có chắc muốn khóa phiếu nhập này?
+                </p>
+              }
+              warningPopupModal={lockPopupModal}
+              toggleModal={this.toggleModalPopupLock}
+              handleWarning={this.handleLockRow}
+            />
+
+            <Modal
+              className="modal-dialog-centered"
+              isOpen={unConfirmPopupModal}
+              autoFocus={false}
+            >
+              <div className="modal-header">
+                <h5 className="modal-title text-default-custom">Không duyệt</h5>
+              </div>
+              <div className="modal-body text-default-custom">
+                <div style={{ marginBottom: "12px" }}>
+                  <label className="form-control-label">
+                    Lý do không duyệt <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <Input
+                    type="textarea"
+                    rows="2"
+                    value={unConfirmReason || ""}
+                    placeholder="Nhập lý do không duyệt"
+                    onChange={(e) =>
+                      this.setState({ unConfirmReason: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="form-control-label">
+                    Nội dung cần thực hiện lại
+                  </label>
+                  <Input
+                    type="textarea"
+                    rows="2"
+                    value={unConfirmContent1 || ""}
+                    placeholder="Nhập nội dung cần thực hiện lại"
+                    onChange={(e) =>
+                      this.setState({ unConfirmContent1: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <Button
+                  color="default"
+                  className="btn-success-cs"
+                  type="button"
+                  onClick={this.handleUnConfirmRow}
+                >
+                  <span>Đồng ý</span>
+                </Button>
+                <Button
+                  color="default"
+                  className="btn-danger-cs"
+                  type="button"
+                  onClick={this.toggleModalPopupUnConfirm}
+                >
+                  <span>Thoát ra</span>
+                </Button>
+              </div>
+            </Modal>
 
             <CreateNewPopup
               createNewModal={createNewModal}

@@ -5,72 +5,117 @@ import compose from "recompose/compose";
 import { actionStampPlate } from "../../../actions/StampTemplateActions";
 import { configSystemAction } from "../../../actions/ConfigSystemAction";
 import { connect } from "react-redux";
-import IconAdd from "../../../assets/img/buttons/add.png";
-import IconDelete from "../../../assets/img/buttons/delete.png";
 
 // reactstrap components
 import {
-  Card,
   FormGroup,
   Input,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
-  Table,
+  Spinner,
 } from "reactstrap";
 import moment from "moment";
 import ReactDatetime from "react-datetime";
 import ModalTable from "components/ModalTable/ModalTable";
+import { fetchData } from "helpers/fetchData";
+
+// Loại lịch sử dải tem (khớp STAMP_REQUEST_HISTORY_TYPES trên app mobile)
+const HISTORY_TYPES = {
+  batch: 0,
+  cancel: 1,
+};
 
 class AddNewQRListHistory extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      id: null,
-      dateFrom: "",
-      dateTo: "",
+      // Mặc định lọc theo hôm nay - giống app mobile
+      dateFrom: moment(),
+      dateTo: moment(),
+      historyData: [],
+      totalCount: 0,
+      isLoading: false,
     };
   }
 
-  onChangeValue = (name) => (e) => {
-    let value = e && e.target ? e.target.value : e;
+  async componentDidMount() {
+    const { id } = this.props;
+    if (id) {
+      await this.fetchHistory();
+    }
+  }
 
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          [name]: value,
-        };
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
+  async componentDidUpdate(prevProps) {
+    if (prevProps.id !== this.props.id && this.props.id) {
+      await this.fetchHistory();
+    }
+  }
+
+  formatDate = (value) => {
+    if (!value) return "";
+    const m = moment.isMoment(value) ? value : moment(value, "DD-MM-YYYY");
+    return m.isValid() ? m.format("YYYY-MM-DD") : "";
   };
 
-  onChangeSelect = (name) => (value) => {
-    this.setState(
-      (prevState) => {
-        let newState = {
-          ...prevState,
-          [name]: value,
-        };
+  fetchHistory = async () => {
+    const { id } = this.props;
+    const { dateFrom, dateTo } = this.state;
 
-        return newState;
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
+    if (!id) return;
+
+    this.setState({ isLoading: true });
+    try {
+      const result = await fetchData.qrCodeManagement.getQRHistory(
+        id,
+        this.formatDate(dateFrom),
+        this.formatDate(dateTo)
+      );
+
+      const historyData = Array.isArray(result?.qrCodes)
+        ? result.qrCodes
+        : Array.isArray(result?.histories)
+        ? result.histories
+        : Array.isArray(result)
+        ? result
+        : [];
+
+      this.setState({
+        historyData,
+        totalCount: result?.totalCount || historyData.length,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error("Fetch QR History error:", error);
+      this.setState({ historyData: [], isLoading: false });
+    }
   };
 
-  handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
+  onChangeDate = (name) => (value) => {
+    this.setState({ [name]: value }, () => {
+      this.fetchHistory();
+    });
+  };
+
+  parseMetaData = (item) => {
+    if (!item || !item.metaData) return {};
+    try {
+      return JSON.parse(item.metaData) || {};
+    } catch (e) {
+      return {};
+    }
+  };
+
+  renderTitle = (item) => {
+    const metaData = this.parseMetaData(item);
+    if (item.type === HISTORY_TYPES.batch) {
+      return `Lô hàng: ${metaData.BatchNum || ""}`;
+    }
+    if (item.type === HISTORY_TYPES.cancel) {
+      return "Hủy tem";
+    }
+    return "";
   };
 
   columnsConfig = [
@@ -81,52 +126,65 @@ class AddNewQRListHistory extends Component {
       render: (row, index) => index + 1,
     },
     {
-      header: "Hành động",
+      header: "Nội dung",
       className: "font-weight-bold",
-      accessor: "actionName",
+      render: (row) => this.renderTitle(row),
     },
     {
-      header: "Mô tả",
-      accessor: "description",
+      header: "Số lượng",
+      className: "text-center",
+      render: (row) => row.quantity || 0,
     },
     {
-      header: "Người thực hiện",
-      accessor: "performedBy",
+      header: "Lý do hủy",
+      render: (row) =>
+        row.type === HISTORY_TYPES.cancel
+          ? this.parseMetaData(row).ReasonCancel || ""
+          : "",
+    },
+    {
+      header: "Dải tem",
+      render: (row) => `${row.startRange || ""} - ${row.endRange || ""}`,
     },
     {
       header: "Thời gian",
-      accessor: "performedDate",
-    },
-    {
-      header: "Trạng thái",
-      className: "text-center",
-      render: (row) => (
-        <span
-          className={`badge ${
-            row.status === "Thành công"
-              ? "badge-success"
-              : row.status === "Thất bại"
-              ? "badge-danger"
-              : "badge-warning"
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
+      render: (row) =>
+        row.createdDate
+          ? moment(row.createdDate).format("DD/MM/YYYY HH:mm")
+          : "",
     },
   ];
 
   render() {
-    const { data } = this.props;
-    const { executedDate, dateFrom, dateTo } = this.state;
+    const { stampInfo } = this.props;
+    const { dateFrom, dateTo, historyData, isLoading } = this.state;
 
-    let dateConvert = executedDate && moment(executedDate).format("DD-MM-YYYY");
-    let historyData = data?.historyData || [];
+    // Thông tin dải tem lấy từ dòng được chọn (giống header trên mobile)
+    const registeredDate =
+      stampInfo?.approvalDate ||
+      stampInfo?.confirmedDate ||
+      stampInfo?.createdDate ||
+      "";
+    const quantity = stampInfo?.quantity || "";
+    const temList =
+      stampInfo?.temList ||
+      (stampInfo?.startNum && stampInfo?.endNum
+        ? `${stampInfo.startNum} - ${stampInfo.endNum}`
+        : "");
+
+    const dateConvert = registeredDate
+      ? moment(registeredDate, [
+          "DD-MM-YYYY",
+          "YYYY-MM-DD",
+          moment.ISO_8601,
+        ]).format("DD-MM-YYYY")
+      : "";
 
     return (
       <>
         <div className={`${classes.formControl} css-system-stamp`}>
           <h3>Thông tin lịch sử dải tem</h3>
+
           <div className={classes.rowItem}>
             <label className="form-control-label">Ngày đăng ký</label>
             <div className={classes.inputArea}>
@@ -137,8 +195,6 @@ class AddNewQRListHistory extends Component {
                   readOnly
                   name="executedDate"
                   value={dateConvert}
-                  defaultValue={dateConvert}
-                  onChange={this.onChangeValue("executedDate")}
                 />
               </InputGroup>
             </div>
@@ -152,8 +208,7 @@ class AddNewQRListHistory extends Component {
                   type="text"
                   readOnly
                   name="quantity"
-                  value="1000"
-                  onChange={this.onChangeValue("quantity")}
+                  value={quantity}
                 />
               </InputGroup>
             </div>
@@ -167,13 +222,13 @@ class AddNewQRListHistory extends Component {
                   type="text"
                   readOnly
                   name="temList"
-                  value="TGI0200158000000282 - TGI0200158000001281"
-                  onChange={this.onChangeValue("temList")}
+                  value={temList}
                 />
               </InputGroup>
             </div>
           </div>
-          <h3>Danh sách dải tem</h3>
+
+          <h3>Danh sách nhật ký</h3>
 
           <div className={classes.rowItem}>
             <div className="wrap-insert-or-update-zone-item-box">
@@ -199,7 +254,7 @@ class AddNewQRListHistory extends Component {
                     value={dateFrom}
                     timeFormat={false}
                     dateFormat="DD-MM-YYYY"
-                    onChange={this.onChangeValue("dateFrom")}
+                    onChange={this.onChangeDate("dateFrom")}
                   />
                 </InputGroup>
               </FormGroup>
@@ -230,19 +285,33 @@ class AddNewQRListHistory extends Component {
                     value={dateTo}
                     timeFormat={false}
                     dateFormat="DD-MM-YYYY"
-                    onChange={this.onChangeValue("dateTo")}
+                    onChange={this.onChangeDate("dateTo")}
                   />
                 </InputGroup>
               </FormGroup>
             </div>
           </div>
-          <div className={classes.rowItem}>
-            <ModalTable
-              data={historyData}
-              columns={this.columnsConfig}
-              classes={classes}
-            />
-          </div>
+
+          {isLoading ? (
+            <div className="text-center py-3">
+              <Spinner color="primary" />
+              <p className="mt-2">Đang tải dữ liệu...</p>
+            </div>
+          ) : (
+            <div className={classes.rowItem}>
+              {historyData.length > 0 ? (
+                <ModalTable
+                  data={historyData}
+                  columns={this.columnsConfig}
+                  classes={classes}
+                />
+              ) : (
+                <p className="text-center text-muted mt-3">
+                  Không có dữ liệu lịch sử
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </>
     );

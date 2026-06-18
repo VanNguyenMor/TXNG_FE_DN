@@ -110,3 +110,36 @@
 .scrollTable::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+.stampTemplateGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.stampTemplateItem {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 4px;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 200px;
+}
+
+.stampTemplateItem:hover {
+  border-color: #09b2fd;
+}
+
+.stampTemplateItemActive {
+  border-color: #09b2fd;
+  box-shadow: 0 0 0 2px rgba(9, 178, 253, 0.3);
+}
+
+.stampTemplateImage {
+  width: 100%;
+  height: 110px;
+  object-fit: contain;
+  display: block;
+}

@@ -1,0 +1,59 @@
+.wrapper {
+    height: calc(100vh - 100px);
+    padding: 20px 0;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.lockBtn {
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.detailRow {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.detailLabel {
+    width: 200px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.detailValue {
+    flex: 1;
+}
+
+.detailSection {
+    font-weight: 700;
+    margin: 14px 0 8px;
+    color: #1f3bb3;
+}
+
+.thumbWrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.thumb {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.fileLink {
+    display: block;
+    margin-bottom: 4px;
+}

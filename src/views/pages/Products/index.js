@@ -36,6 +36,10 @@ import {
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
 
 import InsertOrUpdate from "./InsertOrUpdate.js";
@@ -111,6 +115,10 @@ class Product extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
+      // Khoá lô hàng
+      lockModal: false,
+      lockItem: null,
+      lockWarehouseId: null,
       // fromDate và toDate init là empty
       fromDate: "",
       toDate: "",
@@ -203,16 +211,7 @@ class Product extends Component {
 
         { id: "ZA", title: "Nam Phi" },
       ],
-      WAREHOUSE_OPTIONS: [
-        {
-          id: 1,
-          title: "Kho hàng 1",
-        },
-        {
-          id: 2,
-          title: "Kho hàng 2",
-        },
-      ],
+      WAREHOUSE_OPTIONS: [], // Sẽ được load từ API warehouse/getall
     };
   }
 
@@ -254,7 +253,64 @@ class Product extends Component {
 
     // Fetch danh sách dải tem (stamp templates)
     this.fetchStampTemplateOptions();
+
+    // Fetch danh sách kho hàng (dùng cho chức năng khoá lô hàng)
+    this.fetchWarehouseOptions();
+
+    // Fetch danh sách tỉnh/thành & nước từ API (giống app mobile)
+    this.fetchProvinceOptions();
+    this.fetchNationOptions();
   }
+
+  fetchProvinceOptions = async () => {
+    try {
+      const result = await fetchData.consignments.getListProvinceComboBox();
+      if (result && Array.isArray(result)) {
+        const formatted = result.map((item) => ({
+          id: item.id || item.ID,
+          title: item.provinceName || item.name || item.title || "",
+        }));
+        this.setState({ PROVINCE_OPTIONS: formatted });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách tỉnh/thành:", error);
+    }
+  };
+
+  fetchNationOptions = async () => {
+    try {
+      const result = await fetchData.consignments.getListNationComboBox();
+      if (result && Array.isArray(result)) {
+        const formatted = result.map((item) => ({
+          id: item.id || item.ID,
+          title: item.nationName || item.name || item.title || "",
+        }));
+        this.setState({ COUNTRY_OPTIONS: formatted });
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách nước:", error);
+    }
+  };
+
+  fetchWarehouseOptions = async () => {
+    try {
+      const result = await fetchData.consignments.getListWarehouseForUpdate();
+
+      if (result && Array.isArray(result)) {
+        const formattedWarehouses = result.map((item) => ({
+          id: item.id || item.ID,
+          title: item.name || item.Name || item.title || "",
+        }));
+
+        this.setState((previousState) => ({
+          ...previousState,
+          WAREHOUSE_OPTIONS: formattedWarehouses,
+        }));
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách kho hàng:", error);
+    }
+  };
 
   fetchDiaryOptions = async () => {
     try {
@@ -865,9 +921,9 @@ class Product extends Component {
         const initialData = {
           id: item.id,
           batchId: batch.batchID || batch.BatchID || "",
-          diaryId: batch.diaryID || batch.DiaryID || null,
-          classifyId: batch.classifyID || batch.ClassifyID || null,
-          temId: batch.temID || batch.TemID || null,
+          diaryId: batch.traceID || batch.diaryID || batch.DiaryID || null,
+          classifyId: batch.categoryId || batch.categoryID || batch.classifyID || batch.ClassifyID || null,
+          temId: batch.stampRangeId || batch.stampRangeID || batch.StampRangeID || batch.temID || batch.TemID || null,
           batchNumber: batch.batchNumber || batch.BatchNum || "",
           placeVal: batch.location || batch.Location || "",
           productVal: batch.productName || batch.ProductName || "",
@@ -901,6 +957,97 @@ class Product extends Component {
 
   onDeleteData = (id) => () => {
     alert("Xóa thành công");
+  };
+
+  // Xem nhật ký của lô hàng (giống app mobile) -> điều hướng sang trang nhật ký
+  onViewDiary = (traceId) => {
+    if (!traceId) {
+      toast.error("Không có nhật ký để xem");
+      return;
+    }
+    if (this.props.history) {
+      this.props.history.push({
+        pathname: "/trang_chu/nhat_ky",
+        state: { traceId },
+      });
+    }
+  };
+
+  // === Khoá lô hàng (theo logic app mobile: chọn kho rồi gán/khoá lô hàng) ===
+  openLockModal = (item) => () => {
+    if (!item || !item.id) {
+      toast.error("Hệ thống không tìm thấy lô hàng này");
+      return;
+    }
+
+    // Lô đã duyệt (status = 2) thì đã khoá, không thể thao tác
+    if (item.status === 2) {
+      toast.error("Lô hàng này đã khoá/đã duyệt. Không thể mở khoá");
+      return;
+    }
+
+    this.setState({
+      lockModal: true,
+      lockItem: item,
+      lockWarehouseId: null,
+    });
+  };
+
+  closeLockModal = () => {
+    this.setState({
+      lockModal: false,
+      lockItem: null,
+      lockWarehouseId: null,
+    });
+  };
+
+  handleChangeLockWarehouse = (value) => {
+    this.setState({ lockWarehouseId: value });
+  };
+
+  handleLockBatch = async () => {
+    const { lockItem, lockWarehouseId } = this.state;
+
+    if (!lockItem || !lockItem.id) {
+      toast.error("Hệ thống không tìm thấy lô hàng này");
+      return;
+    }
+
+    if (!lockWarehouseId) {
+      toast.error("Bạn vui lòng chọn kho hàng");
+      return;
+    }
+
+    this.setState({ isLoaded: true });
+
+    try {
+      const result = await fetchData.consignments.updateLock(
+        lockItem.id,
+        lockWarehouseId
+      );
+
+      if (result && result.status === 200) {
+        toast.success("Khoá lô hàng thành công!");
+        this.closeLockModal();
+        this.fetchSummary(
+          JSON.stringify({
+            search: "",
+            filter: "",
+            orderBy: "",
+            page: null,
+            limit: null,
+          })
+        );
+      } else {
+        const message = getErrorMessageServer(result);
+        toast.error(message || "Khoá lô hàng thất bại!");
+        this.setState({ isLoaded: false });
+      }
+    } catch (error) {
+      console.error("Lỗi khi khoá lô hàng:", error);
+      toast.error("Có lỗi xảy ra, vui lòng thử lại!");
+      this.setState({ isLoaded: false });
+    }
   };
 
   toggleModalPopupDelete = () => {
@@ -1063,6 +1210,15 @@ class Product extends Component {
                             Xem chi tiết
                           </DropdownItem>
                         )}
+                        {/* Khoá lô hàng: chỉ với lô "Mới tạo" (status = 0) */}
+                        {isDisableEdit == false && e.status === 0 ? (
+                          <>
+                            <DropdownItem divider />
+                            <DropdownItem onClick={this.openLockModal(e)}>
+                              Khoá lô hàng
+                            </DropdownItem>
+                          </>
+                        ) : null}
                         {/* {isDisableEdit == true ||
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
@@ -1118,6 +1274,8 @@ class Product extends Component {
       fromDate,
       toDate,
       filter,
+      lockModal,
+      lockWarehouseId,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -1193,6 +1351,7 @@ class Product extends Component {
                           initialData={isShowForEdit ? this.state.dataInsert : null}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
+                          onViewDiary={this.onViewDiary}
                           onLoadDetailData={(data) => {
                             this.setState({ dataInsert: data });
                           }}
@@ -1400,6 +1559,36 @@ class Product extends Component {
               moduleBody={message}
               toggleModal={this.toggleModal}
             />
+
+            {/* Modal khoá lô hàng - chọn kho hàng để nhập */}
+            <Modal isOpen={lockModal} toggle={this.closeLockModal} centered>
+              <ModalHeader toggle={this.closeLockModal}>
+                Khoá lô hàng
+              </ModalHeader>
+              <ModalBody>
+                <label className="form-control-label">
+                  Chọn kho hàng để nhập <span style={{ color: "red" }}>*</span>
+                </label>
+                <Select
+                  name="lockWarehouseId"
+                  title="Chọn kho hàng"
+                  data={WAREHOUSE_OPTIONS}
+                  labelName="title"
+                  val="id"
+                  value={lockWarehouseId}
+                  handleChange={this.handleChangeLockWarehouse}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="primary" onClick={this.handleLockBatch}>
+                  Đồng ý
+                </Button>
+                <Button color="secondary" onClick={this.closeLockModal}>
+                  Thoát ra
+                </Button>
+              </ModalFooter>
+            </Modal>
+
             <ToastContainer position="top-center" autoClose={3000} />
           </div>
         }

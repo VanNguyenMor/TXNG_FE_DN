@@ -202,13 +202,14 @@ class BusinessInformation extends Component {
         collapseList.push({ id: item.id, collapse: false });
       });
 
-      const total = tableData.length | 0;
-      const length = tableData.length;
+      const total = tableData.length;
+      const apiTotal = (res.data && (res.data.total || res.data.totalRows || res.data.totalCount)) || total;
 
       this.setState({
         data: tableData,
-        listLength: total,
-        totalPage: Math.ceil(length / limit),
+        listLength: apiTotal,
+        totalElement: apiTotal,
+        totalPage: Math.ceil(apiTotal / limit),
         isLoaded: false,
         collapseList: collapseList,
       });
@@ -235,6 +236,7 @@ class BusinessInformation extends Component {
           id: item.id,
           quantity: request.quantity || request.Quantity || 0,
           stampRange: request.stampTemplateID || request.StampTemplateID || "",
+          size: request.size || request.Size || "",
           printMethod: request.isPrint === true ? 1 : 0,
           notes: request.note || request.Note || "",
           status: request.status || request.Status || 0,
@@ -278,6 +280,7 @@ class BusinessInformation extends Component {
       formData.append("Id", dataInsert.id || "");
       formData.append("Quantity", parsedQuantity);
       formData.append("StampTemplateID", dataInsert.stampRange || "");
+      formData.append("Size", dataInsert.size || "");
       formData.append("IsPrint", "false");
       formData.append("Note", dataInsert.notes || "");
       formData.append("FileUpload", "");
@@ -377,6 +380,11 @@ class BusinessInformation extends Component {
     // Validate quantity
     if (!dataInsert.quantity || dataInsert.quantity <= 0) {
       errors.quantity = "Số lượng không được trống và phải lớn hơn 0";
+    }
+
+    // Validate stamp size
+    if (!dataInsert.size || String(dataInsert.size).trim() === "") {
+      errors.size = "Kích thước tem không được trống";
     }
 
     // Validate stamp template
@@ -526,7 +534,12 @@ class BusinessInformation extends Component {
   };
 
   onShowDetail = (item) => () => {
-    this.onEditData(item)();
+    this.setState({
+      isShowForHistoryList: true,
+      isShowForDetail: false,
+      editId: item.id,
+      tableTitle: "CHI TIẾT YÊU CẦU CẤP TEM",
+    });
   };
 
   onDeleteData = (id) => () => {
@@ -552,7 +565,7 @@ class BusinessInformation extends Component {
       dataInsert: {
         id: null,
         quantity: 0,
-        productId: null,
+        size: "",
         stampRange: "",
         printMethod: 0,
         notes: "",
@@ -744,14 +757,24 @@ class BusinessInformation extends Component {
                           </DropdownItem>
                         )}
 
-                        {isDisableEdit == true ||
-                        isDisableDelete == true ? null : (
-                          <DropdownItem divider />
+                        {isDisableEdit == true || e.currentStatus == 2 || e.currentStatus == 4 ? null : (
+                          <>
+                            <DropdownItem divider />
+                            <DropdownItem onClick={this.onEditData(e)}>
+                              Chỉnh sửa
+                            </DropdownItem>
+                          </>
                         )}
-                        {isDisableDelete == true || e.currentStatus == 2 || e.currentStatus == 4 ? null : (
-                          <DropdownItem onClick={this.onDeleteData(e.id)}>
-                            Xoá
-                          </DropdownItem>
+
+                        {isDisableDelete == true ||
+                        e.currentStatus == 2 ||
+                        e.currentStatus == 4 ? null : (
+                          <>
+                            <DropdownItem divider />
+                            <DropdownItem onClick={this.onDeleteData(e.id)}>
+                              Xoá
+                            </DropdownItem>
+                          </>
                         )}
                       </DropdownMenu>
                     </ButtonDropdown>
@@ -850,9 +873,9 @@ class BusinessInformation extends Component {
                       hideCreate={isDisableAdd == false ? false : true}
                       moduleTitle={
                         isShowForDetail
-                          ? "Chi tiết sản phẩm"
+                          ? "Chi tiết yêu cầu cấp tem"
                           : isShowForHistoryList
-                          ? "Lịch sử sản phẩm"
+                          ? "Chi tiết yêu cầu cấp tem"
                           : "Quản lý tem"
                       }
                       typeSearch={

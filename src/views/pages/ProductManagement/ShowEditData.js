@@ -72,6 +72,9 @@ class ShowEditData extends Component {
 
       productConversionUnits: [],
 
+      verifiedStatus: null,
+      selectedFieldTypes: [],
+
       id: null,
       collapseBaseInfo: true,
       expandedInformation: false,
@@ -196,12 +199,17 @@ class ShowEditData extends Component {
       ingredient: product.ingredient || "",
       storage: product.storage || "",
       usage: product.usage || "",
+      usageWarningVal: product.warningUsage || "",
+      verifiedStatus:
+        typeof product.verifiedStatus !== "undefined"
+          ? product.verifiedStatus
+          : null,
       avatar: finalAvatar,
       productImageFile: null,
       images: parseImages(product.images),
       accreditation: parseImages(product.accreditation),
       certification: parseImages(product.certification),
-      isLocked: product.isLocked,
+      isLocked: product.isLocked ?? product.islocked ?? false,
       productConversionUnits: conversionUnits,
       selectedPermissionGroups:
         (product.permissionGroups &&
@@ -211,6 +219,13 @@ class ShowEditData extends Component {
         [],
       selectedFields:
         (productFields && productFields.map((f) => (f && f.id ? f.id : f))) ||
+        [],
+      // Lưu fieldType của các ngành nghề để mirror logic ẩn trường của mobile (fieldType == 3)
+      selectedFieldTypes:
+        (productFields &&
+          productFields.map((f) =>
+            f && typeof f.fieldType !== "undefined" ? f.fieldType : f?.type
+          )) ||
         [],
       // Convert expiredType to number for proper Select matching (PRODUCT_EXPIRED_TYPE has numeric values)
       expiredType:
@@ -609,7 +624,13 @@ class ShowEditData extends Component {
       }
     }
 
-    this.setState({ selectedFields: fieldsArray }, () => {
+    const fieldData = this.props.FIELD_DATA || [];
+    const selectedFieldTypes = fieldsArray.map((id) => {
+      const f = fieldData.find((x) => String(x.id) === String(id));
+      return f && typeof f.fieldType !== "undefined" ? f.fieldType : f?.type;
+    });
+
+    this.setState({ selectedFields: fieldsArray, selectedFieldTypes }, () => {
       if (this.props.onHandleChangeValue) {
         this.props.onHandleChangeValue(this.state);
       }
@@ -651,6 +672,9 @@ class ShowEditData extends Component {
       origin,
       materialGroupId,
       productCateId,
+      verifiedStatus,
+      selectedFieldTypes,
+      isLocked,
     } = this.state;
     const {
       errors,
@@ -671,24 +695,58 @@ class ShowEditData extends Component {
         )
       : PRODUCT_TYPE_DATA || [];
 
+    // Mirror mobile: nếu ngành nghề có fieldType == 3 (CHĂN NUÔI) thì ẩn
+    // các trường thời hạn sử dụng và hướng dẫn bảo quản/sử dụng/cảnh báo/đóng gói.
+    const fieldTypeById = (id) => {
+      const f = (FIELD_DATA || []).find((x) => String(x.id) === String(id));
+      return f && typeof f.fieldType !== "undefined" ? f.fieldType : f?.type;
+    };
+    const allSelectedFieldTypes = [
+      ...((selectedFieldTypes || [])),
+      ...((selectedFields || []).map(fieldTypeById)),
+    ];
+    const checkType = allSelectedFieldTypes.some((t) => String(t) === "3");
+
+    // Mirror mobile: web doanh nghiệp coi SP thuộc công ty (isBelongTo = true).
+    // -> field bị khóa theo trạng thái khóa SP; riêng mã SP/đơn vị tính luôn read-only,
+    //    editor + ảnh luôn cho sửa. Xem bảng đối chiếu trong ShowEditData.
+    const lockedProduct = !!isLocked;
+
     return (
       <div id="detailLoggingAccordion">
         {isShowForDetail ? (
-          <strong
-            className="mb-2"
-            style={{
-              textAlign: "center",
-              display: "block",
-              backgroundColor: "#db0d0d",
-              color: "#fff",
-              padding: "8px 12px",
-              width: "fit-content",
-              fontSize: "14px",
-              margin: "0 auto",
-            }}
-          >
-            Thông tin chưa được kiểm chứng và xác thực
-          </strong>
+          <>
+            <strong
+              className="mb-2"
+              style={{
+                textAlign: "center",
+                display: "block",
+                backgroundColor: verifiedStatus === 2 ? "#2dce89" : "#db0d0d",
+                color: "#fff",
+                padding: "8px 12px",
+                width: "fit-content",
+                fontSize: "14px",
+                margin: "0 auto",
+              }}
+            >
+              {verifiedStatus === 2
+                ? "Sản phẩm đã được kiểm chứng và xác thực bởi LACOGROUP"
+                : "Thông tin chưa được kiểm chứng và xác thực"}
+            </strong>
+            {this.props.companyTypeLabel ? (
+              <p
+                className="mb-2"
+                style={{
+                  textAlign: "center",
+                  fontStyle: "italic",
+                  marginTop: 6,
+                }}
+              >
+                {this.props.companyTypeLabel} tự chịu trách nhiệm với các thông
+                tin kê khai này
+              </p>
+            ) : null}
+          </>
         ) : null}
         <Card className="mb-3">
           <CardHeader id="headingBaseInfo" className="p-0 bg-white">
@@ -716,6 +774,7 @@ class ShowEditData extends Component {
                     <label className="form-control-label">Hình đại diện</label>
                     {console.log('DEBUG render: avatar =', avatar, 'Noimg =', Noimg)}
                     <ImageUploader
+                      disabled={false}
                       initialImageUrl={avatar || Noimg}
                       onFileSelected={this.handleImageUploadSuccess}
                     />
@@ -763,6 +822,7 @@ class ShowEditData extends Component {
                           name="barcode"
                           placeholder="Mã vạch"
                           value={barcode}
+                          readOnly={false}
                           onChange={this.onChangeValue("barcode")}
                         />
                       </InputGroup>
@@ -787,7 +847,7 @@ class ShowEditData extends Component {
                       >
                         <Input
                           type="text"
-                          readOnly={isShowForDetail}
+                          readOnly={lockedProduct}
                           name="productName"
                           placeholder="Tên sản phẩm"
                           value={productName}
@@ -813,7 +873,7 @@ class ShowEditData extends Component {
                       className="wrap-insert-or-update-zone-item-select"
                       isMulti
                       name="selectedFields"
-                      isDisable={isShowForDetail}
+                      isDisable={lockedProduct}
                       title="Chọn ngành nghề"
                       data={FIELD_DATA}
                       labelName="fieldName"
@@ -835,7 +895,7 @@ class ShowEditData extends Component {
                     </label>
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
-                      isDisable={isShowForDetail}
+                      isDisable={lockedProduct}
                       name="materialGroupId"
                       title="Chọn nhóm sản phẩm"
                       data={PRODUCT_GROUP_DATA}
@@ -858,7 +918,7 @@ class ShowEditData extends Component {
                     <Select
                       className="wrap-insert-or-update-zone-item-select"
                       name="productCateId"
-                      isDisable={isShowForDetail || !materialGroupId}
+                      isDisable={lockedProduct || !materialGroupId}
                       title="Chọn loại sản phẩm"
                       data={filteredProductTypes}
                       labelName="name"
@@ -882,6 +942,7 @@ class ShowEditData extends Component {
                       className="wrap-insert-or-update-zone-item-select"
                       name="manufactID"
                       title="Chọn nhà sản xuất"
+                      isDisable={false}
                       data={PRODUCT_PARTNER_DATA}
                       labelName="partnerName"
                       val="id"
@@ -904,6 +965,7 @@ class ShowEditData extends Component {
                       className="wrap-insert-or-update-zone-item-select"
                       name="origin"
                       title="Chọn nơi xuất xứ"
+                      isDisable={false}
                       data={NATION_DATA}
                       labelName="nationName"
                       val="id"
@@ -937,6 +999,7 @@ class ShowEditData extends Component {
                   </p>
                 </Col>
               </Row>
+              {checkType ? null : (
               <Row className="mt-3">
                 <Col md="6">
                   <div className={`${classes.rowItem} ${classes.alignTop}`}>
@@ -953,7 +1016,7 @@ class ShowEditData extends Component {
                           type="number"
                           name="expiredNum"
                           placeholder="Thời hạn sử dụng"
-                          readOnly={isShowForDetail}
+                          readOnly={lockedProduct}
                           value={expiredNum}
                           required
                           onChange={this.onChangeValue("expiredNum")}
@@ -975,7 +1038,7 @@ class ShowEditData extends Component {
                       name="expiredUnit"
                       title="Chọn loại thời hạn"
                       data={PRODUCT_TYPE_DATES}
-                      isDisable={isShowForDetail}
+                      isDisable={lockedProduct}
                       labelName="label"
                       val="value"
                       defaultValue={expiredUnit}
@@ -987,7 +1050,9 @@ class ShowEditData extends Component {
                   </p>
                 </Col>
               </Row>
+              )}
               <Row className="mt-3">
+                {checkType ? null : (
                 <Col md="6">
                   <div className={classes.rowItem}>
                     <label className="form-control-label">
@@ -998,7 +1063,7 @@ class ShowEditData extends Component {
                       name="expiredType"
                       title="Chọn loại thời hạn sử dụng"
                       data={PRODUCT_EXPIRED_TYPE}
-                      isDisable={isShowForDetail}
+                      isDisable={lockedProduct}
                       labelName="label"
                       defaultValue={expiredType}
                       val="value"
@@ -1009,6 +1074,7 @@ class ShowEditData extends Component {
                     {errors.expiredType}
                   </p>
                 </Col>
+                )}
                 <Col md="6">
                   <div className={`${classes.rowItem} ${classes.alignTop}`}>
                     <Label className="form-control-label">
@@ -1026,6 +1092,7 @@ class ShowEditData extends Component {
                           placeholder="Số công bố chất lượng"
                           value={qualityNum}
                           required
+                          readOnly={false}
                           onChange={this.onChangeValue("qualityNum")}
                         />
                       </InputGroup>
@@ -1038,7 +1105,7 @@ class ShowEditData extends Component {
               </Row>
               <hr className="css-hr" />
               <ConversionManagerTable
-                isDisable={islocked}
+                isDisable={lockedProduct || verifiedStatus === 2}
                 allAvailableUnits={UNITS_DATA || []}
                 initialSelectedUnits={productConversionUnits}
                 onChange={this.onConversionChange}
@@ -1076,6 +1143,8 @@ class ShowEditData extends Component {
                     <div className={classes.inputArea}>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
+                          tinymceScriptSrc="/tinymce/tinymce.min.js"
+                          disabled={false}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1177,6 +1246,8 @@ class ShowEditData extends Component {
                     <div className={classes.inputArea}>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
+                          tinymceScriptSrc="/tinymce/tinymce.min.js"
+                          disabled={false}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1278,6 +1349,8 @@ class ShowEditData extends Component {
                     <div className={classes.inputArea}>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
+                          tinymceScriptSrc="/tinymce/tinymce.min.js"
+                          disabled={false}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1369,6 +1442,8 @@ class ShowEditData extends Component {
                   </div>
                 </Col>
               </Row>
+              {checkType ? null : (
+              <>
               <Row className="mb-3">
                 <Col md="12">
                   <div className={`${classes.rowItem} ${classes.alignTop}`}>
@@ -1379,6 +1454,8 @@ class ShowEditData extends Component {
                     <div className={classes.inputArea}>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
+                          tinymceScriptSrc="/tinymce/tinymce.min.js"
+                          disabled={false}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1480,6 +1557,8 @@ class ShowEditData extends Component {
                     <div className={classes.inputArea}>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
+                          tinymceScriptSrc="/tinymce/tinymce.min.js"
+                          disabled={false}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1581,6 +1660,8 @@ class ShowEditData extends Component {
                     <div className={classes.inputArea}>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
+                          tinymceScriptSrc="/tinymce/tinymce.min.js"
+                          disabled={false}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1682,6 +1763,8 @@ class ShowEditData extends Component {
                     <div className={classes.inputArea}>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
+                          tinymceScriptSrc="/tinymce/tinymce.min.js"
+                          disabled={false}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1773,6 +1856,8 @@ class ShowEditData extends Component {
                   </div>
                 </Col>
               </Row>
+              </>
+              )}
             </CardBody>
           </Collapse>
         </Card>
@@ -1802,6 +1887,7 @@ class ShowEditData extends Component {
                 title="Hình ảnh sản phẩm"
                 initialImages={images}
                 noMutil={true}
+                disabled={false}
                 onImagesChange={this.handleGalleryImagesChange}
               />
 
@@ -1810,6 +1896,7 @@ class ShowEditData extends Component {
                 title="Thông tin kiểm định"
                 initialImages={accreditation}
                 noMutil={true}
+                disabled={false}
                 onImagesChange={this.handleInspectionInformationChange}
               />
 
@@ -1817,6 +1904,7 @@ class ShowEditData extends Component {
                 key={`certification-${certification.length}-${this.state.id}`}
                 title="Thông tin chứng nhận"
                 noMutil={true}
+                disabled={false}
                 initialImages={certification}
                 onImagesChange={this.handleCertificationInformationChange}
               />

@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/LCG_TXNG_BE
 /.pnp
 .pnp.js
 package-lock.json*

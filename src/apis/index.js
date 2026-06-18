@@ -39,6 +39,7 @@ import {
     TRACE,
     PRODUCTS,
     PARTNER,
+    TRANSPORTATION,
     FIELD_TYPE,
     REPORTSP,
     REPORTSP_MANGER,
@@ -191,6 +192,7 @@ export const MENU_LIST_UPDATE = DOMAIN + API + MENU + 'update';
 export const STAMP_LIST = DOMAIN + API + STAMP + 'getall';
 export const STAMP_LIST_CREATE = DOMAIN + API + STAMP + 'create';
 export const STAMP_LIST_DELETE = DOMAIN + API + STAMP + 'delete/';
+export const STAMP_LIST_LOCK = DOMAIN + API + STAMP + 'lock?id=';
 
 //STAMPPROVIDE
 export const STAMPPROVIDE_LIST = DOMAIN + API + STAMPPROVIDE + 'getall';
@@ -321,13 +323,16 @@ export const CONFIG_DETAIL_STAMP_PRICE = DOMAIN + API + CONFIG + 'getdetailsstam
 export const CONFIG_DELETE_STAMP_PRICE = DOMAIN + API + CONFIG + 'deletestampprices?Id=';
 
 //MATERIAL GROUP
-export const MATERIAL_GROUP_GET = DOMAIN + API + MATERIAL_GROUP + 'get?id=';
-export const MATERIAL_GROUP_LIST = DOMAIN + API + MATERIAL_GROUP + 'getall';
+// List + CRUD dùng controller "materialgroupnext" để đồng bộ với app mobile
+// (controller "materialgroup" cũ chỉ có getall/getallhaveproduct, không có get/create/update/lock/delete)
+const MATERIAL_GROUP_NEXT = 'materialgroupnext/';
+export const MATERIAL_GROUP_GET = DOMAIN + API + MATERIAL_GROUP_NEXT + 'get?id=';
+export const MATERIAL_GROUP_LIST = DOMAIN + API + MATERIAL_GROUP_NEXT + 'getall';
 export const MATERIAL_GROUP_LOG_LIST = DOMAIN + API + MATERIAL_GROUP + 'getalllock';
-export const MATERIAL_GROUP_CREATE = DOMAIN + API + MATERIAL_GROUP + 'create';
-export const MATERIAL_GROUP_LOCK = DOMAIN + API + MATERIAL_GROUP + 'lock?id=';
-export const MATERIAL_GROUP_UPDATE = DOMAIN + API + MATERIAL_GROUP + 'update';
-export const MATERIAL_GROUP_DELETE = DOMAIN + API + MATERIAL_GROUP + 'delete?id=';
+export const MATERIAL_GROUP_CREATE = DOMAIN + API + MATERIAL_GROUP_NEXT + 'create';
+export const MATERIAL_GROUP_LOCK = DOMAIN + API + MATERIAL_GROUP_NEXT + 'lock?id=';
+export const MATERIAL_GROUP_UPDATE = DOMAIN + API + MATERIAL_GROUP_NEXT + 'update';
+export const MATERIAL_GROUP_DELETE = DOMAIN + API + MATERIAL_GROUP_NEXT + 'delete?id=';
 export const MATERIAL_GROUP_LOG_PRODUCT_LIST = DOMAIN + API + MATERIAL_GROUP + 'getalllockproduct';
 
 //CONFIG WEBSITE
@@ -375,6 +380,49 @@ export const STAMPTEMPLATE_DELETE = DOMAIN + API + STAMPTEMPLATE;
 export const TRACE_LIST = DOMAIN + API + TRACE + 'getall';
 export const TRACE_GET = DOMAIN + API + TRACE + 'get?id=';
 export const TRACE_GET_HISTORY = DOMAIN + API + TRACE + 'gethistory';
+export const TRACE_GET_FIELDS = DOMAIN + API + TRACE + 'getfields';
+export const TRACE_GET_PRODUCT_BY_TRACE = DOMAIN + API + PRODUCTS + 'getbytrace?FieldId=';
+export const TRACE_DELETE = DOMAIN + API + TRACE + 'delete?id=';
+export const TRACE_COMPLETED = DOMAIN + API + TRACE + 'completed?id=';
+export const TRACE_CREATE = DOMAIN + API + TRACE + 'tracecreate';
+export const TRACE_GET_FIELD_FOR_ADD = DOMAIN + API + FIELD + 'getallbycompanyhaveaccesstrace';
+
+// Ghi nhật ký truy cập (record diary) — đối chiếu app mobile (Laco/src/screens/listDiary)
+export const TRACE_GET_INFORM_SELECT = DOMAIN + API + TRACE + 'get?id='; // trả {trace, informSelects}
+export const TRACE_GET_ATTRIBUTE = DOMAIN + API + TRACE + 'getattribute?informSelectId=';
+export const TRACE_WRITE = DOMAIN + API + TRACE + 'writetrace';
+export const TRACE_GET_PLANZONE = DOMAIN + API + TRACE + 'getplanzone?traceId=';
+// reference lookups cho thuộc tính động khi ghi nhật ký
+export const RD_CUSTOMER_LIST = DOMAIN + API + PARTNER + 'getlistcustomerforwritetrace';
+export const RD_PROVIDER_LIST = DOMAIN + API + PARTNER + 'getlistproviderforwritetrace';
+export const RD_EMPLOYEE_LIST = DOMAIN + API + 'employee/getempimplementation';
+export const RD_MATERIAL_LIST = DOMAIN + API + 'material/getlistforwritetrace';
+export const RD_MATERIAL_UNIT_LIST = DOMAIN + API + 'material/getlistunitforwritetrace?id=';
+export const RD_WAREHOUSE_LIST = DOMAIN + API + 'warehouse/getall';
+export const RD_VEHICLE_LIST = DOMAIN + API + 'vehicle/getall';
+export const RD_FACTORY_LIST = DOMAIN + API + 'factory/getlistforwritetrace';
+export const RD_TOOL_LIST = DOMAIN + API + 'factory/getlisttoolforwritetrace';
+export const RD_TRANSPORT_UNIT_LIST = DOMAIN + API + TRACE + 'getpartnermovement';
+
+// Quản lý bản ghi nhật ký (đánh giá / làm lại / xóa / chi tiết / lịch sử / phân quyền)
+export const TRACE_EVALUATE = DOMAIN + API + TRACE + 'evaluate';
+export const TRACE_MADE_AGAIN = DOMAIN + API + TRACE + 'madeagain';
+export const TRACE_DELETE_WRITE = DOMAIN + API + TRACE + 'deletewritetrace?traceInfoId=';
+export const TRACE_GET_DETAIL_INFORM = DOMAIN + API + TRACE + 'getdetailtraceinform?traceInformId=';
+export const TRACE_PLANZONE_HISTORY = DOMAIN + API + TRACE + 'getplanzonehistory';
+export const TRACE_LIST_EVALUATE = DOMAIN + API + TRACE + 'getlistevaluate?traceInfoID=';
+export const TRACE_GET_TRACEROLE = DOMAIN + API + TRACE + 'gettracerole?traceID=';
+// Tồn kho + phiếu nhập cho ghi nhật ký nguyên vật liệu
+export const TRACE_GET_GOODRECEIPT = DOMAIN + API + TRACE + 'getgoodreceipt?traceId=';
+export const TRACE_GET_DETAIL_GOODRECEIPT = DOMAIN + API + TRACE + 'getdetailgoodreceipt?grId=';
+export const TRACE_CHECK_INVENTORY_MULTI = DOMAIN + API + 'inventory/checkinventorymulti';
+export const TRACE_GET_INVENTORY_BY_MATERIAL = DOMAIN + API + 'inventory/getconvertinventorytoUnitwithoutwarehouse?unitIdTarget=';
+// Upload ảnh + cá thể (item) + QR
+export const TRACE_UPLOAD = DOMAIN + API + TRACE + 'upload';
+export const TRACE_GET_ITEM = DOMAIN + API + TRACE + 'getitem';
+export const TRACE_CHECK_ITEM_VALID = DOMAIN + API + TRACE + 'checkitemvalid?qrCode=';
+export const TRACE_MATERIAL_BY_QR = DOMAIN + API + 'material/getbyqr?materialGroupId=';
+export const TRACE_UPDATE_GPS = DOMAIN + API + TRACE + 'updatetraceinformgps';
 
 //PRODUCTS
 export const PRODUCTS_LIST = DOMAIN + API + PRODUCTS + 'getall';
@@ -400,6 +448,7 @@ export const PARTNER_LIST_TRANSPORTS_VERIFY = DOMAIN + API + PARTNER + 'getalltr
 export const PARTNER_VERIFY = DOMAIN + API + PARTNER + 'verify?id=';
 export const PARTNER_UPLOAD_VERIFY = DOMAIN + API + PARTNER + 'uploadverifiedfiles';
 export const PARTNER_DELETE_UPLOAD_VERIFY = DOMAIN + API + PARTNER + 'deleteverifiedfiles?id=';
+export const PARTNER_LACO = DOMAIN + API + PARTNER + 'getlistpartnerlaco';
 
 //REPORTSP
 export const REPORTSP_LIST_TABLE = DOMAIN + API + REPORTSP + 'getlisttable';
@@ -427,3 +476,10 @@ export const REPORTV2_PRINT_EXCEL_REPORT_LIST_ZONING_PLANTINGZONE_BY_COMPANY_API
 // GOOD DELIVERY NOTE API
 export const GOOD_DELIVERY_GET_LIST = DOMAIN + API + 'goodsdeliverynote/getall';
 export const REPORT_GET_LIST_INVENTORY_TRANSFER_WAREHOUSE_V2 = DOMAIN + API + 'report/getListReportInventoryTransferWarehouseV2?page={0}&limit={1}&fromDate={2}&toDate={3}';
+
+//TRANSPORTATION
+export const TRANSPORTATION_LIST = DOMAIN + API + TRANSPORTATION + 'getall';
+export const TRANSPORTATION_GET = DOMAIN + API + TRANSPORTATION + 'get?id=';
+export const TRANSPORTATION_CREATE = DOMAIN + API + TRANSPORTATION + 'create';
+export const TRANSPORTATION_UPDATE = DOMAIN + API + TRANSPORTATION + 'update';
+export const TRANSPORTATION_DELETE = DOMAIN + API + TRANSPORTATION + 'delete/';

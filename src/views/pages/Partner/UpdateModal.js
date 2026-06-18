@@ -157,7 +157,6 @@ class UpdateModal extends Component {
                     <div className={classes.inputArea}>
                         <InputGroup className="input-group-alternative css-border-input">
                             <Input
-                                disabled
                                 name='PartnerName'
                                 type='text'
                                 defaultValue={data.PartnerName}

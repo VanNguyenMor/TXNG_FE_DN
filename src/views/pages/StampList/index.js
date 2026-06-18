@@ -50,7 +50,7 @@ class StampList extends Component {
 			checkAtive: [{}],
 			fetchingDelete: false,
 			fetching: false,
-			headerTitle: STAMP_LIST_HEADER,
+			headerTitle: [...STAMP_LIST_HEADER, ""],
 			limit: LIMIT_ITEM_IN_PAGE,
 			beginItem: 0,
 			endItem: LIMIT_ITEM_IN_PAGE,
@@ -68,6 +68,8 @@ class StampList extends Component {
 				"limit": null
 			},
 			warningPopupModal: false,
+			warningLockModal: false,
+			lockItem: null,
 			activeCreateSubmit: false,
 			newData: [],
 			startDate: new Date(),
@@ -87,17 +89,22 @@ class StampList extends Component {
 							data.stamp.stamps.map((item, key) => {
 								item['index'] = key + 1;
 								item['collapse'] = false;
-								item['createdDate'] = moment(item.createdDate).format('DD/MM/YYYY');
-								item['quantity'] = item.quantity.toLocaleString('de-DE');
-								item['remaining'] = item.remaining.toLocaleString('de-DE');
-								item['provided'] = item.provided.toLocaleString('de-DE');
+								item['code'] = item.code || item.Code || item.stampCode || item.StampCode || item.stampRange || item.StampRange || '';
+								item['createdDate'] = moment(item.createdDate || item.CreatedDate).format('DD/MM/YYYY');
+								item['createdBy'] = item.createdBy || item.CreatedBy || '';
+								const qty = item.quantity || item.Quantity || 0;
+								const rem = item.remaining || item.Remaining || 0;
+								const prov = item.provided || item.Provided || 0;
+								item['quantity'] = typeof qty === 'number' ? qty.toLocaleString('de-DE') : qty;
+								item['remaining'] = typeof rem === 'number' ? rem.toLocaleString('de-DE') : rem;
+								item['provided'] = typeof prov === 'number' ? prov.toLocaleString('de-DE') : prov;
 
 							});
 							this.setState({
 								data: data.stamp.stamps,
 								history: data.stamp.stamps,
 								listLength: data.stamp.total,
-								totalPage: Math.ceil(data.stamp.stamps.length / limit),
+								totalPage: Math.ceil(data.stamp.total / limit),
 								isLoaded: data.isLoading,
 								status: data.status,
 								message: PLEASE_CHECK_CONNECT(data.message),
@@ -123,7 +130,7 @@ class StampList extends Component {
 					this.setState({ data: [] });
 				}
 				this.setState({ create: data.create, isLoaded: false, status: data.status, message: PLEASE_CHECK_CONNECT(data.message) });
-				// Fetching 
+				// Fetching
 				if (fetching) {
 					this.fetchSummary(JSON.stringify({ "search": "", "filter": "", "orderBy": "", "page": null, "limit": null }));
 					this.setState({ fetching: false });
@@ -286,7 +293,22 @@ class StampList extends Component {
 	handleCreateInfoData = (value) => {
 		const { requestCreateSTAMP } = this.props;
 		this.setState({ fetching: true, isLoaded: true, status: null });
-		requestCreateSTAMP(Number(value.quantity))
+		requestCreateSTAMP(Number(value.quantity)).then(res => {
+			this.setState({ fetching: false, isLoaded: false });
+			if (res && res.status) {
+				this.fetchSummary(JSON.stringify({
+					"startDate": "",
+					"endDate": "",
+					"search": "",
+					"filter": "",
+					"orderBy": "",
+					"page": null,
+					"limit": null
+				}));
+			}
+		}).catch(() => {
+			this.setState({ fetching: false, isLoaded: false });
+		});
 	}
 
 	toggleModal = (state) => {
@@ -304,7 +326,34 @@ class StampList extends Component {
 				this.fetchSummary(JSON.stringify({ "search": "", "filter": "", "orderBy": "", "page": null, "limit": null }));
 			}
 		})
+	}
 
+	handleLockRow = () => {
+		const { requestLockSTAMP } = this.props;
+		const { lockItem } = this.state;
+
+		if (!lockItem) {
+			this.setState({ warningLockModal: false });
+			return;
+		}
+
+		this.setState({ isLoaded: true });
+		requestLockSTAMP(lockItem).then(res => {
+			this.setState({ warningLockModal: false, lockItem: null, isLoaded: false });
+			if (res && res.status === true) {
+				this.fetchSummary(JSON.stringify({
+					"startDate": "",
+					"endDate": "",
+					"search": "",
+					"filter": "",
+					"orderBy": "",
+					"page": null,
+					"limit": null
+				}));
+			}
+		}).catch(() => {
+			this.setState({ warningLockModal: false, lockItem: null, isLoaded: false });
+		});
 	}
 
 	render() {
@@ -326,21 +375,25 @@ class StampList extends Component {
 			endDate,
 			activeCreateSubmit,
 			newData,
-			warningPopupModal
+			warningPopupModal,
+			warningLockModal,
 		} = this.state;
 		const statusPopup = { status: status, message: message };
 
 		let isDisableAdd = true;
 		let isDisableDelete = true;
+		let isDisableLock = true;
 		let ACCOUNT_CLAIM_FF = [];
 		if (JSON.parse(localStorage.getItem('IS_ADMIN'))) {
 			isDisableAdd = false;
 			isDisableDelete = false;
+			isDisableLock = false;
 		} else {
 			ACCOUNT_CLAIM_FF = localStorage.getItem('ACCOUNT_CLAIM_FF').split(',').filter(x => x != "");
 
 			ACCOUNT_CLAIM_FF.filter(x => x == "StampDetails.Add").map(y => isDisableAdd = false)
 			ACCOUNT_CLAIM_FF.filter(x => x == "StampDetails.Delete").map(y => isDisableDelete = false)
+			ACCOUNT_CLAIM_FF.filter(x => x == "StampDetails.Lock").map(y => isDisableLock = false)
 		}
 		return (
 			<>
@@ -409,26 +462,37 @@ class StampList extends Component {
 																			<td style={{ textAlign: 'center' }}>{item.createdDate}</td>
 																			<td style={{ textAlign: 'left' }}>{item.createdBy}</td>
 																			<td>
-																				{item.provided == 0 ? (
+																				{(isDisableDelete == false || isDisableLock == false) ? (
 																					<div>
-																						{isDisableDelete == false ? (
-																							<ButtonDropdown isOpen={item.collapse} toggle={() => this.toggle(key, item.id)}>
-																								<DropdownToggle>
-																									<img src={MenuButton} />
-																								</DropdownToggle>
-																								<DropdownMenu>
-
+																						<ButtonDropdown isOpen={item.collapse} toggle={() => this.toggle(key, item.id)}>
+																							<DropdownToggle>
+																								<img src={MenuButton} />
+																							</DropdownToggle>
+																							<DropdownMenu>
+																								{isDisableLock == false ? (
 																									<DropdownItem
 																										onClick={() => {
-																											this.toggleModal('warningPopupModal');
-																											this.setState({ deleteItem: item.id });
+																											this.setState({ warningLockModal: true, lockItem: item.id });
 																										}}
 																									>
-																										Xoá
+																										Khoá lô hàng
 																									</DropdownItem>
-																								</DropdownMenu>
-																							</ButtonDropdown>
-																						) : null}
+																								) : null}
+																								{isDisableDelete == false && item.provided == 0 ? (
+																									<>
+																										{isDisableLock == false ? <DropdownItem divider /> : null}
+																										<DropdownItem
+																											onClick={() => {
+																												this.toggleModal('warningPopupModal');
+																												this.setState({ deleteItem: item.id });
+																											}}
+																										>
+																											Xoá
+																										</DropdownItem>
+																									</>
+																								) : null}
+																							</DropdownMenu>
+																						</ButtonDropdown>
 																					</div>
 																				) : null}
 																			</td>
@@ -469,6 +533,14 @@ class StampList extends Component {
 								warningPopupModal={warningPopupModal}
 								toggleModal={this.toggleModal}
 								handleWarning={this.handleDeleteRow}
+							/>
+
+							<WarningPopup
+								moduleTitle='Thông báo'
+								moduleBody={<p style={{ textAlign: 'center', fontSize: '1.2rem' }}>Bạn đồng ý khoá lô hàng này?</p>}
+								warningPopupModal={warningLockModal}
+								toggleModal={() => this.setState({ warningLockModal: false, lockItem: null })}
+								handleWarning={this.handleLockRow}
 							/>
 						</Container>
 					</div>
