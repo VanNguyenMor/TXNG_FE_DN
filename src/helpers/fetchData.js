@@ -25,6 +25,7 @@ import {
   PARTNER,
   WAREHOUSE_MANAGEMENT,
   REPORT,
+  NATIONAL_PORTAL_INTEGRATION,
 } from "./endpoint";
 import { USER_LIST_ACCOUNT_LIST } from "../apis/index";
 
@@ -41,6 +42,15 @@ const extractGroupsData = (response) => {
     []
   );
 };
+
+const normalizeNationalPortalAddressItems = (items = []) =>
+  (items || [])
+    .map((item) => ({
+      id: String(item?.id ?? item?.Id ?? "").trim(),
+      name: String(item?.name ?? item?.Name ?? "").trim(),
+      idRoot: String(item?.idRoot ?? item?.IdRoot ?? "").trim(),
+    }))
+    .filter((item) => item.id && item.name);
 
 export const fetchData = {
   province: {
@@ -1651,6 +1661,137 @@ export const fetchData = {
           "❌ Error in getListReportInventoryTransferWarehouseV2:",
           error
         );
+        return null;
+      }
+    },
+  },
+
+  nationalPortalIntegration: {
+    normalizeAddressItems: normalizeNationalPortalAddressItems,
+    save: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          NATIONAL_PORTAL_INTEGRATION.save,
+          payload
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi lưu cấu hình TXNG:", error);
+        return null;
+      }
+    },
+    saveCongViecMappings: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          NATIONAL_PORTAL_INTEGRATION.saveCongViecMappings,
+          payload
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi lưu map công việc:", error);
+        return null;
+      }
+    },
+    syncPreview: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          NATIONAL_PORTAL_INTEGRATION.syncPreview,
+          payload
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi đồng bộ thông tin cổng:", error);
+        return null;
+      }
+    },
+    getConfig: async ({ companyId, productId, fieldId }) => {
+      if (!companyId || !productId) {
+        return null;
+      }
+
+      try {
+        let endpoint = NATIONAL_PORTAL_INTEGRATION.integrationConfig
+          .replace("{companyId}", encodeURIComponent(String(companyId)))
+          .replace("{productId}", encodeURIComponent(String(productId)));
+
+        if (fieldId) {
+          endpoint += `&fieldId=${encodeURIComponent(String(fieldId))}`;
+        }
+
+        const result = await callApi("get", endpoint);
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy cấu hình đấu nối:", error);
+        return null;
+      }
+    },
+    getProvinces: async () => {
+      try {
+        const result = await callApi("get", NATIONAL_PORTAL_INTEGRATION.provinces);
+        return normalizeNationalPortalAddressItems(result?.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy tỉnh/thành cổng:", error);
+        return [];
+      }
+    },
+    getWards: async (provinceIdRoot) => {
+      if (!provinceIdRoot) {
+        return [];
+      }
+
+      try {
+        const endpoint = NATIONAL_PORTAL_INTEGRATION.wards.replace(
+          "{provinceIdRoot}",
+          encodeURIComponent(String(provinceIdRoot))
+        );
+        const result = await callApi("get", endpoint);
+        return normalizeNationalPortalAddressItems(result?.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy phường/xã cổng:", error);
+        return [];
+      }
+    },
+    createLocation: async (payload) => {
+      try {
+        const result = await callApi(
+          "post",
+          NATIONAL_PORTAL_INTEGRATION.createLocation,
+          payload
+        );
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi tạo vùng trồng trên cổng:", error);
+        return null;
+      }
+    },
+    getLocationByGln: async ({ glnCode, idToChuc }) => {
+      if (!glnCode) {
+        return null;
+      }
+
+      try {
+        const endpoint = NATIONAL_PORTAL_INTEGRATION.locationByGln
+          .replace("{glnCode}", encodeURIComponent(String(glnCode)))
+          .replace("{idToChuc}", encodeURIComponent(String(idToChuc || "")));
+        const result = await callApi("get", endpoint);
+        return result || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy vùng trồng theo GLN:", error);
+        return null;
+      }
+    },
+    getInformSelects: async (fieldId, productId) => {
+      try {
+        const endpoint = NATIONAL_PORTAL_INTEGRATION.getInformSelects
+          .replace("{fieldId}", fieldId)
+          .replace("{productId}", productId);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách kê khai:", error);
         return null;
       }
     },

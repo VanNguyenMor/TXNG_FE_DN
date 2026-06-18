@@ -160,6 +160,7 @@ const ICON_MENUS = {
     ReportQuantityProductByZone,
     ReportProductByProvice,
     ReportListCompany,
+    NationalPortalIntegrations: Access,
     // Aliases for menu items missing icon mappings
     SummaryReports: Report,
     SummaryReport: Report,

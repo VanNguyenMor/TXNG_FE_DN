@@ -230,3 +230,17 @@ export const PAYLOAD = {
     limit: null,
   },
 };
+
+export const NATIONAL_PORTAL_INTEGRATION = {
+  integrationConfig:
+    "NationalPortalIntegration/IntegrationConfig?companyId={companyId}&productId={productId}",
+  save: "NationalPortalIntegration/Save",
+  saveCongViecMappings: "NationalPortalIntegration/SaveCongViecMappings",
+  syncPreview: "NationalPortalIntegration/SyncPreview",
+  provinces: "NationalPortalIntegration/Provinces",
+  wards: "NationalPortalIntegration/Wards?provinceIdRoot={provinceIdRoot}",
+  createLocation: "NationalPortalIntegration/CreateLocation",
+  locationByGln:
+    "NationalPortalIntegration/LocationByGln?glnCode={glnCode}&idToChuc={idToChuc}",
+  getInformSelects: "informationaccess/getgridviewv2?fieldId={fieldId}&productId={productId}",
+};
