@@ -166,6 +166,16 @@ export const MENU_DATA = [
     status: 1,
   },
   {
+    id: "055",
+    name: "Tích Hợp TXNG Quốc Gia",
+    url: "/tich_hop_txng_quoc_gia",
+    isCompany: 0,
+    sortOrder: 10,
+    parentID: "005",
+    uniqueCode: "NationalPortalIntegrations",
+    status: 1,
+  },
+  {
     id: "018",
     name: "Quản lí tồn kho",
     url: "/ton_kho",

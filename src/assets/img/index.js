@@ -157,7 +157,8 @@ const ICON_MENUS = {
     ReportQuantityProduct,
     ReportQuantityProductByZone,
     ReportProductByProvice,
-    ReportListCompany
+    ReportListCompany,
+    NationalPortalIntegrations: Access,
 }
 
 export {

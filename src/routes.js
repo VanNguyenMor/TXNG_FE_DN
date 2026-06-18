@@ -71,6 +71,7 @@ import ImportManagement from "views/pages/ImportManagement";
 import QrCodeManagement from "views/pages/QrCodeManagement";
 import BusinessInformation from "views/pages/BusinessInformation";
 import StampRequestUsed from "views/pages/StampRequestUsed";
+import NationalPortalIntegration from "views/pages/NationalPortalIntegration";
 import CompanyListAwaitActivity from "views/pages/CompanyListAwaitActivity";
 import MaterialGroup from "views/pages/MaterialGroup";
 import ProductsGroups from "views/pages/ProductsGroups";
@@ -1012,6 +1013,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "StampRequestUseds",
     component: StampRequestUsed,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "NationalPortalIntegrations",
+    component: NationalPortalIntegration,
   },
 ];
 

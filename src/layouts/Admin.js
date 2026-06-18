@@ -140,6 +140,15 @@ const Admin = (props) => {
   }, [])
 
   React.useEffect(() => {
+    const loginMessage = sessionStorage.getItem("LOGIN_MESSAGE");
+
+    if (loginMessage) {
+      sessionStorage.removeItem("LOGIN_MESSAGE");
+      window.alert(loginMessage);
+    }
+  }, []);
+
+  React.useEffect(() => {
     const { getMenu } = props;
     var listMenu = [];
 
