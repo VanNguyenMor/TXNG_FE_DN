@@ -78,13 +78,14 @@ class BusinessInformation extends Component {
       valueDr: null,
       options: [],
       isShowForEdit: false,
+      // Default to center of Vietnam (Hanoi area) instead of Quy Nhon
       position: {
-        latitude: LOCATION_DEFAULT.lat,
-        longitude: LOCATION_DEFAULT.lng,
+        latitude: 16.047079,
+        longitude: 108.20623,
       },
       positionChange: {
-        latitude: LOCATION_DEFAULT.lat,
-        longitude: LOCATION_DEFAULT.lng,
+        latitude: 16.047079,
+        longitude: 108.20623,
       },
     };
 
@@ -203,6 +204,7 @@ class BusinessInformation extends Component {
         id: companyId,
         fieldID,
         fieldName,
+        introduce,
         address,
         provinceID,
         pRovinceName,
@@ -227,19 +229,37 @@ class BusinessInformation extends Component {
         verifiedStatus,
       } = res;
       const listFieldsData = formatFieldsForSelect(fieldID, fieldName);
+
+      // Parse saved GPS location to set map position
+      let savedPosition = null;
+      if (location && location.includes(",")) {
+        const parts = location.split(",");
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          savedPosition = { latitude: lat, longitude: lng };
+        }
+      }
+
       this.setState(
         (prevState) => {
           const selectedIndustry = listFieldsData.filter((f) =>
             fieldID?.split(",").includes(f.id)
           );
 
+          const positionUpdate = savedPosition
+            ? { position: savedPosition, positionChange: savedPosition }
+            : {};
+
           return {
             ...prevState,
+            ...positionUpdate,
             configSetting: {
               ...prevState.configSetting,
               companyName,
               companyCode,
               id: companyId,
+              introduce: introduce || "",
               address,
               provinceID,
               pRovinceName,
@@ -267,8 +287,7 @@ class BusinessInformation extends Component {
           };
         },
         () => {
-          this.onLoadListDistrictByProvinceId(provinceID);
-          this.onLoadListWardByDistrictId(districtID);
+          if (provinceID) this.onLoadListWardByProvinceId(provinceID);
         }
       );
     } catch (error) {
@@ -290,6 +309,16 @@ class BusinessInformation extends Component {
     try {
       const resWardCompanyBox =
         await fetchData.infoCompany.getListWardByDistrictId(districtID);
+      this.setState({ wards: resWardCompanyBox });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async onLoadListWardByProvinceId(provinceID) {
+    try {
+      const resWardCompanyBox =
+        await fetchData.infoCompany.getListWardByProvinceId(provinceID);
       this.setState({ wards: resWardCompanyBox });
     } catch (error) {
       console.error(error);
@@ -430,11 +459,29 @@ class BusinessInformation extends Component {
 
       const response = await fetchData.infoCompany.update(formData);
 
-      try {
+      if (!response) {
+        toast.error("Cập nhật thất bại! Không nhận được phản hồi từ máy chủ.");
+        return;
+      }
+
+      const statusCode =
+        response?.status || response?.data?.status || response?.statusCode;
+
+      const isSuccess =
+        statusCode === 200 ||
+        statusCode === 204 ||
+        (statusCode === undefined && typeof response === "object" && !response.message && !response.error);
+
+      if (isSuccess) {
         toast.success("Cập nhật thành công!");
         await this.loadDetailData(configSetting.id);
-      } catch {
-        toast.error("Cập nhật thất bại!");
+      } else {
+        const errorMsg =
+          response?.data?.message ||
+          response?.message ||
+          response?.error ||
+          "Cập nhật thất bại!";
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error(error);
@@ -506,6 +553,10 @@ class BusinessInformation extends Component {
         this.setState((previousState) => {
           return {
             ...previousState,
+            locationChange: {
+              lat: res.latitude,
+              lng: res.longitude,
+            },
             position: {
               latitude: res.latitude,
               longitude: res.longitude,
@@ -516,6 +567,10 @@ class BusinessInformation extends Component {
             },
           };
         });
+      } else {
+        toast.error(
+          "Không lấy được vị trí hiện tại. Vui lòng cho phép quyền truy cập vị trí trên trình duyệt."
+        );
       }
     });
   };
@@ -659,6 +714,7 @@ class BusinessInformation extends Component {
       // state list
       provinces,
       districts,
+      wards,
 
       configSetting,
       errorsConfigSystem,
@@ -669,8 +725,9 @@ class BusinessInformation extends Component {
       positionChange,
       listFields,
       industryId,
-      verifiedStatus,
     } = this.state;
+
+    const { verifiedStatus } = configSetting;
 
     const { businessLicenseImages, registrationPaperImages, workImages } =
       configSetting;
@@ -716,16 +773,29 @@ class BusinessInformation extends Component {
         <div className="config-system-content">
           {currentTab == 0 ? (
             <div className="config-system-content-config-system">
-              <h2
+              <div
                 style={{
-                  color: verifiedStatus === 0 ? "red" : "green",
+                  backgroundColor:
+                    verifiedStatus === 1
+                      ? "#28a745"
+                      : verifiedStatus === 3
+                      ? "#fd7e14"
+                      : "#dc3545",
+                  color: "#fff",
                   fontWeight: "bold",
+                  textAlign: "center",
+                  padding: "10px 16px",
+                  borderRadius: "4px",
+                  marginBottom: "12px",
+                  fontSize: "15px",
                 }}
               >
-                {verifiedStatus === 0
-                  ? "Thông tin chưa được kiểm chứng và xác thực"
-                  : "Thông tin đã được kiểm chứng và xác thực"}
-              </h2>
+                {verifiedStatus === 1
+                  ? "Thông tin đã được kiểm chứng và xác thực"
+                  : verifiedStatus === 3
+                  ? "Đang chờ xác thực"
+                  : "Thông tin chưa được kiểm chứng và xác thực"}
+              </div>
               <div>
                 <label className="form-control-label">Hình đại diện</label>
                 <ImageUploader
@@ -781,18 +851,22 @@ class BusinessInformation extends Component {
                   <div className="config-system-content-config-system-item-box">
                     <Select
                       labelMark={
-                        configSetting.industryId
-                          ? configSetting.industryId.map(
-                              (f) => f.fieldName || f.label || f.name
-                            )
+                        configSetting.industryId &&
+                        Array.isArray(configSetting.industryId) &&
+                        configSetting.industryId.length > 0
+                          ? configSetting.industryId
+                              .map((f) => f.fieldName || f.label || f.name)
+                              .filter(Boolean)
                           : null
                       }
                       name="listFields"
                       title="Chọn ngành nghề"
-                      data={listFields?.fields || []}
+                      data={allFields}
                       labelName="fieldName"
                       defaultValue={
-                        configSetting.industryId
+                        configSetting.industryId &&
+                        Array.isArray(configSetting.industryId) &&
+                        configSetting.industryId.length > 0
                           ? configSetting.industryId.map((f) => f.id).join(",")
                           : null
                       }
@@ -807,7 +881,7 @@ class BusinessInformation extends Component {
                           .toString()
                           .split(",")
                           .filter((v) => v);
-                        const selected = (listFields?.fields || []).filter(
+                        const selected = allFields.filter(
                           (f) => ids.includes(String(f.id))
                         );
                         this.onChangeValue("industryId")(selected);
@@ -827,10 +901,14 @@ class BusinessInformation extends Component {
                 <div className="config-system-content-config-system-item-box">
                   <InputGroup className="input-group-alternative css-border-input css-border-webConfig">
                     <Editor
+                      tinymceScriptSrc="/tinymce/tinymce.min.js"
                       onInit={(_, editor) => {
                         this.refcontentEmailRegister = editor;
                       }}
                       initialValue={configSetting.introduce}
+                      onEditorChange={(content) => {
+                        this.onChangeValue("introduce")(content);
+                      }}
                       init={{
                         width: "100%",
                         height: 300,
@@ -941,7 +1019,18 @@ class BusinessInformation extends Component {
                       labelName="provinceName"
                       defaultValue={configSetting?.provinceID}
                       val="id"
-                      handleChange={this.onChangeValue("provinceID")}
+                      handleChange={(value) => {
+                        this.setState((prev) => ({
+                          configSetting: {
+                            ...prev.configSetting,
+                            provinceID: value,
+                            wardID: null,
+                            wardName: "",
+                          },
+                          wards: null,
+                        }));
+                        if (value) this.onLoadListWardByProvinceId(value);
+                      }}
                     />
                     <p className="form-error-message">
                       {errorsConfigSystem.provinceID}
@@ -950,44 +1039,19 @@ class BusinessInformation extends Component {
                 </div>
                 <div className="config-system-content-config-system-multi-item ml-2 mr-2">
                   <label className="config-system-content-config-system-item-label">
-                    Quận/Huyện &nbsp;
-                    <b style={{ color: "red" }}>*</b>
-                  </label>
-                  <div className="config-system-content-config-system-item-box">
-                    <Select
-                      labelMark={configSetting?.districtName}
-                      name="districtID"
-                      title="Chọn Quận/Huyện"
-                      data={districts}
-                      labelName="districtName"
-                      defaultValue={configSetting?.districtID}
-                      val="id"
-                      handleChange={this.onChangeValue("districtID")}
-                    />
-                    <p className="form-error-message">
-                      {errorsConfigSystem.districtID}
-                    </p>
-                  </div>
-                </div>
-                <div className="config-system-content-config-system-multi-item ml-2 mr-2">
-                  <label className="config-system-content-config-system-item-label">
-                    Phường/Xã &nbsp;
-                    <b style={{ color: "red" }}>*</b>
+                    Phường/Xã
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <Select
                       labelMark={configSetting?.wardName}
                       name="wardID"
-                      title="Chọn Phường/Xã"
-                      data={districts}
+                      title="Chọn phường/xã"
+                      data={wards}
                       labelName="wardName"
                       defaultValue={configSetting?.wardID}
                       val="id"
                       handleChange={this.onChangeValue("wardID")}
                     />
-                    <p className="form-error-message">
-                      {errorsConfigSystem.wardID}
-                    </p>
                   </div>
                 </div>
               </div>

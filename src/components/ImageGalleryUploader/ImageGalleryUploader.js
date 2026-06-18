@@ -108,7 +108,7 @@ class ImageGalleryUploader extends Component {
   };
 
   render() {
-    const { title, mdVal, noMutil } = this.props;
+    const { title, mdVal, noMutil, disabled } = this.props;
     const { images } = this.state;
 
     const displayImages =
@@ -159,6 +159,7 @@ class ImageGalleryUploader extends Component {
               >
                 <div style={imageContainerStyle}>
                   <ImageUploader
+                    disabled={disabled}
                     initialImageUrl={imageObject.url}
                     onFileSelected={async (file, previewUrl) => {
                       if (!file) return;
@@ -175,7 +176,7 @@ class ImageGalleryUploader extends Component {
                       this.handleImageUploadSuccess(uploadedUrl, index);
                     }}
                   />
-                  {displayImages.length > 1 && index !== 0 && (
+                  {!disabled && displayImages.length > 1 && index !== 0 && (
                     <Button
                       color="danger"
                       style={removeButtonStyle}
@@ -190,7 +191,7 @@ class ImageGalleryUploader extends Component {
               </Col>
             ))}
 
-            {noMutil ? null : (
+            {noMutil || disabled ? null : (
               <Col
                 md="3"
                 className="d-flex align-items-center justify-content-center"

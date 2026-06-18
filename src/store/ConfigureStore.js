@@ -54,6 +54,7 @@ import * as StampPlateStore from "./StampPlateStore";
 import * as TraceStore from "./TraceStore";
 import * as ProductsStore from "./ProductsStore";
 import * as PartnerStore from "./PartnerStore";
+import * as TransportationStore from "./TransportationStore";
 import * as FieldTypeStore from "./FieldTypeStore";
 import * as ReportSPStore from "./ReportSPStore";
 import * as ReportSPManangerStore from "./ReportSPManangerStore";
@@ -115,6 +116,7 @@ export default function ConfigureStore(history, initialState) {
     TraceStore: TraceStore.reducer,
     ProductsStore: ProductsStore.reducer,
     PartnerStore: PartnerStore.reducer,
+    TransportationStore: TransportationStore.reducer,
     FieldTypeStore: FieldTypeStore.reducer,
     ReportSPStore: ReportSPStore.reducer,
     ReportSPManangerStore: ReportSPManangerStore.reducer,

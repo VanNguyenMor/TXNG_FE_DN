@@ -64,6 +64,7 @@ class ProductManagement extends Component {
       PRODUCT_GROUP_DATA: [],
       PRODUCT_TYPE_DATA: [],
       NATION_DATA: [],
+      COMPANY_TYPE_LABEL: "",
     };
   }
 
@@ -75,7 +76,23 @@ class ProductManagement extends Component {
     this.onFetchDataProductType();
     this.onFetchDataPartner();
     this.onFetchDataNation();
+    this.onFetchCompanyType();
   }
+
+  // Mirror mobile: hiển thị dòng "<loại hình DN> tự chịu trách nhiệm..."
+  onFetchCompanyType = async () => {
+    try {
+      const resCurrent = await fetchData.account.getCurrentCompany();
+      const companyId = resCurrent?.company?.id;
+      if (!companyId) return;
+
+      const detail = await fetchData.infoCompany.detail(companyId);
+      const labelMap = { 0: "Doanh nghiệp", 1: "Cá nhân", 2: "Hợp tác xã" };
+      this.setState({ COMPANY_TYPE_LABEL: labelMap[detail?.isCompany] || "" });
+    } catch (err) {
+      console.error("Lỗi khi lấy loại hình công ty:", err);
+    }
+  };
 
   onFetchDataUnit = async () => {
     const result = await fetchData.productManagement.getListUnitComboBox();
@@ -366,6 +383,7 @@ class ProductManagement extends Component {
       formData.append("Ingredient", dataInsert.ingredient || "");
       formData.append("Storage", dataInsert.storage || "");
       formData.append("Usage", dataInsert.usage || "");
+      formData.append("WarningUsage", dataInsert.usageWarningVal || "");
       formData.append("Packing", dataInsert.packing || "");
 
       // Avatar handling: upload File when present, otherwise only send avatar if it's a remote URL
@@ -435,14 +453,26 @@ class ProductManagement extends Component {
         ? await fetchData.productManagement.update(formData)
         : await fetchData.productManagement.create(formData);
 
-      if (dataInsert.id) {
-        toast.success("Cập nhật sản phẩm thành công!", { autoClose: 3000 });
-      } else {
-        toast.success("Tạo sản phẩm thành công!", { autoClose: 3000 });
-      }
+      const isSuccess =
+        result &&
+        (result.status === 200 ||
+          result.status === 201 ||
+          result.status === true ||
+          result.status === "true");
 
-      toggleModal && toggleModal();
-      this.fetchSummary();
+      if (isSuccess) {
+        const defaultMsg = dataInsert.id
+          ? "Cập nhật sản phẩm thành công!"
+          : "Thêm mới sản phẩm thành công!";
+        toast.success(result.message || defaultMsg, { autoClose: 3000 });
+        toggleModal && toggleModal();
+        this.fetchSummary();
+      } else {
+        const errorMsg =
+          (result && (result.message || result.data?.message)) ||
+          "Có lỗi xảy ra";
+        toast.error(errorMsg, { autoClose: 3000 });
+      }
     } catch (error) {
       console.error("Lỗi gửi dữ liệu sản phẩm:", error);
       toast.error("Lỗi gửi dữ liệu sản phẩm", { autoClose: 3000 });
@@ -661,6 +691,7 @@ class ProductManagement extends Component {
       NATION_DATA,
       warningPopupModal,
       message,
+      COMPANY_TYPE_LABEL,
     } = this.state;
 
     return (
@@ -710,6 +741,8 @@ class ProductManagement extends Component {
                           this.getListProductTypeAddComboBox
                         }
                         onLoadDetailData={this.handleLoadDetailData}
+                        companyTypeLabel={COMPANY_TYPE_LABEL}
+                        isShowForDetail={true}
                       />
                     ) : isShowForHistoryList ? (
                       <ShowHistoryData id={editId} historyData={HISTORY_DATA} />
@@ -726,6 +759,7 @@ class ProductManagement extends Component {
                         getListProductTypeAddComboBox={
                           this.getListProductTypeAddComboBox
                         }
+                        isShowForDetail={false}
                       />
                     )}
                   </div>

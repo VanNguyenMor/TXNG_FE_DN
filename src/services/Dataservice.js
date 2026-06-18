@@ -206,6 +206,44 @@ export const postFormData = async (url, data) => {
   });
 }
 
+export const putFormData = async (url, data) => {
+  return await axios({
+    method: 'put',
+    url: url,
+    headers: getHeader(true),
+    data: data
+  }).then(res => {
+    if (res.status === 200) {
+      return { data: res.data.data, status: res.data.status, message: res.data.message };
+    }
+    else {
+      return { data: null, status: res.data.status, message: res.data.message };
+    }
+  }).catch(err => {
+    if ((err.response || {}).status == 401) {
+
+      VARIABLES.isFechingAlert = false;
+
+      getRefreshToken(actionCreators.userLogin, actionCreators.loginSuccess).then(async result => {
+        VARIABLES.isFechingAlert = true;
+
+        if (result) {
+          return await putFormData(url, data);
+        } else {
+          deleteCookie('AUTHEN_INFO');
+          window.location.href = '/';
+        }
+      });
+    } else {
+      if (typeof (err.response) !== 'undefined') {
+        return { data: null, status: err.response.status, message: err.response.data.message };
+      } else {
+        return { data: null, status: false, message: MESSAGE_CHECK_NET_WORK };
+      }
+    }
+  });
+}
+
 export const del = async (url) => {
   return await axios.delete(url, {
     headers: getHeader(),
@@ -242,7 +280,7 @@ export const del = async (url) => {
         });
       } else {
         if (typeof (err.response) !== 'undefined') {
-          return { data: null, status: err.response.status, message: err.message };
+          return { data: null, status: err.response.status, message: err.response.data?.message || err.message };
         } else {
           return { data: null, status: false, message: MESSAGE_CHECK_NET_WORK };
         }

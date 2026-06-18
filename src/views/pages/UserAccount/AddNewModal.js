@@ -53,10 +53,10 @@ class AddNewModal extends Component {
     if (value === null) value = "";
     data[name] = value;
 
-    this.setState({ data });
-
-    // Check Validation
-    this.handleCheckValidation();
+    this.setState({ data }, () => {
+      // Check Validation after state is updated
+      this.handleCheckValidation();
+    });
   };
 
   handleCheckValidation = () => {
@@ -65,15 +65,11 @@ class AddNewModal extends Component {
 
     if (
       data.fullName.length > 0 &&
-      data.phoneNumber.length > 0 &&
-      data.email.length > 0 &&
       data.roleID.length > 0 &&
       data.userName.length > 0 &&
       data.passwordHash.length > 0 &&
       data.passwordConfirm.length > 0 &&
-      data.passwordHash === data.passwordConfirm &&
-      data.position < 255 &&
-      data.department < 255
+      data.passwordHash === data.passwordConfirm
     ) {
       this.setState({ activeSubmit: true });
 

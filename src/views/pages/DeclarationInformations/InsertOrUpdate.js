@@ -115,7 +115,7 @@ class InsertOrUpadte extends Component {
   };
 
   resetFieldValue = () => {
-    alert();
+    // Reset dynamic field values when type changes
   };
 
   handleFileChange = (files) => {
@@ -312,7 +312,7 @@ class InsertOrUpadte extends Component {
         </div>
 
         {(() => {
-          const selectedDataType = LOGGING_DATA_TYPES.find(
+          const selectedDataType = (LOGGING_DATA_TYPES || []).find(
             (item) => item.id === dataTypeId
           );
 
@@ -366,7 +366,7 @@ class InsertOrUpadte extends Component {
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
               <input
-                value={order}
+                value={order === null || order === undefined ? "" : order}
                 onChange={this.onChangeValue("order")}
                 type="number"
                 min={1}

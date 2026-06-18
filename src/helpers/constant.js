@@ -315,10 +315,7 @@ export const ALERT = ["Stt", "Nhóm quyền", "Thông báo"];
 
 export const MATERIAL_GROUP = [
   "Stt",
-  // 'Ngành nghề',
-  "Hình ảnh",
-  // 'Loại',
-  "Nhóm SẢN PHẨM",
+  "Nhóm nguyên vật liệu",
 ];
 export const PRODUCT_GROUP = ["Stt", "Hình ảnh", "Loại sản phẩm"];
 
@@ -379,6 +376,31 @@ export const PARTNER = [
   // 'Điện thoại'
 ];
 
+// Bảng danh sách Đối tác (PartnerType 0-4, giống app mobile)
+export const PARTNER_DOI_TAC = ["Stt", "Hình ảnh", "Đối tác"];
+
+// Các nhóm đối tác tương ứng partnerType trên mobile
+export const PARTNER_TYPES = [
+  { id: 0, name: "Khách hàng" },
+  { id: 1, name: "Nhà cung cấp" },
+  { id: 2, name: "Vận chuyển" },
+  { id: 3, name: "Cá nhân" },
+  { id: 4, name: "Nhà sản xuất" },
+];
+
+// Loại đối tác cá nhân (ẩn các trường doanh nghiệp)
+export const PARTNER_PERSONAL_ID = 3;
+
+// Đơn vị diện tích vùng sản xuất
+export const PARTNER_AREA_UNITS = [
+  { id: 0, name: "m2" },
+  { id: 1, name: "km2" },
+  { id: 2, name: "hecta" },
+];
+
+// Quốc gia mặc định (Việt Nam) khi chọn đối tác từ hệ thống LACO - cập nhật theo id thực tế nếu cần
+export const NATION_ID_VIETNAM = "";
+
 export const RRMananger = ["Stt", "Tên báo cáo", "Chú thích", "Trạng thái"];
 
 export const AddingReport = ["Stt", "Hiển thị tên", "Hiện"];
@@ -392,6 +414,39 @@ export const HeaderParams = [
 ];
 
 export const PARTNER_PRINTER = ["Stt", "Hình ảnh", "Đơn vị in tem"];
+
+export const TRANSPORTATION = [
+  "Stt",
+  "Tên vận chuyển",
+  "Loại vận chuyển",
+  "Điện thoại",
+  "Email",
+  "Địa chỉ",
+  "",
+];
+
+export const TRANSPORT_ORDER = [
+  "Stt",
+  "",
+  "Đơn vị/Người vận chuyển",
+  "Mã vận đơn",
+  "Mã phiếu xuất",
+  "Nơi đi",
+  "Nơi đến",
+  "Thời gian vận chuyển",
+  "",
+];
+
+export const VEHICLE = [
+  "Stt",
+  "Hình ảnh",
+  "Tên phương tiện",
+  "Biển số",
+  "Loại",
+  "Trọng lượng",
+  "Màu sắc",
+  "",
+];
 
 export const TRACE = ["Stt", "", "Sản phẩm", "Nhà sản xuất", "Mã nhật ký"];
 
@@ -492,15 +547,16 @@ export const STAMP_PRICE_HEADER_SEARCH = "Tìm kiếm danh sách ";
 
 export const STAMP_PRICE_HEADER = ["Stt", "Bảng giá"];
 
-export const QR_SYSTEM_HEADER = ["Stt", "Thông tin"];
+export const QR_SYSTEM_HEADER = ["Stt", "Thông tin", "Thao tác"];
 export const QR_SYSTEM_LIST = [
   "Stt",
   "Thông tin",
   "Đã sử dụng",
   "Còn lại",
   "Bị hư",
+  "Thao tác",
 ];
-export const QR_SYSTEM_ARISES = ["Stt", "Hình ảnh", "Thông tin", "Trạng thái"];
+export const QR_SYSTEM_ARISES = ["Stt", "Hình ảnh", "Thông tin", "Trạng thái", "Thao tác"];
 
 export const SUMMARY_REPORT_TEM_USE = [
   "Stt",
@@ -800,10 +856,14 @@ export const NAVBAR_ITEM = {
   PARTNER_TRANFORM_VERIFY: "Danh sách nhà vận chuyển chờ xác thực",
   COMPANY_VERIFY: "Danh sách doanh nghiệp/HTX/cá nhân chờ xác thực",
   PARTNER: "Đơn vị xác thực",
+  PARTNER_DOI_TAC: "Đối tác",
   PARTNER_PRINTER: "Đơn vị in tem",
   QRCODE_MANAGEMENT: "Quản lí mã QR",
   BUSINESS_INFORMATION: "Thông tin doanh nghiệp",
   STAMPREQUESTUSED: "Danh sách yêu cầu cấp phép sử dụng tem",
+  TRANSPORTATION: "Vận chuyển",
+  TRANSPORT_ORDER: "Vận đơn",
+  VEHICLE: "Phương tiện",
 };
 
 export const USER_INFO_DROPDOWN = [
@@ -876,6 +936,7 @@ export const EXPORT_PRODUCT = [
   "Thời gian",
   "Khách hàng",
   "Trạng thái",
+  "",
 ];
 
 export const PRODUCTS = [

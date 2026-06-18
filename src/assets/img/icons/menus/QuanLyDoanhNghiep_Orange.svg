@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Building -->
+  <rect x="18" y="18" width="64" height="52" rx="3" fill="#FF8C00"/>
+  <!-- Windows row 1 -->
+  <rect x="28" y="28" width="13" height="11" rx="1" fill="white"/>
+  <rect x="47" y="28" width="13" height="11" rx="1" fill="white"/>
+  <!-- Windows row 2 -->
+  <rect x="28" y="45" width="13" height="11" rx="1" fill="white"/>
+  <rect x="47" y="45" width="13" height="11" rx="1" fill="white"/>
+  <!-- People silhouette -->
+  <!-- Center person (head + body) -->
+  <circle cx="50" cy="76" r="5" fill="#FF8C00"/>
+  <path d="M42 95 Q50 85 58 95" fill="#FF8C00"/>
+  <!-- Left person -->
+  <circle cx="33" cy="78" r="4" fill="#FF8C00"/>
+  <path d="M26 95 Q33 87 40 95" fill="#FF8C00"/>
+  <!-- Right person -->
+  <circle cx="67" cy="78" r="4" fill="#FF8C00"/>
+  <path d="M60 95 Q67 87 74 95" fill="#FF8C00"/>
+</svg>

@@ -5,12 +5,15 @@ import QRSystemTab from "./Cp/QRSystemTab";
 import QRArisesTab from "./Cp/QRArisesTab";
 import QRListTab from "./Cp/QRListTab";
 import PopupMessage from "../../../components/PopupMessage";
+import ViewPopup from "../../../components/ViewPopup";
+import ViewModal from "../LoggingInformation/ViewModal";
 import {
   QR_SYSTEM_HEADER,
   QR_SYSTEM_ARISES,
   QR_SYSTEM_LIST,
 } from "../../../helpers/constant";
 import { fetchData } from "helpers/fetchData";
+import { callApi } from "utils/fetchAllData";
 
 class QrCodeManagement extends Component {
   constructor(props) {
@@ -93,6 +96,12 @@ class QrCodeManagement extends Component {
       // QR List Filters
       fromDateQRList: "",
       toDateQRList: "",
+
+      // Chi tiết nhật ký truy xuất (popup mở ngay tại trang QR, giống app mobile)
+      viewDiaryModal: false,
+      diaryTrace: {},
+      diaryTraceInforms: [],
+      isLoadingDiary: false,
 
       // Dùng chung
       popupMessage: false,
@@ -310,6 +319,60 @@ class QrCodeManagement extends Component {
       this.setState({ isLoadedQRArises: false });
       toast.error("Lỗi khi load dữ liệu QR Phát sinh!");
     }
+  };
+
+  // Mở chi tiết nhật ký truy xuất ngay tại trang QR (giống onDetailIncurred của
+  // app mobile: lấy theo traceID của lô hàng, hiển thị popup nhật ký).
+  openDiaryDetail = async (item) => {
+    const traceID = item.traceID || item.traceId;
+    if (!traceID) {
+      toast.error("Lô hàng này chưa có nhật ký truy xuất");
+      return;
+    }
+    const companyID = item.companyID || item.companyId;
+
+    this.setState({
+      viewDiaryModal: true,
+      diaryTrace: {},
+      diaryTraceInforms: [],
+      isLoadingDiary: true,
+    });
+
+    try {
+      const traceUrl = companyID
+        ? `trace/get?id=${traceID}&companyId=${companyID}`
+        : `trace/get?id=${traceID}`;
+      const traceRes = await callApi("get", traceUrl);
+      const trace = (traceRes && traceRes.data && traceRes.data.trace) || {};
+
+      const historyRes = await callApi("post", "trace/gethistory", {
+        companyID: companyID,
+        traceID: traceID,
+        page: 0,
+        limit: 200,
+      });
+      const informs =
+        (historyRes && historyRes.data && historyRes.data.traceInforms) || [];
+
+      this.setState({
+        diaryTrace: trace,
+        diaryTraceInforms: informs,
+        isLoadingDiary: false,
+      });
+    } catch (error) {
+      console.error("openDiaryDetail error:", error);
+      this.setState({ isLoadingDiary: false });
+      toast.error("Lỗi khi tải nhật ký truy xuất!");
+    }
+  };
+
+  closeDiaryDetail = () => {
+    this.setState({
+      viewDiaryModal: false,
+      diaryTrace: {},
+      diaryTraceInforms: [],
+      isLoadingDiary: false,
+    });
   };
 
   onChooseTab = (tab) => () => {
@@ -620,7 +683,8 @@ class QrCodeManagement extends Component {
 
       // Prepare payload
       const formData = new FormData();
-      formData.append("ReasonVal", qrListFormData.reasonVal);
+      // Tên field khớp BadStampJs trên backend (ReasonCancel chứ không phải ReasonVal)
+      formData.append("ReasonCancel", qrListFormData.reasonVal);
       formData.append("StampRequestId", qrListFormData.stampRequestId);
       formData.append("StartNum", qrListFormData.fromVal);
       formData.append("EndNum", qrListFormData.toVal);
@@ -822,6 +886,7 @@ class QrCodeManagement extends Component {
       handleChangeSelectFilter: this.handleChangeSelectFilter,
       handleQRArisesDataReload: this.handleQRArisesDataReload,
       resetKeyQRArises: this.state.resetKeyQRArises,
+      onShowDiaryDetail: this.openDiaryDetail,
     };
 
     const propsForQRList = {
@@ -896,6 +961,25 @@ class QrCodeManagement extends Component {
           moduleBody={messageErr}
           toggleModal={this.toggleModal}
         />
+
+        <ViewPopup
+          moduleTitle="Chi tiết nhật ký truy xuất"
+          viewModal={this.state.viewDiaryModal}
+          toggleModal={this.closeDiaryDetail}
+          moduleBody={
+            this.state.isLoadingDiary ? (
+              <p style={{ textAlign: "center", padding: "20px" }}>
+                Đang tải nhật ký truy xuất...
+              </p>
+            ) : (
+              <ViewModal
+                dataTrace={this.state.diaryTrace}
+                dataTraceInforms={this.state.diaryTraceInforms}
+              />
+            )
+          }
+        />
+
         <ToastContainer position="top-center" autoClose={3000} />
       </div>
     );

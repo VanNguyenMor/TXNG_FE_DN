@@ -6,7 +6,7 @@ import classes from "./index.module.css";
 
 import { InputGroup } from "reactstrap";
 
-class InsertOrUpadte extends Component {
+class InsertOrUpdate extends Component {
   constructor(props) {
     super(props);
 
@@ -15,6 +15,8 @@ class InsertOrUpadte extends Component {
       jobId: null,
       productId: null,
       zoneId: null,
+      popupMessage: false,
+      errMessage: "",
     };
   }
 
@@ -24,18 +26,6 @@ class InsertOrUpadte extends Component {
     if (onHandleChangeValue) {
       onHandleChangeValue(this.state);
     }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
-      }
-    );
 
     this.focusInput();
   }
@@ -44,22 +34,18 @@ class InsertOrUpadte extends Component {
     if (this.refInputName) {
       const timeOut = setTimeout(() => {
         this.refInputName.focus();
-
         clearTimeout(timeOut);
       }, 100);
     }
   };
 
+  // Bug #36/37 fix: onChangeSelect properly updates state and notifies parent
   onChangeSelect = (name) => (value) => {
     this.setState(
-      (prevState) => {
-        let newState = {
-          ...prevState,
-          [name]: value,
-        };
-
-        return newState;
-      },
+      (prevState) => ({
+        ...prevState,
+        [name]: value,
+      }),
       () => {
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
@@ -71,12 +57,10 @@ class InsertOrUpadte extends Component {
   onChangeValue = (name) => (e) => {
     const value = e.target.value;
     this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          [name]: value,
-        };
-      },
+      (previousState) => ({
+        ...previousState,
+        [name]: value,
+      }),
       () => {
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
@@ -85,89 +69,18 @@ class InsertOrUpadte extends Component {
     );
   };
 
-  onChangeSelectType = () => {
-    this.resetFieldValue();
-  };
-
-  resetFieldValue = () => {
-    alert();
-  };
-
-  handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
-  };
-
   toggleModal = (state) => {
     this.setState({ [state]: !this.state[state] });
   };
 
-  calculateTotalAmount = (quantity, price, vatRate) => {
-    const subtotal = Number(quantity) * Number(price);
-    const vatFactor = 1 + Number(vatRate) / 100;
-
-    const totalAmount = subtotal * vatFactor;
-
-    return Math.round(totalAmount);
-  };
-
-  handleScanQR = () => {
-    console.log("Đã nhấn nút Yêu cầu mở Camera.");
-  };
-
-  handleCheckboxChange = (event) => {
-    const { name, checked } = event.target;
-
-    this.setState((prevState) => {
-      const newState = {
-        ...prevState,
-        [name]: checked,
-      };
-
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(newState);
-      }
-
-      return newState;
-    });
-  };
-
-  handleSelect = (value, name) => {
-    const { handleSelect } = this.props;
-    let { newData } = this.state;
-    if (name == "FieldID") {
-      this.setState({ currentFilter: value });
-    }
-    if (name == "FieldID") {
-      const { requestAccessPopupStore } = this.props;
-
-      requestAccessPopupStore(
-        JSON.stringify({
-          search: "",
-          filter: value == "" ? 0 : value,
-          orderBy: "",
-          page: null,
-          limit: null,
-        })
-      );
-    }
-
-    if (value === null) value = "";
-
-    newData[name] = value;
-
-    this.setState({ newData });
-
-    this.handleCheckValidation();
-  };
-
   render() {
-    const { errMessage, popupMessage, jobId, productId } =
-      this.state;
+    const { errMessage, popupMessage, jobId, productId, zoneId } = this.state;
     const { errors, PRODUCT_OPTIONS, JOB_OPTIONS, PLANTINGZONE_OPTIONS } =
       this.props;
 
     return (
       <div className="wrap-insert-or-update-zone">
+        {/* Bug #36 fix: dropdown now uses JOB_OPTIONS from props (fetched from API) */}
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
             Ngành nghề&nbsp;<b style={{ color: "red" }}>*</b>
@@ -175,20 +88,20 @@ class InsertOrUpadte extends Component {
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
               value={jobId}
-              defaultValue={null}
               labelMark={null}
               className="wrap-insert-or-update-zone-item-select"
               name="jobId"
               title="Chọn ngành nghề"
-              data={JOB_OPTIONS}
+              data={JOB_OPTIONS || []}
               labelName="title"
               val="id"
               handleChange={this.onChangeSelect("jobId")}
             />
-
-            <p className="form-error-message">{errors.supplierId || ""}</p>
+            <p className="form-error-message">{(errors && errors.jobId) || ""}</p>
           </div>
         </div>
+
+        {/* Bug #36 fix: dropdown uses PRODUCT_OPTIONS from props (fetched from API) */}
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
             Sản phẩm
@@ -196,31 +109,31 @@ class InsertOrUpadte extends Component {
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
               value={productId}
-              defaultValue={null}
               labelMark={null}
               className="wrap-insert-or-update-zone-item-select"
               name="productId"
               title="Chọn sản phẩm"
-              data={PRODUCT_OPTIONS}
+              data={PRODUCT_OPTIONS || []}
               labelName="title"
               val="id"
               handleChange={this.onChangeSelect("productId")}
             />
-
-            <p className="form-error-message">{errors.productId || ""}</p>
+            <p className="form-error-message">{(errors && errors.productId) || ""}</p>
           </div>
         </div>
-        <div className={`${classes.rowItem} mr-b-0 `}>
+
+        {/* Bug #36 fix: dropdown uses PLANTINGZONE_OPTIONS from props (fetched from API) */}
+        <div className={`${classes.rowItem} mr-b-0`}>
           <label className="wrap-insert-or-update-zone-item-label">
             Vị trí&nbsp;<b style={{ color: "red" }}>*</b>
           </label>
-
-          <div className={`${classes.inputArea} `}>
+          <div className={`${classes.inputArea}`}>
             <Select
+              value={zoneId}
               className="css-select-border"
               name="zoneId"
               title="Chọn vị trí"
-              data={PLANTINGZONE_OPTIONS}
+              data={PLANTINGZONE_OPTIONS || []}
               labelName="title"
               val="id"
               isHideSelectAll={true}
@@ -241,4 +154,4 @@ class InsertOrUpadte extends Component {
   }
 }
 
-export default InsertOrUpadte;
+export default InsertOrUpdate;

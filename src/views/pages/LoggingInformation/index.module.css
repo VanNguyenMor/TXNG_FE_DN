@@ -326,3 +326,57 @@
 .scrollTable::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* ViewModal Styles */
+.container {
+  padding: 1rem;
+}
+
+.headerView {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.timelineRow {
+  display: flex;
+  margin-bottom: 1rem;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.itemBodyView {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.titleItemView {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.itemValueView {
+  font-weight: 500;
+}
+
+.waiting {
+  color: #ff9800;
+  font-weight: bold;
+}
+
+.active {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.disable {
+  color: #f44336;
+  font-weight: bold;
+}
+
+.remake {
+  color: #2196f3;
+  font-weight: bold;
+}

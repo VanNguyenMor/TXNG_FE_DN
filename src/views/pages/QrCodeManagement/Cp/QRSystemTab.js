@@ -7,6 +7,7 @@ import {
   DropdownItem,
   DropdownToggle,
 } from "reactstrap";
+import { withRouter } from "react-router-dom";
 import HeadTitleTable from "components/HeadTitleTable";
 import HeaderTable from "components/HeaderTable";
 import MenuButton from "../../../../assets/img/buttons/menu.png";
@@ -42,6 +43,7 @@ const QRSystemTab = ({
   errorInsertAlert,
   activeCreateSubmit,
   handleQRSystemDataReload,
+  history,
 }) => {
   return (
     <div className="config-system-content-config-qr-system">
@@ -101,7 +103,10 @@ const QRSystemTab = ({
                         <DropdownMenu>
                           <DropdownItem
                             onClick={() =>
-                              alert("Chuyển sang nhật ký truy xuất của QR này")
+                              history.push({
+                                pathname: "/trang_chu/nhat_ky",
+                                state: { traceId: item.traceID },
+                              })
                             }
                           >
                             Xem nhật ký truy xuất
@@ -170,4 +175,4 @@ const QRSystemTab = ({
   );
 };
 
-export default QRSystemTab;
+export default withRouter(QRSystemTab);

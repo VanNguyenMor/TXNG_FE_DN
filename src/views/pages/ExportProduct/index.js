@@ -46,8 +46,18 @@ import {
 } from "reactstrap";
 
 import InsertOrUpdate from "./InsertOrUpdate.js";
+import CreateTransportTicketModal from "./CreateTransportTicketModal.js";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+
+// Trạng thái phiếu xuất (đồng bộ mobile): 0..4
+const GD_STATUS = [
+  { id: 0, name: "Mới tạo", color: "#7F7F7F" },
+  { id: 1, name: "Chờ duyệt", color: "#1B11DE" },
+  { id: 2, name: "Đã duyệt", color: "#00B050" },
+  { id: 3, name: "Không duyệt", color: "#F00000" },
+  { id: 4, name: "Chờ duyệt lại", color: "#00B0F0" },
+];
 
 class ExportProduct extends Component {
   constructor(props) {
@@ -115,10 +125,10 @@ class ExportProduct extends Component {
       warningPopupModal: false,
       deleteId: null,
       popupMessage: null,
-      STATUS_OPTIONS: [
-        { id: 0, name: "Chưa duyệt" },
-        { id: 1, name: "Đã duyệt" },
-      ],
+      // Tạo vận đơn
+      transportTicketModal: false,
+      transportTicketItem: null,
+      STATUS_OPTIONS: GD_STATUS,
       SUPPLIER_LIST: [
         { id: 1, name: "Khách hàng A" },
         { id: 2, name: "Khách hàng B" },
@@ -192,11 +202,15 @@ class ExportProduct extends Component {
       // Map dữ liệu thành format phù hợp với table
       let newData = goodsDeliveryNotes.map((item, index) => ({
         id: item.id,
-        receiptNumber: item.grCode || item.code || `GDN${index + 1}`,
-        creationDate: item.grTime || item.createdDate,
+        receiptNumber: item.giCode || item.grCode || item.code || `GDN${index + 1}`,
+        creationDate: item.giTime
+          ? moment(item.giTime).format("DD/MM/YYYY HH:mm")
+          : item.grTime || item.createdDate,
         supplier: item.partnerName || item.supplier || "",
         importer: item.confirmedByName || item.importer || "",
-        status: item.status || 0,
+        status: item.status != null ? item.status : 0,
+        giType: item.giType,
+        traceInformID: item.traceInformID,
         // Thêm các field khác nếu cần
       }));
 
@@ -380,17 +394,17 @@ class ExportProduct extends Component {
 
     try {
       // Gọi API goodsdeliverynote/get để lấy dữ liệu chi tiết
-      const detailResponse = await fetchData.goodReceived.getDetail(id);
+      const detailResponse = await fetchData.goodDelivery.getDetail(id);
 
       if (detailResponse) {
-        const detailData = detailResponse.goodsReceipt || detailResponse;
+        const detailData = detailResponse.goodsDelivery || detailResponse;
 
-        // Map dữ liệu vào initialData - điều chỉnh theo response thực tế của goodsdeliverynote/get
+        // Map dữ liệu vào initialData theo response goodsdeliverynote/get
         const initialData = {
           id: id,
-          receiptNumber: detailData.grCode || detailData.code || "",
-          creationDate: detailData.grTime ? moment(detailData.grTime).toDate() : new Date(),
-          supplier: detailData.receiptPersonName || detailData.supplier || "",
+          receiptNumber: detailData.giCode || detailData.code || "",
+          creationDate: detailData.giTime ? moment(detailData.giTime).toDate() : new Date(),
+          supplier: detailData.partnerName || detailData.supplier || "",
           importer: detailData.confirmedByName || detailData.importer || "",
           note: detailData.note || "",
           status: detailData.status || 0,
@@ -417,7 +431,12 @@ class ExportProduct extends Component {
   };
 
   onDeleteData = (id) => () => {
-    alert("Xóa thành công");
+    this.setState({ deleteId: id, warningPopupModal: true });
+  };
+
+  // Mở modal tạo vận đơn cho phiếu xuất đã duyệt (status = 2)
+  onCreateTransportTicket = (item) => () => {
+    this.setState({ transportTicketItem: item, transportTicketModal: true });
   };
 
   toggleModalPopupDelete = () => {
@@ -430,36 +449,24 @@ class ExportProduct extends Component {
   };
 
   handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          warningPopupModal: false,
-        };
-      });
+    const { deleteId } = this.state;
+    this.setState({ warningPopupModal: false });
 
-      const data = res.data;
-
-      if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
-
-        this.setState({ message: "Xóa dữ liệu thành công" });
-        toast.success("Xoá dữ liệu thành công!");
-      } else {
-        const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa dữ liệu thất bại" });
+    fetchData.goodDelivery
+      .delete(deleteId)
+      .then((res) => {
+        if (res && res.status === 200) {
+          this.fetchSummary(this.state.filter);
+          toast.success("Xoá phiếu xuất thành công!");
+        } else {
+          this.setState({ message: getErrorMessageServer(res) || "Xóa phiếu xuất thất bại" });
+          this.toggleModal("popupMessage");
+        }
+      })
+      .catch((err) => {
+        this.setState({ message: getErrorMessageServer(err) || "Xóa phiếu xuất thất bại" });
         this.toggleModal("popupMessage");
-      }
-    });
+      });
   };
 
   toggleModal = (state, type) => {
@@ -520,14 +527,13 @@ class ExportProduct extends Component {
             <span style={{ color: `${e.color}` }}>{e.creationDate}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.customer}</span>
+            <span>{e.supplier}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>
-              {e.status === 1
-                ? IMPORT_EXPORT_PRODUCT_STATUS.ACTIVE
-                : IMPORT_EXPORT_PRODUCT_STATUS.DEACTIVE}
-            </span>
+            {(() => {
+              const st = GD_STATUS.find((s) => s.id === e.status);
+              return <span style={{ color: st ? st.color : "#000" }}>{st ? st.name : ""}</span>;
+            })()}
           </td>
           <td>
             {collapseList
@@ -548,6 +554,11 @@ class ExportProduct extends Component {
                             Sửa
                           </DropdownItem>
                         )}
+                        {e.status === 2 ? (
+                          <DropdownItem onClick={this.onCreateTransportTicket(e)}>
+                            Tạo vận đơn
+                          </DropdownItem>
+                        ) : null}
                         {isDisableEdit == true ||
                         isDisableDelete == true ? null : (
                           <DropdownItem divider />
@@ -614,13 +625,13 @@ class ExportProduct extends Component {
         .getItem("ACCOUNT_CLAIM_FF")
         .split(",")
         .filter((x) => x != "");
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Add").map(
+      ACCOUNT_CLAIM_FF.filter((x) => x == "ExportProducts.Add").map(
         (y) => (isDisableAdd = false)
       );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Edit").map(
+      ACCOUNT_CLAIM_FF.filter((x) => x == "ExportProducts.Edit").map(
         (y) => (isDisableEdit = false)
       );
-      ACCOUNT_CLAIM_FF.filter((x) => x == "PlantingZones.Delete").map(
+      ACCOUNT_CLAIM_FF.filter((x) => x == "ExportProducts.Delete").map(
         (y) => (isDisableDelete = false)
       );
     }
@@ -857,6 +868,16 @@ class ExportProduct extends Component {
               moduleBody={message}
               toggleModal={this.toggleModal}
             />
+
+            {this.state.transportTicketModal && (
+              <CreateTransportTicketModal
+                isOpen={this.state.transportTicketModal}
+                goodDelivery={this.state.transportTicketItem}
+                onClose={() => this.setState({ transportTicketModal: false, transportTicketItem: null })}
+                onSuccess={() => this.fetchSummary(this.state.filter)}
+              />
+            )}
+
             <ToastContainer position="top-center" autoClose={3000} />
           </div>
         }

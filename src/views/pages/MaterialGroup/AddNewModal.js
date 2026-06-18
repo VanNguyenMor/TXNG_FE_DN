@@ -227,14 +227,14 @@ class AddNewModal extends Component {
                     <label
                         className="form-control-label width-add-label-material-group"
                     >
-                        Tên nhóm sản phẩm&nbsp;<b style={{ color: 'red' }}>*</b>
+                        Tên nhóm&nbsp;<b style={{ color: 'red' }}>*</b>
                     </label>
 
                     <div className={classes.inputArea}>
                         <InputGroup className="input-group-alternative css-border-input">
                             <Input
                                 name='name'
-                                placeholder='Tên nhóm sản phẩm'
+                                placeholder='Tên nhóm nguyên vật liệu'
                                 //defaultValue={data.quantity}
                                 //required
                                 autoFocus={true}
@@ -260,77 +260,6 @@ class AddNewModal extends Component {
                             handleChange={this.handleSelect}
                         />
                         <p className='form-error-message margin-bottom-0'>{errorInsert['unitID'] || ''}</p>
-                    </div>
-                </div>
-                <div className={classes.rowItem}>
-                    <label
-                        className="form-control-label width-add-label-material-group"
-                    >
-                        Ghi chú
-                    </label>
-                    <div className={classes.inputArea}>
-                        <InputGroup className="input-group-alternative css-border-input">
-                            <Input
-                                name='note'
-                                type='textarea'
-                                //placeholder='Số lượng'
-                                //defaultValue={data.quantity}
-                                //required
-                                //autoFocus={true}
-                                onKeyUp={(event) => this.handleChange(event)}
-                            />
-                        </InputGroup>
-                    </div>
-
-                </div>
-
-                <div className={`${classes.rowItem} `}>
-                    <label
-                        className="form-control-label width-add-label-material-group"
-                    >
-                        Hình ảnh
-                    </label>
-                    <div className={classes.inputArea}>
-                        <div style={{ position: 'relative' }}>
-                            <InputGroup className="input-group-alternative css-border-input" style={{ width: 82, }}>
-                                <input
-                                    type="file"
-                                    name='files'
-                                    style={{ display: 'none' }}
-                                    //value={data.ThumbnailFile}
-                                    required
-                                    ref={ref => this.refFileImage = ref}
-                                    onChange={this.handleChangeIMG}
-                                    accept="image/*"
-                                //onKeyUp={(event) => this.handleChangeIMG(event)}
-                                />
-                                <img
-                                    src={this.state.fileView ? this.state.fileView : NoImg}
-                                    style={{ width: '82px', height: '82px', maxWidth: 320, maxHeight: 320 }} />
-                            </InputGroup>
-                            <div className="css-button-material-group" >
-                                <Button type="button" size="lg" className='btn-primary-cs'
-                                    onClick={this.onUpdateFileImage}>
-                                    <img src={Imgbt} alt='Thêm mới' />
-                                    <span>Chọn hình</span>
-                                </Button>
-                                {this.state.file != null ? (
-                                    <div style={{ position: 'absolute', top: "-12px", left: 72 }}>
-                                        <Button
-                                            color="default"
-                                            data-dismiss="modal"
-                                            type="button"
-                                            className={`css-icon-button-material-group`}
-                                            onClick={this.onDeleImg}
-                                        >
-                                            {/* <img src={delImg} alt='Thoát ra' /> */}
-                                            <span>X</span>
-                                        </Button>
-                                    </div>
-                                ) : null}
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
