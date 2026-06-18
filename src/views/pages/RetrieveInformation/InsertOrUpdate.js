@@ -12,17 +12,19 @@ class InsertOrUpadte extends Component {
   constructor(props) {
     super(props);
 
+    const initialData = props.initialData || {};
+
     this.state = {
-      id: null,
-      imgUrlVal: "",
-      jobId: null,
-      productId: null,
+      id: initialData.id != null ? initialData.id : null,
+      imgUrlVal: initialData.imgUrlVal || "",
+      jobId: initialData.jobId != null ? initialData.jobId : null,
+      productId: initialData.productId != null ? initialData.productId : null,
       retrieveId: null,
-      name: "",
-      order: null,
+      name: initialData.name || "",
+      order: initialData.order != null ? initialData.order : null,
       dataInsert: {},
-      isIsolationTest: false,
-      typeId: null,
+      isIsolationTest: !!initialData.isIsolationTest,
+      typeId: initialData.typeId != null ? initialData.typeId : null,
     };
   }
 
@@ -95,7 +97,7 @@ class InsertOrUpadte extends Component {
   };
 
   resetFieldValue = () => {
-    alert();
+    // Reset dynamic field values when type changes
   };
 
   handleFileChange = (files) => {
@@ -190,7 +192,7 @@ class InsertOrUpadte extends Component {
       isIsolationTest,
       typeId,
     } = this.state;
-    const { errors, PRODUCT_OPTIONS, JOB_OPTIONS, RETRIEVE_OPTIONS } =
+    const { errors, PRODUCT_OPTIONS, JOB_OPTIONS, RETRIEVE_OPTIONS, isReadOnly } =
       this.props;
 
     return (
@@ -244,7 +246,7 @@ class InsertOrUpadte extends Component {
                   name="productId"
                   title="Chọn sản phẩm"
                   data={PRODUCT_OPTIONS}
-                  labelName="title"
+                  labelName="productName"
                   val="id"
                   handleChange={this.onChangeSelect("productId")}
                 />
@@ -266,6 +268,7 @@ class InsertOrUpadte extends Component {
                     value={name}
                     onChange={this.onChangeValue("name")}
                     type="text"
+                    disabled={isReadOnly}
                     className="wrap-insert-or-update-zone-item-input"
                   />
                 </InputGroup>
@@ -282,11 +285,12 @@ class InsertOrUpadte extends Component {
               <div className="wrap-insert-or-update-zone-item-box">
                 <InputGroup className="input-group-alternative css-border-input">
                   <input
-                    value={order}
+                    value={order === null || order === undefined ? "" : order}
                     onChange={this.onChangeValue("order")}
                     type="number"
                     min={1}
                     max={100}
+                    disabled={isReadOnly}
                     className="wrap-insert-or-update-zone-item-input"
                   />
                 </InputGroup>
@@ -306,6 +310,7 @@ class InsertOrUpadte extends Component {
                 type="checkbox"
                 name="isIsolationTest"
                 checked={isIsolationTest}
+                disabled={isReadOnly}
                 onChange={this.handleCheckboxChange}
               />
 
@@ -329,6 +334,7 @@ class InsertOrUpadte extends Component {
                   name="typeId"
                   value={1}
                   checked={typeId === 1}
+                  disabled={isReadOnly}
                   onChange={this.handleRadioChange}
                 />
 
@@ -344,6 +350,7 @@ class InsertOrUpadte extends Component {
                   name="typeId"
                   value={2}
                   checked={typeId === 2}
+                  disabled={isReadOnly}
                   onChange={this.handleRadioChange}
                 />
 
@@ -359,6 +366,7 @@ class InsertOrUpadte extends Component {
                   name="typeId"
                   value={3}
                   checked={typeId === 3}
+                  disabled={isReadOnly}
                   onChange={this.handleRadioChange}
                 />
 

@@ -101,6 +101,7 @@ class ImageUploader extends Component {
 
   render() {
     const { previewImageUrl } = this.state;
+    const { disabled } = this.props;
 
     return (
       <div style={imageControlStyle}>
@@ -114,24 +115,26 @@ class ImageUploader extends Component {
           />
         </div>
 
-        <div className="upload-btn-wrapper">
-          <Button
-            type="button"
-            size="lg"
-            className={`btn-primary-cs`}
-            style={buttonUploadStyle}
-            onClick={this.onUpdateFileLogo}
-          >
-            Cập nhật hình ảnh
-          </Button>
-          <input
-            type="file"
-            accept="image/*"
-            ref={this.refFileInput}
-            onChange={this.handleUploadFile}
-            style={{ display: "none" }}
-          />
-        </div>
+        {disabled ? null : (
+          <div className="upload-btn-wrapper">
+            <Button
+              type="button"
+              size="lg"
+              className={`btn-primary-cs`}
+              style={buttonUploadStyle}
+              onClick={this.onUpdateFileLogo}
+            >
+              Cập nhật hình ảnh
+            </Button>
+            <input
+              type="file"
+              accept="image/*"
+              ref={this.refFileInput}
+              onChange={this.handleUploadFile}
+              style={{ display: "none" }}
+            />
+          </div>
+        )}
       </div>
     );
   }

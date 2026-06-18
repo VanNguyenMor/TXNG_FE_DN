@@ -1,7 +1,8 @@
 import {
     STAMP_LIST,
     STAMP_LIST_CREATE,
-    STAMP_LIST_DELETE
+    STAMP_LIST_DELETE,
+    STAMP_LIST_LOCK
 } from "../apis";
 import {
     get, post, del
@@ -17,6 +18,9 @@ import {
     GET_DELETE_STAMP_LIST_TYPE,
     GET_DELETE_STAMP_LIST_SUCCESS_TYPE,
     GET_DELETE_STAMP_LIST_FAIL_TYPE,
+    GET_LOCK_STAMP_LIST_TYPE,
+    GET_LOCK_STAMP_LIST_SUCCESS_TYPE,
+    GET_LOCK_STAMP_LIST_FAIL_TYPE,
 } from "../services/Common";
 
 const initialState = { data: [], isLoading: false, status: false, message: '' };
@@ -98,5 +102,32 @@ export const actionSTAMPList = {
                 });
             })
         })
+    },
+    requestLockSTAMP: (id) => async (dispatch, getState) => {
+        return new Promise(async resolve => {
+            dispatch({
+                type: GET_LOCK_STAMP_LIST_TYPE, data: initialState
+            });
+
+            return await get(STAMP_LIST_LOCK + id)
+                .then(res => {
+                    if (res.status === SUCCESS_CODE) {
+                        dispatch({ type: GET_LOCK_STAMP_LIST_SUCCESS_TYPE, data: { lock: res.data, isLoading: true, status: true, message: res.message } });
+                    } else {
+                        dispatch({ type: GET_LOCK_STAMP_LIST_FAIL_TYPE, data: { lock: null, isLoading: true, status: false, message: res.message } });
+                    }
+                    resolve({
+                        status: res.status === SUCCESS_CODE,
+                        data: res
+                    });
+                })
+                .catch(err => {
+                    dispatch({ type: GET_LOCK_STAMP_LIST_FAIL_TYPE, data: { lock: null, isLoading: true, status: false, message: err.message } });
+                    resolve({
+                        status: false,
+                        error: err
+                    });
+                });
+        });
     },
 }

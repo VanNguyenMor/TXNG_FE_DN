@@ -4,6 +4,9 @@ export const PLANTING_ZONE = {
   createPlantingZone: "plantingzone/create",
   updatePlantingZone: "plantingzone/update",
   deletePlantingZone: "plantingzone/delete?id={id}",
+  updatePermission: "plantingzone/updatepermission",
+  getListRoleByPlantingZone: "plantingzone/getlistrolebyplantingzone?id={id}",
+  getListRolePlantingZone: "plantingzone/getlistroleplantingzone",
 };
 
 export const PLANTING_TYPE = {
@@ -20,6 +23,7 @@ export const DISTRICT = {
 
 export const WARD = {
   getListWardByDistrictId: "location/getward?districtID={id}",
+  getListWardByProvinceId: "location/getward?provinceID={id}",
 };
 export const ACCOUNT = {
   getCurrentCompany: "company/getcurrent",
@@ -31,6 +35,7 @@ export const INFO_COMPANY = {
   getListProvinceAll: "location/getallprovince",
   getListDistrictByProvinceId: "location/getdistrict?provinceID={id}",
   getListWardByDistrictId: "location/getward?districtID={id}",
+  getListWardByProvinceId: "location/getward?provinceID={id}",
   updateInfoCompany: "company/update",
   uploadFile: "company/upload",
 };
@@ -84,6 +89,15 @@ export const QR_MANAGEMENT = {
   getListManageQRIncurred: "qrmanager/getallqrcodesincurred",
   getListStampRequestComboBox: "manageqr/getliststamprequestcombobox",
   addBadStamp: "badstamp/create",
+  getQRHistory:
+    "manageqr/getlisthistory?page={0}&limit={1}&stampRequestId={2}&fromDate={3}&toDate={4}",
+  // Xử lý tem (yêu cầu hủy tem) - khớp với app mobile
+  getListManageQRBad:
+    "badstamp/getlist?page={0}&limit={1}&stampRequestId={2}&fromDate={3}&toDate={4}",
+  getDetailBadStamp: "badstamp/get?id={0}",
+  deleteManageQRBad: "badstamp/delete?id={0}",
+  confirmBadStamp: "badstamp/confirm?id={0}",
+  unConfirmBadStamp: "badstamp/unconfirm?id={0}",
 };
 
 export const SCANS = {
@@ -118,6 +132,8 @@ export const CONSIGNMENTS = {
   getListClassifyComboBox: "batch/getbatchcategories",
   getListStampTemplate: "stampranges/getstamprange",
   getListWarehouseForUpdate: "warehouse/getall",
+  getListProvinceComboBox: "location/getallprovince",
+  getListNationComboBox: "location/nation",
   getListTraceHarvestForAddConsignmentComboBox: 'trace/getlistharvest',
   updateLock: "batch/lock?id={0}&warehouseId={1}",
   requireConfirm: "batch/requireconfirm?id={id}",
@@ -152,6 +168,46 @@ export const GOOD_RECEIVED = {
   addGoodReceived: "goodsreceivednote/create",
   editGoodReceived: "goodsreceivednote/update",
   deleteGoodReceived: "goodsreceivednote/delete/{id}",
+  lockGoodReceived: "goodsreceivednote/lock/{id}",
+  requireConfirmGoodReceived: "goodsreceivednote/requireconfirm/{id}",
+  requestConfirmGoodReceived: "goodsreceivednote/requestconfirm/{id}",
+  requestUnConfirmGoodReceived:
+    "goodsreceivednote/requestunconfirm/{id}?reason={reason}&content1={content1}",
+};
+
+export const GOOD_DELIVERY = {
+  getListGoodDelivery: "goodsdeliverynote/getall",
+  getDetailGoodDelivery: "goodsdeliverynote/get?id={id}",
+  addGoodDelivery: "goodsdeliverynote/create",
+  editGoodDelivery: "goodsdeliverynote/update",
+  deleteGoodDelivery: "goodsdeliverynote/delete/{id}",
+  lockGoodDelivery: "goodsdeliverynote/lock/{id}",
+  requireConfirmGoodDelivery: "goodsdeliverynote/requireconfirm/{id}",
+  requestConfirmGoodDelivery: "goodsdeliverynote/requestconfirm/{id}",
+  requestUnConfirmGoodDelivery:
+    "goodsdeliverynote/requestunconfirm/{id}?reason={reason}&content1={content1}",
+  createTransportTicket: "goodsdeliverynote/createtransportticket",
+  getListBatchForAddGoodDelivery: "batch/getlistforaddgooddelivery",
+};
+
+export const TRANSPORT = {
+  getListTransport: "transport/getall",
+  getDetailTransport: "transport/get?id={id}",
+  lockTransport: "transport/lock?id={id}",
+  deleteTransport: "transport/delete/{id}",
+};
+
+export const VEHICLE = {
+  getListVehicle: "vehicle/getall",
+  getDetailVehicle: "vehicle/get?id={id}",
+  addVehicle: "vehicle/create",
+  editVehicle: "vehicle/update",
+  deleteVehicle: "vehicle/delete/{id}",
+  getListVehicleType: "vehicle/getlistvehicletype",
+};
+
+export const COMPANY_CONFIG = {
+  get: "companyconfig/get",
 };
 
 export const WAREHOUSE_MANAGEMENT = {

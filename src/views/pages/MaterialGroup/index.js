@@ -148,7 +148,7 @@ class MaterialGroup extends Component {
                 data: data.list.materialGroups,
                 listLength: data.list.total,
                 dataFieldParent: _fieldParent,
-                totalPage: Math.ceil(data.list.materialGroups.length / limit),
+                totalPage: Math.ceil(data.list.total / limit),
                 isLoaded: data.isLoading, status: data.status,
                 message: PLEASE_CHECK_CONNECT(data.message)
               });
@@ -313,7 +313,7 @@ class MaterialGroup extends Component {
             "page": null,
             "limit": null
           }));
-          toast.success('Xoá nhóm sảm phẩm thành công!')
+          toast.success('Xóa nhóm nguyên vật liệu thành công!')
         } else {
           this.setState({
             errNoti: res.message,
@@ -472,7 +472,6 @@ class MaterialGroup extends Component {
   handleCreateInfoData = (value, closeForm, closePopup) => {
     const { requestCreateMaterialGroup } = this.props;
     const { data } = this.state;
-    const bodyFormData = new FormData();
     const errorInsert = {};
     this.setState(previousState => {
       return {
@@ -529,13 +528,14 @@ class MaterialGroup extends Component {
     if (closeForm) {
       closeForm();
     }
-    Object.keys(value).forEach((key) => {
-      bodyFormData.append(key, value[key])
-    });
+    // Đồng bộ với app mobile: chỉ gửi name + unitID (controller materialgroupnext nhận JSON [FromBody])
     this.setState({ fetching: true, isLoaded: true, status: null })
-    requestCreateMaterialGroup(bodyFormData).then(res => {
+    requestCreateMaterialGroup({
+      name: value.name,
+      unitID: value.unitID
+    }).then(res => {
       if (res.data.status == 200) {
-
+        toast.success('Thêm nhóm nguyên vật liệu thành công!');
         this.fetchSummary(JSON.stringify({
           "search": "",
           "filter": "",
@@ -545,6 +545,7 @@ class MaterialGroup extends Component {
         }));
         if (closePopup != 'closePopup') { this.toggleModal('createNewModal'); }
       } else {
+        toast.error(res.data.message || 'Thêm nhóm nguyên vật liệu thất bại!');
         this.setState({ errNoti: res.data.message })
         this.toggleModal('popupMessage')
       }
@@ -561,7 +562,6 @@ class MaterialGroup extends Component {
         errorUpdate
       }
     });
-    const bodyFormData = new FormData();
 
     let newDataUpdate = {
       id: newData.ID,
@@ -622,12 +622,15 @@ class MaterialGroup extends Component {
       }
     });
     this.toggleModal('updateModal')
-    Object.keys(newDataUpdate).forEach((key) => {
-      bodyFormData.append(key, newDataUpdate[key])
-    });
-
-    requestUpdateMaterialGroup(bodyFormData).then(res => {
+    // Đồng bộ với app mobile: chỉ gửi id + name + unitID (+ isProduct=false)
+    requestUpdateMaterialGroup({
+      id: newDataUpdate.id,
+      name: newDataUpdate.name,
+      unitID: newDataUpdate.unitID,
+      isProduct: false
+    }).then(res => {
       if (res.data.status == 200) {
+        toast.success('Cập nhật nhóm nguyên vật liệu thành công!');
         this.fetchSummary(JSON.stringify({
           "search": "",
           "filter": "",
@@ -636,6 +639,7 @@ class MaterialGroup extends Component {
           "limit": null
         }));
       } else {
+        toast.error(res.data.message || 'Cập nhật nhóm nguyên vật liệu thất bại!');
         this.setState({ errNoti: res.data.message })
         this.toggleModal('popupMessage')
       }
@@ -667,7 +671,7 @@ class MaterialGroup extends Component {
           "page": null,
           "limit": null
         }));
-        toast.success('Khoá nhóm sảm phẩm thành công!')
+        toast.success('Khóa nhóm nguyên vật liệu thành công!')
       } else {
         this.setState({
           errNoti: res.data.message,
@@ -765,7 +769,7 @@ class MaterialGroup extends Component {
                                   <Input
                                     name="search"
                                     value={filter.comapanyName}
-                                    placeholder="Nhập tên nhóm sản phẩm cần tìm"
+                                    placeholder="Nhập tên nhóm nguyên vật liệu cần tìm"
                                     onChange={(event) => this.handleChangeFilter(event)}
                                     type="text"
                                   />
@@ -799,7 +803,7 @@ class MaterialGroup extends Component {
                           />
                         }
                         handleSubmitSearchForm={() => this.handleSubmitSearchForm()}
-                        moduleTitle='Thêm nhóm sản phẩm'
+                        moduleTitle='Thêm nhóm nguyên vật liệu'
                         moduleBody={this.renderCreateModal()}
                         activeSubmit={activeCreateSubmit}
                         newData={newData}
@@ -936,13 +940,6 @@ class MaterialGroup extends Component {
                                       {/* <td style={{ textAlign: 'center', whiteSpace: 'normal' }} className={`table-scale-col cursor-unset`}>
                                         <span className={this.handleStyleStatus(item.isLocked)}>{item.status}</span>
                                       </td> */}
-                                      <td>
-                                        <img style={{
-                                          width: 82,
-                                          height: 82,
-                                          objectFit: 'cover'
-                                        }} src={item.image ? item.image : NoImg} />
-                                      </td>
                                       {/* <td>{item.isProduct ? 'Sản phẩm' : 'Nguyên vật liệu'}</td> */}
                                       <td style={{
                                         textAlign: 'left',
@@ -1034,7 +1031,7 @@ class MaterialGroup extends Component {
               <CreateNewPopup
                 newData={newData}
                 createNewModal={createNewModal}
-                moduleTitle='Thêm nhóm sản phẩm'
+                moduleTitle='Thêm nhóm nguyên vật liệu'
                 type100={true}
                 moduleBody={this.renderCreateModal()}
                 toggleModal={this.toggleModal}
@@ -1077,7 +1074,7 @@ class MaterialGroup extends Component {
               {
 
                 <UpdatePopup
-                  moduleTitle='Sửa nhóm sản phẩm'
+                  moduleTitle='Sửa nhóm nguyên vật liệu'
                   moduleBody={
                     <UpdateModal
                       data={detail}

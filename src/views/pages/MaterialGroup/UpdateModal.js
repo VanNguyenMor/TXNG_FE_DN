@@ -46,22 +46,25 @@ class UpdateModal extends Component {
         if (id) {
             await requestGetMaterialGroup(id).then(
                 res => {
+                    // controller "materialgroupnext/get" trả về key dạng PascalCase (ID, Name, UnitID...),
+                    // hỗ trợ luôn camelCase để an toàn
+                    const d = res.data || {};
                     this.setState(previousState => {
                         return {
                             ...previousState,
                             data: {
-                                'ID': res.data.id,
-                                'name': res.data.name,
-                                'note': res.data.note,
-                                'unitID': res.data.unitID,
-                                'fieldID': res.data.fieldID,
+                                'ID': d.ID || d.id,
+                                'name': d.Name || d.name,
+                                'note': d.Note || d.note,
+                                'unitID': d.UnitID || d.unitID,
+                                'fieldID': d.FieldID || d.fieldID,
                                 'files': '',
-                                'image': res.data.image,
-                                'isProduct': res.data.isProduct
+                                'image': d.Image || d.image,
+                                'isProduct': d.IsProduct || d.isProduct
                             }
                         }
                     }, () => this.handleCheckValidation());
-                    this.setState({ file: res.data.image })
+                    this.setState({ file: d.Image || d.image })
                 }
             )
 
@@ -243,7 +246,7 @@ class UpdateModal extends Component {
                     <label
                         className="form-control-label width-add-label-material-group"
                     >
-                        Tên nhóm sản phẩm&nbsp;<b style={{ color: 'red' }}>*</b>
+                        Tên nhóm&nbsp;<b style={{ color: 'red' }}>*</b>
                     </label>
 
                     <div className={classes.inputArea}>
@@ -278,83 +281,6 @@ class UpdateModal extends Component {
                             handleChange={this.handleSelect}
                         />
                         <p className='form-error-message margin-bottom-0'>{errorUpdate['unitID'] || ''}</p>
-                    </div>
-                </div>
-                <div className={classes.rowItem}>
-                    <label
-                        className="form-control-label width-add-label-material-group"
-                    >
-                        Ghi chú
-                    </label>
-                    <div className={classes.inputArea}>
-                        <InputGroup className="input-group-alternative css-border-input">
-                            <Input
-                                name='note'
-                                type='textarea'
-                                //placeholder='Số lượng'
-                                defaultValue={data.note}
-                                //required
-                                //autoFocus={true}
-                                onKeyUp={(event) => this.handleChange(event)}
-                            />
-                        </InputGroup>
-                    </div>
-
-                </div>
-                <div className={classes.rowItem}>
-                    <label
-                        className="form-control-label width-add-label-material-group"
-                    >
-                        Hình ảnh
-                    </label>
-                    <div className={classes.inputArea}>
-                        <div style={{ position: 'relative' }}>
-                            <InputGroup className="input-group-alternative css-border-input">
-                                <input
-                                    ref={ref => this.refFileImage = ref}
-                                    type="file"
-                                    name='files'
-                                    style={{ display: 'none' }}
-                                    required
-                                    onChange={this.handleChangeIMG}
-                                    accept="image/*"
-                                //onKeyUp={(event) => this.handleChangeIMG(event)}
-                                />
-
-                                {
-                                    this.state.fileView === null ? (
-                                        <img
-                                            src={this.state.file ? this.state.file : NoImg}
-                                            style={{ width: '100%', height: '100%', maxWidth: 320, maxHeight: 320 }} />
-                                    ) : (
-                                        <img
-                                            src={this.state.fileView ? this.state.fileView : NoImg}
-                                            style={{ width: '100%', height: '100%', maxWidth: 320, maxHeight: 320 }} />
-                                    )
-                                }
-                            </InputGroup>
-                            <div className="css-button-material-group">
-                                <Button type="button" size="lg" className='btn-primary-cs'
-                                    onClick={this.onUpdateFileImage}>
-                                    <img src={PlusImg} alt='Thêm mới' />
-                                    <span>Chọn hình</span>
-                                </Button>
-                                {this.state.file != null ? (
-                                    <div style={{ position: 'absolute', top: "-12px", left: 72 }}>
-                                        <Button
-                                            color="default"
-                                            data-dismiss="modal"
-                                            type="button"
-                                            className={`css-icon-button-material-group`}
-                                            onClick={this.onDeleImg}
-                                        >
-                                            {/* <img src={CloseIcon} alt='Thoát ra' /> */}
-                                            <span>X</span>
-                                        </Button>
-                                    </div>
-                                ) : null}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -42,7 +42,8 @@ class InsertOrUpadte extends Component {
       productId: null,
       warehouseId: null,
       file: "",
-      files: "", // Thay đổi thành string thay vì array
+      files: [], // Tệp mới chọn để upload (mảng File)
+      existingFiles: [], // Chứng từ đã đính kèm trước đó ({ name, url })
       unit: "",
       quantity: 0,
       vat: 0,
@@ -52,9 +53,19 @@ class InsertOrUpadte extends Component {
       isAddingDetail: false,
     };
 
-    this.state = props.dataInsert
+    const initialState = props.dataInsert
       ? { ...defaultState, ...props.dataInsert }
-      : defaultState;
+      : { ...defaultState };
+
+    // Chuẩn hóa file về dạng mảng (existingFiles: đã có, files: tệp mới chọn)
+    initialState.existingFiles = Array.isArray(initialState.existingFiles)
+      ? initialState.existingFiles
+      : [];
+    initialState.files = Array.isArray(initialState.files)
+      ? initialState.files
+      : [];
+
+    this.state = initialState;
   }
 
   componentWillUnmount() {
@@ -82,16 +93,16 @@ class InsertOrUpadte extends Component {
         JSON.stringify(prevProps.dataInsert) !== JSON.stringify(dataInsert)
       ) {
         const newState = { ...dataInsert };
-        
-        // Handle files for display - files is a URL string
-        if (dataInsert.files && typeof dataInsert.files === 'string') {
-          // Extract filename from URL
-          const urlParts = dataInsert.files.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          newState.file = fileName;
-          newState.files = dataInsert.files; // Keep original URL string
-        }
-        
+
+        // existingFiles (chứng từ đã có) và files (tệp mới) được chuẩn hóa thành
+        // mảng ở component cha (onEditData). Giữ nguyên nếu có, mặc định mảng rỗng.
+        newState.existingFiles = Array.isArray(dataInsert.existingFiles)
+          ? dataInsert.existingFiles
+          : [];
+        newState.files = Array.isArray(dataInsert.files)
+          ? dataInsert.files
+          : [];
+
         this.setState((prevState) => {
           return { ...prevState, ...newState };
         });
@@ -216,14 +227,50 @@ class InsertOrUpadte extends Component {
     alert();
   };
 
-  handleFileChange = (files) => {
-    const fileNames = Array.from(files).map(file => file.name).join(", ");
-    this.setState({ file: fileNames, files: Array.from(files) }, () => {
-      // Update parent component with new state
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(this.state);
+  handleFileChange = (fileList) => {
+    const picked = Array.from(fileList || []);
+    if (picked.length === 0) return;
+
+    this.setState(
+      (prevState) => ({
+        files: [...(prevState.files || []), ...picked],
+      }),
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
       }
-    });
+    );
+  };
+
+  // Xóa tệp mới vừa chọn (chưa upload)
+  onRemoveNewFile = (index) => () => {
+    this.setState(
+      (prevState) => ({
+        files: (prevState.files || []).filter((_, i) => i !== index),
+      }),
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
+  };
+
+  // Xóa chứng từ đã đính kèm trước đó (sẽ không nằm trong StrFile khi lưu)
+  onRemoveExistingFile = (url) => () => {
+    this.setState(
+      (prevState) => ({
+        existingFiles: (prevState.existingFiles || []).filter(
+          (f) => f.url !== url
+        ),
+      }),
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
   };
 
   toggleModal = (state) => {
@@ -396,6 +443,8 @@ class InsertOrUpadte extends Component {
       price,
       unit,
       status,
+      files,
+      existingFiles,
     } = this.state;
     const {
       errors,
@@ -553,14 +602,78 @@ class InsertOrUpadte extends Component {
           </label>
 
           <div className={`${classes.inputArea} `}>
-            <input
-              type="file"
-              className="form-control-file"
-              name="relatedDocuments"
-              multiple={true}
-              onChange={(e) => this.handleFileChange(e.target.files)}
-              readOnly={status === 2 ? true : false}
-            />
+            {status !== 2 ? (
+              <input
+                type="file"
+                className="form-control-file"
+                name="relatedDocuments"
+                multiple={true}
+                onChange={(e) => this.handleFileChange(e.target.files)}
+              />
+            ) : null}
+
+            {/* Chứng từ đã đính kèm trước đó */}
+            {Array.isArray(existingFiles) && existingFiles.length > 0 && (
+              <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 8 }}>
+                {existingFiles.map((f) => (
+                  <li
+                    key={f.url}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <a
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ wordBreak: "break-all" }}
+                    >
+                      {f.name}
+                    </a>
+                    {status !== 2 ? (
+                      <button
+                        type="button"
+                        onClick={this.onRemoveExistingFile(f.url)}
+                        className="btn btn-sm btn-danger"
+                        style={{ marginLeft: 8, padding: "0 8px" }}
+                        title="Xóa chứng từ"
+                      >
+                        X
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Tệp mới vừa chọn (chưa lưu) */}
+            {status !== 2 && Array.isArray(files) && files.length > 0 && (
+              <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 8 }}>
+                {files.map((f, index) => (
+                  <li
+                    key={`${f.name}_${index}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span style={{ wordBreak: "break-all" }}>{f.name}</span>
+                    <button
+                      type="button"
+                      onClick={this.onRemoveNewFile(index)}
+                      className="btn btn-sm btn-danger"
+                      style={{ marginLeft: 8, padding: "0 8px" }}
+                      title="Bỏ tệp"
+                    >
+                      X
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
         <hr style={{ paddingTop: 5, marginBottom: 0, paddingBottom: 5 }} />

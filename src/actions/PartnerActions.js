@@ -9,7 +9,8 @@ import {
     PARTNER_LIST_TRANSPORTS_VERIFY,
     PARTNER_VERIFY,
     PARTNER_UPLOAD_VERIFY,
-    PARTNER_DELETE_UPLOAD_VERIFY
+    PARTNER_DELETE_UPLOAD_VERIFY,
+    PARTNER_LACO
 } from "../apis";
 import {
     get, post, del
@@ -172,6 +173,29 @@ export const actionPartner = {
                     });
                 })
         })
+    },
+    requestListPartnerLACO: (params) => async (dispatch, getState) => {
+        // params: { name, code, companyId }
+        return new Promise(async resolve => {
+            const name = encodeURIComponent((params && params.name) || '');
+            const code = encodeURIComponent((params && params.code) || '');
+            const companyId = encodeURIComponent((params && params.companyId) || '');
+            const url = `${PARTNER_LACO}?name=${name}&code=${code}&companyId=${companyId}`;
+
+            await get(url)
+                .then(res => {
+                    resolve({
+                        status: true,
+                        data: res
+                    });
+                })
+                .catch(err => {
+                    resolve({
+                        status: false,
+                        error: err
+                    });
+                });
+        });
     },
     requestDeletePartner: (id) => async (dispatch, getState) => {
         return new Promise(async resolve => {

@@ -8,6 +8,7 @@ import {
   Button,
   Table,
 } from "reactstrap";
+import { withRouter } from "react-router-dom";
 import ReactDatetime from "react-datetime";
 import AddNewQRArises from "../AddNewQRArises";
 import Select from "components/Select";
@@ -55,6 +56,8 @@ const QRArisesTab = ({
   setState,
   handleQRArisesDataReload,
   resetKeyQRArises,
+  onShowDiaryDetail,
+  history,
 }) => {
   const sourceData = Array.isArray(dataQRArises) ? dataQRArises : [];
   const pageSize = Number(limitQRArises) > 0 ? Number(limitQRArises) : 10;
@@ -198,13 +201,7 @@ const QRArisesTab = ({
                       <img src={MenuButton} alt="Menu" />
                     </DropdownToggle>
                     <DropdownMenu>
-                      <DropdownItem
-                        onClick={() =>
-                          alert(
-                            "Chuyển sang trang nhật ký truy xuất của QR này"
-                          )
-                        }
-                      >
+                      <DropdownItem onClick={() => onShowDiaryDetail(item)}>
                         Chi tiết nhật ký truy xuất
                       </DropdownItem>
                       <DropdownItem divider />
@@ -267,4 +264,4 @@ const QRArisesTab = ({
   );
 };
 
-export default QRArisesTab;
+export default withRouter(QRArisesTab);

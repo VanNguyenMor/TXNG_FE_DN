@@ -137,7 +137,11 @@ class UserAccount extends Component {
               this.setState({
                 data: data.data.users,
                 listLength: data.data.total,
-                totalPage: Math.ceil(data.data.users.length / limit),
+                totalPage: Math.ceil(data.data.total / limit),
+                totalElement: Math.min(data.data.users.length, limit),
+                beginItem: 0,
+                endItem: limit,
+                currentPage: 0,
                 isLoaded: data.isLoading,
                 status: data.status,
                 message: PLEASE_CHECK_CONNECT(data.message),

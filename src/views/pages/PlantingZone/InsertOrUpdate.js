@@ -75,7 +75,6 @@ class InsertOrUpadte extends Component {
     this.state = {
       // state use
       provinces: null,
-      districts: null,
       wards: null,
       plantingTypes: null,
       gpsNew: [],
@@ -114,7 +113,6 @@ class InsertOrUpadte extends Component {
       // form data
       provinceId: null,
       wardId: null,
-      districtId: null,
       plantingTypeId: null,
       area: 0,
     };
@@ -175,6 +173,8 @@ class InsertOrUpadte extends Component {
           plantingTypeAttribute: newDataInsert.plantingTypeAttribute,
           plantingZoneId: newDataInsert.plantingZoneId,
           fileView: newDataInsert.fileView,
+        }, async () => {
+          if (newDataInsert.provinceId) await this.handleGetWardData();
         });
 
         if (this.props.onLoadDetailData) {
@@ -203,16 +203,9 @@ class InsertOrUpadte extends Component {
     }
   }
 
-  async handleGetDistrictData() {
-    this.setState({
-      districts: await fetchData.district.getByProvinceId(
-        this.state.provinceId
-      ),
-    });
-  }
   async handleGetWardData() {
     this.setState({
-      wards: await fetchData.ward.getByDistrictId(this.state.provinceId),
+      wards: await fetchData.ward.getByProvinceId(this.state.provinceId),
     });
   }
 
@@ -245,7 +238,6 @@ class InsertOrUpadte extends Component {
         plantingTypeId: null,
         plantingZoneId: null,
         wardId: null,
-        districtId: null,
       };
     });
   }
@@ -267,14 +259,15 @@ class InsertOrUpadte extends Component {
           this.props.onHandleChangeValue(this.state);
         }
       });
+    } else if (name === "provinceId") {
+      this.setState({ [name]: value, wardId: null, wards: null }, () => {
+        this.handleGetWardData();
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      });
     } else {
       this.setState({ [name]: value }, () => {
-        if (name === "provinceId") {
-          this.handleGetDistrictData();
-        }
-        if (name === "districtId") {
-          this.handleGetWardData();
-        }
         if (this.props.onHandleChangeValue) {
           this.props.onHandleChangeValue(this.state);
         }
@@ -288,15 +281,11 @@ class InsertOrUpadte extends Component {
     this.setState(
       (prev) => ({
         ...prev,
-        dataInsert: {
-          ...prev.dataInsert,
-          [name]: value,
-        },
         [name]: value,
       }),
       () => {
         if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state.dataInsert);
+          this.props.onHandleChangeValue(this.state);
         }
       }
     );
@@ -778,7 +767,6 @@ class InsertOrUpadte extends Component {
     const {
       // state use
       provinces,
-      districts,
       wards,
       plantingTypes,
 
@@ -790,8 +778,6 @@ class InsertOrUpadte extends Component {
       name,
       isShowMapViewLocation,
 
-      dataWard,
-      dataDistrict,
       gpsNew,
       errMessage,
       popupMessage,
@@ -799,10 +785,6 @@ class InsertOrUpadte extends Component {
       // form data
       provinceId,
       wardId,
-      districtId,
-      provinceName,
-      districtName,
-      wardName,
       plantingTypeId,
       area,
     } = this.state;
@@ -933,62 +915,29 @@ class InsertOrUpadte extends Component {
             <p className="form-error-message">{errors.provinceId || ""}</p>
           </div>
         </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Quận/Huyện
-            {plantingZoneId ? null : (
-              <>
-                &nbsp;<b style={{ color: "red" }}>*</b>
-              </>
-            )}
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <Select
-              value={districtId || null}
-              labelMark={
-                districts?.find((d) => d.id === districtId)?.districtName ||
-                null
-              }
-              className="wrap-insert-or-update-zone-item-select"
-              name="districtId"
-              title="Chọn Quận/Huyện"
-              data={districts || []}
-              isDisable={!provinceId}
-              labelName="districtName"
-              val="id"
-              handleChange={this.onChangeSelect("districtId")}
-            />
 
-            <p className="form-error-message">{errors.districtId || ""}</p>
-          </div>
-        </div>
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
-            Phường/Xã
-            {plantingZoneId ? null : (
-              <>
-                &nbsp;<b style={{ color: "red" }}>*</b>
-              </>
-            )}
+            Phường/xã
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
-              value={wardId || null}
+              value={wardId}
               labelMark={
-                wards?.find((w) => w.id === wardId)?.nameSearch || null
+                wards?.find((w) => w.id === wardId)?.wardName || null
               }
               className="wrap-insert-or-update-zone-item-select"
               name="wardId"
-              title="Chọn Phường/Xã"
+              title="Chọn Phường/xã"
               data={wards || []}
-              isDisable={!districtId}
-              labelName="nameSearch"
+              labelName="wardName"
               val="id"
               handleChange={this.onChangeSelect("wardId")}
             />
             <p className="form-error-message">{errors.wardId || ""}</p>
           </div>
         </div>
+
         <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
         <b>KHAI BÁO GPS</b>
         <div className="wrap-insert-or-update-zone-item">

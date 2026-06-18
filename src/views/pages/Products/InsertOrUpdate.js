@@ -201,16 +201,51 @@ class InsertOrUpadte extends Component {
       if (exportType === 0) {
         marketId = 1;
       } else if (exportType === 1) {
-        marketId = 2; 
+        marketId = 2;
       }
-      
+
+      // Theo app mobile: detail không trả thẳng traceID, mà suy ra từ tracesInformID
+      // bằng cách match với danh sách nhật ký (TRACEHARVEST_OPTIONS).
+      let diaryId = batch.traceID || batch.traceId || batch.DiaryID || batch.diaryID || null;
+      const tracesInformID =
+        batch.tracesInformID || batch.tracesInformId || batch.TracesInformID || null;
+      if (!diaryId && tracesInformID && Array.isArray(this.props.TRACEHARVEST_OPTIONS)) {
+        const matchedTrace = this.props.TRACEHARVEST_OPTIONS.find(
+          (o) => String(o.TraceInformID) === String(tracesInformID)
+        );
+        if (matchedTrace) {
+          diaryId = matchedTrace.id;
+        }
+      }
+
+      // Theo app mobile: tỉnh/thành & nước nằm trong mảng batchExports (residentID),
+      // phân biệt theo exportType (0 = trong nước/tỉnh, 1 = nước ngoài/nước).
+      const batchExports = res.data?.batchExports || res.batchExports || [];
+      const firstExport =
+        Array.isArray(batchExports) && batchExports.length > 0 ? batchExports[0] : null;
+      const residentId = firstExport
+        ? firstExport.residentID || firstExport.residentId || firstExport.id || null
+        : null;
+      let provinceId = batch.provinceID || batch.ProvinceID || null;
+      let countryId = batch.countryID || batch.CountryID || null;
+      if (residentId) {
+        if (marketId === 1) {
+          provinceId = residentId;
+        } else if (marketId === 2) {
+          countryId = residentId;
+        }
+      }
+
       const newData = {
         id: id,
         batchCode: batch.batchCode || batch.batchID || batch.BatchID || "",
-        diaryId: batch.traceID || batch.traceId || batch.DiaryID || batch.diaryID || null,
+        diaryId: diaryId,
         traceName: batch.traceName || "",
-        classifyId: batch.categoryId || batch.classifyID || batch.ClassifyID || null,
-        temId: batch.stampID || batch.temID || batch.TemID || null,
+        // Theo app mobile (getDetailConsignment): phân loại = categoryId, dải tem = stampRangeId
+        classifyId:
+          batch.categoryId || batch.categoryID || batch.classifyID || batch.ClassifyID || null,
+        temId:
+          batch.stampRangeId || batch.stampRangeID || batch.StampRangeID || batch.temID || batch.TemID || null,
         batchNumber: batch.batchNum || batch.batchNumber || batch.BatchNum || "",
         planZoneName: batch.planZoneName || batch.plantZoneName || "",
         productVal: batch.productName || batch.ProductName || "",
@@ -220,8 +255,8 @@ class InsertOrUpadte extends Component {
         fromVal: batch.startNum || batch.fromValue || batch.FromValue || "",
         toVal: batch.endNum || batch.toValue || batch.ToValue || "",
         marketId: marketId,
-        provinceId: batch.provinceID || batch.ProvinceID || null,
-        countryId: batch.countryID || batch.CountryID || null,
+        provinceId: provinceId,
+        countryId: countryId,
         warehouseId: batch.warehouseID || batch.WarehouseID || null,
         qrCodes: qrCodes,
         createdDate: batch.createdDate || batch.fromDate || "",
@@ -464,10 +499,16 @@ class InsertOrUpadte extends Component {
 
     return (
       <div className="wrap-insert-or-update-zone">
-        {isShowForEdit ? (
-          <a class="btn btn-primary btn-sm" href="#" role="button">
+        {isShowForEdit && diaryId ? (
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() =>
+              this.props.onViewDiary && this.props.onViewDiary(diaryId)
+            }
+          >
             Xem nhật ký
-          </a>
+          </button>
         ) : null}
         <div
           className="wrap-insert-or-update-zone-item"
@@ -671,8 +712,6 @@ class InsertOrUpadte extends Component {
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
               value={temId}
-              defaultValue={null}
-              labelMark={null}
               className="wrap-insert-or-update-zone-item-select"
               name="temId"
               isDisable={isShowForEdit}
@@ -806,8 +845,6 @@ class InsertOrUpadte extends Component {
             <div className="wrap-insert-or-update-zone-item-box">
               <Select
                 value={provinceId}
-                defaultValue={null}
-                labelMark={null}
                 className="wrap-insert-or-update-zone-item-select"
                 name="provinceId"
                 title="Chọn danh tỉnh/thành"
@@ -830,8 +867,6 @@ class InsertOrUpadte extends Component {
             <div className="wrap-insert-or-update-zone-item-box">
               <Select
                 value={countryId}
-                defaultValue={null}
-                labelMark={null}
                 className="wrap-insert-or-update-zone-item-select"
                 isDisable={isShowForEdit}
                 name="countryId"

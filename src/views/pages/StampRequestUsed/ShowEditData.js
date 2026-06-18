@@ -2,8 +2,9 @@ import React, { Component } from "react";
 import PopupMessage from "../../../components/PopupMessage";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import classes from "./index.module.css";
-import { Col, Input, InputGroup, Label, Row } from "reactstrap";
+import { Col, Input, InputGroup, Label, Row, Modal, ModalHeader, ModalBody } from "reactstrap";
 import { fetchData } from "helpers/fetchData";
+import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 
 class ShowEditData extends Component {
   constructor(props) {
@@ -15,10 +16,11 @@ class ShowEditData extends Component {
       stampRange: "",
       printMethod: 0,
       notes: "",
-      productList: [],
+      size: "",
       stampTemplateList: [],
       errMessage: "",
       popupMessage: false,
+      previewImage: null,
     };
     this.toggle = this.toggle.bind(this);
   }
@@ -33,8 +35,15 @@ class ShowEditData extends Component {
     this.setState({ [state]: !this.state[state] });
   };
 
+  openPreview = (image) => () => {
+    this.setState({ previewImage: image || NoImg });
+  };
+
+  closePreview = () => {
+    this.setState({ previewImage: null });
+  };
+
   async componentDidMount() {
-    await this.loadProductList();
     await this.loadStampTemplateList();
 
     if (this.props.dataInsert) {
@@ -62,34 +71,28 @@ class ShowEditData extends Component {
     }
   }
 
-  loadProductList = async () => {
-    try {
-      const products = await fetchData.stampRequest.getListProduct();
-      const productList = Array.isArray(products)
-        ? products
-        : products?.data || [];
-
-      this.setState({ productList });
-    } catch (error) {
-    }
-  };
-
   loadStampTemplateList = async () => {
     try {
       const templates = await fetchData.stampRequest.getListStampTemplate();
-      
+
       // Handle different response formats
+      // fetchData.stampRequest.getListStampTemplate returns result?.data
+      // so templates could be: array, { stampTemplates: [...] }, { stamps: [...] }, { data: [...] }
       let stampTemplateList = [];
       if (Array.isArray(templates)) {
         stampTemplateList = templates;
       } else if (templates && typeof templates === 'object') {
-        // If it's an object, check for common array properties
-        stampTemplateList = templates.data || templates.stamps || templates.stampTemplates || [];
+        stampTemplateList =
+          templates.stampTemplates ||
+          templates.stamps ||
+          templates.stampRanges ||
+          templates.data ||
+          [];
       }
-      
+
       this.setState({ stampTemplateList });
     } catch (error) {
-      console.error("❌ Error loading stamp templates:", error);
+      console.error("Error loading stamp templates:", error);
       this.setState({ stampTemplateList: [] });
     }
   };
@@ -162,6 +165,7 @@ class ShowEditData extends Component {
       printMethod,
       notes,
       stampTemplateList,
+      size,
     } = this.state;
     const { errors } = this.props;
 
@@ -170,7 +174,7 @@ class ShowEditData extends Component {
         <Row className="mb-2">
           <Col md="6">
             <div className={`${classes.rowItem} ${classes.alignTop}`}>
-              <Label className="form-control-label">Số lượng tem xin cấp</Label>
+              <Label className="form-control-label">Số lượng tem xin cấp&nbsp;<b style={{ color: 'red' }}>*</b></Label>
 
               <div className={classes.inputArea}>
                 <InputGroup className="input-group-alternative css-border-input">
@@ -190,31 +194,70 @@ class ShowEditData extends Component {
           </Col>
           <Col md="6">
             <div className={`${classes.rowItem} ${classes.alignTop}`}>
-              <Label className="form-control-label">Mẫu in tem</Label>
+              <Label className="form-control-label">Kích thước tem&nbsp;<b style={{ color: 'red' }}>*</b></Label>
 
               <div className={classes.inputArea}>
                 <InputGroup className="input-group-alternative css-border-input">
                   <Input
-                    type="select"
-                    name="stampRange"
-                    value={stampRange || ""}
-                    onChange={this.onChangeValue("stampRange")}
-                  >
-                    <option value="">-- Chọn mẫu in tem --</option>
-                    {Array.isArray(stampTemplateList) && stampTemplateList.length > 0 ? (
-                      stampTemplateList.map((item) => (
-                        <option
-                          key={item.id || item.ID}
-                          value={item.id || item.ID}
-                        >
-                          {item.name || item.Name || item.stampRangeName || item.StampRangeName}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">-- Không có mẫu in tem --</option>
-                    )}
-                  </Input>
+                    type="text"
+                    name="size"
+                    placeholder="Kích thước tem"
+                    value={size || ""}
+                    onChange={this.onChangeValue("size")}
+                  />
                 </InputGroup>
+                <p className="form-error-message margin-bottom-0">
+                  {errors?.size || ""}
+                </p>
+              </div>
+            </div>
+          </Col>
+        </Row>
+        <Row className="mb-2">
+          <Col md="12">
+            <div className={`${classes.rowItem} ${classes.alignTop}`}>
+              <Label className="form-control-label">Mẫu in tem&nbsp;<b style={{ color: 'red' }}>*</b></Label>
+
+              <div className={classes.inputArea}>
+                {Array.isArray(stampTemplateList) && stampTemplateList.length > 0 ? (
+                  <div className={classes.stampTemplateGrid}>
+                    {stampTemplateList.map((item) => {
+                      const itemId = item.id || item.ID;
+                      const isActive = String(stampRange || "") === String(itemId);
+                      const itemName =
+                        item.name ||
+                        item.Name ||
+                        item.stampRangeName ||
+                        item.StampRangeName ||
+                        item.stampTemplateName ||
+                        item.StampTemplateName ||
+                        "";
+
+                      return (
+                        <div
+                          key={itemId}
+                          className={`${classes.stampTemplateItem} ${
+                            isActive ? classes.stampTemplateItemActive : ""
+                          }`}
+                          onClick={() => this.onChangeSelect("stampRange")(itemId)}
+                          onDoubleClick={this.openPreview(item.template || item.Template)}
+                          title={`${itemName}${itemName ? " — " : ""}Nhấp đúp để xem ảnh lớn`}
+                        >
+                          <img
+                            src={item.template || item.Template || NoImg}
+                            alt={itemName}
+                            className={classes.stampTemplateImage}
+                            onError={(e) => {
+                              e.target.src = NoImg;
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="margin-bottom-0">-- Không có mẫu in tem --</p>
+                )}
                 <p className="form-error-message margin-bottom-0">
                   {errors?.stampRange || ""}
                 </p>
@@ -313,6 +356,25 @@ class ShowEditData extends Component {
           moduleBody={this.state.errMessage}
           toggleModal={this.toggleModal}
         />
+
+        <Modal
+          isOpen={!!this.state.previewImage}
+          toggle={this.closePreview}
+          centered
+          size="lg"
+        >
+          <ModalHeader toggle={this.closePreview}>Mẫu in tem</ModalHeader>
+          <ModalBody className="text-center">
+            <img
+              src={this.state.previewImage || NoImg}
+              alt="Mẫu in tem"
+              style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain" }}
+              onError={(e) => {
+                e.target.src = NoImg;
+              }}
+            />
+          </ModalBody>
+        </Modal>
       </div>
     );
   }

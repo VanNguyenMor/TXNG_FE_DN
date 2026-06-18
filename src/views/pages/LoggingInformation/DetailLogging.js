@@ -1,317 +1,164 @@
 import React, { Component } from "react";
+import moment from "moment";
 import PopupMessage from "../../../components/PopupMessage";
-import Select from "components/Select";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import classes from "./index.module.css";
 
 import { InputGroup } from "reactstrap";
 
+// Chi tiết nhật ký (read-only) — đối chiếu mobile Laco/src/screens/detailDiary
+const E_RESULT_TEXT = {
+  0: "Đang chờ",
+  1: "Đạt",
+  2: "Không đạt",
+  3: "Đã thực hiện lại",
+};
+const E_RESULT_STYLE = {
+  0: classes.waiting,
+  1: classes.active,
+  2: classes.disable,
+  3: classes.remake,
+};
+
 class DetailLogging extends Component {
   constructor(props) {
     super(props);
-
     this.state = {
-      id: null,
-      jobId: null,
-      productId: null,
-      zoneId: null,
-      isShowList: false,
+      traceInforms: [],
+      isLoaded: false,
+      popupMessage: false,
+      errMessage: "",
     };
   }
 
-  async componentDidMount() {
-    const { onHandleChangeValue } = this.props;
+  componentDidMount() {
+    const { onHandleChangeValue, item, requestGetHistoryTrace } = this.props;
 
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
+    if (onHandleChangeValue) onHandleChangeValue(this.state);
+
+    if (item && requestGetHistoryTrace) {
+      const traceID = item.id || item.ID;
+      const companyID = item.CompanyID || item.companyId;
+      this.setState({ isLoaded: true });
+      requestGetHistoryTrace({ companyID, traceID, page: 0, limit: 200 }).then((res) => {
+        const data = ((res.data || {}).data || {});
+        this.setState({ traceInforms: data.traceInforms || [], isLoaded: false });
+      });
     }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
-      }
-    );
-
-    this.focusInput();
   }
-
-  focusInput = () => {
-    if (this.refInputName) {
-      const timeOut = setTimeout(() => {
-        this.refInputName.focus();
-
-        clearTimeout(timeOut);
-      }, 100);
-    }
-  };
-
-  onChangeSelect = (name) => (value) => {
-    this.setState(
-      (prevState) => {
-        let newState = {
-          ...prevState,
-          [name]: value,
-          ...(name === "importTypeId"
-            ? {
-                ingredientId: null,
-                jobId: null,
-                warehouseId: null,
-                quantity: 0,
-                vat: 0,
-                price: 0,
-                unit: "",
-                inventory: 0,
-              }
-            : {}),
-        };
-
-        if (name === "ingredientId") {
-          const selected = prevState.INGREDIENT_LIST.find((i) => i.id == value);
-
-          if (selected) {
-            newState = {
-              ...newState,
-              quantity: selected.quantity,
-              unit: selected.unit !== null ? selected.unit : "",
-              warehouseId:
-                selected.warehouseId !== null ? selected.warehouseId : null,
-            };
-          }
-        }
-
-        return newState;
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
-  };
-
-  onChangeValue = (name) => (e) => {
-    const value = e.target.value;
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          [name]: value,
-        };
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
-    );
-  };
-
-  onChangeSelectType = () => {
-    this.resetFieldValue();
-  };
-
-  resetFieldValue = () => {
-    alert();
-  };
-
-  handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
-  };
 
   toggleModal = (state) => {
     this.setState({ [state]: !this.state[state] });
   };
 
-  calculateTotalAmount = (quantity, price, vatRate) => {
-    const subtotal = Number(quantity) * Number(price);
-    const vatFactor = 1 + Number(vatRate) / 100;
-
-    const totalAmount = subtotal * vatFactor;
-
-    return Math.round(totalAmount);
-  };
-
-  handleScanQR = () => {
-    console.log("Đã nhấn nút Yêu cầu mở Camera.");
-  };
-
-  handleCheckboxChange = (event) => {
-    const { name, checked } = event.target;
-
-    this.setState((prevState) => {
-      const newState = {
-        ...prevState,
-        [name]: checked,
-      };
-
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(newState);
-      }
-
-      return newState;
-    });
+  renderContents = (raw) => {
+    let contents = [];
+    try {
+      contents = JSON.parse(raw || "[]");
+    } catch (e) {
+      contents = [];
+    }
+    if (!contents.length) return null;
+    return (
+      <div className="mt-2">
+        {contents.map((c, i) => (
+          <div key={i} className="d-flex mb-1">
+            <div className="text-muted" style={{ marginRight: 8 }}>
+              {c.ColumnName}:
+            </div>
+            <div className="fw-bold">{c.DisplayValue || c.Value || ""}</div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   render() {
-    const { errMessage, popupMessage, jobId, productId, zoneId, isShowList } =
-      this.state;
-    const { errors, PRODUCT_OPTIONS, JOB_OPTIONS, PLANTINGZONE_OPTIONS } =
-      this.props;
+    const { errMessage, popupMessage, traceInforms, isLoaded } = this.state;
+    const { item } = this.props;
+
+    const displayTitle = item ? (item.title || item.ProductName || "") : "";
+    const displayCode = item ? (item.code || item.NameCode || "") : "";
+    const displayZone = item ? (item.plantingZoneName || item.PlantingZone || "") : "";
 
     return (
       <div className="wrap-insert-or-update-zone">
-        <div
-          className="wrap-insert-or-update-zone-item"
-          style={{
-            pointerEvents: "none",
-            opacity: ".5",
-          }}
-        >
-          <label className="wrap-insert-or-update-zone-item-label">
-            Tiêu đề&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
+        {/* Thông tin trace (read-only) */}
+        <div className="wrap-insert-or-update-zone-item" style={{ pointerEvents: "none", opacity: ".6" }}>
+          <label className="wrap-insert-or-update-zone-item-label">Tiêu đề</label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                type="text"
-                value="Dép lê"
-                className="wrap-insert-or-update-zone-item-input"
-              />
+              <input type="text" value={displayTitle} readOnly className="wrap-insert-or-update-zone-item-input" />
             </InputGroup>
-
-            <p className="form-error-message">{errors.title || ""}</p>
           </div>
         </div>
-        <div
-          className="wrap-insert-or-update-zone-item"
-          style={{
-            pointerEvents: "none",
-            opacity: ".5",
-          }}
-        >
+
+        <div className="wrap-insert-or-update-zone-item" style={{ pointerEvents: "none", opacity: ".6" }}>
           <label className="wrap-insert-or-update-zone-item-label">Code</label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
-              <input
-                value="ASDASDAS2173817391HASDA"
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
+              <input type="text" value={displayCode} readOnly className="wrap-insert-or-update-zone-item-input" />
             </InputGroup>
-
-            <p className="form-error-message">{errors.code || ""}</p>
           </div>
         </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Vị trí&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
+
+        <div className="wrap-insert-or-update-zone-item" style={{ pointerEvents: "none", opacity: ".6" }}>
+          <label className="wrap-insert-or-update-zone-item-label">Vị trí</label>
           <div className="wrap-insert-or-update-zone-item-box">
-            <Select
-              value={jobId}
-              defaultValue={null}
-              labelMark={null}
-              className="wrap-insert-or-update-zone-item-select"
-              name="jobId"
-              title="Chọn vị trí"
-              data={PLANTINGZONE_OPTIONS}
-              labelName="title"
-              val="id"
-              handleChange={this.onChangeSelect("jobId")}
-            />
-
-            <p className="form-error-message">{errors.supplierId || ""}</p>
+            <InputGroup className="input-group-alternative css-border-input">
+              <input type="text" value={displayZone} readOnly className="wrap-insert-or-update-zone-item-input" />
+            </InputGroup>
           </div>
         </div>
+
         <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
-        <h3>Danh sách</h3>
+        <h3>Danh sách nhật ký</h3>
+
         <div className="list">
-          <div class="card mb-3">
-            <div class="card-header bg-white p-0" id="headingNote">
-              <h5 class="mb-0">
-                <button
-                  class="btn btn-block text-left d-flex justify-content-between align-items-center"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapseNote"
-                  aria-expanded="true"
-                  aria-controls="collapseNote"
-                >
-                  <span class="text-info">Ghi Chú</span>
-                  <i class="fas fa-chevron-up"></i>
-                </button>
-              </h5>
-            </div>
-
-            <div
-              id="collapseNote"
-              class="collapse show"
-              aria-labelledby="headingNote"
-              data-bs-parent="#accordionExample"
-            >
-              <div class="card-body p-3">
-                <div class="d-flex mb-1">
-                  <div class="text-muted">Ngày thực hiện: </div>
-                  <div class="fw-bold">18/11/2025 13:04</div>
+          {isLoaded ? (
+            <p style={{ textAlign: "center", color: "#999" }}>Đang tải...</p>
+          ) : traceInforms && traceInforms.length > 0 ? (
+            traceInforms.map((inform, index) => (
+              <div key={index} className="card mb-3">
+                <div className="card-header bg-white p-0">
+                  <h5 className="mb-0 p-2">
+                    <span className="text-info">{inform.infoName || "Ghi nhật ký"}</span>
+                  </h5>
                 </div>
-
-                <div class="d-flex mb-1">
-                  <div class="text-muted">Người thực hiện: </div>
-                  <div class="fw-bold">Công ty Việt Mỹ</div>
-                </div>
-
-                <div class="d-flex mb-1">
-                  <div class="text-muted">Kết quả: </div>
-                  <div class="text-warning">Đang chờ</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="card mb-3">
-            <div class="card-header bg-white p-0" id="headingNote">
-              <h5 class="mb-0">
-                <button
-                  class="btn btn-block text-left d-flex justify-content-between align-items-center"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapseNote"
-                  aria-expanded="true"
-                  aria-controls="collapseNote"
-                >
-                  <span class="text-info">Ghi Chú</span>
-                  <i class="fas fa-chevron-up"></i>
-                </button>
-              </h5>
-            </div>
-
-            <div
-              id="collapseNote"
-              class="collapse show"
-              aria-labelledby="headingNote"
-              data-bs-parent="#accordionExample"
-            >
-              <div class="card-body p-3">
-                <div class="d-flex mb-1">
-                  <div class="text-muted">Ngày thực hiện: </div>
-                  <div class="fw-bold">18/11/2025 13:04</div>
-                </div>
-
-                <div class="d-flex mb-1">
-                  <div class="text-muted">Người thực hiện: </div>
-                  <div class="fw-bold">Công ty Việt Mỹ</div>
-                </div>
-
-                <div class="d-flex mb-1">
-                  <div class="text-muted">Kết quả: </div>
-                  <div class="text-warning">Đang chờ</div>
+                <div className="card-body p-3">
+                  <div className="d-flex mb-1">
+                    <div className="text-muted" style={{ marginRight: 8 }}>Ngày thực hiện: </div>
+                    <div className="fw-bold">
+                      {inform.createdDate
+                        ? moment(inform.createdDate).format("DD/MM/YYYY HH:mm")
+                        : ""}
+                    </div>
+                  </div>
+                  <div className="d-flex mb-1">
+                    <div className="text-muted" style={{ marginRight: 8 }}>Người thực hiện: </div>
+                    <div className="fw-bold">{inform.fullName || ""}</div>
+                  </div>
+                  <div className="d-flex mb-1">
+                    <div className="text-muted" style={{ marginRight: 8 }}>Kết quả: </div>
+                    <div className={E_RESULT_STYLE[inform.eResult] || ""}>
+                      {E_RESULT_TEXT[inform.eResult] || ""}
+                    </div>
+                  </div>
+                  {(inform.eResult === 2 || inform.eResult === 3) && inform.reason ? (
+                    <div className="d-flex mb-1">
+                      <div className="text-muted" style={{ marginRight: 8 }}>
+                        {inform.eResult === 2 ? "Lý do: " : "Nội dung đã thực hiện lại: "}
+                      </div>
+                      <div className="fw-bold">{inform.reason}</div>
+                    </div>
+                  ) : null}
+                  {this.renderContents(inform.contents)}
                 </div>
               </div>
-            </div>
-          </div>
+            ))
+          ) : (
+            <p style={{ textAlign: "center", color: "#999" }}>Chưa có dữ liệu</p>
+          )}
         </div>
         <hr style={{ marginTop: 10, marginBottom: 0, paddingBottom: 10 }} />
 

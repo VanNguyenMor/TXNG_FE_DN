@@ -113,7 +113,7 @@ class Partner extends Component {
               this.setState({
                 data: data.list.partners,
                 listLength: data.list.total,
-                totalPage: Math.ceil(data.list.partners.length / limit),
+                totalPage: Math.ceil(data.list.total / limit),
                 isLoaded: data.isLoading, status: data.status,
                 message: PLEASE_CHECK_CONNECT(data.message)
               });
@@ -389,6 +389,7 @@ class Partner extends Component {
 
         if (closePopup != 'closePopup') { this.toggleModal('createNewModal'); }
 
+        toast.success("Thêm đơn vị xác thực thành công!");
         this.fetchSummary(JSON.stringify({
           "companyName": "",
           "phone": "",
@@ -476,6 +477,7 @@ class Partner extends Component {
 
     requestUpdatePartner(bodyFormData).then(res => {
       if (res.data.status == 200) {
+        toast.success("Cập nhật đơn vị xác thực thành công!");
         this.fetchSummary(JSON.stringify({
           "companyName": "",
           "phone": "",
@@ -628,7 +630,6 @@ class Partner extends Component {
                                               {isDisableEdit == false ? (
                                                 <DropdownItem
                                                   onClick={() => {
-                                                    this.toggleModal('updateModal');
                                                     this.handleOpenEdit(item.id);
                                                     this.setState({ currentRow: item })
                                                   }}
@@ -710,7 +711,7 @@ class Partner extends Component {
                       handleNewData={this.handleNewDataUpdate}
                       errorUpdate={this.state.errorUpdate}
                     />}
-                  newData={newData}
+                  newData={this.state.newDataUpdate}
                   updateModal={updateModal}
                   toggleModal={this.toggleModal}
                   activeSubmit={activeCreateSubmit}

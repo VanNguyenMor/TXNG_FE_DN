@@ -1,4 +1,4 @@
-import { postFormData, post, del, put, get } from "services/Dataservice";
+import { postFormData, putFormData, post, del, put, get } from "services/Dataservice";
 
 export const callApi = async (
   method,
@@ -6,7 +6,7 @@ export const callApi = async (
   payload = {},
   isFormData = false
 ) => {
-  const API_DOMAIN = "https://truyxuatnguongoc.tiengiang.gov.vn:9803/api/";
+  const API_DOMAIN ="http://localhost:8088/api/"; //"https://truyxuatnguongoc.tiengiang.gov.vn:9803/api/";
   //const API_DOMAIN = "https://localhost:44310/api/";
   const url = API_DOMAIN + endpoint;
 
@@ -18,7 +18,7 @@ export const callApi = async (
         ? postFormData(url, payload)
         : post(url, payload));
     case "put":
-      return await put(url, payload);
+      return await (isFormData ? putFormData(url, payload) : put(url, payload));
     case "delete":
       return await del(url);
     default:

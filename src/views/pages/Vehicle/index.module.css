@@ -1,0 +1,41 @@
+.wrapper {
+    height: calc(100vh - 100px);
+    padding: 20px 0;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.logo {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.formControl {
+    display: flex;
+    flex-direction: column;
+}
+
+.rowItem {
+    display: flex;
+    width: 100%;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.rowItem label {
+    width: 160px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.inputArea {
+    width: 100%;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    margin: 4px 0 0;
+}

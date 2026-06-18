@@ -41,18 +41,20 @@ class Select extends Component {
   componentWillReceiveProps(props) {
 
   if (props.isMulti) {
-    if (!props.defaultValue || props.defaultValue == this.state.value) {
-      if (!props.defaultValue) {
-        this.setState({ currentArray: [], currentLabel: [], value: null });
-      }
+    const prevDefaultValue = this.props.defaultValue;
+    const nextDefaultValue = props.defaultValue;
+
+    if (!nextDefaultValue && prevDefaultValue !== nextDefaultValue) {
+      // defaultValue chuyển từ có giá trị sang null/undefined → reset
+      this.setState({ currentArray: [], currentLabel: [], value: null });
     }
-    if (props.defaultValue && props.defaultValue != this.state.value) {
+    if (nextDefaultValue && nextDefaultValue != this.state.value) {
       this.setState(
-        () => ({ value: props.defaultValue }),
-        () => this.handleGetLabelNameMulti(props.defaultValue)
+        () => ({ value: nextDefaultValue }),
+        () => this.handleGetLabelNameMulti(nextDefaultValue)
       );
     }
-  } 
+  }
   else {
     
     if (props.value !== undefined && props.value !== this.state.value) {
@@ -83,13 +85,16 @@ class Select extends Component {
 }
 
   componentDidUpdate(prevProps) {
-    const { data, defaultValue } = this.props;
-    const { value, currentLabel } = this.state;
+    const { data, defaultValue, value } = this.props;
 
-    // If data changes and we have a defaultValue selected, update the label
-    if (data !== prevProps.data && defaultValue && data && data.length > 0) {
-      // Always try to get the label when data changes, even if currentLabel exists
-      this.handleGetLabelName(defaultValue);
+    // Khi danh sách options (data) thay đổi/đến sau, tính lại label theo value
+    // hiện tại để không bị mất hiển thị (vd: load chi tiết trước khi options về).
+    if (data !== prevProps.data && data && data.length > 0) {
+      if (value !== undefined && value !== null && value !== "") {
+        this.handleGetLabelName(value);
+      } else if (defaultValue) {
+        this.handleGetLabelName(defaultValue);
+      }
     }
   }
 

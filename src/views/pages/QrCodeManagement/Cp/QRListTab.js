@@ -1,5 +1,5 @@
 // QRListTab.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   Table,
@@ -12,6 +12,10 @@ import {
   Input,
   Label,
   Button,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
 import ReactDatetime from "react-datetime";
 import Select from "components/Select";
@@ -23,6 +27,7 @@ import HeadTitleTable from "components/HeadTitleTable";
 import HeaderTable from "components/HeaderTable";
 import AddNewQRList from "../AddNewQRList";
 import AddNewQRListHistory from "../AddNewQRListHistory";
+import ProcessStampModal from "./ProcessStampModal";
 import Pagination from "components/Pagination";
 import CreateNewPopup from "components/CreateNewPopup";
 import WarningPopup from "components/WarningPopup";
@@ -67,6 +72,32 @@ const QRListTab = ({
   toDateQRList,
   resetKeyQRList,
 }) => {
+  // Local state for history modal and process stamp modal
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyItem, setHistoryItem] = useState(null);
+  const [processStampModalOpen, setProcessStampModalOpen] = useState(false);
+  const [processStampItem, setProcessStampItem] = useState(null);
+
+  const openHistoryModal = (item) => {
+    setHistoryItem(item);
+    setHistoryModalOpen(true);
+  };
+
+  const closeHistoryModal = () => {
+    setHistoryModalOpen(false);
+    setHistoryItem(null);
+  };
+
+  const openProcessStampModal = (item) => {
+    setProcessStampItem(item);
+    setProcessStampModalOpen(true);
+  };
+
+  const closeProcessStampModal = () => {
+    setProcessStampModalOpen(false);
+    setProcessStampItem(null);
+  };
+
   return (
     <div className="config-system-content-config-qr-list">
       <HeaderTable
@@ -186,7 +217,7 @@ const QRListTab = ({
                     <td>{item.availableCount}</td>
                     <td>{item.errorCount}</td>
 
-                    {/* <td>
+                    <td>
                       <ButtonDropdown
                         isOpen={item.collapse}
                         toggle={() => toggleQRList(idx, item.id)}
@@ -196,11 +227,15 @@ const QRListTab = ({
                         </DropdownToggle>
 
                         <DropdownMenu>
-                          <DropdownItem onClick={onEditQRList(item.id)}>
-                            Xử lý dải tem
+                          <DropdownItem
+                            onClick={() => openProcessStampModal(item)}
+                          >
+                            Xử lý tem
                           </DropdownItem>
 
-                          <DropdownItem onClick={onEditQRListHistory(item.id)}>
+                          <DropdownItem
+                            onClick={() => openHistoryModal(item)}
+                          >
                             Xem lịch sử
                           </DropdownItem>
 
@@ -216,7 +251,7 @@ const QRListTab = ({
                           </DropdownItem>
                         </DropdownMenu>
                       </ButtonDropdown>
-                    </td> */}
+                    </td>
                   </tr>
                 ))}
           </tbody>
@@ -233,6 +268,37 @@ const QRListTab = ({
           handlePageClick={handlePageClickQRList}
         />
       )}
+
+      {/* Modal Xem lịch sử dải tem */}
+      <Modal
+        isOpen={historyModalOpen}
+        toggle={closeHistoryModal}
+        size="lg"
+        className="modal-dialog-centered"
+      >
+        <ModalHeader toggle={closeHistoryModal}>
+          Xem lịch sử dải tem
+        </ModalHeader>
+        <ModalBody>
+          {historyItem && (
+            <AddNewQRListHistory id={historyItem.id} stampInfo={historyItem} />
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onClick={closeHistoryModal}>
+            Đóng
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Modal Xử lý tem (danh sách yêu cầu hủy + tạo + duyệt/không duyệt + xóa) */}
+      <ProcessStampModal
+        isOpen={processStampModalOpen}
+        stampRequest={processStampItem}
+        onClose={closeProcessStampModal}
+        onChanged={handleQRListDataReload}
+        TEMLIST_OPTIONS={TEMLIST_OPTIONS}
+      />
 
       {/* POPUP */}
       <CreateNewPopup
@@ -262,9 +328,6 @@ const QRListTab = ({
             {isShowForListHistory && (
               <AddNewQRListHistory
                 id={idQRList}
-                onHandleChangeValue={onHandleChangeValueQRList}
-                errorInsert={errorInserts}
-                data={insertQRList}
               />
             )}
           </div>

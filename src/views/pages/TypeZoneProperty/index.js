@@ -128,7 +128,7 @@ class TypeZoneProperty extends Component {
                 dataAll: dataType.plantingTypes,
                 history: dataType.plantingTypes,
                 listLength: dataType.total,
-                totalPage: Math.ceil(dataType.plantingTypes.length / limit),
+                totalPage: Math.ceil(dataType.total / limit),
                 status: dataType.plantingTypes.status,
                 refetch: false,
                 // message: PLEASE_CHECK_CONNECT(data.message)
@@ -140,7 +140,7 @@ class TypeZoneProperty extends Component {
                 dataAll: dataType?.plantingTypes,
                 history: dataType?.plantingTypes,
                 listLength: dataType?.total,
-                totalPage: Math.ceil(dataType?.plantingTypes.length / limit),
+                totalPage: Math.ceil((dataType?.total || 0) / limit),
                 status: dataType?.plantingTypes.status,
                 refetch: false,
                 // message: PLEASE_CHECK_CONNECT(data.message)
@@ -750,7 +750,7 @@ class TypeZoneProperty extends Component {
                               .map((item, key) => (
                                 <tr key={key} className="table-hover-css">
                                   <td className="table-scale-col table-user-col-1">
-                                    {key + 1 + (currentPage - 1) * 10}
+                                    {beginItem + key + 1}
                                   </td>
                                   <td
                                     className="table-scale-col"

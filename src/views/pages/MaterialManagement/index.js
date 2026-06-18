@@ -271,7 +271,7 @@ class MaterialManagement extends Component {
       formData.append("UnitID", dataInsert.unitVal || "");
       formData.append("UnitName", dataInsert.unitName || "");
       formData.append("Producer", dataInsert.producerId || "");
-      formData.append("Quarantine", dataInsert.quarantine);
+      formData.append("Quarantine", dataInsert.quarantine ?? "");
 
       formData.append("Recommended", dataInsert.recommendedVal || "");
       if (dataInsert.producerId)
@@ -302,10 +302,24 @@ class MaterialManagement extends Component {
         ? await fetchData.materialManagement.update(formData)
         : await fetchData.materialManagement.create(formData);
 
-      toggleModal && toggleModal();
-      this.fetchSummary();
+      if (result && result.status === 200) {
+        const successMsg = dataInsert.id
+          ? "Cập nhật thành công!"
+          : "Thêm mới thành công!";
+        toast.success(successMsg);
+        toggleModal && toggleModal();
+        this.fetchSummary();
+      } else {
+        const errorMessage = result?.message
+          || (dataInsert.id
+            ? "Cập nhật thất bại! Vui lòng thử lại."
+            : "Thêm mới thất bại! Vui lòng thử lại.");
+        toast.error(errorMessage);
+      }
     } catch (error) {
       console.error("Lỗi gửi dữ liệu:", error);
+      const errorMsg = error?.message || "Có lỗi xảy ra, vui lòng thử lại!";
+      toast.error(errorMsg);
     }
   };
 
