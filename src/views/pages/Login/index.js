@@ -66,6 +66,56 @@ import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import { functions } from "lodash";
 import { getUrlCompanyAPI } from "../../../utils/service.js";
 
+const LOGIN_ISSUE_STATUSES = [300, 301, 302, 303, 304, 305];
+
+const parseLoginClaims = (claims) => {
+  try {
+    return JSON.parse(claims || "[]") || [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const buildLoginAuthData = (tokenResult, tokenAccount, company, infoData) => ({
+  id: tokenAccount.id,
+  userName: tokenAccount.userName,
+  fullName: tokenAccount.fullName,
+  companyID: tokenAccount.companyID,
+  isAdmin: tokenAccount.isAdmin,
+  claims: parseLoginClaims(tokenAccount.claims),
+  companyCode: company.companyCode,
+  expires: tokenResult.data.expires_in,
+  token: tokenResult.data.access_token,
+  refreshToken: tokenResult.data.refresh_token,
+  loginStatus: infoData.status,
+  loginMessage: infoData.message || "",
+});
+
+const completeLogin = (tokenResult, infoData, callBack, redirect) => {
+  const tokenAccount = (infoData.data || {}).token || {};
+  const company = (infoData.data || {}).company || {};
+
+  if (localStorage.getItem("TOKEN") != null) {
+    deleteCookie("AUTHEN_INFO");
+  }
+
+  const data = buildLoginAuthData(tokenResult, tokenAccount, company, infoData);
+  setCookie("AUTHEN_INFO", JSON.stringify(data));
+
+  if (
+    infoData.message &&
+    LOGIN_ISSUE_STATUSES.includes(infoData.status)
+  ) {
+    sessionStorage.setItem("LOGIN_MESSAGE", infoData.message);
+  }
+
+  if (callBack) {
+    callBack();
+  }
+
+  redirect(data);
+};
+
 class Login extends Component {
   constructor(props) {
     super(props);
@@ -188,7 +238,7 @@ class Login extends Component {
       const { username, password } = this.state;
       const { onUserLogin } = this.props;
       this.onCheckInput(() => {
-        getAccessToken(username, password, onUserLogin, this.getStateError, this.props.loginSuccess, this.onOpenSpiner);
+        getAccessToken(username, password, onUserLogin, this.getStateError, this.props.loginSuccess, this.onOpenSpiner, this.onLoginFailed);
       })
     }
   }
@@ -199,6 +249,13 @@ class Login extends Component {
     } else {
       this.setState({ isLoaded: false })
     }
+  }
+
+  onLoginFailed = (message) => {
+    this.setState({
+      errSys: message || "Đăng nhập thất bại.",
+      isLoaded: false,
+    });
   }
 
   onNextInputCatpcha = () => {
@@ -445,7 +502,7 @@ class Login extends Component {
                           onClick={(event) => {
                             this.onNextInputCatpcha();
                             this.onCheckInput(() => {
-                              getAccessToken(username, password, this.props.onUserLogin, this.getStateError, this.props.loginSuccess, this.onOpenSpiner);
+                              getAccessToken(username, password, this.props.onUserLogin, this.getStateError, this.props.loginSuccess, this.onOpenSpiner, this.onLoginFailed);
                             })
                           }
                           }>
@@ -495,7 +552,7 @@ class Login extends Component {
     );
   }
 };
-export const getAccessToken = async (username, password, redirect, getStateError, callBack, onOpenSpiner) => {
+export const getAccessToken = async (username, password, redirect, getStateError, callBack, onOpenSpiner, onLoginFailed) => {
   const axiosConfig = {
     baseURL: BASE_URL,
     timeout: 30000,
@@ -514,95 +571,45 @@ export const getAccessToken = async (username, password, redirect, getStateError
 
   onOpenSpiner(true);
 
-  axios.post('/connect/token', qs.stringify(requestData), axiosConfig).then(async result => {
-    let key = null;
-    
-    if (result.status == 200) {
-      // await axios.get(USER_LOGIN, {
-      //   headers: {
-      //     authorization: 'Bearer ' + result.data.access_token
-      //   }
-      // })
-      //   .then(res => {
-      //     if (res.data.status == 200) {
-      //       key = res;
-      //     } else {
-      //       getStateError(result);
-      //       if (getStateError) {
-      //         onOpenSpiner(false)
-      //       }
-      //     }
-      //   })
+  try {
+    const result = await axios.post('/connect/token', qs.stringify(requestData), axiosConfig);
 
-      // const data = key.data.data.token || {};
-
-      // data.token = result.data.access_token;
-
-      // data.expires = result.data.expires_in;
-
-      // data.refreshToken = result.data.refresh_token;
-
-      // setCookie('AUTHEN_INFO', JSON.stringify(data));
-
-      // if (callBack) {
-      //   callBack();
-      // }
-
-      // redirect(data);
-      const token = ((result || {}).data || {}).access_token || null;
-      const refreshToken = ((result || {}).data || {}).refresh_token || "";
-      
-      if (token) {
-        const url = getUrlCompanyAPI("user/login");
-        
-        const info = await axios.get(url, {
-          headers: {
-            authorization: "Bearer " + token,
-          },
-        });
-        const infoData = info.data || {};
-
-        const tokenAccount = (infoData.data || {}).token || {};
-        const company = (infoData.data || {}).company || {};
-        if (infoData.status == 200) {
-          if (localStorage.getItem("TOKEN") != null) {
-            deleteCookie("AUTHEN_INFO");
-          }
-          const data = {
-            id: tokenAccount.id,
-            userName: tokenAccount.userName,
-            fullName: tokenAccount.fullName,
-            companyID: tokenAccount.companyID,
-            isAdmin: tokenAccount.isAdmin,
-            claims: JSON.parse(tokenAccount.claims || "[]") || [],
-            companyCode: company.companyCode,
-          };
-          data.expires = result.data.expires_in;
-          data.token = result.data.access_token;
-          data.refreshToken = result.data.refresh_token;
-          setCookie("AUTHEN_INFO", JSON.stringify(data));
-
-          if (callBack) {
-            callBack();
-          }
-          
-          redirect(data);
-        } else {
-          return false;
-        }
-      }
-    } else {
+    if (result.status != 200) {
       getStateError(result);
-      if (getStateError) {
-        onOpenSpiner(false)
-      }
+      onOpenSpiner(false);
+      return;
     }
-  }).catch(err => {
+
+    const token = ((result || {}).data || {}).access_token || null;
+
+    if (!token) {
+      getStateError(result);
+      onOpenSpiner(false);
+      return;
+    }
+
+    const url = getUrlCompanyAPI("user/login");
+    const info = await axios.get(url, {
+      headers: {
+        authorization: "Bearer " + token,
+      },
+    });
+    const infoData = info.data || {};
+    const status = infoData.status;
+
+    if (status == 200 || LOGIN_ISSUE_STATUSES.includes(status)) {
+      completeLogin(result, infoData, callBack, redirect);
+      return;
+    }
+
+    onOpenSpiner(false);
+    if (onLoginFailed) {
+      onLoginFailed(infoData.message || "Đăng nhập thất bại.");
+    }
+  } catch (err) {
     getStateError(err);
-    if (getStateError) {
-      onOpenSpiner(false)
-    }
-  });
+    onOpenSpiner(false);
+  }
 }
 
 export const getRefreshToken = (redirect, callBack) => {
@@ -650,27 +657,8 @@ export const getRefreshToken = (redirect, callBack) => {
             });
             const infoData = info.data || {};
 
-            const tokenAccount = (infoData.data || {}).token || {};
-            const company = (infoData.data || {}).company || {};
-            if (infoData.status == 200) {
-              if (localStorage.getItem("TOKEN") != null) {
-                deleteCookie("AUTHEN_INFO");
-              }
-              const data = {
-                id: tokenAccount.id,
-                userName: tokenAccount.userName,
-                fullName: tokenAccount.fullName,
-                companyID: tokenAccount.companyID,
-                isAdmin: tokenAccount.isAdmin,
-                claims: JSON.parse(tokenAccount.claims || "[]") || [],
-                companyCode: company.companyCode,
-              };
-              data.expires = result.data.expires_in;
-              data.token = result.data.access_token;
-              data.refreshToken = result.data.refresh_token;
-              setCookie("AUTHEN_INFO", JSON.stringify(data));
-
-              redirect(data);
+            if (infoData.status == 200 || LOGIN_ISSUE_STATUSES.includes(infoData.status)) {
+              completeLogin(result, infoData, null, redirect);
               window.location.reload();
               resolve(true);
             } else {

@@ -1,0 +1,215 @@
+.page {
+  padding: 0 0 120px;
+  min-height: calc(100vh - 180px);
+}
+
+.cardBody {
+  padding-bottom: 96px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #32325d;
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.formRowTwoCol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .formRowTwoCol {
+    grid-template-columns: 1fr;
+  }
+
+  .page {
+    padding-bottom: 140px;
+  }
+
+  .cardBody {
+    padding-bottom: 112px;
+  }
+
+  .referencePanel {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.formItem {
+  flex: 1 1 280px;
+  min-width: 240px;
+}
+
+.formRowTwoCol .formItem {
+  flex: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.formItemFull {
+  flex: 1 1 100%;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #525f7f;
+}
+
+.readonlyValue {
+  padding: 10px 12px;
+  background: #f6f9fc;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  color: #525f7f;
+  min-height: 42px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+}
+
+.pageBottomSpacer {
+  height: 48px;
+}
+
+.mappingTable {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.mappingTableWrap {
+  overflow-x: auto;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mappingTableHead :global(th) {
+  background-color: #f6f9fc;
+  color: #32325d;
+  font-weight: 600;
+  font-size: 13px;
+  border-color: #e9ecef;
+}
+
+.mappingSummary {
+  font-size: 13px;
+  font-weight: 600;
+  color: #525f7f;
+  margin-bottom: 12px;
+}
+
+.referencePanel {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  background: #fff;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.referencePanelTitle {
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #32325d;
+  background: #f6f9fc;
+  border-bottom: 1px solid #e9ecef;
+  position: sticky;
+  top: 0;
+}
+
+.referenceList {
+  margin: 0;
+  padding: 8px 12px 12px 28px;
+  font-size: 13px;
+  color: #525f7f;
+}
+
+.mappingBadgeDone,
+.mappingBadgePending {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mappingBadgeDone {
+  background: #e6faf3;
+  color: #2dce89;
+}
+
+.mappingBadgePending {
+  background: #fff5e6;
+  color: #fb6340;
+}
+
+.mappingInput {
+  min-width: 280px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #8898aa;
+  margin-top: 8px;
+}
+
+.inlineActions {
+  margin: 8px 0 16px;
+}
+
+.previewBox {
+  padding: 12px;
+  background: #f6f9fc;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  color: #525f7f;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.addressSelect :global(.select-search) {
+  width: 100%;
+}
+
+.addressSelect :global(.select-search__input) {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #cad1d7;
+  border-radius: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.configuredBadge {
+  font-size: 13px;
+  color: #2dce89;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.wardLoading {
+  font-size: 12px;
+  color: #8898aa;
+  margin-top: 6px;
+}
