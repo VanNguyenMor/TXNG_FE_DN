@@ -268,10 +268,8 @@ class DashboardChart extends Component {
             ACCOUNT_CLAIM_FF = localStorage.getItem('ACCOUNT_CLAIM_FF').split(',').filter(x => x != "");
             ACCOUNT_CLAIM_FF.filter(x => x == "StampRequests.View").map(y => isDisableChart = false)
         }
-        this.fetchSummary(yearM);
-        // this.fetchSummaryQuarter(yearQ);
-        // this.fetchSummaryYear(yearfromY, yeartoY)
         if (isDisableChart === false) {
+            this.fetchSummary(yearM);
             getDistrictList();
             requestListMaterialGroup(JSON.stringify({
                 "search": "",

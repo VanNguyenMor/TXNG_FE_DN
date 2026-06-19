@@ -133,6 +133,7 @@ class Transport extends Component {
         data: transports,
         listLength: total,
         totalPage: Math.ceil(transports.length / limit),
+        totalElement: Math.min(limit, transports.length),
         isLoaded: false,
         collapseList,
         status: (res || {}).status,

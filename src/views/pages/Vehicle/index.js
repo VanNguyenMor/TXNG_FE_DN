@@ -11,6 +11,7 @@ import Pagination from "components/Pagination";
 import Select from "../../../components/Select";
 import ImageUploader from "../../../components/ImageUploader/ImageUploader";
 import MenuButton from "../../../assets/img/buttons/menu.png";
+import PlusImg from "../../../assets/img/buttons/plus.svg";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 import WarningPopup from "../../../components/WarningPopup";
 import PopupMessage from "../../../components/PopupMessage";
@@ -127,6 +128,7 @@ class Vehicle extends Component {
           data: list,
           listLength: total,
           totalPage: Math.ceil(list.length / limit),
+          totalElement: Math.min(limit, list.length),
           isLoaded: false,
           collapseList,
           status: (res || {}).status,
@@ -482,8 +484,10 @@ class Vehicle extends Component {
                           type="button"
                           size="lg"
                           className="btn-primary-cs"
+                          style={{ width: "auto", minWidth: 110, padding: "0.3rem 12px", whiteSpace: "nowrap" }}
                           onClick={this.onOpenCreate}
                         >
+                          <img src={PlusImg} alt="Thêm phương tiện" />
                           <span>Thêm phương tiện</span>
                         </Button>
                       )

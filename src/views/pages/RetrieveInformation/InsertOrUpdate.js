@@ -25,6 +25,7 @@ class InsertOrUpadte extends Component {
       dataInsert: {},
       isIsolationTest: !!initialData.isIsolationTest,
       typeId: initialData.typeId != null ? initialData.typeId : null,
+      imageFile: null, // file ảnh người dùng vừa chọn (gửi lên BE field "Image")
     };
   }
 
@@ -102,6 +103,19 @@ class InsertOrUpadte extends Component {
 
   handleFileChange = (files) => {
     this.setState({ file: files[0]?.name || "" });
+  };
+
+  // ImageUploader gọi onFileSelected(file, previewUrl) khi người dùng chọn ảnh.
+  // Lưu file để gửi lên BE + cập nhật preview, rồi đẩy state lên cha (onHandleChangeValue).
+  handleImageSelected = (file, previewUrl) => {
+    this.setState(
+      { imageFile: file, imgUrlVal: previewUrl },
+      () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      }
+    );
   };
 
   toggleModal = (state) => {
@@ -203,7 +217,8 @@ class InsertOrUpadte extends Component {
               <label className="form-control-label">Hình ảnh</label>
               <ImageUploader
                 initialImageUrl={imgUrlVal || Noimg}
-                onFileSelected={this.handleImageUploadSuccess}
+                onFileSelected={this.handleImageSelected}
+                disabled={isReadOnly}
               />
             </div>
           </Col>

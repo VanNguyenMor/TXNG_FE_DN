@@ -212,6 +212,7 @@ class ProductManagement extends Component {
         data: newData,
         listLength: newData.length,
         totalPage: Math.ceil(newData.length / limit),
+        totalElement: Math.min(limit, newData.length),
         collapseList,
         isLoaded: false,
       });

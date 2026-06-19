@@ -1,393 +1,237 @@
 import React, { Component } from "react";
-import PopupMessage from "../../../components/PopupMessage";
 import Select from "components/Select";
 import "../../../assets/css/page/insert_or_update_planting_zone.css";
 import classes from "./index.module.css";
+import { Col, InputGroup, Row } from "reactstrap";
 
-import { InputGroup } from "reactstrap";
+// Kiểu dữ liệu "Văn bản" mới cho phép chọn Danh sách tham chiếu (giống mobile)
+const DATA_TYPE_TEXT = 1;
 
-const DATA_INSERT_FIELDS = ["reference_select", "case_yes", "case_no"];
-
-class InsertOrUpadte extends Component {
+class InsertOrUpdate extends Component {
   constructor(props) {
     super(props);
 
+    const init = props.initialData || {};
     this.state = {
-      id: null,
-      jobId: null,
-      productId: null,
-      retrieveId: null,
-      name: "",
-      order: null,
-      dataTypeId: null,
-      dataInsert: {},
+      id: init.id != null ? init.id : null,
+      processAccessId: init.processAccessId != null ? init.processAccessId : null,
+      setManifestName: init.setManifestName || "",
+      sortOrder: init.sortOrder != null ? init.sortOrder : "",
+      variable: init.variable != null ? Number(init.variable) : null,
+      refference: init.refference != null ? init.refference : null,
+      informSelectValues: init.informSelectValues || [],
+      isGenerated: init.isGenerated,
     };
   }
 
-  async componentDidMount() {
-    const { onHandleChangeValue } = this.props;
-
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
-    }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
-      }
-    );
-
-    this.focusInput();
+  componentDidMount() {
+    this.report();
   }
 
-  focusInput = () => {
-    if (this.refInputName) {
-      const timeOut = setTimeout(() => {
-        this.refInputName.focus();
-
-        clearTimeout(timeOut);
-      }, 100);
-    }
+  report = () => {
+    if (this.props.onHandleChangeValue) this.props.onHandleChangeValue(this.state);
   };
 
   onChangeSelect = (name) => (value) => {
+    this.setState({ [name]: value }, this.report);
+  };
+
+  onChangeVariable = (value) => {
+    const variable = value === null || value === "" ? null : Number(value);
+    // Đổi kiểu dữ liệu khác "Văn bản" -> bỏ danh sách tham chiếu
+    const refference = variable === DATA_TYPE_TEXT ? this.state.refference : null;
+    this.setState({ variable, refference }, this.report);
+  };
+
+  onChangeRefference = (value) => {
     this.setState(
-      (prevState) => {
-        let newState = { ...prevState };
-
-        if (name === "dataTypeId") {
-          newState[name] = value;
-          newState.dataInsert = {}; 
-        } else if (DATA_INSERT_FIELDS.includes(name)) {
-          newState.dataInsert = {
-            ...prevState.dataInsert,
-            [name]: value,
-          };
-        } else {
-          newState[name] = value;
-        }
-
-        return newState;
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
+      { refference: value === null || value === "" ? null : Number(value) },
+      this.report
     );
   };
 
   onChangeValue = (name) => (e) => {
+    this.setState({ [name]: e.target.value }, this.report);
+  };
+
+  // Định nghĩa nội dung hiển thị cho kiểu Có/Không (condition '1' = Có, '0' = Không)
+  onChangeCustom = (condition) => (e) => {
     const value = e.target.value;
-    this.setState(
-      (previousState) => {
-        if (DATA_INSERT_FIELDS.includes(name)) {
-          return {
-            ...previousState,
-            dataInsert: {
-              ...previousState.dataInsert,
-              [name]: value,
-            },
-          };
-        } else {
-          return {
-            ...previousState,
-            [name]: value,
-          };
-        }
-      },
-      () => {
-        if (this.props.onHandleChangeValue) {
-          this.props.onHandleChangeValue(this.state);
-        }
-      }
+    const informSelectValues = (this.state.informSelectValues || []).map((x) => ({ ...x }));
+    const found = informSelectValues.find((p) => String(p.condition) === condition);
+    if (found) found.value = value;
+    else informSelectValues.push({ condition, value });
+    this.setState({ informSelectValues }, this.report);
+  };
+
+  getCustomValue = (condition) => {
+    const found = (this.state.informSelectValues || []).find(
+      (p) => String(p.condition) === condition
     );
-  };
-
-  onChangeSelectType = () => {
-    this.resetFieldValue();
-  };
-
-  resetFieldValue = () => {
-    // Reset dynamic field values when type changes
-  };
-
-  handleFileChange = (files) => {
-    this.setState({ file: files[0]?.name || "" });
-  };
-
-  toggleModal = (state) => {
-    this.setState({ [state]: !this.state[state] });
-  };
-
-  calculateTotalAmount = (quantity, price, vatRate) => {
-    const subtotal = Number(quantity) * Number(price);
-    const vatFactor = 1 + Number(vatRate) / 100;
-
-    const totalAmount = subtotal * vatFactor;
-
-    return Math.round(totalAmount);
-  };
-
-  handleScanQR = () => {
-    console.log("Đã nhấn nút Yêu cầu mở Camera.");
-  };
-
-  handleCheckboxChange = (event) => {
-    const { name, checked } = event.target;
-
-    this.setState((prevState) => {
-      const newState = {
-        ...prevState,
-        [name]: checked,
-      };
-
-      if (this.props.onHandleChangeValue) {
-        this.props.onHandleChangeValue(newState);
-      }
-
-      return newState;
-    });
-  };
-
-  handleSelect = (value, name) => {
-    const { handleSelect } = this.props;
-    let { newData } = this.state;
-    if (name == "FieldID") {
-      this.setState({ currentFilter: value });
-    }
-    if (name == "FieldID") {
-      const { requestAccessPopupStore } = this.props;
-
-      requestAccessPopupStore(
-        JSON.stringify({
-          search: "",
-          filter: value == "" ? 0 : value,
-          orderBy: "",
-          page: null,
-          limit: null,
-        })
-      );
-    }
-
-    if (value === null) value = "";
-
-    newData[name] = value;
-
-    this.setState({ newData });
-
-    this.handleCheckValidation();
+    return found ? found.value : "";
   };
 
   render() {
+    const { processAccessId, setManifestName, sortOrder, variable, refference } = this.state;
     const {
-      errMessage,
-      popupMessage,
-      jobId,
-      productId,
-      retrieveId,
-      name,
-      dataTypeId,
-      order,
-      dataInsert,
-    } = this.state;
-    const {
-      errors,
-      PRODUCT_OPTIONS,
-      JOB_OPTIONS,
-      RETRIEVE_OPTIONS,
-      LOGGING_DATA_TYPES,
-      REFERENCE_LIST,
+      errors = {},
+      isReadOnly,
+      PROCESS_ACCESS_OPTIONS = [],
+      VARIABLE_OPTIONS = [],
+      REFERENCE_OPTIONS = [],
     } = this.props;
 
     return (
       <div className="wrap-insert-or-update-zone">
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Ngành nghề&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <Select
-              value={jobId}
-              defaultValue={null}
-              labelMark={null}
-              className="wrap-insert-or-update-zone-item-select"
-              name="jobId"
-              title="Chọn ngành nghề"
-              data={JOB_OPTIONS}
-              labelName="title"
-              val="id"
-              handleChange={this.onChangeSelect("jobId")}
-            />
+        <Row className="mb-3">
+          <Col md="12">
+            <div className={`${classes.rowItem} mr-b-0 `}>
+              <label className="wrap-insert-or-update-zone-item-label">
+                Truy xuất&nbsp;<b style={{ color: "red" }}>*</b>
+              </label>
+              <div className="wrap-insert-or-update-zone-item-box">
+                <Select
+                  value={processAccessId}
+                  name="processAccessId"
+                  title="Chọn truy xuất"
+                  data={PROCESS_ACCESS_OPTIONS}
+                  labelName="title"
+                  val="id"
+                  handleChange={this.onChangeSelect("processAccessId")}
+                />
+                <p className="form-error-message">{errors.processAccessId || ""}</p>
+              </div>
+            </div>
+          </Col>
+        </Row>
 
-            <p className="form-error-message">{errors.supplierId || ""}</p>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Sản phẩm
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <Select
-              value={productId}
-              defaultValue={null}
-              labelMark={null}
-              className="wrap-insert-or-update-zone-item-select"
-              name="productId"
-              title="Chọn sản phẩm"
-              data={PRODUCT_OPTIONS}
-              labelName="title"
-              val="id"
-              handleChange={this.onChangeSelect("productId")}
-            />
+        <Row className="mb-3">
+          <Col md="9">
+            <div className={`${classes.rowItem} mr-b-0 `}>
+              <label className="wrap-insert-or-update-zone-item-label">
+                Tên kê khai&nbsp;<b style={{ color: "red" }}>*</b>
+              </label>
+              <div className="wrap-insert-or-update-zone-item-box">
+                <InputGroup className="input-group-alternative css-border-input">
+                  <input
+                    value={setManifestName}
+                    onChange={this.onChangeValue("setManifestName")}
+                    type="text"
+                    maxLength={255}
+                    disabled={isReadOnly}
+                    className="wrap-insert-or-update-zone-item-input"
+                  />
+                </InputGroup>
+                <p className="form-error-message">{errors.setManifestName || ""}</p>
+              </div>
+            </div>
+          </Col>
+          <Col md="3">
+            <div className={`${classes.rowItem} mr-b-0 `}>
+              <label className="wrap-insert-or-update-zone-item-label">Sắp xếp</label>
+              <div className="wrap-insert-or-update-zone-item-box">
+                <InputGroup className="input-group-alternative css-border-input">
+                  <input
+                    value={sortOrder === null || sortOrder === undefined ? "" : sortOrder}
+                    onChange={this.onChangeValue("sortOrder")}
+                    type="number"
+                    min={1}
+                    max={100}
+                    disabled={isReadOnly}
+                    className="wrap-insert-or-update-zone-item-input"
+                  />
+                </InputGroup>
+              </div>
+            </div>
+          </Col>
+        </Row>
 
-            <p className="form-error-message">{errors.productId || ""}</p>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Truy xuất
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <Select
-              value={retrieveId}
-              defaultValue={null}
-              labelMark={null}
-              className="wrap-insert-or-update-zone-item-select"
-              name="retrieveId"
-              title="Chọn truy xuất"
-              data={RETRIEVE_OPTIONS}
-              labelName="title"
-              val="id"
-              handleChange={this.onChangeSelect("retrieveId")}
-            />
+        <Row className="mb-3">
+          <Col md={variable === DATA_TYPE_TEXT ? "6" : "12"}>
+            <div className={`${classes.rowItem} mr-b-0 `}>
+              <label className="wrap-insert-or-update-zone-item-label">
+                Kiểu dữ liệu&nbsp;<b style={{ color: "red" }}>*</b>
+              </label>
+              <div className="wrap-insert-or-update-zone-item-box">
+                <Select
+                  value={variable}
+                  name="variable"
+                  title="Chọn kiểu dữ liệu"
+                  data={VARIABLE_OPTIONS}
+                  labelName="label"
+                  val="value"
+                  handleChange={this.onChangeVariable}
+                />
+                <p className="form-error-message">{errors.variable || ""}</p>
+              </div>
+            </div>
+          </Col>
 
-            <p className="form-error-message">{errors.retrieveId || ""}</p>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Tên kê khai&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                value={name}
-                onChange={this.onChangeValue("name")}
-                type="text"
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-
-            <p className="form-error-message">{errors.name || ""}</p>
-          </div>
-        </div>
-
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Kiểu dữ liệu
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <Select
-              value={dataTypeId}
-              defaultValue={null}
-              labelMark={null}
-              className="wrap-insert-or-update-zone-item-select"
-              name="dataTypeId"
-              title="Chọn kiểu dữ liệu"
-              data={LOGGING_DATA_TYPES}
-              labelName="title"
-              val="id"
-              handleChange={this.onChangeSelect("dataTypeId")}
-            />
-
-            <p className="form-error-message">{errors.dataTypeId || ""}</p>
-          </div>
-        </div>
-
-        {(() => {
-          const selectedDataType = (LOGGING_DATA_TYPES || []).find(
-            (item) => item.id === dataTypeId
-          );
-
-          if (selectedDataType && selectedDataType.childInputs.length > 0) {
-            return selectedDataType.childInputs.map((inputDef) => (
-              <div
-                key={inputDef.name}
-                className="wrap-insert-or-update-zone-item"
-              >
+          {variable === DATA_TYPE_TEXT ? (
+            <Col md="6">
+              <div className={`${classes.rowItem} mr-b-0 `}>
                 <label className="wrap-insert-or-update-zone-item-label">
-                  {inputDef.label}&nbsp;
-                  {inputDef.required && <b style={{ color: "red" }}>*</b>}
+                  Danh sách tham chiếu
                 </label>
-
                 <div className="wrap-insert-or-update-zone-item-box">
-                  {inputDef.type === "select_input" ? (
-                    <Select
-                      value={dataInsert[inputDef.name]}
-                      name={inputDef.name}
-                      title={inputDef.placeholder}
-                      data={this.props[inputDef.dataSource] || []}
-                      labelName="title"
-                      val="id"
-                      handleChange={this.onChangeSelect(inputDef.name)}
-                    />
-                  ) : (
-                    <InputGroup className="input-group-alternative css-border-input">
-                      <input
-                        value={dataInsert[inputDef.name] || ""}
-                        onChange={this.onChangeValue(inputDef.name)}
-                        type={inputDef.type}
-                        className="wrap-insert-or-update-zone-item-input"
-                      />
-                    </InputGroup>
-                  )}
-
-                  <p className="form-error-message">
-                    {errors[inputDef.name] || ""}
-                  </p>
+                  <Select
+                    value={refference}
+                    name="refference"
+                    title="Chọn danh sách tham chiếu"
+                    data={REFERENCE_OPTIONS}
+                    labelName="label"
+                    val="value"
+                    handleChange={this.onChangeRefference}
+                  />
                 </div>
               </div>
-            ));
-          }
-          return null;
-        })()}
+            </Col>
+          ) : null}
+        </Row>
 
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Sắp xếp&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <input
-                value={order === null || order === undefined ? "" : order}
-                onChange={this.onChangeValue("order")}
-                type="number"
-                min={1}
-                max={100}
-                className="wrap-insert-or-update-zone-item-input"
-              />
-            </InputGroup>
-
-            <p className="form-error-message">{errors.order || ""}</p>
-          </div>
-        </div>
-
-        <PopupMessage
-          popupMessage={popupMessage}
-          moduleTitle={"Thông báo"}
-          moduleBody={errMessage}
-          toggleModal={this.toggleModal}
-        />
+        {/* Kiểu Có/Không: định nghĩa nội dung hiển thị */}
+        {variable === 6 ? (
+          <Row className="mb-3">
+            <Col md="12">
+              <label className="wrap-insert-or-update-zone-item-label">
+                Định nghĩa nội dung hiển thị cho kiểu dữ liệu có/không
+              </label>
+            </Col>
+            <Col md="6">
+              <div className={`${classes.rowItem} mr-b-0 `}>
+                <label className="wrap-insert-or-update-zone-item-label">Trường hợp có</label>
+                <InputGroup className="input-group-alternative css-border-input">
+                  <input
+                    value={this.getCustomValue("1")}
+                    onChange={this.onChangeCustom("1")}
+                    type="text"
+                    maxLength={255}
+                    disabled={isReadOnly}
+                    className="wrap-insert-or-update-zone-item-input"
+                  />
+                </InputGroup>
+              </div>
+            </Col>
+            <Col md="6">
+              <div className={`${classes.rowItem} mr-b-0 `}>
+                <label className="wrap-insert-or-update-zone-item-label">Trường hợp không</label>
+                <InputGroup className="input-group-alternative css-border-input">
+                  <input
+                    value={this.getCustomValue("0")}
+                    onChange={this.onChangeCustom("0")}
+                    type="text"
+                    maxLength={255}
+                    disabled={isReadOnly}
+                    className="wrap-insert-or-update-zone-item-input"
+                  />
+                </InputGroup>
+              </div>
+            </Col>
+          </Row>
+        ) : null}
       </div>
     );
   }
 }
 
-export default InsertOrUpadte;
+export default InsertOrUpdate;
