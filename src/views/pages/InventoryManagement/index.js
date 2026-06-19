@@ -305,6 +305,11 @@ class InventoryManagement extends Component {
         data: newData,
         listLength: total,
         totalPage: Math.ceil(length / limit),
+        totalElement: Math.min(limit, length),
+        // Reset phân trang về trang đầu mỗi lần nạp lại để không rơi vào trang trống
+        beginItem: 0,
+        endItem: limit,
+        currentPage: 0,
         isLoaded: false,
         collapseList: collapseList,
       });
@@ -566,9 +571,11 @@ class InventoryManagement extends Component {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
     let parentid = [];
-    let autoIndex = 0;
+    // STT chạy liên tục giữa các trang -> bắt đầu từ beginItem
+    let autoIndex = beginItem;
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
+    // Chỉ render dữ liệu của trang hiện tại (phân trang thực sự)
+    const pageData = data.filter((item, key) => key >= beginItem && key < endItem);
     data.forEach((e) => parentid.push(e.id));
 
     const cb = (e, key, array) => {
@@ -651,7 +658,7 @@ class InventoryManagement extends Component {
       e.children && e.children.forEach(cb);
     };
 
-    data.forEach(cb);
+    pageData.forEach(cb);
     return list;
   };
 
@@ -669,6 +676,7 @@ class InventoryManagement extends Component {
       listLength,
       totalPage,
       totalElement,
+      currentPage,
       fromDate,
       toDate,
       createNewModal,
@@ -899,12 +907,13 @@ class InventoryManagement extends Component {
                     {/* Pagination */}
                     {
                       // Page of Table
-                      Array.isArray(data) > 0 && (
+                      Array.isArray(data) && data.length > 0 && (
                         <Pagination
                           data={data}
                           listLength={listLength}
                           totalPage={totalPage}
                           totalElement={totalElement}
+                          currentPage={currentPage > 0 ? currentPage - 1 : 0}
                           handlePageClick={this.handlePageClick}
                         />
                       )

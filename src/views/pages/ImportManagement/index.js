@@ -203,8 +203,8 @@ class ImportManagement extends Component {
     };
 
     const requestParams = {
-      page: parsedParams.page || filter.page || 1,
-      limit: parsedParams.limit || filter.limit || limit,
+      page: 0,
+      limit: 10000,
       fromDate: formatDateParam(parsedParams.fromDate ?? this.state.fromDate),
       toDate: formatDateParam(parsedParams.toDate ?? this.state.toDate),
     };
@@ -216,12 +216,7 @@ class ImportManagement extends Component {
       .then((res) => {
         const collapseList = [];
         const responseData = (res?.data || {}).data || res?.data || {};
-        const rawItems =
-          responseData.items ||
-          responseData.inventoryTransfers ||
-          responseData.transferWarehouseItems ||
-          responseData.data ||
-          [];
+        const rawItems = responseData.reports || [];
 
         const itemsArray = Array.isArray(rawItems) ? rawItems : [];
 
@@ -275,33 +270,18 @@ class ImportManagement extends Component {
           item["index"] = key + 1;
         });
 
-        const totalFromApi =
-          responseData.totalElement ||
-          responseData.totalElements ||
-          responseData.total ||
-          responseData.totalCount;
-        const computedTotal =
-          typeof totalFromApi === "number" ? totalFromApi : newData.length;
-        const totalPageFromApi =
-          responseData.totalPage ||
-          responseData.totalPages ||
-          responseData.pageCount;
+        const total = newData.length;
 
         this.setState({
           data: newData,
-          listLength: computedTotal,
-          totalPage:
-            typeof totalPageFromApi === "number"
-              ? totalPageFromApi
-              : Math.ceil(
-                  computedTotal / (requestParams.limit || limit || 1)
-                ),
+          listLength: total,
+          totalPage: Math.ceil(total / limit),
           isLoaded: false,
           collapseList: collapseList,
           beginItem: 0,
-          endItem: requestParams.limit || limit,
-          totalElement: computedTotal,
-          currentPage: requestParams.page || 1,
+          endItem: limit,
+          totalElement: Math.min(limit, total),
+          currentPage: 0,
         });
       })
       .catch((error) => {
@@ -544,14 +524,14 @@ class ImportManagement extends Component {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
     let parentid = [];
-    let autoIndex = 0;
+    let autoIndex = beginItem;
+    const pageData = data.filter((item, key) => key >= beginItem && key < endItem);
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
     data.forEach((e) => parentid.push(e.id));
 
     const cb = (e, key, array) => {
       const renderClass =
-        e.parentID.length === 0
+        !(e.parentID || []).length
           ? `${classes.treeParent}`
           : `${classes.treeChild}${
               parentid.includes(e.parentID)
@@ -638,7 +618,7 @@ class ImportManagement extends Component {
       e.children && e.children.forEach(cb);
     };
 
-    data.forEach(cb);
+    pageData.forEach(cb);
     return list;
   };
 
@@ -665,6 +645,7 @@ class ImportManagement extends Component {
       PRODUCTS_OPTIONS,
       UNIT_OPTIONS,
       STATUS_OPTIONS,
+      currentPage,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -842,13 +823,14 @@ class ImportManagement extends Component {
                     {/* Pagination */}
                     {
                       // Page of Table
-                      Array.isArray(data) > 0 && (
+                      Array.isArray(data) && data.length > 0 && (
                         <Pagination
                           data={data}
                           listLength={listLength}
                           totalPage={totalPage}
                           totalElement={totalElement}
                           handlePageClick={this.handlePageClick}
+                          currentPage={currentPage > 0 ? currentPage - 1 : 0}
                         />
                       )
                     }

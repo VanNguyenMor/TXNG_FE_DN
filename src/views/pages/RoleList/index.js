@@ -144,6 +144,10 @@ class RoleList extends Component {
                   history: roleData.roles.roles,
                   listLength: roleData.roles.total,
                   totalPage: Math.ceil(roleData?.roles?.roles?.length / limit),
+                  // Reset phân trang về trang đầu mỗi lần nạp lại để không rơi vào trang trống
+                  beginItem: 0,
+                  endItem: limit,
+                  currentPage: 0,
                   isLoaded: roleData.isLoading,
                   refetch: false,
                   status: roleData.status,
@@ -157,6 +161,10 @@ class RoleList extends Component {
                   history: roleData.roles.roles,
                   listLength: roleData.roles.total,
                   totalPage: Math.ceil(roleData?.roles?.roles?.length / limit),
+                  // Reset phân trang về trang đầu mỗi lần nạp lại để không rơi vào trang trống
+                  beginItem: 0,
+                  endItem: limit,
+                  currentPage: 0,
                   isLoaded: false,
                   status: roleData.status,
                   message: PLEASE_CHECK_CONNECT(roleData.message),
@@ -623,6 +631,7 @@ class RoleList extends Component {
       listLength,
       totalPage,
       totalElement,
+      currentPage,
       filter,
       activeCreateSubmit,
       newData,
@@ -842,6 +851,7 @@ class RoleList extends Component {
                           listLength={listLength}
                           totalPage={totalPage}
                           totalElement={totalElement}
+                          currentPage={currentPage > 0 ? currentPage - 1 : 0}
                           handlePageClick={this.handlePageClick}
                         />
                       )

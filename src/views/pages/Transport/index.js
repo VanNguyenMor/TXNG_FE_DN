@@ -134,6 +134,10 @@ class Transport extends Component {
         listLength: total,
         totalPage: Math.ceil(transports.length / limit),
         totalElement: Math.min(limit, transports.length),
+        // Reset phân trang về trang đầu mỗi lần nạp lại để không rơi vào trang trống
+        beginItem: 0,
+        endItem: limit,
+        currentPage: 0,
         isLoaded: false,
         collapseList,
         status: (res || {}).status,
@@ -356,6 +360,7 @@ class Transport extends Component {
       listLength,
       totalPage,
       totalElement,
+      currentPage,
       fromDate,
       toDate,
       collapseList,
@@ -521,6 +526,7 @@ class Transport extends Component {
                       listLength={listLength}
                       totalPage={totalPage}
                       totalElement={totalElement}
+                      currentPage={currentPage > 0 ? currentPage - 1 : 0}
                       handlePageClick={this.handlePageClick}
                     />
                   )}

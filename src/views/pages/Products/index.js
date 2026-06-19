@@ -553,7 +553,7 @@ class Product extends Component {
           totalPage: Math.ceil(length / limit),
           isLoaded: false,
           collapseList: collapseList,
-          totalElement: total,
+          totalElement: Math.min(limit, total),
           beginItem: 0,
           endItem: limit,
           currentPage: 1,
@@ -1145,9 +1145,11 @@ class Product extends Component {
     
     let list = [];
     let parentid = [];
-    let autoIndex = 0;
+    // STT chạy liên tục giữa các trang -> bắt đầu từ beginItem
+    let autoIndex = beginItem;
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
+    // Chỉ render dữ liệu của trang hiện tại (phân trang thực sự)
+    const pageData = data.filter((item, key) => key >= beginItem && key < endItem);
     data.forEach((e) => parentid.push(e.id));
 
     const cb = (e, key, array) => {
@@ -1242,7 +1244,7 @@ class Product extends Component {
       }
     };
 
-    data.forEach(cb);
+    pageData.forEach(cb);
     return list;
   };
 
@@ -1260,6 +1262,7 @@ class Product extends Component {
       listLength,
       totalPage,
       totalElement,
+      currentPage,
       createNewModal,
       popupMessage,
       activeCreateSubmit,
@@ -1488,12 +1491,13 @@ class Product extends Component {
                     {/* Pagination */}
                     {
                       // Page of Table
-                      Array.isArray(data) > 0 && (
+                      Array.isArray(data) && data.length > 0 && (
                         <Pagination
                           data={data}
                           listLength={listLength}
                           totalPage={totalPage}
                           totalElement={totalElement}
+                          currentPage={currentPage > 0 ? currentPage - 1 : 0}
                           handlePageClick={this.handlePageClick}
                         />
                       )
