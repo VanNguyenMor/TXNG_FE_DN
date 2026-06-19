@@ -97,7 +97,7 @@ export const MENU_DATA = [
   },
   {
     id: "055",
-    name: "Tích Hợp TXNG Quốc Gia",
+    name: "Quản lý tích hợp TXNG Quốc gia",
     url: "/tich_hop_txng_quoc_gia",
     isCompany: 0,
     sortOrder: 4,

@@ -139,6 +139,8 @@ class NationalPortalIntegration extends Component {
   resetPortalInfo = () => {
     this.setState({
       isIntegrationConfigured: false,
+      fieldId: null,
+      plantingZoneId: null,
       gtinCode: "",
       idChuoiCungUng: "",
       idToChuc: "",
@@ -152,10 +154,20 @@ class NationalPortalIntegration extends Component {
       informSelects: [],
       congViecMappings: {},
       existingLocationText: "",
+      provinceId: null,
+      provinceName: "",
+      provinceIdRoot: "",
+      wardId: null,
+      wardName: "",
+      wards: [],
+      isLoadingWards: false,
+      street: "",
+      lat: "",
+      lng: "",
     });
   };
 
-  loadInformSelects = async (fieldId, productId) => {
+  loadInformSelects = async (fieldId, productId, { updateState = true } = {}) => {
     if (!fieldId || !productId) {
       this.setState({ informSelects: [], congViecMappings: {} });
       return { informSelects: [], congViecMappings: {} };
@@ -176,7 +188,9 @@ class NationalPortalIntegration extends Component {
         congViecMappings[item.id] = "";
       });
 
-      this.setState({ informSelects, congViecMappings });
+      if (updateState) {
+        this.setState({ informSelects, congViecMappings });
+      }
       return { informSelects, congViecMappings };
     } catch (error) {
       toast.error("Không thể tải danh sách kê khai.");
@@ -243,11 +257,10 @@ class NationalPortalIntegration extends Component {
     }
   };
 
-  loadIntegrationConfig = async (productId, fieldId = null, informSelects = []) => {
+  loadIntegrationConfig = async (productId) => {
     const { companyId } = this.state;
 
     if (!companyId || !productId) {
-      this.resetPortalInfo();
       return;
     }
 
@@ -257,7 +270,6 @@ class NationalPortalIntegration extends Component {
       const result = await fetchData.nationalPortalIntegration.getConfig({
         companyId,
         productId,
-        fieldId: fieldId || undefined,
       });
       const config = result?.data || {};
 
@@ -268,23 +280,16 @@ class NationalPortalIntegration extends Component {
         config.idToChuc;
 
       if (!hasSavedProductInfo) {
-        const hasLocalPortalData =
-          this.state.gtinCode?.trim() ||
-          this.state.idChuoiCungUng?.trim() ||
-          (this.state.congViecOptions || []).length > 0;
-
-        if (!hasLocalPortalData) {
-          this.resetPortalInfo();
-        }
         return;
       }
 
-      const resolvedFieldId =
-        fieldId || config.fieldId || config.FieldId || null;
+      const resolvedFieldId = config.fieldId || config.FieldId || null;
 
-      let informSelectsToUse = informSelects;
-      if (resolvedFieldId && !informSelectsToUse.length) {
-        const informData = await this.loadInformSelects(resolvedFieldId, productId);
+      let informSelectsToUse = [];
+      if (resolvedFieldId) {
+        const informData = await this.loadInformSelects(resolvedFieldId, productId, {
+          updateState: false,
+        });
         informSelectsToUse = informData?.informSelects || [];
       }
 
@@ -292,35 +297,40 @@ class NationalPortalIntegration extends Component {
         ? this.applyCongViecMappingsFromConfig(config, informSelectsToUse)
         : {};
 
-      this.setState({
-        isIntegrationConfigured: !!config.isConfigured,
-        fieldId: resolvedFieldId,
-        gtinCode: config.gtinCode || this.state.gtinCode || "",
-        idChuoiCungUng: config.idChuoiCungUng || this.state.idChuoiCungUng || "",
-        idToChuc: config.idToChuc || this.state.idToChuc || "",
-        idSanPham: config.idSanPham || this.state.idSanPham || "",
-        idNganhHang: config.idNganhHang || this.state.idNganhHang || "",
-        idVungTrong: config.idVungTrong || this.state.idVungTrong || "",
-        glnCode: config.gtinCode || this.state.glnCode || "",
-        plantingZoneId: config.plantingZoneId || null,
-        informSelects: resolvedFieldId ? informSelectsToUse : [],
-        congViecMappings: resolvedFieldId ? congViecMappings : {},
-      });
+      const gtinCode = (config.gtinCode || "").trim();
+      const idChuoiCungUng = (config.idChuoiCungUng || "").trim();
 
-      if (
-        (config.gtinCode || this.state.gtinCode) &&
-        (config.idChuoiCungUng || this.state.idChuoiCungUng) &&
-        !(this.state.congViecOptions || []).length
-      ) {
+      await new Promise((resolve) =>
+        this.setState(
+          {
+            isIntegrationConfigured: !!config.isConfigured,
+            fieldId: resolvedFieldId,
+            gtinCode,
+            idChuoiCungUng,
+            idToChuc: config.idToChuc || "",
+            idSanPham: config.idSanPham || "",
+            idNganhHang: config.idNganhHang || "",
+            idVungTrong: config.idVungTrong || "",
+            glnCode: gtinCode,
+            plantingZoneId: config.plantingZoneId || null,
+            informSelects: informSelectsToUse,
+            congViecMappings,
+          },
+          resolve
+        )
+      );
+
+      if (gtinCode && idChuoiCungUng) {
         await this.runSyncPreview({
           silent: true,
           preserveVungTrong: true,
-          preserveCongViecOptions: true,
+          gtinCode,
+          idChuoiCungUng,
         });
       }
 
-      if (config.gtinCode && config.idToChuc) {
-        await this.loadLocationByGln(config.gtinCode, config.idToChuc, false, true);
+      if (gtinCode && config.idToChuc) {
+        await this.loadLocationByGln(gtinCode, config.idToChuc, false, true);
       }
     } catch (error) {
       toast.error("Không thể tải cấu hình đấu nối đã lưu.");
@@ -332,22 +342,27 @@ class NationalPortalIntegration extends Component {
   loadPortalInfoForSelection = async () => {
     const { productId } = this.state;
 
+    this.resetPortalInfo();
+
     if (!productId) {
-      this.resetPortalInfo();
       return;
     }
 
-    await this.loadIntegrationConfig(productId, null);
+    await this.loadIntegrationConfig(productId);
   };
 
   runSyncPreview = async ({
     silent = false,
     preserveVungTrong = false,
     preserveCongViecOptions = false,
+    gtinCode: gtinOverride,
+    idChuoiCungUng: idChuoiOverride,
   } = {}) => {
-    const { gtinCode, idChuoiCungUng, idVungTrong } = this.state;
+    const gtinCode = (gtinOverride ?? this.state.gtinCode)?.trim();
+    const idChuoiCungUng = (idChuoiOverride ?? this.state.idChuoiCungUng)?.trim();
+    const { idVungTrong } = this.state;
 
-    if (!gtinCode?.trim() || !idChuoiCungUng?.trim()) {
+    if (!gtinCode || !idChuoiCungUng) {
       if (!silent) {
         toast.warning("Vui lòng nhập Mã GTIN và idChuoiCungUng.");
       }
@@ -432,11 +447,6 @@ class NationalPortalIntegration extends Component {
 
     this.setState({ [name]: value }, async () => {
       if (name === "productId") {
-        this.setState({
-          fieldId: null,
-          informSelects: [],
-          congViecMappings: {},
-        });
         await this.loadPortalInfoForSelection();
       }
 
@@ -857,7 +867,7 @@ class NationalPortalIntegration extends Component {
             <Col>
               <Card>
                 <CardHeader>
-                  <h3 className="mb-0">Quản Lí Tích Hợp TXNG Quốc Gia</h3>
+                  <h3 className="mb-0">Quản lý tích hợp TXNG Quốc gia</h3>
                 </CardHeader>
                 <CardBody className={classes.cardBody}>
                   {isLoading && (
@@ -867,7 +877,7 @@ class NationalPortalIntegration extends Component {
                   )}
 
                   <div className={classes.sectionTitle}>
-                    1. Liên kết nội bộ
+                    1. Thông tin liên kết nội bộ
                   </div>
                   <div className={classes.formRowTwoCol}>
                     <div className={classes.formItem}>
@@ -892,7 +902,7 @@ class NationalPortalIntegration extends Component {
                   </div>
 
                   <div className={classes.sectionTitle}>
-                    2. Thông tin cổng (GTIN + chuỗi cung ứng)
+                    2. Thông tin trên Cổng TXNG Quốc gia
                   </div>
                   {isIntegrationConfigured && (
                     <p className={classes.configuredBadge}>
@@ -909,9 +919,9 @@ class NationalPortalIntegration extends Component {
                       "Ví dụ: 8939636000813"
                     )}
                     {this.renderInput(
+                      "ID chuỗi cung ứng",
                       "idChuoiCungUng",
-                      "idChuoiCungUng",
-                      "UUID do admin cổng cung cấp"
+                      "Nhập ID chuỗi cung ứng do Cổng TXNG cung cấp"
                     )}
                   </div>
                   <div className={classes.inlineActions}>
@@ -920,7 +930,7 @@ class NationalPortalIntegration extends Component {
                       disabled={isSyncing || isLoading}
                       onClick={this.handleSyncPreview}
                     >
-                      {isSyncing ? "Đang lấy thông tin..." : "Lấy thông tin cổng"}
+                      {isSyncing ? "Đang lấy thông tin..." : "Lấy thông tin từ cổng"}
                     </Button>
                   </div>
                   {(tenSanPham || tenChuoiCungUng || gtinCode || isIntegrationConfigured) && (
@@ -941,7 +951,7 @@ class NationalPortalIntegration extends Component {
                   )}
 
                   <div className={classes.sectionTitle}>
-                    3. Địa chỉ vùng sản xuất
+                    3. Thông tin vùng sản xuất
                   </div>
                   <p className={classes.hint}>
                     Tỉnh/thành và phường/xã lấy từ Cổng TXNG Quốc gia. Mã GLN
@@ -949,9 +959,9 @@ class NationalPortalIntegration extends Component {
                   </p>
                   <div className={classes.formRowTwoCol}>
                     {this.renderAddressSelectSearch(
-                      "Tỉnh/thành",
+                      "Tỉnh/thành phố",
                       provinceId,
-                      "Tìm và chọn tỉnh/thành",
+                      "Chọn tỉnh/thành phố",
                       provinceOptions,
                       this.onChangeSelect("provinceId")
                     )}
@@ -960,7 +970,7 @@ class NationalPortalIntegration extends Component {
                       wardId,
                       provinceId
                         ? "Tìm và chọn phường/xã"
-                        : "Chọn tỉnh/thành trước",
+                        : "Vui lòng chọn tỉnh/thành phố trước",
                       wardOptions,
                       this.onChangeSelect("wardId"),
                       !provinceId || isLoadingWards,
@@ -969,22 +979,22 @@ class NationalPortalIntegration extends Component {
                   </div>
                   <div className={classes.formRowTwoCol}>
                     {this.renderInput(
-                      "Ấp/đường",
+                      "Ấp/đường/thôn",
                       "street",
                       "Ví dụ: Ấp Mỹ Lương"
                     )}
                     <div className={classes.formItem}>
                       <label className={classes.label}>
-                        Mã GLN (= Mã GTIN)
+                        Mã GLN vùng sản xuất
                       </label>
                       <div className={classes.readonlyValue}>
-                        {effectiveGln || "—"}
+                        {effectiveGln || "Tự động lấy theo mã GTIN"}
                       </div>
                     </div>
                   </div>
                   <div className={classes.formRowTwoCol}>
-                    {this.renderInput("Vĩ độ (lat)", "lat", "Tuỳ chọn", "number")}
-                    {this.renderInput("Kinh độ (lng)", "lng", "Tuỳ chọn", "number")}
+                    {this.renderInput("Vĩ độ", "lat", "Ví dụ: 10.3756", "number")}
+                    {this.renderInput("Kinh độ", "lng", "Ví dụ: 106.3604", "number")}
                   </div>
                   <div className={classes.inlineActions}>
                     <Button
@@ -995,7 +1005,7 @@ class NationalPortalIntegration extends Component {
                     >
                       {isCreatingLocation
                         ? "Đang tra cứu..."
-                        : "Lấy vùng trồng từ GLN"}
+                        : "Lấy vùng sản xuất từ GLN"}
                     </Button>
                     <Button
                       color="secondary"
@@ -1003,8 +1013,8 @@ class NationalPortalIntegration extends Component {
                       onClick={this.handleCreateLocation}
                     >
                       {isCreatingLocation
-                        ? "Đang tạo vùng trồng..."
-                        : "Tạo vùng trồng trên cổng"}
+                        ? "Đang tạo vùng sản xuất..."
+                        : "Tạo vùng sản xuất trên cổng"}
                     </Button>
                   </div>
                   {idVungTrong && (
@@ -1017,17 +1027,16 @@ class NationalPortalIntegration extends Component {
                   )}
 
                   <div className={classes.sectionTitle}>
-                    4. Map công việc thực hiện
+                    4. Liên kết công việc thực hiện
                   </div>
                   <p className={classes.hint}>
-                    Danh sách kê khai nội bộ (dùng khi ghi nhật ký mobile) cần
-                    được map thủ công với công việc cổng TXNG QG. Hai danh sách
-                    có thể khác tên và số lượng — chọn đúng cặp tương ứng rồi
-                    lưu vào cột NPCongViec của kê khai nội bộ.
+                    Chọn ngành hàng để hiển thị danh sách kê khai nội bộ, sau đó
+                    liên kết từng kê khai với công việc tương ứng trên Cổng TXNG
+                    Quốc gia.
                   </p>
                   <div className={classes.formRow}>
                     <div className={classes.formItem}>
-                      <label className={classes.label}>Ngành hàng (để map công việc)</label>
+                      <label className={classes.label}>Ngành hàng</label>
                       <Select
                         value={fieldId}
                         className="wrap-insert-or-update-zone-item-select"
@@ -1077,12 +1086,12 @@ class NationalPortalIntegration extends Component {
                   )}
                   {!fieldId ? (
                     <p className={classes.hint}>
-                      Chọn ngành hàng để hiển thị danh sách kê khai nội bộ và map
-                      với công việc cổng.
+                      Chọn ngành hàng để hiển thị danh sách kê khai nội bộ và liên
+                      kết với công việc tương ứng trên Cổng TXNG Quốc gia.
                     </p>
                   ) : !congViecOptions.length ? (
                     <p className={classes.hint}>
-                      Nhấn &quot;Lấy thông tin cổng&quot; ở mục 2 để tải danh sách
+                      Nhấn &quot;Lấy thông tin từ cổng&quot; ở mục 2 để tải danh sách
                       công việc cổng.
                     </p>
                   ) : informSelects.length === 0 ? (
