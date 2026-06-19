@@ -8,6 +8,7 @@ import { actionZoneCreators } from "../../../actions/ZoneListActions";
 import { platingZoneAction } from "../../../actions/PlantingZoneAction";
 import { areaDataAction } from "../../../actions/AreaDataAction";
 import classes from "./index.module.css";
+import Pagination from "components/Pagination";
 import HeaderTable from "components/HeaderTable";
 import HeadTitleTable from "components/HeadTitleTable";
 import SearchModal from "./SearchModal";
@@ -168,16 +169,18 @@ class PlantingZone extends Component {
 
       const tree = this.buildTreeData(_plantingZones);
 
-      const total = resData.total || 0;
-
       this.setState({
         rawZones: _plantingZones,
         searchName: "",
         data: tree,
-        listLength: total,
+        listLength: tree.length,
         totalPage: Math.ceil(tree.length / limit),
+        totalElement: Math.min(limit, tree.length),
         isLoaded: false,
         collapseList: collapseList,
+        beginItem: 0,
+        endItem: limit,
+        currentPage: 0,
       });
     });
   };
@@ -657,9 +660,9 @@ class PlantingZone extends Component {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
     let parentid = [];
-    let autoIndex = 0;
+    let autoIndex = beginItem;
+    const pageData = data.filter((item, key) => key >= beginItem && key < endItem);
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
     data.forEach((e) => parentid.push(e.id));
 
     const cb = (e, key, array) => {
@@ -746,7 +749,7 @@ class PlantingZone extends Component {
       e.children && e.children.forEach(cb);
     };
 
-    data.forEach(cb);
+    pageData.forEach(cb);
     return list;
   };
 
@@ -772,6 +775,10 @@ class PlantingZone extends Component {
       allRoles,
       assignedRoles,
       zoneRoleLoading,
+      listLength,
+      totalPage,
+      totalElement,
+      currentPage,
     } = this.state;
 
     const availableRoles = (allRoles || []).filter(
@@ -908,6 +915,18 @@ class PlantingZone extends Component {
                         </tbody>
                       </Table>
                     </Card>
+
+                    {/* Pagination */}
+                    {Array.isArray(data) && data.length > 0 && (
+                      <Pagination
+                        data={data}
+                        listLength={listLength}
+                        totalPage={totalPage}
+                        totalElement={totalElement}
+                        handlePageClick={this.handlePageClick}
+                        currentPage={currentPage > 0 ? currentPage - 1 : 0}
+                      />
+                    )}
                   </div>
                 </Row>
               )}

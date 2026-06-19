@@ -243,7 +243,7 @@ class QrCodeManagement extends Component {
       currentPageQRList: 0,
       beginItemQRList: 0,
       endItemQRList: Math.min(limitQRList, filtered.length),
-      totalElementQRList: filtered.length,
+      totalElementQRList: Math.min(limitQRList, filtered.length),
     });
   };
 
@@ -449,7 +449,7 @@ class QrCodeManagement extends Component {
           dataQRList: mappedData,
           dataQRListOriginal: mappedData, // Store original data for filtering
           listLengthQRList: mappedData.length,
-          totalElementQRList: total !== undefined ? total : mappedData.length,
+          totalElementQRList: Math.min(limitQRList, mappedData.length),
           endItemQRList: Math.min(limitQRList, mappedData.length),
           isLoadedQRList: false,
         });

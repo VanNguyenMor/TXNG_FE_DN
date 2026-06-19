@@ -203,7 +203,7 @@ const QRListTab = ({
                 )
                 .map((item, idx) => (
                   <tr key={idx}>
-                    <td>{idx + 1}</td>
+                    <td>{beginItemQRList + idx + 1}</td>
 
                     <td style={{ textAlign: "left" }}>
                       <span>Ngày ĐK: {item.approvalDate}</span>

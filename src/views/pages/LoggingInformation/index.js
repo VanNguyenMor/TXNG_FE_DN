@@ -154,7 +154,7 @@ class LoggingInformation extends Component {
         product: "",
         orderBy: "",
         page: 0,
-        limit: LIMIT_ITEM_IN_PAGE,
+        limit: 10000,
         init: true
       })
     );
@@ -242,10 +242,13 @@ class LoggingInformation extends Component {
         {
           data: newData,
           listLength: total,
-          totalElement: total,
+          totalElement: Math.min(limit, total),
           totalPage: Math.ceil(total / limit),
           isLoaded: false,
           collapseList: collapseList,
+          beginItem: 0,
+          endItem: limit,
+          currentPage: 0,
         },
         () => {
           const { traceIdToOpen } = this.state;
@@ -380,7 +383,7 @@ class LoggingInformation extends Component {
         product: filter.product || "",
         orderBy: "",
         page: 0,
-        limit: limit,
+        limit: 10000,
         init: false
       })
     );
@@ -720,9 +723,9 @@ class LoggingInformation extends Component {
     const { beginItem, endItem, collapseList } = this.state;
     let list = [];
     let parentid = [];
-    let autoIndex = 0;
+    let autoIndex = beginItem;
+    const pageData = data.filter((item, key) => key >= beginItem && key < endItem);
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
     data.forEach((e) => parentid.push(e.id));
 
     const cb = (e, key, array) => {
@@ -826,7 +829,7 @@ class LoggingInformation extends Component {
       e.children && e.children.forEach(cb);
     };
 
-    data.forEach(cb);
+    pageData.forEach(cb);
     return list;
   };
 
@@ -859,6 +862,7 @@ class LoggingInformation extends Component {
       PRODUCT_OPTIONS,
       PLANTINGZONE_OPTIONS,
       LOGGING_OPTIONS,
+      currentPage,
     } = this.state;
 
     const statusPopup = { status: status, message: message };
@@ -910,7 +914,7 @@ class LoggingInformation extends Component {
                             product: "",
                             orderBy: "",
                             page: 0,
-                            limit: LIMIT_ITEM_IN_PAGE,
+                            limit: 10000,
                             init: true
                           })
                         )
@@ -1124,6 +1128,7 @@ class LoggingInformation extends Component {
                           totalPage={totalPage}
                           totalElement={totalElement}
                           handlePageClick={this.handlePageClick}
+                          currentPage={currentPage > 0 ? currentPage - 1 : 0}
                         />
                       )
                     }

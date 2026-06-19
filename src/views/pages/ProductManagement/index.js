@@ -213,6 +213,10 @@ class ProductManagement extends Component {
         listLength: newData.length,
         totalPage: Math.ceil(newData.length / limit),
         totalElement: Math.min(limit, newData.length),
+        // Reset phân trang về trang đầu mỗi lần nạp lại để không rơi vào trang trống
+        beginItem: 0,
+        endItem: limit,
+        currentPage: 0,
         collapseList,
         isLoaded: false,
       });
@@ -678,6 +682,7 @@ class ProductManagement extends Component {
       listLength,
       totalPage,
       totalElement,
+      currentPage,
       isShowForDetail,
       isShowForHistoryList,
       editId,
@@ -782,6 +787,7 @@ class ProductManagement extends Component {
                 listLength={listLength}
                 totalPage={totalPage}
                 totalElement={totalElement}
+                currentPage={currentPage > 0 ? currentPage - 1 : 0}
                 handlePageClick={this.handlePageClick}
               />
             </div>

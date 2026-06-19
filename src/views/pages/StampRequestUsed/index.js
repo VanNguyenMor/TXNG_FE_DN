@@ -202,14 +202,18 @@ class BusinessInformation extends Component {
         collapseList.push({ id: item.id, collapse: false });
       });
 
+      // Phân trang client-side -> dùng độ dài data thực (đã lọc), không dùng tổng server
       const total = tableData.length;
-      const apiTotal = (res.data && (res.data.total || res.data.totalRows || res.data.totalCount)) || total;
 
       this.setState({
         data: tableData,
-        listLength: apiTotal,
-        totalElement: apiTotal,
-        totalPage: Math.ceil(apiTotal / limit),
+        listLength: total,
+        totalElement: Math.min(limit, total),
+        totalPage: Math.ceil(total / limit),
+        // Reset phân trang về trang đầu mỗi lần nạp lại để không rơi vào trang trống
+        beginItem: 0,
+        endItem: limit,
+        currentPage: 0,
         isLoaded: false,
         collapseList: collapseList,
       });
@@ -406,17 +410,25 @@ class BusinessInformation extends Component {
   };
 
   handlePageClick = (data) => {
-    let { limit } = this.state;
+    let { limit, data: list } = this.state;
     let selected = data.selected;
     let offset = Math.ceil(selected * limit);
 
     let beginItem = offset;
     let endItem = offset + limit;
 
+    // Số dòng đã hiển thị tính tới trang hiện tại (cho ô "Hiển thị X trên Y")
+    let total = 0;
+    (list || []).forEach(
+      (item, key) => key >= beginItem && key < endItem && total++
+    );
+    total = selected * limit + total;
+
     this.setState({
       beginItem: beginItem,
       endItem: endItem,
       currentPage: selected,
+      totalElement: total,
     });
   };
 
@@ -820,6 +832,7 @@ class BusinessInformation extends Component {
       listLength,
       totalPage,
       totalElement,
+      currentPage,
       createNewModal,
       popupMessage,
       activeCreateSubmit,
@@ -1008,6 +1021,7 @@ class BusinessInformation extends Component {
                           listLength={listLength}
                           totalPage={totalPage}
                           totalElement={totalElement}
+                          currentPage={currentPage}
                           handlePageClick={this.handlePageClick}
                         />
                       )
