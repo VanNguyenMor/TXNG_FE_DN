@@ -102,6 +102,7 @@ class History extends Component {
                 user: removeDuplicates(user, item => item.id),
                 listLength: data.log.total,
                 totalPage: Math.ceil(data.log.logs.length / limit),
+                totalElement: Math.min(limit, data.log.logs.length),
                 isLoaded: data.isLoading, status: data.status,
                 message: PLEASE_CHECK_CONNECT(data.message)
               });

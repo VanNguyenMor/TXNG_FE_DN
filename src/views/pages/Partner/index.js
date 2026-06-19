@@ -114,6 +114,7 @@ class Partner extends Component {
                 data: data.list.partners,
                 listLength: data.list.total,
                 totalPage: Math.ceil(data.list.total / limit),
+                totalElement: Math.min(limit, data.list.partners.length),
                 isLoaded: data.isLoading, status: data.status,
                 message: PLEASE_CHECK_CONNECT(data.message)
               });
@@ -671,7 +672,7 @@ class Partner extends Component {
                               data={data}
                               listLength={listLength}
                               totalPage={totalPage}
-                              totalElement={totalElement}
+                              totalElement={Math.min(endItem, data.length)}
                               handlePageClick={this.handlePageClick}
                             />
                           )

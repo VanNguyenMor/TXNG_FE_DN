@@ -1012,7 +1012,10 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <Select
-                      labelMark={configSetting?.pRovinceName}
+                      labelMark={
+                        provinces?.find((p) => p.id === configSetting?.provinceID)?.provinceName ||
+                        null
+                      }
                       name="provinceID"
                       title="Chọn tỉnh/thành"
                       data={provinces}
@@ -1020,16 +1023,21 @@ class BusinessInformation extends Component {
                       defaultValue={configSetting?.provinceID}
                       val="id"
                       handleChange={(value) => {
-                        this.setState((prev) => ({
-                          configSetting: {
-                            ...prev.configSetting,
-                            provinceID: value,
-                            wardID: null,
-                            wardName: "",
-                          },
-                          wards: null,
-                        }));
-                        if (value) this.onLoadListWardByProvinceId(value);
+                        this.setState(
+                          (prev) => ({
+                            configSetting: {
+                              ...prev.configSetting,
+                              provinceID: value,
+                              pRovinceName: "",
+                              wardID: null,
+                              wardName: "",
+                            },
+                            wards: null,
+                          }),
+                          () => {
+                            if (value) this.onLoadListWardByProvinceId(value);
+                          }
+                        );
                       }}
                     />
                     <p className="form-error-message">
@@ -1043,10 +1051,13 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <Select
-                      labelMark={configSetting?.wardName}
+                      labelMark={
+                        wards?.find((w) => w.id === configSetting?.wardID)?.wardName ||
+                        null
+                      }
                       name="wardID"
                       title="Chọn phường/xã"
-                      data={wards}
+                      data={wards || []}
                       labelName="wardName"
                       defaultValue={configSetting?.wardID}
                       val="id"

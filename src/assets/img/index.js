@@ -48,6 +48,8 @@ import RequestUnlockCompanies from './icons/menus/DanhSach.png';
 
 import Users from './icons/menus/NguoiDung.png';
 import PlantingTypes from './icons/menus/LoaiVungTrong.png';
+import TransportIcon from './icons/menus/DanhSach.png';
+import VehicleIcon from './icons/menus/NganhNghe.png';
 import Fields from './icons/menus/NganhNghe.png';
 import PlantingZones from './icons/menus/VungTrong.png';
 import MaterialGroups from './icons/menus/LoaiSanPham.png';
@@ -165,6 +167,8 @@ const ICON_MENUS = {
     SummaryReport: Report,
     BusinessInformations: BusinessInformationsOrange,
     Transportations: Fields,
+    Transports: TransportIcon,
+    Vehicles: VehicleIcon,
     MaterialManagements: MaterialGroups,
     ProductManagements: Products,
     ImportProducts: ImportManagements,

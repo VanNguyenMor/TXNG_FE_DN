@@ -626,7 +626,7 @@ class Partners extends Component {
                       data={data}
                       listLength={listLength}
                       totalPage={totalPage}
-                      totalElement={totalElement}
+                      totalElement={Math.min(endItem, data.length)}
                       handlePageClick={this.handlePageClick}
                     />
                   )}

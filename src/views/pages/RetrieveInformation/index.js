@@ -273,6 +273,11 @@ class RetrieveInformation extends Component {
         totalPage: Math.ceil(length / limit),
         isLoaded: false,
         collapseList: collapseList,
+        // Reset phân trang về trang đầu mỗi lần nạp lại để không rơi vào trang trống
+        beginItem: 0,
+        endItem: limit,
+        currentPage: 0,
+        totalElement: Math.min(limit, length),
       });
     }).catch((error) => {
       console.error("Error fetching grid view report:", error);
@@ -771,10 +776,17 @@ class RetrieveInformation extends Component {
     formData.append("fieldId", fieldId);
     formData.append("productId", productId);
     formData.append("sortOrder", Number(dataInsert.order) || 0);
+    // BE đặt tên property là "CheckQuaratine" (thiếu chữ 'n') -> gửi đúng key này.
+    // Gửi kèm "checkQuarantine" để an toàn nếu BE được sửa chính tả sau này.
+    formData.append("checkQuaratine", dataInsert.isIsolationTest ? true : false);
     formData.append("checkQuarantine", dataInsert.isIsolationTest ? true : false);
     formData.append("checkGoodReceived", dataInsert.typeId === 1);
     formData.append("checkRating", dataInsert.typeId === 2);
     formData.append("checkDelivery", dataInsert.typeId === 3);
+    // Ảnh: BE nhận List<IFormFile> qua field "Image" (chỉ gửi khi người dùng chọn ảnh mới)
+    if (dataInsert.imageFile) {
+      formData.append("Image", dataInsert.imageFile);
+    }
 
     const isEdit = !!editId;
     if (isEdit) {
@@ -941,12 +953,14 @@ class RetrieveInformation extends Component {
   };
 
   renderTable = (data, isDisableEdit, isDisableDelete) => {
-    const { beginItem, endItem, collapseList, selectedItems } = this.state;
+    const { beginItem, endItem, collapseList } = this.state;
     let list = [];
     let parentid = [];
-    let autoIndex = 0;
+    // STT chạy liên tục giữa các trang -> bắt đầu từ beginItem
+    let autoIndex = beginItem;
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
+    // Chỉ render dữ liệu của trang hiện tại (phân trang thực sự)
+    const pageData = data.filter((item, key) => key >= beginItem && key < endItem);
     data.forEach((e) => parentid.push(e.id));
 
     const cb = (e, key, array) => {
@@ -965,13 +979,6 @@ class RetrieveInformation extends Component {
           index={autoIndex}
           className="table-hover-css"
         >
-          <td style={{ textAlign: "center", width: "40px" }}>
-            <input
-              type="checkbox"
-              checked={selectedItems.includes(e.id)}
-              onChange={() => this.handleSelectItem(e.id)}
-            />
-          </td>
           <td
             className={`className='table-scale-col table-user-col-1' ${renderClass}`}
             style={{ cursor: "pointer", textDecoration: "underline" }}
@@ -984,32 +991,31 @@ class RetrieveInformation extends Component {
             <span style={{ color: `${e.color}` }}>{e.retrieve}</span>
           </td>
 
+          {/* NHẬT KÝ (isChecked): checkbox bật/tắt hiển thị trong nhật ký — giống mobile */}
           <td
             style={{ textAlign: "center", cursor: "pointer" }}
             onClick={() => this.onToggleDiary(e)}
           >
-            <span
-              className={
-                e.loggingStatus ? "badge badge-success" : "badge badge-danger"
-              }
-              style={{ minWidth: "50px" }}
-            >
-              {e.loggingStatus ? "Đã Ghi" : "Chưa Ghi"}
-            </span>
+            <input
+              type="checkbox"
+              readOnly
+              checked={!!e.loggingStatus}
+              style={{ cursor: "pointer", width: 18, height: 18 }}
+            />
           </td>
+          {/* QUÉT MÃ (isShow): checkbox bật/tắt hiển thị khi quét QR — giống mobile */}
           <td
             style={{ textAlign: "center", cursor: "pointer" }}
             onClick={() => this.onToggleQRCode(e)}
           >
-            <span
-              className={
-                e.qrStatus ? "badge badge-success" : "badge badge-danger"
-              }
-              style={{ minWidth: "50px" }}
-            >
-              {e.qrStatus ? "Đã Quét" : "Chưa Quét"}
-            </span>
+            <input
+              type="checkbox"
+              readOnly
+              checked={!!e.qrStatus}
+              style={{ cursor: "pointer", width: 18, height: 18 }}
+            />
           </td>
+          {/* HT ĐÁNH GIÁ (isShowEvaluated): chỉ hiện checkbox khi mục có isEvaluated */}
           <td
             style={{
               textAlign: "center",
@@ -1018,14 +1024,12 @@ class RetrieveInformation extends Component {
             onClick={() => e.isEvaluated && this.onToggleEvaluated(e)}
           >
             {e.isEvaluated ? (
-              <span
-                className={
-                  e.htFeedback ? "badge badge-success" : "badge badge-danger"
-                }
-                style={{ minWidth: "50px" }}
-              >
-                {e.htFeedback ? "Có đánh giá" : "Không đánh giá"}
-              </span>
+              <input
+                type="checkbox"
+                readOnly
+                checked={!!e.htFeedback}
+                style={{ cursor: "pointer", width: 18, height: 18 }}
+              />
             ) : null}
           </td>
           <td>
@@ -1075,7 +1079,7 @@ class RetrieveInformation extends Component {
       e.children && e.children.forEach(cb);
     };
 
-    data.forEach(cb);
+    pageData.forEach(cb);
     return list;
   };
 
@@ -1250,6 +1254,16 @@ class RetrieveInformation extends Component {
                       }
                     />
 
+                    {/* Tiêu đề mô tả khu vực dữ liệu truy xuất — đồng bộ mobile setAccess */}
+                    <div style={{ margin: "4px 0 12px" }}>
+                      <div style={{ fontWeight: 700, color: "#1f3bb3", fontSize: 16 }}>
+                        DỮ LIỆU TRUY XUẤT
+                      </div>
+                      <div style={{ color: "#6c757d", fontSize: 13 }}>
+                        Chọn dữ liệu truy xuất hiển thị ứng với doanh nghiệp của bạn
+                      </div>
+                    </div>
+
                     {/* Table */}
                     <Card className="shadow">
                       <Table
@@ -1258,14 +1272,6 @@ class RetrieveInformation extends Component {
                       >
                         <thead className="thead-dark">
                           <tr>
-                            <th scope="col" style={{ textAlign: "center", width: "40px" }}>
-                              <input
-                                type="checkbox"
-                                checked={selectAll}
-                                onChange={this.handleSelectAll}
-                                title="Chọn tất cả"
-                              />
-                            </th>
                             {headerTitle.map((item, key) => (
                               <th
                                 scope="col"
@@ -1318,12 +1324,17 @@ class RetrieveInformation extends Component {
                     {/* Pagination */}
                     {
                       // Page of Table
-                      Array.isArray(data) > 0 && (
+                      Array.isArray(data) && data.length > 0 && (
                         <Pagination
                           data={data}
                           listLength={listLength}
                           totalPage={totalPage}
                           totalElement={totalElement}
+                          currentPage={
+                            this.state.currentPage > 0
+                              ? this.state.currentPage - 1
+                              : 0
+                          }
                           handlePageClick={this.handlePageClick}
                         />
                       )

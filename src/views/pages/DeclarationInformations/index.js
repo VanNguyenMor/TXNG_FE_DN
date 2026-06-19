@@ -1,32 +1,13 @@
 import React, { Component } from "react";
-import compose from "recompose/compose";
-import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
-import {
-  DECLARATION_INFORMATION,
-  LOGGING_INFORMATION,
-} from "../../../helpers/constant";
-import { bindActionCreators } from "redux";
-import { connect } from "react-redux";
-import { actionZoneCreators } from "../../../actions/ZoneListActions";
-import { platingZoneAction } from "../../../actions/PlantingZoneAction";
-import { areaDataAction } from "../../../actions/AreaDataAction";
 import classes from "./index.module.css";
-import Pagination from "components/Pagination";
+import { setAlertContext, openAlertContext } from "../../../helpers/common.js";
+import { DECLARATION_INFORMATION, LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
 import HeaderTable from "components/HeaderTable";
-import { LIMIT_ITEM_IN_PAGE, LOADING_TIME } from "../../../helpers/constant";
-import MenuButton from "../../../assets/img/buttons/menu.png";
-import WarningPopup from "../../../components/WarningPopup";
-import PopupMessage from "../../../components/PopupMessage";
-import { handleGenTree } from "../../../helpers/trees";
+import Pagination from "components/Pagination";
 import Select from "../../../components/Select";
-import CreateNewPopup from "../../../components/CreateNewPopup";
-import { typeZonePropertyAction } from "../../../actions/TypeZonePropertyAction";
 import SearchImg from "../../../assets/img/buttons/searchig.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
-
-// reactstrap components
 import {
   Card,
   Table,
@@ -39,1094 +20,719 @@ import {
   DropdownMenu,
   DropdownItem,
 } from "reactstrap";
+import MenuButton from "../../../assets/img/buttons/menu.png";
+import { generateStyleTableCol } from "../../../bases/controls/helper";
 
 import InsertOrUpdate from "./InsertOrUpdate.js";
-
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
-import { getUrlCompanyAPI } from "utils/service.js";
-import axios from "axios";
-import { getCookie } from "helpers/cookie.js";
 import { fetchData } from "helpers/fetchData";
 import { callApi } from "utils/fetchAllData";
+
+// Kiểu dữ liệu kê khai — đồng bộ mobile (constants/data: LIST_DATA_TYPE / DATA_TYPES)
+const DATA_TYPES = { text: 1, number: 2, date: 3, image: 4, banDo: 5, trueFalse: 6 };
+const VARIABLE_OPTIONS = [
+  { value: 1, label: "Văn bản" },
+  { value: 2, label: "Số" },
+  { value: 3, label: "Thời gian" },
+  { value: 4, label: "Hình ảnh" },
+  { value: 5, label: "Định vị" },
+  { value: 6, label: "Có/không" },
+];
+const REFERENCE_OPTIONS = [
+  { value: 10, label: "Khách hàng" },
+  { value: 20, label: "Nhà cung cấp" },
+  { value: 40, label: "Sản phẩm/nguyên vật liệu" },
+  { value: 60, label: "Đơn vị tính" },
+  { value: 91, label: "Nhà máy" },
+  { value: 93, label: "Thiết bị" },
+  { value: 94, label: "Vận chuyển" },
+];
 
 class DeclarationInformations extends Component {
   constructor(props) {
     super(props);
 
-    const dataMock = [
-      {
-        id: 1,
-        retrieve: "Pha da (Vẽ mẫu trên da)",
-        title: "Dùng da bò thật",
-        loggingStatus: 1,
-        qrStatus: 1,
-      },
-      {
-        id: 2,
-        retrieve: "Cắt da theo khuôn đã pha",
-        title: "Dùng kéo cắt da, kéo đã được vệ sinh sạch sẽ",
-        loggingStatus: 1,
-        qrStatus: 1,
-      },
-    ];
-
     this.state = {
-      data: dataMock,
-      detail: [],
-      update: [],
-      create: [],
-      delete: [],
-      roles: [],
+      data: [], // flat: mỗi dòng = 1 kê khai (con) kèm tên Truy xuất (cha)
+      informations: [],
+      informSelects: [],
+      informSelectParents: [],
       isLoaded: null,
       status: null,
-      open: false,
-      openAddNew: false,
       message: "",
-      history: [],
-      zones: [],
-      editStatus: true,
-      district: [],
-      districtList: [],
-      province: [],
-      ward: [],
-      provinceIDCurrent: null,
       headerTitle: DECLARATION_INFORMATION,
       limit: LIMIT_ITEM_IN_PAGE,
       beginItem: 0,
       endItem: LIMIT_ITEM_IN_PAGE,
       totalElement: 0,
       listLength: 0,
-      createNewModal: false,
       currentPage: 0,
-      filter: {
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
-      },
+      totalPage: 0,
+      collapseList: [],
+      filter: { filter: "", product: "" }, // filter = fieldId, product = productId
+      JOB_OPTIONS: [],
+      PRODUCT_OPTIONS: [],
+      PROCESS_ACCESS_OPTIONS: [],
+      VARIABLE_OPTIONS,
+      REFERENCE_OPTIONS,
+      // Modal thêm/sửa (qua HeaderTable)
       dataInsert: {},
       errorInserts: {},
+      editId: null,
+      editData: null,
       isShowForEdit: false,
       isShowForDetail: false,
-      isShowForWrite: false,
-      editId: null,
-      warningPopupModal: false,
-      deleteId: null,
-      popupMessage: null,
-      STATUS_OPTIONS: [
-        { id: 0, title: "False" },
-        { id: 1, title: "True" },
-      ],
-      JOB_OPTIONS: [
-        { id: 0, title: "Ngành nghề 1" },
-        { id: 1, title: "Ngành nghề 2" },
-      ],
-      RETRIEVE_OPTIONS: [
-        { id: 0, title: "Truy xuất 1" },
-        { id: 1, title: "Truy xuất 2" },
-      ],
-      PRODUCT_OPTIONS: [
-        { id: 0, title: "Sản phẩm 1" },
-        { id: 1, title: "Sản phẩm 2" },
-      ],
-      PLANTINGZONE_OPTIONS: [
-        {
-          id: 0,
-          title: "Vùng trồng 1",
-        },
-        {
-          id: 1,
-          title: "Vùng trồng 2",
-        },
-      ],
-      LOGGING_OPTIONS: [
-        {
-          id: 0,
-          title: "Thiết kế tạo mẫu",
-        },
-        {
-          id: 1,
-          title: "Chọn nguyên liệu",
-        },
-      ],
-      REFERENCE_LIST: [
-        {
-          id: 0,
-          title: "Danh sách tham chiếu 1",
-        },
-        {
-          id: 1,
-          title: "Danh sách tham chiếu 2",
-        },
-      ],
-      LOGGING_DATA_TYPES: [
-        {
-          id: "text_options",
-          title: "Văn bản",
-          childInputs: [
-            {
-              name: "reference_select",
-              label: "Danh sách tham chiếu",
-              type: "select_input",
-              required: true,
-              dataSource: "REFERENCE_LIST",
-              placeholder: "Chọn danh sách tham chiếu...",
-            },
-          ],
-        },
-        {
-          id: "yes_no_options",
-          title: "Có/Không",
-          childInputs: [
-            {
-              name: "case_yes",
-              label: "Trường hợp Có",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "case_no",
-              label: "Trường hợp Không",
-              type: "text",
-              required: true,
-            },
-          ],
-        },
-        { id: "number", title: "Nhập số", childInputs: [] },
-        { id: "time", title: "Chọn thời gian", childInputs: [] },
-        { id: "image", title: "Hình ảnh", childInputs: [] },
-        { id: "location", title: "Định vị", childInputs: [] },
-      ],
-      selectedItems: [],
-      selectAll: false,
     };
   }
-
-  componentDidMount() {}
 
   componentWillMount() {
-    const { getListTypeZoneProperty } = this.props;
-    /* Fetch Summary */
-    this.fetchSummary(
-      JSON.stringify({
-        search: "",
-        filter: "",
-        orderBy: "",
-        page: null,
-        limit: null,
+    fetchData.infoCompany
+      .getFieldByCompanyHaveAccess({})
+      .then((res) => {
+        let arr = [];
+        if (Array.isArray(res)) arr = res;
+        else if (res && Array.isArray(res.data)) arr = res.data;
+        else if (res && Array.isArray(res.fields)) arr = res.fields;
+        else if (res && res.data && Array.isArray(res.data.fields)) arr = res.data.fields;
+
+        const options = (arr || []).map((item) => ({
+          id: item.id != null ? item.id : item.ID,
+          title: item.name || item.title || item.fieldName || item.FieldName,
+        }));
+        this.setState({ JOB_OPTIONS: options });
+
+        if (options.length === 1 && options[0].id != null) {
+          const fieldId = options[0].id;
+          this.setState(
+            (prev) => ({ filter: { ...prev.filter, filter: fieldId, product: "" } }),
+            () => this.fetchProductsByField(fieldId)
+          );
+        }
       })
-    );
-
-    // Fetch job/field options from API
-    fetchData.infoCompany.getFieldByCompanyHaveAccess({}).then(res => {
-      // Handle different response structures
-      let dataArray = [];
-      if (Array.isArray(res)) {
-        dataArray = res;
-      } else if (res && Array.isArray(res.data)) {
-        dataArray = res.data;
-      } else if (res && res.fields && Array.isArray(res.fields)) {
-        dataArray = res.fields;
-      } else if (res && res.data && Array.isArray(res.data.fields)) {
-        dataArray = res.data.fields;
-      }
-      
-      const options = (dataArray || []).map(item => ({ 
-        id: item.id, 
-        title: item.name || item.title || item.fieldName 
-      }));
-      this.setState({ JOB_OPTIONS: options });
-    }).catch(error => {
-      console.error("Error fetching job options:", error);
-    });
-
-    getListTypeZoneProperty({
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          dataTypeZone: ((res.data || {}).data || {}).plantingTypes || [],
-        };
-      });
-    });
-
-    const rolePayload = {
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    };
+      .catch((e) => console.error("Lỗi lấy ngành nghề:", e));
   }
 
-  fetchSummary = (data) => {
-    const { limit, filter } = this.state;
+  componentDidUpdate() {
+    const { status } = this.state;
+    if (status || !status) {
+      setTimeout(() => this.setState({ status: null }), LOADING_TIME);
+    }
+  }
 
-    this.setState({ isLoaded: true });
+  // Dựng list phẳng: mỗi kê khai (con) + tên Truy xuất (cha) — giữ field gốc để xử lý nghiệp vụ
+  buildData = (informSelects, informSelectParents) => {
+    const parentName = (parentID) => {
+      const p = (informSelectParents || []).find((x) => x.informID === parentID);
+      return p ? p.name : "";
+    };
+    return (informSelects || []).map((item, key) => ({
+      ...item,
+      index: key + 1,
+      retrieve: parentName(item.parentID), // TRUY XUẤT (cha)
+      manifestName: item.name, // TÊN KÊ KHAI (con)
+      loggingStatus: item.isChecked ? 1 : 0,
+      qrStatus: item.isShow ? 1 : 0,
+    }));
+  };
 
-    // Get fieldId and productId from filter
+  fetchSummary = () => {
+    const { filter, limit } = this.state;
     const fieldId = filter.filter || "";
     const productId = filter.product || "";
 
-    // Build API URL with parameters
-    const apiEndpoint = `informationaccess/getgridviewv2?fieldId=${fieldId}&productId=${productId}`;
-
-    callApi("get", apiEndpoint).then((res) => {
-      let collapseList = [];
-      
-      // Extract informSelectParents array from response
-      const informSelectParents = (res.data && res.data.informSelectParents) || [];
-
-      // Map informSelectParents to table data structure
-      let newData = informSelectParents.map((item, key) => ({
-        id: item.id,
-        index: key + 1, // STT - tự động đếm
-        retrieve: item.name, // TÊN TRUY XUẤT
-        title: item.name,
-        loggingStatus: item.isChecked ? 1 : 0, // NHẬT KÝ
-        qrStatus: item.isShow ? 1 : 0, // QUÉT MÃ
-        parentID: item.parentID === null ? "" : item.parentID,
-        color: "#000",
-      }));
-
-      newData.forEach((item) => {
-        collapseList.push({ id: item.id, collapse: false });
-      });
-
-      const total = newData.length | 0;
-      const length = newData.length;
-
+    if (!fieldId || !productId) {
       this.setState({
-        data: newData,
-        listLength: total,
-        totalPage: Math.ceil(length / limit),
-        isLoaded: false,
-        collapseList: collapseList,
+        data: [],
+        informations: [],
+        informSelects: [],
+        informSelectParents: [],
+        listLength: 0,
+        totalPage: 0,
       });
-    }).catch((error) => {
-      console.error("Error fetching information access:", error);
-      this.setState({ isLoaded: false });
-    });
-  };
-
-  closeStatusModal = () => {
-    const { status } = this.state;
-
-    if (status || !status) {
-      setTimeout(() => {
-        this.setState({ status: null, isLoaded: false });
-      }, LOADING_TIME);
-    }
-  };
-
-  handlePageClick = (data) => {
-    let { limit, beginItem, endItem } = this.state;
-    let selected = data.selected;
-    let offset = Math.ceil(selected * limit);
-    let total = 0;
-
-    beginItem = offset;
-    endItem = offset + limit;
-
-    this.state.data.map(
-      (item, key) => key >= beginItem && key < endItem && total++
-    );
-
-    if (selected > 0) {
-      total = selected * limit + total;
-    } else total = total;
-
-    this.setState({
-      beginItem: beginItem,
-      endItem: endItem,
-      currentPage: selected + 1,
-      totalElement: total,
-    });
-  };
-
-  handleChangeFilter = (event) => {
-    let { filter } = this.state;
-    const ev = event.target;
-
-    filter[ev["name"]] = ev["value"];
-    this.setState({ filter });
-  };
-
-  clearFilter = () => {
-    let clearFilter = {
-      search: "",
-      filter: "",
-      orderBy: "",
-      page: null,
-      limit: null,
-    };
-    this.setState({ filter: clearFilter });
-  };
-
-  handleChangeSelectFilter = async (value, name) => {
-    let { filter } = this.state;
-
-    filter[name] = value;
-    this.setState({ filter });
-
-    // When field (ngành nghề) is selected, fetch products
-    if (name !== "filter") {
       return;
     }
 
-    const fieldID = (value && value.id) || value || "";
+    this.setState({ isLoaded: true });
+
+    callApi("get", `informationaccess/getgridviewv2?fieldId=${fieldId}&productId=${productId}`)
+      .then((res) => {
+        const data = (res && res.data) || {};
+        const informations = data.informations || [];
+        const informSelects = data.informSelects || [];
+        const informSelectParents = data.informSelectParents || [];
+
+        const newData = this.buildData(informSelects, informSelectParents);
+        const collapseList = newData.map((item) => ({ id: item.id, collapse: false }));
+
+        this.setState({
+          informations,
+          informSelects,
+          informSelectParents,
+          data: newData,
+          collapseList,
+          listLength: newData.length,
+          totalPage: Math.ceil(newData.length / limit),
+          beginItem: 0,
+          endItem: limit,
+          currentPage: 0,
+          totalElement: Math.min(limit, newData.length),
+          isLoaded: false,
+        });
+      })
+      .catch((error) => {
+        console.error("Lỗi lấy danh sách kê khai:", error);
+        this.setState({ isLoaded: false });
+      });
+  };
+
+  fetchProductsByField = async (fieldID) => {
     if (!fieldID) {
       this.setState({ PRODUCT_OPTIONS: [] });
       return;
     }
-
-    const payload = {
-      fieldID: fieldID,
-      productCode: "",
-      productName: "",
-      orderBy: "",
-      page: 0,
-      limit: 1000,
-    };
-
     try {
-      const res = await fetchData.product.getAllLock(payload);
-      console.log("Fetched products:", res);
-      let dataArray = [];
-      if (Array.isArray(res)) {
-        dataArray = res;
-      } else if (res && res.data && Array.isArray(res.data)) {
-        dataArray = res.data;
-      } else if (res && res.products && Array.isArray(res.products)) {
-        dataArray = res.products;
-      } else if (res && res.data && Array.isArray(res.data.products)) {
-        dataArray = res.data.products;
-      }
+      const res = await fetchData.product.getAllLock({
+        fieldID,
+        productCode: "",
+        productName: "",
+        orderBy: "",
+        page: 0,
+        limit: 1000,
+      });
+      let arr = [];
+      if (Array.isArray(res)) arr = res;
+      else if (res && Array.isArray(res.data)) arr = res.data;
+      else if (res && Array.isArray(res.products)) arr = res.products;
+      else if (res && res.data && Array.isArray(res.data.products)) arr = res.data.products;
 
-      const options = (dataArray || []).map((item) => ({
+      const options = (arr || []).map((item) => ({
         id: item.id,
-        title: item.productName || item.name || item.title,
+        productName: item.productName || item.name || item.title,
       }));
       this.setState({ PRODUCT_OPTIONS: options });
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Lỗi lấy sản phẩm:", error);
     }
   };
 
-  handleSubmitSearchForm = () => {
-    this.fetchSummary();
-  };
-
-  handleModal = (status, openModal, closeModal) => {
-    if (
-      status ||
-      this.state.isShowForEdit ||
-      this.state.isShowForDetail ||
-      this.state.isShowForWrite
-    ) {
-      closeModal && closeModal();
-    } else {
-      // Fetch RETRIEVE_OPTIONS when opening modal
-      const { filter } = this.state;
-      const fieldId = filter.filter || "";
-      const productId = filter.product || "";
-
-      console.log("=== handleModal Debug ===");
-      console.log("fieldId:", fieldId);
-      console.log("productId:", productId);
-
-      if (fieldId && productId) {
-        const apiEndpoint = `informationaccess/getListProcessAccessForAdd?fieldId=${fieldId}&productId=${productId}`;
-        console.log("API Endpoint:", apiEndpoint);
-        
-        callApi("get", apiEndpoint).then((res) => {
-          console.log("API Response:", res);
-          console.log("res.data:", res.data);
-          
-          const dataArray = (res.data && res.data.data) || res.data || [];
-          console.log("dataArray:", dataArray);
-          
-          const options = (Array.isArray(dataArray) ? dataArray : []).map((item) => ({
-            id: item.id,
-            title: item.name || item.title,
-          }));
-          console.log("RETRIEVE_OPTIONS mapped:", options);
-          
-          this.setState({ RETRIEVE_OPTIONS: options });
-        }).catch((error) => {
-          console.error("Error fetching retrieve options:", error);
-        });
-      } else {
-        console.log("fieldId or productId is missing, cannot fetch retrieve options");
-      }
-
-      openModal && openModal();
+  handleChangeSelectFilter = async (value, name) => {
+    if (name !== "filter") {
+      this.setState((prev) => ({ filter: { ...prev.filter, product: value } }));
+      return;
     }
-
-    this.setState({
-      isShowForEdit: false,
-      isShowForDetail: false,
-      isShowForWrite: false,
-      editId: null,
-    });
+    this.setState((prev) => ({
+      filter: { ...prev.filter, filter: value, product: "" },
+      PRODUCT_OPTIONS: [],
+      data: [],
+      informSelects: [],
+      informSelectParents: [],
+    }));
+    if (value) await this.fetchProductsByField(value);
   };
 
-  toggle = (el, val) => {
-    let { collapseList } = this.state;
+  handleSubmitSearchForm = () => this.fetchSummary();
 
-    collapseList
-      .filter((item) => item.id === val)
-      .map((item) => (item.collapse = !item.collapse));
-
-    this.setState({ collapseList });
+  handlePageClick = (data) => {
+    let { limit, beginItem, endItem } = this.state;
+    const selected = data.selected;
+    const offset = Math.ceil(selected * limit);
+    let total = 0;
+    beginItem = offset;
+    endItem = offset + limit;
+    this.state.data.map((item, key) => key >= beginItem && key < endItem && total++);
+    if (selected > 0) total = selected * limit + total;
+    this.setState({ beginItem, endItem, currentPage: selected + 1, totalElement: total });
   };
-  checkDataInsert = (isCheck) => {
-    if (!isCheck) {
-      return {};
+
+  requireFieldProduct = () => {
+    const { filter } = this.state;
+    if (!filter.filter) {
+      toast.error("Bạn vui lòng chọn ngành nghề");
+      return false;
     }
-    const { dataInsert, data, editId, currentRow } = this.state;
-    const title = dataInsert.title;
-
-    const errorInserts = {};
-
-    if (!title) {
-      errorInserts.title = "Số phiếu không được bỏ trống";
+    if (!filter.product) {
+      toast.error("Bạn vui lòng chọn sản phẩm");
+      return false;
     }
-
-    return errorInserts;
+    return true;
   };
 
-  onConfirm = (toggleModal, closePopup) => {
-    const { dataInsert, filter } = this.state;
+  // NHẬT KÝ (isChecked): toggle; tắt isShow. Không cho bỏ tick mục bắt buộc.
+  onToggleDiary = (row) => {
+    if (!this.requireFieldProduct()) return;
+    const informSelects = this.state.informSelects.map((x) => ({ ...x }));
+    const item = informSelects.find((p) => p.id === row.id);
+    if (!item) return;
 
-    const name = (dataInsert.name || "").trim();
-    if (!name) {
-      toast.error("Tên kê khai không được bỏ trống");
+    if (!item.isGenerated) {
+      const information = this.state.informations.find((p) => p.id === item.informID);
+      if (information && information.isRequired && item.isChecked) return;
+    } else if (item.isRequired && item.isChecked) {
       return;
     }
 
-    // Prepare payload for API
-    const payload = {
-      fieldID: filter.filter || "",
-      productID: filter.product || "",
-      informID: dataInsert.retrieveId || "",
-      name: name,
-      sortOrder: Number(dataInsert.order) || 0,
-      isChecked: false,
-      isShow: false,
-    };
+    item.isChecked = !item.isChecked;
+    item.isShow = false;
+    this.setState({ informSelects, data: this.buildData(informSelects, this.state.informSelectParents) });
+  };
 
-    // Call API
-    callApi("post", "informationaccess/create", payload)
+  // QUÉT MÃ (isShow): toggle; khi bật thì ép bật Nhật ký.
+  onToggleQRCode = (row) => {
+    if (!this.requireFieldProduct()) return;
+    const informSelects = this.state.informSelects.map((x) => ({ ...x }));
+    const item = informSelects.find((p) => p.id === row.id);
+    if (!item) return;
+
+    if (!item.isGenerated) {
+      const information = this.state.informations.find((p) => p.id === item.informID);
+      if (information && information.isRequired && item.isShow) return;
+    } else if (item.isRequired && item.isShow) {
+      return;
+    }
+
+    item.isShow = !item.isShow;
+    if (item.isShow) item.isChecked = true;
+    this.setState({ informSelects, data: this.buildData(informSelects, this.state.informSelectParents) });
+  };
+
+  // Lưu thay đổi (CẬP NHẬT) -> informationaccess/updatev2
+  onUpdate = () => {
+    if (!this.requireFieldProduct()) return;
+    const { filter, informSelects } = this.state;
+
+    const notRequired = informSelects.filter((p) => !p.isRequired || p.isEvaluated);
+    if (notRequired.length <= 0) {
+      toast.error("Không có kê khai để cập nhật");
+      return;
+    }
+
+    const items = informSelects
+      .filter((p) => notRequired.find((t) => t.informID === p.informID) || p.isGenerated)
+      .map((p) => ({ id: p.id, isChecked: !!p.isChecked, isShow: !!p.isShow }));
+
+    this.setState({ isLoaded: true });
+    callApi("post", "informationaccess/updatev2", {
+      fieldId: filter.filter,
+      productId: filter.product,
+      items,
+    })
       .then((res) => {
-        if (res.status === 200 || (res.data && res.data.status === 200)) {
-          toast.success("Thêm mới thành công!");
-
-          // Refresh data
+        if (res && (res.status === 200 || (res.data && res.data.status === 200))) {
+          toast.success("Cập nhật kê khai thành công");
           this.fetchSummary();
-
-          // Close modal
-          if (toggleModal) {
-            toggleModal();
-          }
         } else {
-          const message = (res.data && res.data.message) || "Thêm mới thất bại";
-          toast.error(message);
+          toast.error(getErrorMessageServer(res) || "Cập nhật kê khai thất bại");
+          this.setState({ isLoaded: false });
         }
       })
       .catch((error) => {
-        console.error("Error creating information access:", error);
-        const message = (error.response && error.response.data && error.response.data.message) || "Thêm mới thất bại";
-        toast.error(message);
+        console.error("Lỗi cập nhật kê khai:", error);
+        toast.error("Cập nhật kê khai thất bại");
+        this.setState({ isLoaded: false });
       });
   };
 
-  onHandleChangeValue = (data) => {
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          dataInsert: data,
-        };
-      },
-      () => {
-        const errorInserts = this.checkDataInsert();
+  loadProcessAccessForAdd = () => {
+    const { filter } = this.state;
+    const fieldId = filter.filter || "";
+    const productId = filter.product || "";
+    if (!fieldId || !productId) return;
 
-        this.setState((previousState) => {
-          return {
-            ...previousState,
-            errorInserts,
-          };
-        });
-      }
-    );
+    callApi("get", `informationaccess/getListProcessAccessForAdd?fieldId=${fieldId}&productId=${productId}`)
+      .then((res) => {
+        const arr =
+          (res.data && res.data.informSelects) ||
+          (res.data && res.data.data) ||
+          res.data ||
+          [];
+        const options = (Array.isArray(arr) ? arr : []).map((item) => ({
+          id: item.informID != null ? item.informID : item.id, // value = informID (giống mobile)
+          title: item.name || item.title,
+        }));
+        this.setState({ PROCESS_ACCESS_OPTIONS: options });
+      })
+      .catch((error) => console.error("Lỗi lấy danh sách truy xuất:", error));
   };
 
-  handleSelectItem = (id) => {
-    this.setState((prevState) => {
-      const { selectedItems } = prevState;
-      const exists = selectedItems.includes(id);
-      const newSelected = exists
-        ? selectedItems.filter((itemId) => itemId !== id)
-        : [...selectedItems, id];
-      return { selectedItems: newSelected, selectAll: newSelected.length === prevState.data.length };
-    });
-  };
-
-  handleSelectAll = () => {
-    this.setState((prevState) => {
-      const { selectAll, data } = prevState;
-      if (selectAll) {
-        return { selectAll: false, selectedItems: [] };
-      } else {
-        return { selectAll: true, selectedItems: data.map((item) => item.id) };
-      }
-    });
-  };
-
-  onEditData = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForEdit: true,
-      };
-    });
-  };
-
-  onShowDetail = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForDetail: true,
-      };
-    });
-  };
-
-  onShowWrite = (id) => () => {
-    this.setState((previousState) => {
-      return {
-        isShowForWrite: true,
-      };
-    });
-  };
-
-  onDeleteData = (id) => () => {
-    alert("Xóa thành công");
-  };
-
-  toggleModalPopupDelete = () => {
-    this.setState((previousState) => {
-      return {
-        ...previousState,
-        warningPopupModal: false,
-      };
-    });
-  };
-
-  handleDeleteRow = () => {
-    this.props.deletePlantingZone({ id: this.state.deleteId }).then((res) => {
-      this.setState((previousState) => {
-        return {
-          ...previousState,
-          warningPopupModal: false,
-        };
-      });
-
-      const data = res.data;
-
-      if (data.status == 200) {
-        this.fetchSummary(
-          JSON.stringify({
-            search: "",
-            filter: "",
-            orderBy: "",
-            page: null,
-            limit: null,
-          })
-        );
-
-        this.setState({ message: "Xóa dữ liệu thành công" });
-        toast.success("Xoá dữ liệu thành công!");
-      } else {
-        const message = getErrorMessageServer(res);
-
-        this.setState({ message: message || "Xóa dữ liệu thất bại" });
-        this.toggleModal("popupMessage");
-      }
-    });
-  };
-
-  toggleModal = (state, type) => {
-    if (type == 1) {
-      this.setState({ [state]: false });
-      return;
+  handleModal = (status, openModal, closeModal) => {
+    if (status || this.state.isShowForEdit || this.state.isShowForDetail) {
+      closeModal && closeModal();
     } else {
-      this.setState({
-        [state]: !this.state[state],
+      if (!this.requireFieldProduct()) return;
+      this.loadProcessAccessForAdd();
+      openModal && openModal();
+    }
+    this.setState({
+      isShowForEdit: false,
+      isShowForDetail: false,
+      editId: null,
+      editData: null,
+      dataInsert: {},
+    });
+  };
+
+  onHandleChangeValue = (data) => this.setState({ dataInsert: data });
+
+  onConfirm = (toggleModal) => {
+    const { dataInsert, filter, editId } = this.state;
+
+    const fieldId = filter.filter || "";
+    const productId = filter.product || "";
+    const processAccessId = dataInsert.processAccessId || "";
+    const name = (dataInsert.setManifestName || "").trim();
+    const variable = dataInsert.variable;
+
+    if (!fieldId) return toast.error("Bạn vui lòng chọn ngành nghề");
+    if (!productId) return toast.error("Bạn vui lòng chọn sản phẩm");
+    if (!processAccessId) return toast.error("Bạn vui lòng chọn truy xuất");
+    if (!name) return toast.error("Bạn vui lòng nhập tên kê khai");
+    if (!variable) return toast.error("Bạn vui lòng chọn kiểu dữ liệu");
+
+    const payload = {
+      id: editId || undefined,
+      setManifestName: name,
+      fieldID: fieldId,
+      productID: productId,
+      processAccessID: processAccessId,
+      sortOrder: Number(dataInsert.sortOrder) || 0,
+      refference:
+        variable === DATA_TYPES.text && dataInsert.refference != null ? dataInsert.refference : null,
+      variable,
+      informSelectValues: dataInsert.informSelectValues || [],
+    };
+
+    const isEdit = !!editId;
+    const endpoint = isEdit ? "informationaccess/update" : "informationaccess/create";
+
+    callApi("post", endpoint, payload)
+      .then((res) => {
+        if (res && (res.status === 200 || (res.data && res.data.status === 200))) {
+          toast.success(isEdit ? "Cập nhật thành công!" : "Thêm mới thành công!");
+          this.fetchSummary();
+          if (toggleModal) toggleModal();
+        } else {
+          toast.error(
+            getErrorMessageServer(res) || (isEdit ? "Cập nhật thất bại" : "Thêm mới thất bại")
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Lỗi lưu kê khai:", error);
+        toast.error(getErrorMessageServer(error) || "Lưu kê khai thất bại");
       });
-    }
   };
 
-  renderTreeLine = (nodelv) => {
-    let line = "";
-
-    for (let i = 0; i < nodelv; i++) {
-      line += "-";
-    }
-
-    return line;
+  onEditData = (row) => () => {
+    callApi("get", `informationaccess/getDetailSetManifest?id=${row.id}`)
+      .then((res) => {
+        const data = (res && res.data) || {};
+        const informSelect = data.informSelect || {};
+        this.loadProcessAccessForAdd();
+        this.setState({
+          editId: row.id,
+          isShowForEdit: true,
+          editData: {
+            id: row.id,
+            processAccessId: informSelect.parentID,
+            setManifestName: informSelect.name,
+            sortOrder: informSelect.sortOrder,
+            variable: informSelect.columnType,
+            refference: informSelect.reference,
+            informSelectValues: data.informSelectValues || [],
+            isGenerated: informSelect.isGenerated,
+          },
+        });
+      })
+      .catch((error) => {
+        console.error("Lỗi lấy chi tiết kê khai:", error);
+        toast.error("Lấy thông tin kê khai thất bại");
+      });
   };
 
-  showTitleWithStatus = (id) => {
-    const { STATUS_OPTIONS } = this.state;
-
-    let queue = STATUS_OPTIONS ? [...STATUS_OPTIONS] : [];
-
-    while (queue.length > 0) {
-      const status = queue.shift();
-
-      if (status && status.id === id) {
-        return status.title;
-      }
-
-      if (status && status.children && status.children.length > 0) {
-        queue.push(...status.children);
-      }
-    }
-
-    return "";
+  onDeleteData = (row) => () => {
+    callApi("delete", `informationaccess/delete?id=${row.id}`)
+      .then((res) => {
+        if (res && (res.status === 200 || (res.data && res.data.status === 200))) {
+          toast.success("Xoá kê khai thành công");
+          this.fetchSummary();
+        } else {
+          toast.error(getErrorMessageServer(res) || "Xoá kê khai thất bại");
+        }
+      })
+      .catch((error) => {
+        console.error("Lỗi xoá kê khai:", error);
+        toast.error("Xoá kê khai thất bại");
+      });
   };
 
-  handleClickStatus = (item, type) => {
-    alert(`Đã thao tác ${type} cho STT: ${item.stt}`);
+  // Mục kê khai được phép sửa/xoá (giống mobile: tự tạo & không bắt buộc, hoặc kiểu Có/Không)
+  canEditChild = (row) =>
+    (row.isGenerated && !row.isRequired) || row.columnType === DATA_TYPES.trueFalse;
+
+  toggle = (val) => {
+    let { collapseList } = this.state;
+    collapseList.filter((item) => item.id === val).map((item) => (item.collapse = !item.collapse));
+    this.setState({ collapseList });
   };
 
-  renderTable = (data, isDisableEdit, isDisableDelete) => {
-    const { beginItem, endItem, collapseList, selectedItems } = this.state;
-    let list = [];
-    let parentid = [];
-    let autoIndex = 0;
+  renderTable = (isDisableEdit, isDisableDelete) => {
+    const { data, beginItem, endItem, collapseList } = this.state;
+    let autoIndex = beginItem;
+    const pageData = data.filter((item, key) => key >= beginItem && key < endItem);
 
-    data.filter((item, key) => key >= beginItem && key < endItem);
-    data.forEach((e) => parentid.push(e.id));
-
-    const cb = (e, key, array) => {
-      const renderClass =
-        e.parentID.length === 0
-          ? `${classes.treeParent}`
-          : `${classes.treeChild}${
-              parentid.includes(e.parentID)
-                ? ` ${classes.childs}`
-                : ` ${classes.childsItem}`
-            }`;
-      list.push(
+    return pageData.map((e) => {
+      const information = !e.isGenerated
+        ? this.state.informations.find((p) => p.id === e.informID)
+        : null;
+      const requiredChecked =
+        (information && information.isRequired) || (e.isGenerated && e.isRequired);
+      const row = (
         <tr
-          key={autoIndex}
-          parentid={e.parentID}
-          currentid={e.id}
-          index={autoIndex}
+          key={e.id}
+          style={{ ...generateStyleTableCol(this.tableBody, (data || []).length) }}
           className="table-hover-css"
         >
-          <td style={{ textAlign: "center", width: "40px" }}>
+          <td className="table-scale-col table-user-col-1">{autoIndex + 1}</td>
+          <td style={{ textAlign: "left" }}>{e.retrieve}</td>
+          <td style={{ textAlign: "left" }}>{e.manifestName}</td>
+          <td style={{ textAlign: "center", cursor: "pointer" }} onClick={() => this.onToggleDiary(e)}>
             <input
               type="checkbox"
-              checked={selectedItems.includes(e.id)}
-              onChange={() => this.handleSelectItem(e.id)}
+              readOnly
+              checked={!!e.loggingStatus}
+              disabled={requiredChecked && e.loggingStatus}
+              style={{ cursor: "pointer", width: 18, height: 18 }}
             />
           </td>
-          <td
-            className={`className='table-scale-col table-user-col-1' ${renderClass}`}
-          >
-            {autoIndex + 1}
-          </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.retrieve}</span>
-          </td>
-          <td style={{ textAlign: "left" }} className={renderClass}>
-            <span style={{ color: `${e.color}` }}>{e.title}</span>
-          </td>
-          <td
-            style={{ textAlign: "center", cursor: "pointer" }}
-            onClick={() => this.handleClickStatus(e, "loggingStatus")}
-          >
-            <span
-              className={
-                e.loggingStatus ? "badge badge-success" : "badge badge-danger"
-              }
-              style={{ minWidth: "50px" }}
-            >
-              {e.loggingStatus ? "Đã Ghi" : "Chưa Ghi"}
-            </span>
-          </td>
-          <td
-            style={{ textAlign: "center", cursor: "pointer" }}
-            onClick={() => this.handleClickStatus(e, "qrStatus")}
-          >
-            <span
-              className={
-                e.qrStatus ? "badge badge-success" : "badge badge-danger"
-              }
-              style={{ minWidth: "50px" }}
-            >
-              {e.qrStatus ? "Đã Quét" : "Chưa Quét"}
-            </span>
+          <td style={{ textAlign: "center", cursor: "pointer" }} onClick={() => this.onToggleQRCode(e)}>
+            <input
+              type="checkbox"
+              readOnly
+              checked={!!e.qrStatus}
+              disabled={requiredChecked && e.qrStatus}
+              style={{ cursor: "pointer", width: 18, height: 18 }}
+            />
           </td>
           <td>
-            {collapseList
-              .filter((item) => item.id === e.id)
-              .map((ele, key) => (
-                <div key={key}>
-                  {isDisableEdit == true && isDisableDelete == true ? null : (
-                    <ButtonDropdown
-                      isOpen={ele.collapse}
-                      toggle={() => this.toggle(key, e.id)}
-                    >
+            {this.canEditChild(e) && (isDisableEdit === false || isDisableDelete === false)
+              ? collapseList
+                  .filter((c) => c.id === e.id)
+                  .map((ele, k) => (
+                    <ButtonDropdown key={k} isOpen={ele.collapse} toggle={() => this.toggle(e.id)}>
                       <DropdownToggle>
-                        <img src={MenuButton} />
+                        <img src={MenuButton} alt="menu" />
                       </DropdownToggle>
                       <DropdownMenu>
-                        {isDisableEdit == true ? null : (
-                          <DropdownItem onClick={this.onEditData(e)}>
-                            Sửa
-                          </DropdownItem>
-                        )}
-                        {isDisableEdit == true ||
-                        isDisableDelete == true ? null : (
-                          <DropdownItem divider />
-                        )}
-                        {isDisableDelete == true ? null : (
-                          <DropdownItem onClick={this.onDeleteData(e.id)}>
-                            Xoá
-                          </DropdownItem>
-                        )}
+                        {isDisableEdit === false ? (
+                          <DropdownItem onClick={this.onEditData(e)}>Sửa</DropdownItem>
+                        ) : null}
+                        {isDisableDelete === false && e.isGenerated ? (
+                          <>
+                            <DropdownItem divider />
+                            <DropdownItem onClick={this.onDeleteData(e)}>Xoá</DropdownItem>
+                          </>
+                        ) : null}
                       </DropdownMenu>
                     </ButtonDropdown>
-                  )}
-                </div>
-              ))}
+                  ))
+              : null}
           </td>
         </tr>
       );
       autoIndex++;
-      e.children && e.children.forEach(cb);
-    };
-
-    data.forEach(cb);
-    return list;
+      return row;
+    });
   };
 
   render() {
     const {
-      warningPopupModal,
-      editId,
-      isShowForEdit,
-      isShowForDetail,
-      isShowForWrite,
-      errorInserts,
-      status,
-      headerTitle,
-      data,
-      message,
       isLoaded,
+      status,
+      message,
+      filter,
+      data,
+      headerTitle,
       listLength,
       totalPage,
       totalElement,
-      createNewModal,
-      popupMessage,
-      activeCreateSubmit,
-      STATUS_OPTIONS,
       JOB_OPTIONS,
-      RETRIEVE_OPTIONS,
       PRODUCT_OPTIONS,
-      PLANTINGZONE_OPTIONS,
-      LOGGING_OPTIONS,
-      LOGGING_DATA_TYPES,
-      REFERENCE_LIST,
-      selectedItems,
-      selectAll,
+      PROCESS_ACCESS_OPTIONS,
+      VARIABLE_OPTIONS: variableOpts,
+      REFERENCE_OPTIONS: referenceOpts,
+      informSelects,
+      errorInserts,
+      editId,
+      isShowForEdit,
+      isShowForDetail,
     } = this.state;
 
-    const statusPopup = { status: status, message: message };
+    const statusPopup = { status, message };
+
     let isDisableAdd = false;
     let isDisableEdit = false;
     let isDisableDelete = false;
-    let ACCOUNT_CLAIM_FF = [];
     if (!JSON.parse(localStorage.getItem("IS_ADMIN"))) {
-      ACCOUNT_CLAIM_FF = (localStorage.getItem("ACCOUNT_CLAIM_FF") || "")
-        .split(",")
-        .filter((x) => x != "");
-      if (
-        ACCOUNT_CLAIM_FF.length > 0 &&
-        !ACCOUNT_CLAIM_FF.find((x) => x === "DeclarationInformations.Add")
-      ) {
-        isDisableAdd = true;
-      }
-      if (
-        ACCOUNT_CLAIM_FF.length > 0 &&
-        !ACCOUNT_CLAIM_FF.find((x) => x === "DeclarationInformations.Edit")
-      ) {
-        isDisableEdit = true;
-      }
-      if (
-        ACCOUNT_CLAIM_FF.length > 0 &&
-        !ACCOUNT_CLAIM_FF.find((x) => x === "DeclarationInformations.Delete")
-      ) {
-        isDisableDelete = true;
-      }
+      const claims = (localStorage.getItem("ACCOUNT_CLAIM_FF") || "").split(",").filter((x) => x != "");
+      if (claims.length > 0 && !claims.find((x) => x === "DeclarationInformations.Add")) isDisableAdd = true;
+      if (claims.length > 0 && !claims.find((x) => x === "DeclarationInformations.Edit")) isDisableEdit = true;
+      if (claims.length > 0 && !claims.find((x) => x === "DeclarationInformations.Delete")) isDisableDelete = true;
     }
+
+    const canUpdate =
+      isDisableEdit === false &&
+      Array.isArray(informSelects) &&
+      informSelects.length > 0 &&
+      informSelects.filter((p) => !p.isRequired || p.isGenerated).length > 0;
 
     return (
       <>
-        {
-          <div className={classes.wrapper}>
-            <Container fluid>
-              {isLoaded ? (
-                <div style={{ display: "table", margin: "auto" }}>
-                  <Spinner style={{ width: "3rem", height: "3rem" }} />
-                </div>
-              ) : (
-                <Row>
-                  <div className="col">
-                    {/* Header */}
-                    <HeaderTable
-                      dataReload={() =>
-                        this.fetchSummary(
-                          JSON.stringify({
-                            search: "",
-                            filter: "",
-                            orderBy: "",
-                            page: null,
-                            limit: null,
-                          })
-                        )
-                      }
-                      hideSearch={true}
-                      hideCreate={isDisableAdd == false ? false : true}
-                      moduleTitle={
-                        isShowForDetail
-                          ? "Chi tiết nhật ký truy xuất"
-                          : isShowForEdit
-                          ? "Cập nhật nhật ký truy xuất"
-                          : isShowForWrite
-                          ? "Ghi nhật ký truy cập"
-                          : "Thêm/Cập nhật nhật ký truy xuất"
-                      }
-                      moduleBody={
-                        <InsertOrUpdate
-                          id={editId}
-                          errors={errorInserts}
-                          onHandleChangeValue={this.onHandleChangeValue}
-                          STATUS_OPTIONS={STATUS_OPTIONS}
-                          JOB_OPTIONS={JOB_OPTIONS}
-                          RETRIEVE_OPTIONS={RETRIEVE_OPTIONS}
-                          PRODUCT_OPTIONS={PRODUCT_OPTIONS}
-                          PLANTINGZONE_OPTIONS={PLANTINGZONE_OPTIONS}
-                          LOGGING_DATA_TYPES={LOGGING_DATA_TYPES}
-                          REFERENCE_LIST={REFERENCE_LIST}
-                        />
-                      }
-                      isShowForEdit={
-                        isShowForEdit || isShowForDetail || isShowForWrite
-                      }
-                      handleModal={this.handleModal}
-                      isReadOnly={isShowForDetail}
-                      onConfirm={this.onConfirm}
-                      handleSubmitSearchForm={() =>
-                        this.handleSubmitSearchForm()
-                      }
-                      typeSearch={
-                        <>
-                          <div
-                            className="div_flex"
-                            style={{ marginBottom: "10px", flex: "wrap" }}
-                          >
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Ngành nghề
-                              </label>
-                              <div>
-                                <Select
-                                  name="filter"
-                                  title="Ngành nghề"
-                                  data={JOB_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-div-search">
-                              <label className="form-control-label">
-                                Sản phẩm
-                              </label>
-                              <div>
-                                <Select
-                                  name="product"
-                                  title="Sản phẩm"
-                                  data={PRODUCT_OPTIONS}
-                                  labelName="title"
-                                  val="id"
-                                  handleChange={this.handleChangeSelectFilter}
-                                />
-                              </div>
-                            </div>
-                            <div className="mg-btn">
-                              <label className="form-control-label">
-                                &nbsp;
-                              </label>
-                              <Button
-                                className="btn-warning-cs"
-                                color="default"
-                                type="button"
-                                size="md"
-                                onClick={() => {
-                                  this.handleSubmitSearchForm();
-                                }}
-                              >
-                                <img src={SearchImg} alt="Tìm kiếm" />
-                                <span>Tìm kiếm</span>
-                              </Button>
-                            </div>
-                          </div>
-                        </>
-                      }
-                    />
-
-                    {/* Table */}
-                    <Card className="shadow">
-                      <Table
-                        className="align-items-center tablecs table-css-planting-zone"
-                        responsive
-                      >
-                        <thead className="thead-dark">
-                          <tr>
-                            <th scope="col" style={{ textAlign: "center", width: "40px" }}>
-                              <input
-                                type="checkbox"
-                                checked={selectAll}
-                                onChange={this.handleSelectAll}
-                                title="Chọn tất cả"
-                              />
-                            </th>
-                            {headerTitle.map((item, key) => (
-                              <th
-                                scope="col"
-                                key={key}
-                                style={{ whiteSpace: "normal" }}
-                                className={`${key === 0 ? "table-scale-col table-user-col-1" : ""} font-bold font-size-15px`}
-                              >
-                                {item}
-                              </th>
-                            ))}
-                            <th scope="col" className="font-bold font-size-15px"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Array.isArray(data) &&
-                            this.renderTable(
-                              data,
-                              isDisableEdit,
-                              isDisableDelete
-                            )}
-                        </tbody>
-                      </Table>
-                    </Card>
-
-                    {/* Pagination */}
-                    {
-                      // Page of Table
-                      Array.isArray(data) > 0 && (
-                        <Pagination
-                          data={data}
-                          listLength={listLength}
-                          totalPage={totalPage}
-                          totalElement={totalElement}
-                          handlePageClick={this.handlePageClick}
-                        />
-                      )
+        <div className={classes.wrapper}>
+          <Container fluid>
+            {isLoaded ? (
+              <div style={{ display: "table", margin: "auto" }}>
+                <Spinner style={{ width: "3rem", height: "3rem" }} />
+              </div>
+            ) : (
+              <Row>
+                <div className="col">
+                  <HeaderTable
+                    dataReload={() => this.fetchSummary()}
+                    hideSearch={true}
+                    hideCreate={isDisableAdd}
+                    moduleTitle={
+                      isShowForDetail
+                        ? "Chi tiết kê khai"
+                        : isShowForEdit
+                        ? "Cập nhật kê khai"
+                        : "Thêm kê khai"
                     }
-                  </div>
-                </Row>
-              )}
-
-              {
-                //Set Alert Context
-                setAlertContext(statusPopup)
-              }
-
-              {
-                //Open Alert Context
-                openAlertContext(statusPopup)
-              }
-            </Container>
-
-            <WarningPopup
-              moduleTitle="Thông báo"
-              moduleBody={
-                <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
-                  Bạn đồng ý xóa thông tin này?
-                </p>
-              }
-              warningPopupModal={warningPopupModal}
-              toggleModal={this.toggleModalPopupDelete}
-              handleWarning={this.handleDeleteRow}
-            />
-
-            <CreateNewPopup
-              createNewModal={createNewModal}
-              moduleTitle="Thêm dữ liệu"
-              type100={true}
-              moduleBody={
-                <>
-                  <InsertOrUpdate
-                    id={editId}
-                    errors={errorInserts}
-                    onHandleChangeValue={this.onHandleChangeValue}
+                    moduleBody={
+                      <InsertOrUpdate
+                        id={editId}
+                        initialData={this.state.editData}
+                        isReadOnly={isShowForDetail}
+                        errors={errorInserts}
+                        onHandleChangeValue={this.onHandleChangeValue}
+                        PROCESS_ACCESS_OPTIONS={PROCESS_ACCESS_OPTIONS}
+                        VARIABLE_OPTIONS={variableOpts}
+                        REFERENCE_OPTIONS={referenceOpts}
+                      />
+                    }
+                    isShowForEdit={isShowForEdit || isShowForDetail}
+                    handleModal={this.handleModal}
+                    isReadOnly={isShowForDetail}
+                    onConfirm={this.onConfirm}
+                    handleSubmitSearchForm={() => this.handleSubmitSearchForm()}
+                    typeSearch={
+                      <div className="div_flex" style={{ marginBottom: "10px", flexWrap: "wrap" }}>
+                        <div className="mg-div-search">
+                          <label className="form-control-label">Ngành nghề</label>
+                          <div>
+                            <Select
+                              name="filter"
+                              title="Ngành nghề"
+                              value={filter.filter || null}
+                              data={JOB_OPTIONS}
+                              labelName="title"
+                              val="id"
+                              handleChange={this.handleChangeSelectFilter}
+                            />
+                          </div>
+                        </div>
+                        <div className="mg-div-search">
+                          <label className="form-control-label">Sản phẩm</label>
+                          <div>
+                            <Select
+                              name="product"
+                              title="Sản phẩm"
+                              value={filter.product || null}
+                              data={PRODUCT_OPTIONS}
+                              labelName="productName"
+                              val="id"
+                              handleChange={this.handleChangeSelectFilter}
+                            />
+                          </div>
+                        </div>
+                        <div className="mg-btn">
+                          <label className="form-control-label">&nbsp;</label>
+                          <Button
+                            className="btn-warning-cs"
+                            color="default"
+                            type="button"
+                            size="md"
+                            onClick={() => this.handleSubmitSearchForm()}
+                          >
+                            <img src={SearchImg} alt="Tìm kiếm" />
+                            <span>Tìm kiếm</span>
+                          </Button>
+                        </div>
+                      </div>
+                    }
                   />
-                </>
-              }
-              toggleModal={this.toggleModal}
-              activeSubmit={activeCreateSubmit}
-              onConfirm={(data, close) => {
-                this.onConfirm(data, close);
-              }}
-            />
 
-            <PopupMessage
-              popupMessage={popupMessage}
-              moduleTitle={"Thông báo"}
-              moduleBody={message}
-              toggleModal={this.toggleModal}
-            />
-            <ToastContainer position="top-center" autoClose={3000} />
-          </div>
-        }
+                  {/* Tiêu đề mô tả — đồng bộ mobile setManifest + giống trang Truy xuất */}
+                  <div style={{ margin: "4px 0 12px" }}>
+                    <div style={{ fontWeight: 700, color: "#1f3bb3", fontSize: 16 }}>DỮ LIỆU KÊ KHAI</div>
+                    <div style={{ color: "#6c757d", fontSize: 13 }}>
+                      Chọn dữ liệu kê khai hiển thị ứng với doanh nghiệp của bạn
+                    </div>
+                  </div>
+
+                  <Card className="shadow">
+                    <Table className="align-items-center tablecs" responsive>
+                      <thead className="thead-dark">
+                        <tr>
+                          {headerTitle.map((item, key) => (
+                            <th
+                              scope="col"
+                              key={key}
+                              style={{ whiteSpace: "normal", textAlign: key >= 3 ? "center" : "left" }}
+                              className={`${key === 0 ? "table-scale-col table-user-col-1" : ""} font-bold font-size-15px`}
+                            >
+                              {item}
+                            </th>
+                          ))}
+                          <th scope="col" className="font-bold font-size-15px"></th>
+                        </tr>
+                      </thead>
+                      <tbody ref={(ref) => (this.tableBody = ref)}>
+                        {Array.isArray(data) && this.renderTable(isDisableEdit, isDisableDelete)}
+                      </tbody>
+                    </Table>
+                  </Card>
+
+                  {canUpdate ? (
+                    <div style={{ display: "flex", justifyContent: "center", margin: "15px 0" }}>
+                      <Button className="btn-success-cs" color="default" type="button" size="md" onClick={this.onUpdate}>
+                        <span>CẬP NHẬT</span>
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  {Array.isArray(data) && data.length > 0 && (
+                    <Pagination
+                      data={data}
+                      listLength={listLength}
+                      totalPage={totalPage}
+                      totalElement={totalElement}
+                      currentPage={this.state.currentPage > 0 ? this.state.currentPage - 1 : 0}
+                      handlePageClick={this.handlePageClick}
+                    />
+                  )}
+                </div>
+              </Row>
+            )}
+
+            {setAlertContext(statusPopup)}
+            {openAlertContext(statusPopup)}
+          </Container>
+
+          <ToastContainer position="top-center" autoClose={3000} />
+        </div>
       </>
     );
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    zone: state.ZoneStore,
-    PlantingZoneStore: state.PlantingZoneStore,
-    TypeZoneProperty: state.TypeZonePropertyStore,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    ...bindActionCreators(actionZoneCreators, dispatch),
-    ...bindActionCreators(typeZonePropertyAction, dispatch),
-    ...bindActionCreators(areaDataAction, dispatch),
-    ...bindActionCreators(platingZoneAction, dispatch),
-  };
-};
-
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-  DeclarationInformations
-);
+export default DeclarationInformations;

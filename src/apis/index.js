@@ -221,7 +221,7 @@ export const PLANTINGTYPE_LIST_DELETE = DOMAIN + API + PLANTINGTYPE + 'delete?id
 export const DASHBOARD_DETAIL = DOMAIN + API + DASHBOARD;
 export const DASHBOARD_DEBT_COLLECT_OF_REGISTRASTION_OF_USE = DOMAIN + API + DASHBOARD + '/debtcollectofregistrastionofuse';
 export const DASHBOARD_LIABILITIES_STAPM = DOMAIN + API + DASHBOARD + '/liabilitiesstamp';
-export const DASHBOARD_GET_INFO = DOMAIN + API + DASHBOARD + '/getHeaderDashboard';
+export const DASHBOARD_GET_INFO = DOMAIN + API + DASHBOARD + '/get';
 export const DASHBOARD_GET_ALERTS = DOMAIN + API + DASHBOARD + '/getalerts';
 export const DASHBOARD_GET_TOTAL_ALERTS = DOMAIN + API + DASHBOARD + '/gettotalalerts';
 export const DASHBOARD_READ = DOMAIN + API + DASHBOARD + '/read?alertId=';

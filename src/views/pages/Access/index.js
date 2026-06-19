@@ -187,6 +187,7 @@ class Access extends Component {
 								collapseList: collapseList,
 								listLength: newData.length,
 								totalPage: Math.ceil(newData.length / limit),
+								totalElement: Math.min(limit, newData.length),
 								isLoaded: false,
 								status: data.status,
 								message: PLEASE_CHECK_CONNECT(data.message)
