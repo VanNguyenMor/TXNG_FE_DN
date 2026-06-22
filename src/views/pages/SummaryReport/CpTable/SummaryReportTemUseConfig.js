@@ -88,7 +88,9 @@ class SummaryReportTemUseConfig extends Component {
                       dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
                         onChangeFilter("fromDateSummaryReportTemUse")(
-                          value ? value.format("DD/MM/YYYY") : ""
+                          value && typeof value.format === "function"
+                            ? value.format("DD/MM/YYYY")
+                            : value || ""
                         )
                       }
                     />
@@ -107,7 +109,9 @@ class SummaryReportTemUseConfig extends Component {
                       dateFormat="DD/MM/YYYY"
                       onChange={(value) =>
                         onChangeFilter("toDateSummaryReportTemUse")(
-                          value ? value.format("DD/MM/YYYY") : ""
+                          value && typeof value.format === "function"
+                            ? value.format("DD/MM/YYYY")
+                            : value || ""
                         )
                       }
                     />

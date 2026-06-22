@@ -353,7 +353,9 @@ class ImportProduct extends Component {
         filter: filter?.filter || "",
         orderBy: filter?.orderBy || "",
         page: 0,
-        limit: limit,
+        // limit = null => tải toàn bộ phiếu nhập rồi phân trang phía client (giống Vùng trồng).
+        // state.limit (=10) chỉ dùng làm page-size khi cắt dữ liệu hiển thị, KHÔNG gửi lên API.
+        limit: null,
         init: true,
       };
 

@@ -438,10 +438,12 @@ class Product extends Component {
 
     const { limit } = this.state;
     
-    // Parse filter parameters from data
+    // Parse filter parameters from data.
+    // limit = null => tải toàn bộ lô hàng rồi phân trang phía client (giống Vùng trồng).
+    // state.limit (=10) chỉ dùng làm page-size khi cắt dữ liệu hiển thị, KHÔNG gửi lên API.
     let filterParams = {
       page: 0,
-      limit: limit,
+      limit: null,
       search: "",
       filter: "",
       orderBy: "",
@@ -452,7 +454,7 @@ class Product extends Component {
         const parsedData = typeof data === "string" ? JSON.parse(data) : data;
         filterParams = {
           page: parsedData.page || 0,
-          limit: parsedData.limit || limit,
+          limit: parsedData.limit ?? null,
           search: parsedData.search || "",
           filter: parsedData.filter || "",
           orderBy: parsedData.orderBy || "",
@@ -1395,9 +1397,10 @@ class Product extends Component {
                                   timeFormat={false}
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) => {
-                                    const newFromDate = value
-                                      ? value.format("DD-MM-YYYY")
-                                      : "";
+                                    const newFromDate =
+                                      value && typeof value.format === "function"
+                                        ? value.format("DD-MM-YYYY")
+                                        : value || "";
                                     this.setState({ fromDate: newFromDate });
                                   }}
                                 />
@@ -1418,9 +1421,10 @@ class Product extends Component {
                                   timeFormat={false}
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) => {
-                                    const newToDate = value
-                                      ? value.format("DD-MM-YYYY")
-                                      : "";
+                                    const newToDate =
+                                      value && typeof value.format === "function"
+                                        ? value.format("DD-MM-YYYY")
+                                        : value || "";
                                     this.setState({ toDate: newToDate });
                                   }}
                                 />

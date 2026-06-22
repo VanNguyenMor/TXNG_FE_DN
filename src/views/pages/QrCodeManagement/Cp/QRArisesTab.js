@@ -108,7 +108,10 @@ const QRArisesTab = ({
                   dateFormat="DD-MM-YYYY"
                   onChange={(value) =>
                     setState({
-                      fromDate: value ? value.format("YYYY-MM-DD") : "",
+                      fromDate:
+                        value && typeof value.format === "function"
+                          ? value.format("YYYY-MM-DD")
+                          : value || "",
                     })
                   }
                 />
@@ -124,7 +127,10 @@ const QRArisesTab = ({
                   dateFormat="DD-MM-YYYY"
                   onChange={(value) =>
                     setState({
-                      toDate: value ? value.format("YYYY-MM-DD") : "",
+                      toDate:
+                        value && typeof value.format === "function"
+                          ? value.format("YYYY-MM-DD")
+                          : value || "",
                     })
                   }
                 />
@@ -227,7 +233,7 @@ const QRArisesTab = ({
           data={sourceData}
           listLength={totalFilteredElements}
           totalPage={totalPageFiltered}
-          totalElement={totalFilteredElements}
+          totalElement={Math.min(endItemQRArises, totalFilteredElements)}
           currentPage={currentPageQRArises}
           handlePageClick={handlePageClickQRArises}
         />

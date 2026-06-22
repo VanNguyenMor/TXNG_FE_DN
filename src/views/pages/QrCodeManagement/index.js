@@ -483,7 +483,8 @@ class QrCodeManagement extends Component {
       beginItemQRSystem,
       endItemQRSystem,
       currentPageQRSystem: selected,
-      totalElementQRSystem: endItemQRSystem - beginItemQRSystem,
+      // Số lũy kế tới trang hiện tại (giống Vùng trồng), endItem đã bằng giá trị này
+      totalElementQRSystem: endItemQRSystem,
     });
   };
 
@@ -499,7 +500,8 @@ class QrCodeManagement extends Component {
       beginItemQRArises,
       endItemQRArises,
       currentPageQRArises: selected,
-      totalElementQRArises: endItemQRArises - beginItemQRArises,
+      // Số lũy kế tới trang hiện tại (giống Vùng trồng), endItem đã bằng giá trị này
+      totalElementQRArises: endItemQRArises,
     });
   };
 
@@ -515,7 +517,8 @@ class QrCodeManagement extends Component {
       beginItemQRList,
       endItemQRList,
       currentPageQRList: selected,
-      totalElementQRList: endItemQRList - beginItemQRList,
+      // Số lũy kế tới trang hiện tại (giống Vùng trồng), endItem đã bằng giá trị này
+      totalElementQRList: endItemQRList,
     });
   };
 
