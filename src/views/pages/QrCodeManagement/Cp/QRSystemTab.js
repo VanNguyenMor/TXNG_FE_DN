@@ -24,6 +24,7 @@ const QRSystemTab = ({
   endItemQRSystem,
   listLengthQRSystem,
   totalPageQRSystem,
+  totalElementQRSystem,
   currentPageQRSystem,
   insertQRSystem,
   errorInserts,
@@ -137,6 +138,7 @@ const QRSystemTab = ({
           data={dataQRSystem}
           listLength={listLengthQRSystem}
           totalPage={totalPageQRSystem}
+          totalElement={totalElementQRSystem}
           currentPage={currentPageQRSystem}
           handlePageClick={handlePageClickQRSystem}
         />

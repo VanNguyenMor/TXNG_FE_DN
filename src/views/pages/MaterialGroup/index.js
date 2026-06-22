@@ -144,11 +144,18 @@ class MaterialGroup extends Component {
                   new Date(a.name).getTime()
               }).reverse();
 
+              // Phân trang client-side giống Vùng trồng: tải toàn bộ rồi cắt theo trang.
+              // listLength/totalPage tính theo số phần tử thực tế đang nắm giữ.
+              const _total = _data.length;
               this.setState({
                 data: data.list.materialGroups,
-                listLength: data.list.total,
+                listLength: _total,
                 dataFieldParent: _fieldParent,
-                totalPage: Math.ceil(data.list.total / limit),
+                totalPage: Math.ceil(_total / limit),
+                totalElement: Math.min(limit, _total),
+                beginItem: 0,
+                endItem: limit,
+                currentPage: 0,
                 isLoaded: data.isLoading, status: data.status,
                 message: PLEASE_CHECK_CONNECT(data.message)
               });
@@ -696,6 +703,7 @@ class MaterialGroup extends Component {
       listLength,
       totalPage,
       totalElement,
+      currentPage,
       filter,
       warningPopupModal,
       activeCreateSubmit,
@@ -932,10 +940,12 @@ class MaterialGroup extends Component {
                           <tbody ref={ref => this.tableBody = ref}>
                             {
                               Array.isArray(data) && (
-                                data.map((item, key) => {
+                                data
+                                  .filter((item, key) => key >= beginItem && key < endItem)
+                                  .map((item, key) => {
                                   return (
                                     <tr key={key} style={{ ...generateStyleTableCol(this.tableBody, (data || []).length) }} className="table-hover-css" >
-                                      <td className='table-scale-col table-user-col-1'>{key + 1}</td>
+                                      <td className='table-scale-col table-user-col-1'>{beginItem + key + 1}</td>
 
                                       {/* <td style={{ textAlign: 'center', whiteSpace: 'normal' }} className={`table-scale-col cursor-unset`}>
                                         <span className={this.handleStyleStatus(item.isLocked)}>{item.status}</span>
@@ -1009,7 +1019,7 @@ class MaterialGroup extends Component {
                           </tbody>
                         </Table>
                       </Card>
-                      {/* {
+                      {
                         // Page of Table
                         Array.isArray(data) && (
                           data.length > 0 && (
@@ -1018,11 +1028,12 @@ class MaterialGroup extends Component {
                               listLength={listLength}
                               totalPage={totalPage}
                               totalElement={totalElement}
+                              currentPage={currentPage > 0 ? currentPage - 1 : 0}
                               handlePageClick={this.handlePageClick}
                             />
                           )
                         )
-                      } */}
+                      }
                     </div>
                   </Row>
                 )

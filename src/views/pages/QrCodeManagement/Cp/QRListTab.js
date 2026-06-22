@@ -152,7 +152,9 @@ const QRListTab = ({
                   dateFormat="DD-MM-YYYY"
                   onChange={(value) =>
                     handleChangeSelectFilter("fromDateQRList")(
-                      value ? value.format("YYYY-MM-DD") : ""
+                      value && typeof value.format === "function"
+                        ? value.format("YYYY-MM-DD")
+                        : value || ""
                     )
                   }
                 />
@@ -168,7 +170,9 @@ const QRListTab = ({
                   dateFormat="DD-MM-YYYY"
                   onChange={(value) =>
                     handleChangeSelectFilter("toDateQRList")(
-                      value ? value.format("YYYY-MM-DD") : ""
+                      value && typeof value.format === "function"
+                        ? value.format("YYYY-MM-DD")
+                        : value || ""
                     )
                   }
                 />

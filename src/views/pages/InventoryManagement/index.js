@@ -235,7 +235,9 @@ class InventoryManagement extends Component {
     // Chuẩn bị params cho API
     const apiParams = {
       page: params.page || filter.page || 1,
-      limit: params.limit || filter.limit || 10,
+      // limit = null => tải toàn bộ tồn kho rồi phân trang phía client (giống Vùng trồng).
+      // state.limit (=10) chỉ dùng làm page-size khi cắt dữ liệu hiển thị, KHÔNG ép thành 10 ở đây.
+      limit: params.limit ?? filter.limit ?? null,
       fromDate: params.fromDate || this.state.fromDate,
       toDate: params.toDate || this.state.toDate,
     };
@@ -268,21 +270,34 @@ class InventoryManagement extends Component {
     apiCall.then((res) => {
       const { limit } = this.state;
       let collapseList = [];
-      const responseData = (res.data || {}).data || {};
+      // Dataservice.get đã unwrap 1 lớp -> res.data CHÍNH LÀ { reports: [...] }.
+      // Không unwrap thêm .data nữa (nếu không responseData sẽ luôn rỗng -> bảng trống).
+      const responseData = (res && res.data) || {};
 
       // Xử lý dữ liệu theo API được gọi
       let newData;
       if (filter.typeof === 1 || filter.typeof === 2) {
         // Xử lý response từ report APIs
-        const inventoryData = responseData.inventoryItems || responseData.items || [];
+        // API report trả về key "reports"; field số lượng là reportQuantityFirst/Middle/Last.
+        const inventoryData =
+          responseData.reports ||
+          responseData.inventoryItems ||
+          responseData.items ||
+          [];
         newData = inventoryData.map((item, index) => ({
           id: item.id || index + 1,
           warehouse: item.warehouseName || item.warehouse || "",
           itemName: item.productName || item.materialName || item.itemName || "",
           unit: item.unitName || item.unit || "",
-          beginningBalance: item.beginningBalance || item.openingBalance || 0,
-          inPeriod: item.inPeriod || item.receipt || 0,
-          endingBalance: item.endingBalance || item.closingBalance || 0,
+          // dùng ?? để giữ giá trị 0 (||  sẽ nhầm 0 thành "rỗng" rồi rơi về 0 sai ngữ cảnh)
+          beginningBalance:
+            item.reportQuantityFirst ?? item.beginningBalance ?? item.openingBalance ?? 0,
+          inPeriod:
+            item.reportQuantityMiddle ?? item.inPeriod ?? item.receipt ?? 0,
+          endingBalance:
+            item.reportQuantityLast ?? item.endingBalance ?? item.closingBalance ?? 0,
+          // report không có parentID -> phải set "" để renderTable đọc e.parentID.length không crash
+          parentID: "",
         }));
       } else {
         // Xử lý dữ liệu planting zone (giữ nguyên logic cũ)
@@ -826,9 +841,12 @@ class InventoryManagement extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      // value là moment khi hợp lệ, là string khi gõ dở/đã xoá.
+                                      // Chỉ .format khi là moment, tránh crash trắng trang.
+                                      fromDate:
+                                        value && typeof value.format === "function"
+                                          ? value.format("DD-MM-YYYY")
+                                          : value || "",
                                     })
                                   }
                                 />
@@ -850,9 +868,12 @@ class InventoryManagement extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      // value là moment khi hợp lệ, là string khi gõ dở/đã xoá.
+                                      // Chỉ .format khi là moment, tránh crash trắng trang.
+                                      toDate:
+                                        value && typeof value.format === "function"
+                                          ? value.format("DD-MM-YYYY")
+                                          : value || "",
                                     })
                                   }
                                 />

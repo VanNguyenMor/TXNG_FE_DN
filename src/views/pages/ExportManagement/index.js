@@ -833,9 +833,10 @@ class ExportManagement extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      fromDate:
+                                        value && typeof value.format === "function"
+                                          ? value.format("DD-MM-YYYY")
+                                          : value || "",
                                     })
                                   }
                                 />
@@ -857,9 +858,10 @@ class ExportManagement extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      toDate:
+                                        value && typeof value.format === "function"
+                                          ? value.format("DD-MM-YYYY")
+                                          : value || "",
                                     })
                                   }
                                 />

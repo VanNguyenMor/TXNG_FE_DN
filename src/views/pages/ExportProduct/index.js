@@ -109,12 +109,14 @@ class ExportProduct extends Component {
       totalElement: 0,
       listLength: 0,
       currentPage: 0,
+      // Shape chuẩn giống Vùng trồng & nút "Tải lại": tải toàn bộ (limit:null) rồi
+      // phân trang phía client. Không hardcode ngày/Status/Limit để khỏi thiếu dữ liệu.
       filter: {
-        FromDate: "2025-01-01",
-        ToDate: "2025-12-31",
-        Status: 1,
-        Page: 1,
-        Limit: 20,
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
       },
       fromDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
       toDate: new Date(),
@@ -196,8 +198,14 @@ class ExportProduct extends Component {
       let collapseList = [];
       const responseData = (res.data || {}).data || {};
 
-      // Lấy danh sách goods delivery notes từ response
-      let goodsDeliveryNotes = responseData.goodsDeliveryNotes || responseData.goodsDelivery || [];
+      // Lấy danh sách phiếu xuất từ response.
+      // API goodsissuenote/getall trả về key "goodsIssues" -> phải đọc key này trước,
+      // nếu không bảng sẽ trống dù API có dữ liệu.
+      let goodsDeliveryNotes =
+        responseData.goodsIssues ||
+        responseData.goodsDeliveryNotes ||
+        responseData.goodsDelivery ||
+        [];
       
       // Map dữ liệu thành format phù hợp với table
       let newData = goodsDeliveryNotes.map((item, index) => ({
@@ -216,7 +224,9 @@ class ExportProduct extends Component {
 
       newData.forEach((item, key) => {
         collapseList.push({ id: item.id, collapse: false });
-        item["parentID"] = item.parentID === null ? "" : item.parentID;
+        // goodsIssues không có field parentID -> phải ép cả null lẫn undefined về ""
+      // (renderTable đọc e.parentID.length, undefined sẽ làm crash trắng trang).
+      item["parentID"] = item.parentID == null ? "" : item.parentID;
       });
 
       // Nếu không phải tree structure, bỏ handleGenTree
@@ -714,9 +724,12 @@ class ExportProduct extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      fromDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      // value là moment khi hợp lệ, là string khi gõ dở/đã xoá.
+                                      // Chỉ .format khi là moment, tránh crash trắng trang.
+                                      fromDate:
+                                        value && typeof value.format === "function"
+                                          ? value.format("DD-MM-YYYY")
+                                          : value || "",
                                     })
                                   }
                                 />
@@ -738,9 +751,12 @@ class ExportProduct extends Component {
                                   dateFormat="DD-MM-YYYY"
                                   onChange={(value) =>
                                     this.setState({
-                                      toDate: value
-                                        ? value.format("DD-MM-YYYY")
-                                        : "",
+                                      // value là moment khi hợp lệ, là string khi gõ dở/đã xoá.
+                                      // Chỉ .format khi là moment, tránh crash trắng trang.
+                                      toDate:
+                                        value && typeof value.format === "function"
+                                          ? value.format("DD-MM-YYYY")
+                                          : value || "",
                                     })
                                   }
                                 />
