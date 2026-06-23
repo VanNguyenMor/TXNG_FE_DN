@@ -135,6 +135,7 @@ export const CONSIGNMENTS = {
   getListProvinceComboBox: "location/getallprovince",
   getListNationComboBox: "location/nation",
   getListTraceHarvestForAddConsignmentComboBox: 'trace/getlistharvest',
+  getUnitNameByTraceInform: "unit/getunitnamebytraceinform?traceInformId={0}",
   updateLock: "batch/lock?id={0}&warehouseId={1}",
   requireConfirm: "batch/requireconfirm?id={id}",
   confirm: "batch/requestconfirm?id={id}&warehouseId={warehouseId}",

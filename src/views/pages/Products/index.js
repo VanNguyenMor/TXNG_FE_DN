@@ -119,9 +119,8 @@ class Product extends Component {
       lockModal: false,
       lockItem: null,
       lockWarehouseId: null,
-      // fromDate và toDate init là empty
-      fromDate: "",
-      toDate: "",
+      fromDate: moment().format("DD-MM-YYYY"),
+      toDate: moment().format("DD-MM-YYYY"),
       collapseList: [],
 
       STATUS_OPTIONS: [
@@ -218,7 +217,6 @@ class Product extends Component {
   componentDidMount() {
     const { getListTypeZoneProperty } = this.props;
     
-    /* Fetch Summary - load all data without date filter */
     this.fetchSummary(
       JSON.stringify({
         search: "",
@@ -226,6 +224,8 @@ class Product extends Component {
         orderBy: "",
         page: null,
         limit: null,
+        fromDate: moment().format("DD-MM-YYYY"),
+        toDate: moment().format("DD-MM-YYYY"),
       })
     );
 
@@ -351,10 +351,10 @@ class Product extends Component {
           title: item.Name || item.name || "",
           traceName: item.traceName || "",
           createdAt: item.createdDate || item.CreatedDate || "",
-          ProductName: item.ProductName || item.ProductName || 0,
-          ProductID: item.ProductID || item.ProductID || "",
-          PlantingZoneID: item.PlantingZoneID || item.PlantingZoneID || "",
-          TraceInformID: item.TraceInformID || item.TraceInformID || "",
+          ProductName: item.ProductName || item.productName || "",
+          ProductID: item.ProductID || item.productID || "",
+          PlantingZoneID: item.PlantingZoneID || item.plantingZoneID || "",
+          TraceInformID: item.TraceInformID || item.traceInformID || item.traceInformId || "",
         }));
         
         this.setState((previousState) => ({
@@ -757,66 +757,62 @@ class Product extends Component {
       return;
     }
 
-    const traceData = await fetchData.consignments.getListTraceHarvestForAddConsignmentComboBox();
-      
-    // Format dữ liệu từ API thành DIARY_OPTIONS
-    const formattedTraceHarvest = traceData.map((item) => ({
-      id: item.id || item.ID,
-      title: item.Name || item.name || "",
-      traceName: item.traceName || "",
-      createdAt: item.createdDate || item.CreatedDate || "",
-      ProductName: item.ProductName || item.ProductName || 0,
-      ProductID: item.ProductID || item.ProductID || "",
-      PlantingZoneID: item.PlantingZoneID || item.PlantingZoneID || "",
-      TraceInformID: item.TraceInformID || item.TraceInformID || "",
-    })).find(th => th.id === dataInsert.diaryId);
+    // Dùng TRACEHARVEST_OPTIONS đã load sẵn trong state (tránh gọi API 2 lần)
+    const traceOptions = this.state.TRACEHARVEST_OPTIONS || [];
+    const formattedTraceHarvest = traceOptions.find(
+      th => String(th.id) === String(dataInsert.diaryId)
+    );
 
-    console.log('TraceInformID', formattedTraceHarvest.TraceInformID);
+    if (!formattedTraceHarvest) {
+      toast.error("Không tìm thấy thông tin nhật ký, vui lòng chọn lại.");
+      this.setState({ isLoaded: false });
+      return;
+    }
+
+    const traceInformId = formattedTraceHarvest.TraceInformID;
+    if (!traceInformId) {
+      toast.error("Nhật ký này chưa có thông tin truy xuất, vui lòng chọn nhật ký khác.");
+      this.setState({ isLoaded: false });
+      return;
+    }
 
     this.setState({ isLoaded: true });
 
     try {
       const formData = new FormData();
 
-      //const traceData = await this.fetchTraceHarvestOptions();
       // Add ID if editing
       if (dataInsert.id) {
         formData.append("Id", dataInsert.id);
       }
 
-      // Append form data
-      //formData.append("BatchNum", dataInsert.batchNumber || "");
-      //formData.append("DiaryID", dataInsert.diaryId || "");
-      //formData.append("ClassifyID", dataInsert.classifyId || "");
-      //formData.append("TemID", dataInsert.temId || "");
-      //formData.append("Quantity", dataInsert.quantity || 1);
-      //formData.append("Location", dataInsert.placeVal || "");
-      //formData.append("ProductName", dataInsert.productVal || "");
-      //formData.append("Notes", dataInsert.noteVal || "");
-      //formData.append("UnitID", dataInsert.unitVal || "");
-      //formData.append("FromValue", dataInsert.fromVal || "");
-      //formData.append("ToValue", dataInsert.toVal || "");
-      //formData.append("MarketID", dataInsert.marketId || null);
-      //formData.append("ProvinceID", dataInsert.provinceId || null);
-      //formData.append("CountryID", dataInsert.countryId || null);
-      //formData.append("WarehouseID", dataInsert.warehouseId || null);
-
-      // Append form data
+      // Các field giống mobile (onAdd)
       formData.append("TraceID", dataInsert.diaryId || "");
       formData.append("PlantingZoneID", formattedTraceHarvest.PlantingZoneID || "");
       formData.append("BatchNum", dataInsert.batchNumber || "");
       formData.append("Quantity", dataInsert.quantity || 0);
-      formData.append("Note", dataInsert.noteVal || "");
-      formData.append("StampQuantity",  "");
-      formData.append("TraceInformID", formattedTraceHarvest.TraceInformID || "");
-      formData.append("CreatedDate", moment().format("YYYY-MM-DD") || "");
-      formData.append("QRCodes", dataInsert.qrCodes || "");
+      formData.append("Note", dataInsert.note || "");
+      formData.append("StampQuantity", "");
+      formData.append("TraceInformID", traceInformId);
+      formData.append("CreatedDate", moment().format("YYYY-MM-DD"));
       formData.append("StartNum", dataInsert.fromVal || "");
       formData.append("EndNum", dataInsert.toVal || "");
       formData.append("StampRangeID", dataInsert.temId || "");
       formData.append("CategoryID", dataInsert.classifyId || "");
 
+      // ExportType: mobile dùng 0=trong nước, 1=nước ngoài (marketId: 1=trong nước, 2=nước ngoài)
+      const exportType = dataInsert.marketId === 2 ? 1 : 0;
+      formData.append("ExportType", exportType);
 
+      // batchExports: array province/country IDs (giống mobile: _batchExports)
+      const batchExportId = exportType === 0 ? dataInsert.provinceId : dataInsert.countryId;
+      if (batchExportId) {
+        formData.append("batchExports", batchExportId);
+      }
+
+      // QR codes: gửi từng item riêng (giống mobile gửi array)
+      const qrCodes = Array.isArray(dataInsert.qrCodes) ? dataInsert.qrCodes : [];
+      qrCodes.forEach(code => formData.append("QRCodes", code));
 
       // Append file if exists
       if (dataInsert.file && dataInsert.file instanceof File) {
@@ -833,8 +829,7 @@ class Product extends Component {
         result = await fetchData.consignments.addConsignment(formData);
       }
 
-      console.log('Devresult', result);
-      if (result.status === 200) {
+      if (result && result.status === 200) {
         const message = dataInsert.id
           ? "Cập nhật lô hàng thành công!"
           : "Thêm lô hàng thành công!";
@@ -865,11 +860,8 @@ class Product extends Component {
           })
         );
       } else {
-        toast.error(
-          dataInsert.id
-            ? "Cập nhật lô hàng thất bại!"
-            : "Thêm lô hàng thất bại!"
-        );
+        const errMsg = result?.message || (dataInsert.id ? "Cập nhật lô hàng thất bại!" : "Thêm lô hàng thất bại!");
+        toast.error(errMsg);
         this.setState({ isLoaded: false });
       }
     } catch (error) {

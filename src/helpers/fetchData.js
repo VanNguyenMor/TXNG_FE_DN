@@ -885,26 +885,20 @@ export const fetchData = {
     addConsignment: async (data) => {
       try {
         const result = await callApi("post", CONSIGNMENTS.addConsignment, data);
-        if(result && result.status === 200){
-          return result
-        }
-        return result?.data || null;
+        return result || { status: 500, message: "Lỗi không xác định" };
       } catch (error) {
         console.error("Lỗi khi thêm lô hàng:", error);
-        return null;
+        return { status: 500, message: error?.message || "Lỗi không xác định" };
       }
     },
 
     editConsignment: async (data) => {
       try {
         const result = await callApi("post", CONSIGNMENTS.editConsignment, data);
-        if(result && result.status === 200){
-          return result
-        }
-        return result?.data || null;
+        return result || { status: 500, message: "Lỗi không xác định" };
       } catch (error) {
         console.error("Lỗi khi cập nhật lô hàng:", error);
-        return null;
+        return { status: 500, message: error?.message || "Lỗi không xác định" };
       }
     },
 
@@ -989,6 +983,16 @@ export const fetchData = {
       try {
         const result = await callApi("get", CONSIGNMENTS.getListTraceHarvestForAddConsignmentComboBox);
         return result?.data?.traces || result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getUnitNameByTraceInform: async (traceInformId) => {
+      try {
+        const url = CONSIGNMENTS.getUnitNameByTraceInform.replace("{0}", traceInformId);
+        const result = await callApi("get", url);
+        return result?.data?.unitName || result?.data || null;
       } catch (error) {
         return null;
       }
