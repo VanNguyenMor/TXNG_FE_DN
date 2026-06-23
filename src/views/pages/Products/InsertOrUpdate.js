@@ -280,26 +280,46 @@ class InsertOrUpadte extends Component {
     }
   };
 
+  // Gọi API lấy đơn vị tính theo traceInformId — giống mobile: unit/getunitnamebytraceinform
+  fetchUnitNameByTrace = async (traceInformId) => {
+    try {
+      const unitName = await fetchData.consignments.getUnitNameByTraceInform(traceInformId);
+      if (unitName) {
+        this.setState({ unitName }, () => {
+          if (this.props.onHandleChangeValue) {
+            this.props.onHandleChangeValue(this.state);
+          }
+        });
+      }
+    } catch (e) {
+      // unitName stays empty if API fails
+    }
+  };
+
   // Handle select change - special handling for diaryId
   onChangeSelect = (name) => (value) => {
     const selectValue = value !== null && value !== undefined ? String(value) : null;
 
     if (name === "diaryId") {
       const numericValue = Number(selectValue);
-      const selectedOption = this.props.DIARY_OPTIONS?.find(
+      // Tìm trong TRACEHARVEST_OPTIONS (đây là list đang hiển thị trong dropdown)
+      const selectedOption = this.props.TRACEHARVEST_OPTIONS?.find(
         (item) => item.id === numericValue
       );
+      const traceInformId = selectedOption?.TraceInformID || null;
 
       this.setState(
         (prevState) => ({
           ...prevState,
           diaryId: selectValue,
-          traceName: selectedOption?.title || selectedOption?.traceName || "",
-          planZoneName: selectedOption?.planZoneName || "",
-          productVal: selectedOption?.product || "",
-          unitName: selectedOption?.unitName || "",
+          traceName: selectedOption?.title || "",
+          productVal: selectedOption?.ProductName || "",
+          unitName: "",
         }),
         () => {
+          if (traceInformId) {
+            this.fetchUnitNameByTrace(traceInformId);
+          }
           if (this.props.onHandleChangeValue) {
             this.props.onHandleChangeValue(this.state);
           }
@@ -514,20 +534,17 @@ class InsertOrUpadte extends Component {
           className="wrap-insert-or-update-zone-item"
         >
           <label className="wrap-insert-or-update-zone-item-label">
-            Mã lô hàng&nbsp;<b style={{ color: "red" }}>*</b>
+            Mã lô hàng
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
                <Input
-                  readOnly={isShowForEdit}
-                  onChange={this.onChangeValue("batchCode")}
+                  readOnly={true}
                   type="text"
                   value={batchCode}
                 className="wrap-insert-or-update-zone-item-input"
                 />
             </InputGroup>
-
-            <p className="form-error-message">{errors.batchCode || ""}</p>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
@@ -550,7 +567,7 @@ class InsertOrUpadte extends Component {
         </div>
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
-            Ngày tạo&nbsp;<b style={{ color: "red" }}>*</b>
+            Ngày tạo
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
@@ -618,8 +635,7 @@ class InsertOrUpadte extends Component {
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">
                <Input
-                  readOnly={isShowForEdit}
-                   onChange={this.onChangeValue("productVal")}
+                  readOnly={true}
                   type="text"
                   value={productVal}
                 className="wrap-insert-or-update-zone-item-input"
@@ -629,48 +645,45 @@ class InsertOrUpadte extends Component {
             <p className="form-error-message">{errors.productVal || ""}</p>
           </div>
         </div>
-        <div
-          className="wrap-insert-or-update-zone-item"
-       
-        >
-          <label className="wrap-insert-or-update-zone-item-label">
-            Đơn vị tính&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <Input
-                  readOnly={isShowForEdit}
-                   onChange={this.onChangeValue("unitName")}
-                  type="text"
-                  value={unitName}
-                className="wrap-insert-or-update-zone-item-input"
-                />
-            </InputGroup>
-
-            <p className="form-error-message">{errors.unitName || ""}</p>
+        <div className="wrap-insert-or-update-zone-item">
+          <div style={{ display: "flex", gap: "12px" }}>
+            <div style={{ flex: 1 }}>
+              <label className="wrap-insert-or-update-zone-item-label">
+                Số lượng&nbsp;<b style={{ color: "red" }}>*</b>
+              </label>
+              <div className="wrap-insert-or-update-zone-item-box">
+                <InputGroup className="input-group-alternative css-border-input">
+                  <Input
+                    readOnly={isShowForEdit}
+                    onChange={this.onChangeValue("quantity")}
+                    type="text"
+                    value={quantity}
+                    className="wrap-insert-or-update-zone-item-input"
+                  />
+                </InputGroup>
+                <p className="form-error-message">{errors.quantity || ""}</p>
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label className="wrap-insert-or-update-zone-item-label">
+                Đơn vị tính
+              </label>
+              <div className="wrap-insert-or-update-zone-item-box">
+                <InputGroup className="input-group-alternative css-border-input">
+                  <Input
+                    readOnly={true}
+                    type="text"
+                    value={unitName}
+                    className="wrap-insert-or-update-zone-item-input"
+                  />
+                </InputGroup>
+              </div>
+            </div>
           </div>
         </div>
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
-            Số lượng&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
-          <div className="wrap-insert-or-update-zone-item-box">
-            <InputGroup className="input-group-alternative css-border-input">
-              <Input
-                  readOnly={isShowForEdit}
-                   onChange={this.onChangeValue("quantity")}
-                  type="text"
-                  value={quantity}
-                className="wrap-insert-or-update-zone-item-input"
-                />
-            </InputGroup>
-
-            <p className="form-error-message">{errors.quantity || ""}</p>
-          </div>
-        </div>
-        <div className="wrap-insert-or-update-zone-item">
-          <label className="wrap-insert-or-update-zone-item-label">
-            Phân loại&nbsp;<b style={{ color: "red" }}>*</b>
+            Phân loại
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <Select
@@ -689,7 +702,7 @@ class InsertOrUpadte extends Component {
         </div>
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
-            Ghi chú&nbsp;<b style={{ color: "red" }}>*</b>
+            Ghi chú
           </label>
           <div className="wrap-insert-or-update-zone-item-box">
             <InputGroup className="input-group-alternative css-border-input">

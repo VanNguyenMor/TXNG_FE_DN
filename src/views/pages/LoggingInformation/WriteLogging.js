@@ -50,6 +50,94 @@ const UNSUPPORTED_REFERENCES = {
   [REFERENCE_DIARYS.donViTinh]: "Đơn vị tính (đang phát triển)",
 };
 
+const getResponseData = (res) => {
+  const data = res && res.data;
+
+  return (data && data.data) || data || {};
+};
+
+const getInformSelectId = (item) =>
+  item && (
+    item.ID ||
+    item.id ||
+    item.InformSelectID ||
+    item.informSelectID ||
+    item.informSelectId
+  );
+
+const getInformSelectName = (item) =>
+  item && (
+    item.Name ||
+    item.name ||
+    item.InfoName ||
+    item.infoName ||
+    item.InformName ||
+    item.informName ||
+    item.InformSelectName ||
+    item.informSelectName ||
+    item.ColumnName ||
+    item.columnName ||
+    item.title
+  );
+
+const getInformId = (item) =>
+  item && (
+    item.InformID ||
+    item.informID ||
+    item.InformId ||
+    item.informId
+  );
+
+const getInformSelectsFromData = (data) => {
+  const direct =
+    data.informSelects ||
+    data.InformSelects ||
+    data.informSelect ||
+    data.InformSelect ||
+    (data.trace && (
+      data.trace.informSelects ||
+      data.trace.InformSelects ||
+      data.trace.informSelect ||
+      data.trace.InformSelect
+    ));
+
+  if (Array.isArray(direct)) {
+    return direct;
+  }
+
+  const visited = new Set();
+  const queue = [data];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current || typeof current !== "object" || visited.has(current)) {
+      continue;
+    }
+
+    visited.add(current);
+
+    if (Array.isArray(current)) {
+      const looksLikeInformSelect = current.some(
+        (item) =>
+          item &&
+          typeof item === "object" &&
+          getInformSelectId(item) &&
+          (getInformSelectName(item) || getInformId(item))
+      );
+
+      if (looksLikeInformSelect) {
+        return current;
+      }
+
+      current.forEach((item) => queue.push(item));
+    } else {
+      Object.keys(current).forEach((key) => queue.push(current[key]));
+    }
+  }
+
+  return [];
+};
+
 class WriteLogging extends Component {
   constructor(props) {
     super(props);
@@ -73,14 +161,34 @@ class WriteLogging extends Component {
   }
 
   componentDidMount() {
-    const { item } = this.props;
+    this.initFromProps(this.props);
+  }
 
-    const traceId = item ? (item.id || item.ID || null) : null;
+  componentDidUpdate(prevProps) {
+    const prevTraceId = this.getTraceId(prevProps);
+    const traceId = this.getTraceId(this.props);
+
+    if (String(prevTraceId || "") !== String(traceId || "")) {
+      this.initFromProps(this.props);
+    }
+  }
+
+  getTraceId = (props = this.props) => {
+    const { item, id, traceId } = props;
+
+    return item
+      ? (item.id || item.ID || item.traceId || item.TraceID || item.traceID || id || traceId || null)
+      : (id || traceId || null);
+  };
+
+  initFromProps = (props) => {
+    const { item } = props;
+    const traceId = this.getTraceId(props);
 
     this.setState(
       {
         id: traceId,
-        zoneId: item ? (item.plantingZoneId || item.PlantingZone || null) : null,
+        zoneId: item ? (item.plantingZoneId || item.PlantingZoneID || item.PlantingZone || null) : null,
         productId: item ? (item.productId || item.ProductId || null) : null,
       },
       () => {
@@ -90,8 +198,7 @@ class WriteLogging extends Component {
         }
       }
     );
-  }
-
+  };
   // Lấy danh sách "loại nhật ký" hợp lệ của trace (trace/get?id=&companyId=)
   loadInformSelects = (traceId, companyId) => {
     const { requestGetInformSelect } = this.props;
@@ -103,8 +210,8 @@ class WriteLogging extends Component {
     const arg = companyId ? `${traceId}&companyId=${companyId}` : `${traceId}`;
 
     requestGetInformSelect(arg).then((res) => {
-      const data = ((res.data || {}).data || {});
-      const informSelects = data.informSelects || [];
+      const data = getResponseData(res);
+      const informSelects = getInformSelectsFromData(data);
       const trace = data.trace || {};
       this.setState((prev) => ({
         informSelects,
@@ -119,7 +226,7 @@ class WriteLogging extends Component {
     const { requestGetPlanZoneByTrace } = this.props;
     if (requestGetPlanZoneByTrace) {
       requestGetPlanZoneByTrace(traceId).then((res) => {
-        const data = ((res.data || {}).data || {});
+        const data = getResponseData(res);
         const zones = data.plantingZones || data.planZones || data.plantingZone || [];
         if (Array.isArray(zones) && zones.length > 0) {
           const mapped = zones.map((z) => ({
@@ -136,7 +243,7 @@ class WriteLogging extends Component {
   onChangeInformSelect = (value) => {
     const { informSelects } = this.state;
     const selected = (informSelects || []).find(
-      (p) => String(p.ID || p.id) === String(value)
+      (p) => String(getInformSelectId(p)) === String(value)
     );
 
     if (!selected) {
@@ -144,8 +251,8 @@ class WriteLogging extends Component {
       return;
     }
 
-    const informSelectId = selected.ID || selected.id;
-    const informId = selected.InformID || selected.informID;
+    const informSelectId = getInformSelectId(selected);
+    const informId = getInformId(selected);
 
     this.setState({ informSelectId, informId, isLoaded: true });
 
@@ -156,8 +263,8 @@ class WriteLogging extends Component {
     }
 
     requestGetAttribute(informSelectId).then((res) => {
-      const data = ((res.data || {}).data || {});
-      const informs = data.informs || [];
+      const data = getResponseData(res);
+      const informs = data.informs || data.Informs || [];
 
       // attributes là các inform có isData > 0
       const attributes = informs
@@ -823,10 +930,12 @@ class WriteLogging extends Component {
     const displayTitle = item ? (item.title || item.ProductName || "") : "";
     const displayCode = item ? (item.code || item.NameCode || "") : "";
 
-    const informOptions = (informSelects || []).map((it) => ({
-      id: it.ID || it.id,
-      title: it.Name || it.name,
-    }));
+    const informOptions = (informSelects || [])
+      .map((it) => ({
+        id: getInformSelectId(it),
+        title: getInformSelectName(it) || getInformSelectId(it),
+      }))
+      .filter((it) => it.id);
 
     return (
       <div className="wrap-insert-or-update-zone">
