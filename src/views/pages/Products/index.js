@@ -119,9 +119,8 @@ class Product extends Component {
       lockModal: false,
       lockItem: null,
       lockWarehouseId: null,
-      // fromDate và toDate init là empty
-      fromDate: "",
-      toDate: "",
+      fromDate: moment().format("DD-MM-YYYY"),
+      toDate: moment().format("DD-MM-YYYY"),
       collapseList: [],
 
       STATUS_OPTIONS: [
@@ -218,7 +217,6 @@ class Product extends Component {
   componentDidMount() {
     const { getListTypeZoneProperty } = this.props;
     
-    /* Fetch Summary - load all data without date filter */
     this.fetchSummary(
       JSON.stringify({
         search: "",
@@ -226,6 +224,8 @@ class Product extends Component {
         orderBy: "",
         page: null,
         limit: null,
+        fromDate: moment().format("DD-MM-YYYY"),
+        toDate: moment().format("DD-MM-YYYY"),
       })
     );
 
@@ -351,10 +351,10 @@ class Product extends Component {
           title: item.Name || item.name || "",
           traceName: item.traceName || "",
           createdAt: item.createdDate || item.CreatedDate || "",
-          ProductName: item.ProductName || item.ProductName || 0,
-          ProductID: item.ProductID || item.ProductID || "",
-          PlantingZoneID: item.PlantingZoneID || item.PlantingZoneID || "",
-          TraceInformID: item.TraceInformID || item.TraceInformID || "",
+          ProductName: item.ProductName || item.productName || "",
+          ProductID: item.ProductID || item.productID || "",
+          PlantingZoneID: item.PlantingZoneID || item.plantingZoneID || "",
+          TraceInformID: item.TraceInformID || item.traceInformID || item.traceInformId || "",
         }));
         
         this.setState((previousState) => ({

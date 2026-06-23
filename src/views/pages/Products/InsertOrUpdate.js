@@ -301,10 +301,9 @@ class InsertOrUpadte extends Component {
     const selectValue = value !== null && value !== undefined ? String(value) : null;
 
     if (name === "diaryId") {
-      const numericValue = Number(selectValue);
       // Tìm trong TRACEHARVEST_OPTIONS (đây là list đang hiển thị trong dropdown)
       const selectedOption = this.props.TRACEHARVEST_OPTIONS?.find(
-        (item) => item.id === numericValue
+        (item) => String(item.id) === String(selectValue)
       );
       const traceInformId = selectedOption?.TraceInformID || null;
 
