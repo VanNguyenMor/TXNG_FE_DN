@@ -232,6 +232,8 @@ class AdminNavbar extends Component {
     formData.append('PasswordConfirm', "");
     formData.append('AvatarFile', file);
     // formData.append('Avatar', "");
+    // Modal "Đổi hình đại diện" chỉ cập nhật avatar → báo backend chỉ update avatar.
+    formData.append('IsUpdateAvatarOnly', true);
     updateMe(formData).then(res => {
       if (res.data.status == 200) {
         this.setState({ notChang: true });

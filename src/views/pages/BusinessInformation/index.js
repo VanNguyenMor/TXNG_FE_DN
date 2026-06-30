@@ -40,6 +40,12 @@ class BusinessInformation extends Component {
       districts: null,
       wards: null,
 
+      // Seed cố định cho TinyMCE "Giới thiệu". CHỈ cập nhật khi load dữ liệu,
+      // KHÔNG cập nhật theo từng phím gõ. Tránh việc initialValue đổi mỗi keystroke
+      // khiến @tinymce/tinymce-react gọi editor.setContent() (reset nội dung +
+      // nhảy con trỏ về đầu) làm hỏng khi gõ tiếng Việt có dấu.
+      introduceSeed: "",
+
       configSetting: {
         verifiedImage: null,
         businessImageFile: null,
@@ -254,6 +260,7 @@ class BusinessInformation extends Component {
           return {
             ...prevState,
             ...positionUpdate,
+            introduceSeed: introduce || "",
             configSetting: {
               ...prevState.configSetting,
               companyName,
@@ -604,12 +611,29 @@ class BusinessInformation extends Component {
     }
 
     const formData = new FormData();
-    formData.append("files", file);
+    // Phải kèm file.name, nếu không backend sẽ bind như field text (không phải
+    // IFormFile) → không nhận được file → upload hình đại diện không hoạt động.
+    formData.append("files", file, file.name);
 
     try {
       const response = await fetchData.infoCompany.uploadFile(formData);
       if (response) {
-        const newLogoUrl = Array.isArray(response) ? response : response;
+        // Chuẩn hoá nhiều dạng response về URL string: chuỗi, mảng URL, hoặc
+        // object { url | data | uploadKey | path }.
+        const extractUrl = (res) => {
+          if (!res) return null;
+          if (typeof res === "string") return res;
+          if (Array.isArray(res)) return extractUrl(res[0]);
+          if (typeof res === "object")
+            return res.url || res.data || res.uploadKey || res.path || null;
+          return null;
+        };
+        const newLogoUrl = extractUrl(response);
+
+        if (!newLogoUrl) {
+          toast.error("Lỗi: Không nhận được URL sau khi upload.");
+          return;
+        }
 
         this.setState(
           (prevState) => ({
@@ -901,11 +925,12 @@ class BusinessInformation extends Component {
                 <div className="config-system-content-config-system-item-box">
                   <InputGroup className="input-group-alternative css-border-input css-border-webConfig">
                     <Editor
+                      key={`introduce-editor-${configSetting.id || "new"}`}
                       tinymceScriptSrc="/tinymce/tinymce.min.js"
                       onInit={(_, editor) => {
                         this.refcontentEmailRegister = editor;
                       }}
-                      initialValue={configSetting.introduce}
+                      initialValue={this.state.introduceSeed}
                       onEditorChange={(content) => {
                         this.onChangeValue("introduce")(content);
                       }}

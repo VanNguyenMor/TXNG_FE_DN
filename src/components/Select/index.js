@@ -15,6 +15,7 @@ class Select extends Component {
       top: 0,
       width: 0,
       left: 0,
+      maxHeight: 500,
       dissableMulti: false,
     };
 
@@ -129,13 +130,39 @@ class Select extends Component {
 
       let { open } = this.state;
 
-      this.setState({ open: !open, top: top + height, width, left }, () => {
-        if (isMulti) {
-          if (this.state.open == true) {
-            this.setState({ dissableMulti: true });
+      // Mở dropdown theo không gian còn lại của viewport để tránh bị cắt khi
+      // Select nằm gần đáy màn hình (vd: trong modal). Nếu phía dưới không đủ
+      // chỗ thì lật lên trên; đồng thời giới hạn chiều cao để có thể cuộn.
+      const GAP = 4;
+      const MAX_HEIGHT = 500;
+      const MARGIN = 8;
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      const spaceBelow = viewportHeight - (top + height);
+      const spaceAbove = top;
+
+      let dropTop;
+      let maxHeight;
+      if (spaceBelow >= spaceAbove) {
+        // Mở xuống dưới
+        dropTop = top + height;
+        maxHeight = Math.min(MAX_HEIGHT, spaceBelow - GAP - MARGIN);
+      } else {
+        // Mở lên trên
+        maxHeight = Math.min(MAX_HEIGHT, spaceAbove - GAP - MARGIN);
+        dropTop = top - maxHeight - GAP;
+      }
+
+      this.setState(
+        { open: !open, top: dropTop, width, left, maxHeight },
+        () => {
+          if (isMulti) {
+            if (this.state.open == true) {
+              this.setState({ dissableMulti: true });
+            }
           }
         }
-      });
+      );
     }
   };
 
@@ -378,6 +405,7 @@ class Select extends Component {
       left,
       top,
       width,
+      maxHeight,
       dissableMulti,
     } = this.state;
     const hasValue =
@@ -452,6 +480,7 @@ class Select extends Component {
               left,
               top,
               width,
+              maxHeight,
               position: "fixed",
             }}
           >
