@@ -80,6 +80,11 @@ const buildLoginAuthData = (tokenResult, tokenAccount, company, infoData) => ({
   id: tokenAccount.id,
   userName: tokenAccount.userName,
   fullName: tokenAccount.fullName,
+  avatar:
+    tokenAccount.avatar ||
+    tokenAccount.Avatar ||
+    tokenAccount.avatarUrl ||
+    null,
   companyID: tokenAccount.companyID,
   isAdmin: tokenAccount.isAdmin,
   claims: parseLoginClaims(tokenAccount.claims),

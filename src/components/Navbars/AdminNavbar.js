@@ -217,7 +217,7 @@ class AdminNavbar extends Component {
 
   handleUpdateData = (val) => {
     const { file, details } = this.state;
-    const { updateMe } = this.props;
+    const { updateMe, getUserInfo } = this.props;
     const formData = new FormData();
     // formData.append('ID', ACCOUNT_ID);
     formData.append('ID', localStorage.getItem('ACCOUNT_ID'));
@@ -237,6 +237,17 @@ class AdminNavbar extends Component {
     updateMe(formData).then(res => {
       if (res.data.status == 200) {
         this.setState({ notChang: true });
+        // API updateme trả về data: null nên không có URL avatar mới. Phải fetch
+        // lại thông tin user để cập nhật ACCOUNT_AVA trong localStorage, nếu không
+        // sau khi reload navbar/sidebar sẽ đọc avatar cũ (chỉ set lúc đăng nhập).
+        if (getUserInfo) {
+          getUserInfo(localStorage.getItem('ACCOUNT_ID')).then(r => {
+            if (r && r.data && r.data.status == 200 && r.data.data) {
+              const newAva = r.data.data.Avatar || r.data.data.avatar || null;
+              localStorage.setItem('ACCOUNT_AVA', newAva);
+            }
+          });
+        }
         //window.location.reload();
         this.toggleModal('updateModal')
       }
