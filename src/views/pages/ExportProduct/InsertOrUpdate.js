@@ -43,23 +43,19 @@ class InsertOrUpadte extends Component {
   }
 
   async componentDidMount() {
-    const { onHandleChangeValue } = this.props;
+    const { onHandleChangeValue, initialData, isShowForEdit } = this.props;
 
-    if (onHandleChangeValue) {
-      onHandleChangeValue(this.state);
-    }
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-        };
-      },
-      () => {
-        if (onHandleChangeValue) {
-          onHandleChangeValue(this.state);
-        }
+    // Chế độ sửa: nạp dữ liệu chi tiết đã fetch vào state để form hiển thị.
+    const seedState =
+      isShowForEdit && initialData
+        ? { ...this.state, ...initialData }
+        : this.state;
+
+    this.setState(seedState, () => {
+      if (onHandleChangeValue) {
+        onHandleChangeValue(this.state);
       }
-    );
+    });
 
     this.focusInput();
   }

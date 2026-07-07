@@ -58,7 +58,11 @@ class LoggingInformation extends Component {
       dataTrace: {},
       dataTraceInforms: [],
       currentViewItem: null,
-      canEvaluate: false,
+      // Quyền đánh giá theo trace (thông tin truy xuất của sản phẩm):
+      // isEvalAdmin = admin được đánh giá tất cả; permissionTraces = danh sách quyền
+      // theo từng hạng mục (informSelectID + isExecuted) trả về từ gettracerole.
+      isEvalAdmin: false,
+      permissionTraces: [],
       data: [],
       traceIdToOpen: null,
       detail: [],
@@ -511,21 +515,26 @@ class LoggingInformation extends Component {
     this.setState({ currentViewItem: item });
     this.loadViewData(item);
 
-    // Phân quyền đánh giá: admin luôn được; còn lại dựa vào gettracerole
+    // Phân quyền đánh giá: admin luôn được; còn lại dựa vào gettracerole.
+    // gettracerole trả về data.data = mảng quyền theo từng hạng mục nhật ký
+    // (mỗi phần tử có informSelectID + isExecuted); được đánh giá hạng mục nào
+    // khi tồn tại quyền khớp informSelectID và còn isExecuted = false.
     const isAdmin = JSON.parse(localStorage.getItem("IS_ADMIN") || "false");
     if (isAdmin) {
-      this.setState({ canEvaluate: true });
+      this.setState({ isEvalAdmin: true, permissionTraces: [] });
     } else {
       const traceID = item.id || item.ID;
       const { requestGetTraceRole } = this.props;
       if (requestGetTraceRole) {
         requestGetTraceRole(traceID).then((res) => {
-          const roleData = ((res.data || {}).data || {});
-          const roles = roleData.traceRoles || roleData.roles || roleData || [];
-          this.setState({ canEvaluate: Array.isArray(roles) ? roles.length > 0 : !!roles });
+          const permissionTraces = ((res.data || {}).data || []);
+          this.setState({
+            isEvalAdmin: false,
+            permissionTraces: Array.isArray(permissionTraces) ? permissionTraces : [],
+          });
         });
       } else {
-        this.setState({ canEvaluate: false });
+        this.setState({ isEvalAdmin: false, permissionTraces: [] });
       }
     }
 
@@ -1188,7 +1197,8 @@ class LoggingInformation extends Component {
                 <ViewModal
                   dataTrace={this.state.dataTrace}
                   dataTraceInforms={this.state.dataTraceInforms}
-                  canEvaluate={this.state.canEvaluate}
+                  isEvalAdmin={this.state.isEvalAdmin}
+                  permissionTraces={this.state.permissionTraces}
                   requestEvaluateDiary={this.props.requestEvaluateDiary}
                   requestMadeAgainDiary={this.props.requestMadeAgainDiary}
                   requestDeleteWriteTrace={this.props.requestDeleteWriteTrace}

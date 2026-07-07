@@ -412,18 +412,38 @@ class ExportProduct extends Component {
       const detailResponse = await fetchData.goodDelivery.getDetail(id);
 
       if (detailResponse) {
-        const detailData = detailResponse.goodsDelivery || detailResponse;
+        // Response bọc chi tiết trong key goodsIssue (một số API cũ dùng goodsDelivery).
+        const detailData =
+          detailResponse.goodsIssue || detailResponse.goodsDelivery || detailResponse;
+        // Dòng chi tiết (sản phẩm/lô hàng) nằm trong mảng giMores.
+        const firstLine =
+          (Array.isArray(detailData.giMores) && detailData.giMores[0]) || {};
+        // Suy ra loại phiếu: có batchID -> Lô hàng ("1"), ngược lại -> Sản phẩm ("2").
+        const importTypeId =
+          detailData.batchID || firstLine.batchID ? "1" : "2";
 
-        // Map dữ liệu vào initialData theo response goodsdeliverynote/get
+        // Map dữ liệu vào initialData theo tên field mà InsertOrUpdate sử dụng
         const initialData = {
           id: id,
+          importTypeId,
           receiptNumber: detailData.giCode || detailData.code || "",
-          creationDate: detailData.giTime ? moment(detailData.giTime).toDate() : new Date(),
-          supplier: detailData.partnerName || detailData.supplier || "",
-          importer: detailData.confirmedByName || detailData.importer || "",
+          creationDate: detailData.giTime ? moment(detailData.giTime) : "",
+          supplierId: detailData.partnerID || detailData.supplier || null,
+          importer:
+            detailData.issuePersonName ||
+            detailData.confirmedByName ||
+            detailData.importer ||
+            "",
           note: detailData.note || "",
-          status: detailData.status || 0,
-          // Thêm các field khác nếu cần
+          status: detailData.status != null ? detailData.status : 0,
+          // Chi tiết dòng hàng
+          productId: importTypeId === "2" ? firstLine.materialID || null : null,
+          ingredientId: importTypeId === "1" ? firstLine.batchID || null : null,
+          warehouseId: firstLine.warehouseID || null,
+          quantity: firstLine.quantity != null ? Number(firstLine.quantity) : 0,
+          unit: firstLine.unitID || "",
+          price: firstLine.unitPrice != null ? Number(firstLine.unitPrice) : 0,
+          vat: firstLine.perVAT != null ? Number(firstLine.perVAT) : 0,
         };
 
         this.setState(
@@ -567,7 +587,7 @@ class ExportProduct extends Component {
                       </DropdownToggle>
                       <DropdownMenu>
                         {isDisableEdit == true ? null : (
-                          <DropdownItem onClick={this.onEditData(e)}>
+                          <DropdownItem onClick={this.onEditData(e.id)}>
                             Sửa
                           </DropdownItem>
                         )}
@@ -687,6 +707,8 @@ class ExportProduct extends Component {
                       moduleBody={
                         <InsertOrUpdate
                           id={editId}
+                          initialData={this.state.dataInsert}
+                          isShowForEdit={isShowForEdit}
                           errors={errorInserts}
                           onHandleChangeValue={this.onHandleChangeValue}
                           STATUS_OPTIONS={STATUS_OPTIONS}
