@@ -1227,12 +1227,13 @@ export const fetchData = {
       try {
         const endpoint = GOOD_DELIVERY.getDetailGoodDelivery.replace("{id}", id);
         const result = await callApi("get", endpoint);
-        // Handle nested data structure: res.data.data.goodsDelivery
-        if (result?.data?.data?.goodsDelivery) {
+        // API goodsdeliverynote/get trả về data.goodsIssue (không phải goodsDelivery).
+        // Xử lý cả cấu trúc lồng: res.data.data.goodsIssue.
+        if (result?.data?.data?.goodsIssue || result?.data?.data?.goodsDelivery) {
           return result.data.data;
-        } else if (result?.data?.goodsDelivery) {
+        } else if (result?.data?.goodsIssue || result?.data?.goodsDelivery) {
           return result.data;
-        } else if (result?.goodsDelivery) {
+        } else if (result?.goodsIssue || result?.goodsDelivery) {
           return result;
         }
         return result?.data || null;

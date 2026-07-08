@@ -45,6 +45,26 @@ class DiaryRecord extends Component {
     return item.id || item.ID || item.Id || item.traceInformId || item.TraceInformId;
   };
 
+  // Quyền đánh giá hạng mục nhật ký này (bám theo logic app mobile - detailDiary):
+  // - Chỉ áp dụng khi bản ghi đang chờ hoặc đã thực hiện lại.
+  // - Admin được đánh giá tất cả; còn lại phải có quyền khớp informSelectID và
+  //   còn ít nhất một quyền chưa thực hiện (isExecuted = false).
+  canRate = () => {
+    const { item, permissionTraces = [], isEvalAdmin } = this.props;
+    const eResult = item.eResult;
+
+    const isRatable =
+      eResult === E_RESULT.waiting || eResult === E_RESULT.remade;
+    if (!isRatable) return false;
+
+    if (isEvalAdmin) return true;
+
+    const matched = permissionTraces.filter(
+      (p) => p.informSelectID === item.informSelectID
+    );
+    return matched.some((p) => !p.isExecuted);
+  };
+
   toggleEvaluate = () => {
     this.setState((s) => ({ showEvaluate: !s.showEvaluate, typePass: true, reason: "", file: null }));
   };
@@ -172,9 +192,12 @@ class DiaryRecord extends Component {
   };
 
   render() {
-    const { item, contents, canEvaluate } = this.props;
+    const { item, contents } = this.props;
     const { showEvaluate, typePass, reason, submitting } = this.state;
     const meta = resultMeta(item.eResult);
+    // Nút đánh giá chỉ hiện khi có quyền đánh giá và bản ghi được cấu hình
+    // cho phép đánh giá (item.isEvaluated) - theo thông tin truy xuất của sản phẩm.
+    const showEvaluateBtn = this.canRate() && !!item.isEvaluated;
 
     return (
       <div className={classes.itemBodyView}>
@@ -196,7 +219,7 @@ class DiaryRecord extends Component {
 
         {/* Thanh thao tác */}
         <div className="row mt-2" style={{ gap: 6, paddingLeft: 15 }}>
-          {canEvaluate && item.eResult === E_RESULT.waiting ? (
+          {showEvaluateBtn ? (
             <Button size="sm" color="info" type="button" onClick={this.toggleEvaluate}>
               Đánh giá
             </Button>
@@ -275,7 +298,8 @@ class ViewModal extends Component {
     const {
       dataTrace,
       dataTraceInforms,
-      canEvaluate,
+      isEvalAdmin,
+      permissionTraces,
       requestEvaluateDiary,
       requestMadeAgainDiary,
       requestDeleteWriteTrace,
@@ -317,7 +341,8 @@ class ViewModal extends Component {
                   <DiaryRecord
                     item={item}
                     contents={contents}
-                    canEvaluate={canEvaluate}
+                    isEvalAdmin={isEvalAdmin}
+                    permissionTraces={permissionTraces}
                     requestEvaluateDiary={requestEvaluateDiary}
                     requestMadeAgainDiary={requestMadeAgainDiary}
                     requestDeleteWriteTrace={requestDeleteWriteTrace}
