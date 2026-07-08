@@ -182,8 +182,11 @@ class WriteLogging extends Component {
   };
 
   initFromProps = (props) => {
-    const { item } = props;
+    const { item, copyItem } = props;
     const traceId = this.getTraceId(props);
+
+    // Ghi nhớ bản ghi cần sao chép để prefill sau khi tải xong loại nhật ký + thuộc tính
+    this.pendingCopyItem = copyItem || null;
 
     this.setState(
       {
@@ -213,13 +216,21 @@ class WriteLogging extends Component {
       const data = getResponseData(res);
       const informSelects = getInformSelectsFromData(data);
       const trace = data.trace || {};
-      this.setState((prev) => ({
-        informSelects,
-        haveItem: trace.haveItem || data.haveItem || false,
-        // Vị trí: ưu tiên id thật từ trace detail (bảng list chỉ trả tên nên không khớp option)
-        zoneId: trace.plantingZoneID || trace.PlantingZoneID || prev.zoneId || null,
-        isLoaded: false,
-      }));
+      this.setState(
+        (prev) => ({
+          informSelects,
+          haveItem: trace.haveItem || data.haveItem || false,
+          // Vị trí: ưu tiên id thật từ trace detail (bảng list chỉ trả tên nên không khớp option)
+          zoneId: trace.plantingZoneID || trace.PlantingZoneID || prev.zoneId || null,
+          isLoaded: false,
+        }),
+        () => {
+          // Nếu đang ở luồng sao chép -> chọn sẵn loại nhật ký tương ứng
+          if (this.pendingCopyItem) {
+            this.applyCopyItem(this.pendingCopyItem);
+          }
+        }
+      );
     });
 
     // Nạp danh sách vị trí theo trace (đối chiếu mobile getplanzone) để Vị trí hiển thị đúng nhãn
@@ -292,6 +303,12 @@ class WriteLogging extends Component {
       this.setState({ attributes, isLoaded: false }, () => {
         // tải sẵn danh sách cho các thuộc tính dạng reference
         attributes.forEach((attr) => this.loadReferenceOptions(attr));
+        // Luồng sao chép: prefill giá trị từ bản ghi được chép (không tự lấy GPS)
+        if (this.pendingCopyItem) {
+          this.prefillFromCopy(this.pendingCopyItem);
+          this.pendingCopyItem = null;
+          return;
+        }
         // tự động lấy GPS cho thuộc tính định vị (giống mobile)
         const hasGps = attributes.some((a) => a.dataType === DATA_TYPES.banDo);
         if (hasGps && navigator.geolocation) {
@@ -306,6 +323,128 @@ class WriteLogging extends Component {
         }
       });
     });
+  };
+
+  // ----- Luồng sao chép nhật ký (đối chiếu app mobile - copyItem) -----
+  // Chọn sẵn loại nhật ký khớp với bản ghi được chép, đồng thời set vị trí.
+  applyCopyItem = (copyItem) => {
+    const targetId =
+      copyItem.informSelectID ||
+      copyItem.InformSelectID ||
+      copyItem.informSelectId;
+
+    const match = (this.state.informSelects || []).find(
+      (s) => String(getInformSelectId(s)) === String(targetId)
+    );
+
+    // Vị trí lấy theo bản ghi được chép nếu có
+    const zoneId =
+      copyItem.plantingZoneID ||
+      copyItem.PlantingZoneID ||
+      copyItem.plantingZoneId;
+    if (zoneId) {
+      this.setState({ zoneId });
+    }
+
+    if (!match) {
+      // Không tìm được loại nhật ký tương ứng -> huỷ luồng copy
+      this.pendingCopyItem = null;
+      return;
+    }
+
+    // Chọn loại nhật ký -> load thuộc tính, prefill sẽ chạy trong callback
+    this.onChangeInformSelect(getInformSelectId(match));
+  };
+
+  // Điền giá trị các thuộc tính từ contents của bản ghi được chép.
+  prefillFromCopy = (copyItem) => {
+    let contents = [];
+    try {
+      contents = JSON.parse(copyItem.contents || copyItem.Contents || "[]");
+    } catch (e) {
+      contents = [];
+    }
+    if (!Array.isArray(contents) || contents.length === 0) return;
+
+    const findContent = (attr) =>
+      contents.find((c) => {
+        const cid = c.InformID || c.informID;
+        return cid && attr.informID && String(cid) === String(attr.informID);
+      });
+
+    this.setState(
+      (prev) => {
+        const attributes = prev.attributes.map((attr) => {
+          const c = findContent(attr);
+          if (!c) return attr;
+
+          const value = c.Value != null ? c.Value : c.value;
+          const displayValue =
+            c.DisplayValue != null ? c.DisplayValue : c.displayValue;
+          const ref = attr.reference;
+
+          if (ref === REFERENCE_DIARYS.nguyenVatLieu) {
+            let material = c.Material || c.material || {};
+            if (typeof material === "string") {
+              try {
+                material = JSON.parse(material || "{}") || {};
+              } catch (e) {
+                material = {};
+              }
+            }
+            const materialId =
+              material.materialID || material.MaterialID || value || "";
+            return {
+              ...attr,
+              _value: materialId,
+              _value2: materialId,
+              _display: displayValue || "",
+              _display2: displayValue || "",
+              _valueUnit: material.unitID || material.UnitID || "",
+              _displayUnit: material.unitName || material.UnitName || "",
+              _quantity: (material.quantity || material.Quantity || "").toString(),
+            };
+          }
+
+          if (ref === REFERENCE_DIARYS.phieuNhap) {
+            return {
+              ...attr,
+              _value: value || "",
+              _displayGoodReceipt: displayValue || "",
+            };
+          }
+
+          if (REFERENCE_CONFIG[ref]) {
+            return { ...attr, _value: value || "", _display: displayValue || "" };
+          }
+
+          if (attr.dataType === DATA_TYPES.trueFalse) {
+            return { ...attr, _value: value === "1" || value === true ? "1" : "0" };
+          }
+
+          if (attr.dataType === DATA_TYPES.image) {
+            return { ...attr, _value: (value || "").toString() };
+          }
+
+          if (attr.dataType === DATA_TYPES.date) {
+            return { ...attr, _value: value || null };
+          }
+
+          // text / number / banDo
+          return { ...attr, _value: value != null ? value : "" };
+        });
+
+        return { attributes };
+      },
+      () => {
+        // Với nguyên vật liệu: tải danh sách đơn vị để dropdown hiển thị đúng nhãn
+        this.state.attributes.forEach((attr) => {
+          if (attr.reference === REFERENCE_DIARYS.nguyenVatLieu && attr._value) {
+            this.loadMaterialUnits(attr, attr._value2 || attr._value);
+          }
+        });
+      }
+    );
   };
 
   loadReferenceOptions = (attr) => {

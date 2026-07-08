@@ -110,6 +110,8 @@ class LoggingInformation extends Component {
       isShowForWrite: false,
       editId: null,
       currentItem: null,
+      // Bản ghi nhật ký được chọn để sao chép (mở form ghi nhật ký prefill sẵn)
+      copyItem: null,
       warningPopupModal: false,
       lockWarningPopupModal: false,
       deleteId: null,
@@ -411,6 +413,7 @@ class LoggingInformation extends Component {
       isShowForWrite: false,
       editId: null,
       currentItem: null,
+      copyItem: null,
     });
   };
 
@@ -590,6 +593,22 @@ class LoggingInformation extends Component {
       isShowForWrite: true,
       editId: item.id || item.ID,
       currentItem: item,
+      copyItem: null,
+    });
+  };
+
+  // Sao chép một bản ghi nhật ký: đóng modal xem, mở form ghi nhật ký với dữ
+  // liệu được chép sẵn từ bản ghi (đối chiếu app mobile - onCopyTrace/copyItem).
+  onCopyTrace = (record) => {
+    const trace = this.state.currentViewItem;
+    if (!trace || !record) return;
+
+    this.setState({
+      viewModal: false,
+      isShowForWrite: true,
+      editId: trace.id || trace.ID,
+      currentItem: trace,
+      copyItem: record,
     });
   };
 
@@ -959,6 +978,7 @@ class LoggingInformation extends Component {
                               ref={(r) => (this.writeLoggingRef = r)}
                               id={editId}
                               item={currentItem}
+                              copyItem={this.state.copyItem}
                               errors={errorInserts}
                               PLANTINGZONE_OPTIONS={PLANTINGZONE_OPTIONS}
                               requestGetInformSelect={this.props.requestGetInformSelect}
@@ -1199,6 +1219,8 @@ class LoggingInformation extends Component {
                   dataTraceInforms={this.state.dataTraceInforms}
                   isEvalAdmin={this.state.isEvalAdmin}
                   permissionTraces={this.state.permissionTraces}
+                  canCopy={!isDisableAdd}
+                  onCopyTrace={this.onCopyTrace}
                   requestEvaluateDiary={this.props.requestEvaluateDiary}
                   requestMadeAgainDiary={this.props.requestMadeAgainDiary}
                   requestDeleteWriteTrace={this.props.requestDeleteWriteTrace}
