@@ -121,6 +121,16 @@ class DiaryRecord extends Component {
     });
   };
 
+  // Sao chép bản ghi để tạo nhật ký mới (đối chiếu app mobile - onCopyTrace)
+  onCopy = () => {
+    const { item, onCopyTrace } = this.props;
+    if (!onCopyTrace) return;
+
+    if (!window.confirm("Bạn muốn sao chép nhật ký này?")) return;
+
+    onCopyTrace(item);
+  };
+
   onDelete = () => {
     const { requestDeleteWriteTrace, onRefresh } = this.props;
     const id = this.getId();
@@ -229,6 +239,11 @@ class DiaryRecord extends Component {
               Làm lại
             </Button>
           ) : null}
+          {this.props.canCopy ? (
+            <Button size="sm" color="primary" type="button" onClick={this.onCopy}>
+              Sao chép
+            </Button>
+          ) : null}
           <Button size="sm" color="danger" type="button" onClick={this.onDelete}>
             Xóa
           </Button>
@@ -300,6 +315,8 @@ class ViewModal extends Component {
       dataTraceInforms,
       isEvalAdmin,
       permissionTraces,
+      canCopy,
+      onCopyTrace,
       requestEvaluateDiary,
       requestMadeAgainDiary,
       requestDeleteWriteTrace,
@@ -343,6 +360,8 @@ class ViewModal extends Component {
                     contents={contents}
                     isEvalAdmin={isEvalAdmin}
                     permissionTraces={permissionTraces}
+                    canCopy={canCopy}
+                    onCopyTrace={onCopyTrace}
                     requestEvaluateDiary={requestEvaluateDiary}
                     requestMadeAgainDiary={requestMadeAgainDiary}
                     requestDeleteWriteTrace={requestDeleteWriteTrace}
