@@ -32,7 +32,17 @@ function normalizeUrlsInput(urls) {
 
 function createInitialImages(urls) {
   const normalized = normalizeUrlsInput(urls || []);
-  return normalized.map((url) => ({ id: nextId++, url: url }));
+  const images = normalized.map((url) => ({ id: nextId++, url: url }));
+  if (images.length === 0) images.push({ id: nextId++, url: Noimg });
+  return images;
+}
+
+function getRealUrls(images) {
+  return images.map((img) => img.url).filter((u) => !!u && u !== Noimg);
+}
+
+function isSameUrls(a, b) {
+  return a.length === b.length && a.every((u, i) => u === b[i]);
 }
 
 class ImageGalleryUploader extends Component {
@@ -41,51 +51,44 @@ class ImageGalleryUploader extends Component {
     this.state = {
       images: createInitialImages(props.initialImages || []),
     };
-    nextId = this.state.images.length;
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
-    if (
-      nextProps.initialImages &&
-      nextProps.initialImages !== this.props.initialImages
-    ) {
-      const imgs = createInitialImages(nextProps.initialImages);
-      this.setState({ images: imgs });
-      nextId = imgs.length;
+    if (nextProps.initialImages !== this.props.initialImages) {
+      const nextUrls = normalizeUrlsInput(nextProps.initialImages);
+      if (isSameUrls(nextUrls, getRealUrls(this.state.images))) return;
+      this.setState({ images: createInitialImages(nextProps.initialImages) });
     }
   }
 
-  getUrlsFromState() {
-    return this.state.images.map((img) => img.url);
-  }
-
   notifyParent(updatedImagesObject) {
-    const updatedUrls = updatedImagesObject.map((img) => img.url);
+    const updatedUrls = getRealUrls(updatedImagesObject);
     if (this.props.onImagesChange) {
       this.props.onImagesChange(updatedUrls);
     }
   }
 
-  handleImageUploadSuccess = (newImageUrl, index) => {
+  // Tìm ô theo id (không dùng index) để tránh ghi nhầm ô khi ô khác bị xóa lúc đang upload
+  handleImageUploadSuccess = (newImageUrl, id) => {
+    if (!newImageUrl || typeof newImageUrl !== "string") return;
+
     this.setState((prevState) => {
-      let updatedImages = [...prevState.images];
-      updatedImages[index] = { ...updatedImages[index], url: newImageUrl };
+      if (!prevState.images.some((img) => img.id === id)) return null;
+
+      const updatedImages = prevState.images.map((img) =>
+        img.id === id ? { ...img, url: newImageUrl } : img
+      );
       this.notifyParent(updatedImages);
 
       return { images: updatedImages };
     });
   };
 
+  // Ô trống chưa có ảnh thật nên không cần báo lên component cha
   handleAddImageField = () => {
-    this.setState((prevState) => {
-      const newImageObject = { id: nextId++, url: Noimg };
-      const updatedImages = [...prevState.images, newImageObject];
-      this.notifyParent(updatedImages);
-
-      return {
-        images: updatedImages,
-      };
-    });
+    this.setState((prevState) => ({
+      images: [...prevState.images, { id: nextId++, url: Noimg }],
+    }));
   };
 
   handleRemoveImageField = (idToRemove) => {
@@ -110,9 +113,6 @@ class ImageGalleryUploader extends Component {
   render() {
     const { title, mdVal, noMutil, disabled } = this.props;
     const { images } = this.state;
-
-    const displayImages =
-      images.length > 0 ? images : [{ id: nextId++, url: Noimg }];
 
     const imageContainerStyle = {
       position: "relative",
@@ -151,7 +151,7 @@ class ImageGalleryUploader extends Component {
           <h3 className="mb-4">{title || "Thư viện hình ảnh"}</h3>
 
           <Row className="mb-3">
-            {displayImages.map((imageObject, index) => (
+            {images.map((imageObject, index) => (
               <Col
                 md={mdVal ? mdVal : 6}
                 key={imageObject.id}
@@ -173,10 +173,10 @@ class ImageGalleryUploader extends Component {
                       );
                       const uploadedUrl = res;
 
-                      this.handleImageUploadSuccess(uploadedUrl, index);
+                      this.handleImageUploadSuccess(uploadedUrl, imageObject.id);
                     }}
                   />
-                  {!disabled && displayImages.length > 1 && index !== 0 && (
+                  {!disabled && images.length > 1 && index !== 0 && (
                     <Button
                       color="danger"
                       style={removeButtonStyle}
