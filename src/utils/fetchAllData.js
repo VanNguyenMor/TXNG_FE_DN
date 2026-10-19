@@ -7,7 +7,7 @@ export const callApi = async (
   isFormData = false
 ) => {
   //const API_DOMAIN ="http://localhost:8088/api/";
-  const API_DOMAIN ="https://truyxuatnguongoc.tiengiang.gov.vn:9803/api/";
+  const API_DOMAIN ="https://truyxuatnguongoc.dongthap.gov.vn:10803/api/";
   //const API_DOMAIN = "https://localhost:44310/api/";
   const url = API_DOMAIN + endpoint;
 
