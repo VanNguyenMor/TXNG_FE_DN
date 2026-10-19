@@ -483,9 +483,15 @@ class BusinessInformation extends Component {
         toast.success("Cập nhật thành công!");
         await this.loadDetailData(configSetting.id);
       } else {
+        const validationErrors = response?.data?.errors || response?.errors;
+        const validationMsg = validationErrors
+          ? Object.values(validationErrors).flat().filter(Boolean).join("; ")
+          : "";
         const errorMsg =
+          validationMsg ||
           response?.data?.message ||
           response?.message ||
+          response?.title ||
           response?.error ||
           "Cập nhật thất bại!";
         toast.error(errorMsg);
@@ -1054,6 +1060,7 @@ class BusinessInformation extends Component {
                               ...prev.configSetting,
                               provinceID: value,
                               pRovinceName: "",
+                              districtID: null,
                               wardID: null,
                               wardName: "",
                             },
@@ -1086,7 +1093,16 @@ class BusinessInformation extends Component {
                       labelName="wardName"
                       defaultValue={configSetting?.wardID}
                       val="id"
-                      handleChange={this.onChangeValue("wardID")}
+                      handleChange={(value) => {
+                        const ward = (wards || []).find((w) => w.id === value);
+                        this.setState((prev) => ({
+                          configSetting: {
+                            ...prev.configSetting,
+                            wardID: value,
+                            districtID: ward?.districtID || ward?.DistrictID || null,
+                          },
+                        }));
+                      }}
                     />
                   </div>
                 </div>
