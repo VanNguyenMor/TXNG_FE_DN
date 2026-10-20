@@ -153,6 +153,12 @@ export const STAMP_REQUEST = {
   getListStampTemplate: "requestprovidestamp/getliststemptemplate",
   getPriceStamp: "requestprovidestamp/getprice?quantity={quantity}",
   requestProvideStamp: "requestprovidestamp/requestprovincestamp?id={id}",
+  createNotRegister: "requestprovidestamp/createforprovincenotregister",
+  updateFilesAgain: "requestprovidestamp/updatefilesagain",
+  requestPermissionStamp: "requestprovidestamp/requestpermissionprovincestamp",
+  createAfterPayment: "requestprovidestamp/createafterpayment",
+  printStamp: "requestprovidestamp/printstamp?id={id}",
+  getConfig: "configwebsite/getconfig",
 };
 
 export const PARTNER = {

@@ -97,6 +97,7 @@ class HeaderTable extends Component {
       styleCustom,
       typeSearch,
       isReadOnly,
+      disableSubmit,
     } = this.props;
 
     return (
@@ -355,6 +356,7 @@ class HeaderTable extends Component {
           onConfirm={onConfirm}
           toggleModal={this.toggleModal}
           activeSubmit={activeSubmit}
+          disableSubmit={disableSubmit}
           handleCreateInfoData={(data, beta, close) => {
             handleCreateInfoData(
               data,

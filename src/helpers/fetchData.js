@@ -1095,12 +1095,75 @@ export const fetchData = {
     getListStampTemplate: async () => {
       try {
         const result = await callApi("post", STAMP_REQUEST.getListStampTemplate, {});
-        
+
         const data = result?.data || null;
-        
+
         return data;
       } catch (error) {
         console.error("❌ Error in getListStampTemplate:", error);
+        return null;
+      }
+    },
+
+    getConfig: async () => {
+      try {
+        const result = await callApi("get", STAMP_REQUEST.getConfig);
+        return result?.data || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    getPrice: async (quantity) => {
+      try {
+        const endpoint = STAMP_REQUEST.getPriceStamp.replace("{quantity}", quantity);
+        const result = await callApi("get", endpoint);
+        const value = result?.data;
+        if (value === null || value === undefined || value === "") return null;
+        return Number.isFinite(Number(value)) ? Number(value) : null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    createNotRegister: async (payload) => {
+      try {
+        return await callApi("post", STAMP_REQUEST.createNotRegister, payload);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    updateFilesAgain: async (formData) => {
+      try {
+        return await callApi("post", STAMP_REQUEST.updateFilesAgain, formData, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    requestPermission: async (formData) => {
+      try {
+        return await callApi("post", STAMP_REQUEST.requestPermissionStamp, formData, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    createAfterPayment: async (formData) => {
+      try {
+        return await callApi("post", STAMP_REQUEST.createAfterPayment, formData, true);
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    printStamp: async (id) => {
+      try {
+        const endpoint = STAMP_REQUEST.printStamp.replace("{id}", id);
+        const result = await callApi("get", endpoint);
+        return result?.data || null;
+      } catch (error) {
         return null;
       }
     },
