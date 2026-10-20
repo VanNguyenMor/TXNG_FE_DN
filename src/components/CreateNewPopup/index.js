@@ -27,6 +27,7 @@ class CreateNewPopup extends Component {
       handleCreateInfoData,
       onConfirm,
       isShowForEdit,
+      disableSubmit,
     } = this.props;
 
     return (
@@ -63,7 +64,7 @@ class CreateNewPopup extends Component {
                         handleCreateInfoData(newData, "a", "closePopup");
                       }
                     }}
-                    // disabled={activeSubmit ? false : true}
+                    disabled={disableSubmit}
                   >
                     <img src={SaveIcon1} alt="Lưu lại" />
                     <span>Lưu lại</span>
@@ -85,7 +86,7 @@ class CreateNewPopup extends Component {
                           handleCreateInfoData(newData);
                         }
                       }}
-                      // disabled={activeSubmit ? false : true}
+                      disabled={disableSubmit}
                     >
                       <img src={SaveIcon1} alt="Lưu & Thêm" />
                       <span>Lưu & Thêm</span>
@@ -106,7 +107,7 @@ class CreateNewPopup extends Component {
                           handleCreateInfoData(newData, "a", "closePopup");
                         }
                       }}
-                      // disabled={activeSubmit ? false : true}
+                      disabled={disableSubmit}
                     >
                       <img src={SaveIcon1} alt="Lưu & Đóng" />
                       <span>Lưu & Đóng</span>

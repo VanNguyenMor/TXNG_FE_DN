@@ -6,6 +6,9 @@ import { Col, Row, Label, Input, InputGroup, Modal, ModalHeader, ModalBody } fro
 import { fetchData } from "helpers/fetchData";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
 import moment from "moment";
+import { toast } from "react-toastify";
+import { loadDetail } from "./services";
+import { splitFileNames, formatNumber } from "./utils";
 
 class ShowHistoryData extends Component {
   constructor(props) {
@@ -71,16 +74,11 @@ class ShowHistoryData extends Component {
 
   loadDetail = async (id) => {
     this.setState({ isLoaded: true });
-    try {
-      const detailData = await fetchData.stampRequest.getDetail(id);
-      if (detailData) {
-        const request = detailData.request || detailData;
-        this.setState({ detail: request, isLoaded: false });
-      } else {
-        this.setState({ isLoaded: false });
-      }
-    } catch (error) {
-      console.error("Error loading stamp request detail:", error);
+    const res = await loadDetail(id);
+    if (res.ok) {
+      this.setState({ detail: res.detail, isLoaded: false });
+    } else {
+      toast.error(res.message);
       this.setState({ isLoaded: false });
     }
   };
@@ -117,13 +115,31 @@ class ShowHistoryData extends Component {
     this.setState({ previewImage: null });
   };
 
-  formatNumber = (value) => {
-    const num = Number(value) || 0;
-    return num.toLocaleString("de-DE");
+  formatNumber = formatNumber;
+
+  renderFiles = (value) => {
+    const names = splitFileNames(value);
+    if (names.length === 0) return <p className="text-muted mb-0">Chưa có tệp.</p>;
+    return (
+      <ul className="mb-0 pl-3">
+        {names.map((name, index) => (
+          <li key={`${name}-${index}`}>
+            {name.startsWith("http") ? (
+              <a href={name} target="_blank" rel="noopener noreferrer">
+                {name.split("/").pop()}
+              </a>
+            ) : (
+              name
+            )}
+          </li>
+        ))}
+      </ul>
+    );
   };
 
   render() {
     const { detail, isLoaded, errMessage, popupMessage } = this.state;
+    const { config = {} } = this.props;
 
     if (isLoaded) {
       return (
@@ -157,6 +173,8 @@ class ShowHistoryData extends Component {
     const isPrint = detail.isPrint === true || detail.IsPrint === true;
     const printMethod = isPrint ? "Tự in" : "Yêu cầu in";
     const note = detail.note || detail.Note || "";
+    const fileUpload = detail.fileUpload || "";
+    const fileUploadUsed = detail.fileUploadUsed || "";
     const status =
       detail.status !== undefined
         ? detail.status
@@ -180,6 +198,8 @@ class ShowHistoryData extends Component {
     const stampTemplateImage =
       (stampTemplate && (stampTemplate.template || stampTemplate.Template)) || "";
     const amountPerStamp = quantity > 0 ? amount / quantity : 0;
+    const showDelivery = Boolean(deliveryDate);
+    const showPartner = !isPrint && Boolean(partnerName) && status !== 1 && status !== 3;
 
     return (
       <div className="wrap-insert-or-update-zone">
@@ -220,7 +240,7 @@ class ShowHistoryData extends Component {
             <div className="form-group">
               <Label className="form-control-label">Kích thước tem</Label>
               <InputGroup className="input-group-alternative css-border-input">
-                <Input type="text" value={size || "-"} disabled readOnly />
+                <Input type="text" value={size || ""} disabled readOnly />
               </InputGroup>
             </div>
           </Col>
@@ -245,17 +265,19 @@ class ShowHistoryData extends Component {
           </Col>
         </Row>
 
-        {deliveryDate ? (
+        {showDelivery || showPartner ? (
           <Row className="mb-2">
-            <Col md="6">
-              <div className="form-group">
-                <Label className="form-control-label">Ngày trả tem</Label>
-                <InputGroup className="input-group-alternative css-border-input">
-                  <Input type="text" value={deliveryDate} disabled readOnly />
-                </InputGroup>
-              </div>
-            </Col>
-            {!isPrint && partnerName ? (
+            {showDelivery ? (
+              <Col md="6">
+                <div className="form-group">
+                  <Label className="form-control-label">Ngày trả tem</Label>
+                  <InputGroup className="input-group-alternative css-border-input">
+                    <Input type="text" value={deliveryDate} disabled readOnly />
+                  </InputGroup>
+                </div>
+              </Col>
+            ) : null}
+            {showPartner ? (
               <Col md="6">
                 <div className="form-group">
                   <Label className="form-control-label">Đơn vị in tem</Label>
@@ -327,6 +349,40 @@ class ShowHistoryData extends Component {
             </div>
           </Col>
         </Row>
+
+        <Row className="mb-2">
+          <Col md="12">
+            <div className="form-group">
+              <Label className="form-control-label">Hồ sơ đính kèm yêu cầu cấp tem</Label>
+              <div
+                className="text-muted"
+                dangerouslySetInnerHTML={{ __html: config.attachmentStamps || "" }}
+              />
+              <Label className="form-control-label">Tệp đính kèm yêu cầu cấp tem</Label>
+              {this.renderFiles(fileUpload)}
+            </div>
+          </Col>
+        </Row>
+
+        {effect ? (
+          <Row className="mb-2">
+            <Col md="12">
+              <div className="form-group">
+                <Label className="form-control-label">
+                  Hồ sơ đính kèm yêu cầu cấp phép sử dụng tem
+                </Label>
+                <div
+                  className="text-muted"
+                  dangerouslySetInnerHTML={{ __html: config.attachmentUsed || "" }}
+                />
+                <Label className="form-control-label">
+                  Tệp đính kèm yêu cầu cấp phép sử dụng tem
+                </Label>
+                {this.renderFiles(fileUploadUsed)}
+              </div>
+            </Col>
+          </Row>
+        ) : null}
 
         {note ? (
           <Row className="mb-2">

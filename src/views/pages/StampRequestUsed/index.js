@@ -41,6 +41,22 @@ import {
 
 import ShowHistoryData from "./ShowHistoryData.js";
 import ShowEditData from "./ShowEditData.js";
+import UploadDocsModal from "./UploadDocsModal.js";
+import PrintStampModal from "./PrintStampModal.js";
+import {
+  PRINT_METHOD,
+  ROW_ACTION,
+  getRowActions,
+  getSimpleRowActions,
+  getUploadConfig,
+  validateRequest,
+} from "./utils";
+import {
+  loadConfig,
+  openEditRequest,
+  saveRequest,
+  createPriceTracker,
+} from "./services";
 
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
 import Select from "components/Select/index.js";
@@ -90,6 +106,15 @@ class BusinessInformation extends Component {
       },
       dataInsert: {},
       errorInserts: {},
+      submitted: false,
+      saving: false,
+      isConfirm: true,
+      configLoaded: false,
+      config: { attachmentStamps: "", attachmentUsed: "" },
+      priceStamp: null,
+      priceLoading: false,
+      uploadModal: null,
+      printRequestId: null,
       isShowForHistoryList: false,
       isShowForDetail: false,
       editId: null,
@@ -113,6 +138,44 @@ class BusinessInformation extends Component {
       ],
     };
   }
+
+  componentDidMount() {
+    this.priceTracker = createPriceTracker({
+      onChange: ({ price, loading }) => {
+        if (!this.unmounted) this.setState({ priceStamp: price, priceLoading: loading });
+      },
+    });
+    this.ensureConfig();
+  }
+
+  componentWillUnmount() {
+    this.unmounted = true;
+    if (this.priceTracker) this.priceTracker.cancel();
+  }
+
+  ensureConfig = async () => {
+    if (this.state.configLoaded) return true;
+    if (!this.configPromise) {
+      this.configPromise = loadConfig().finally(() => {
+        this.configPromise = null;
+      });
+    }
+    const config = await this.configPromise;
+    if (this.unmounted) return false;
+    if (!config.ok) {
+      toast.error("Không tải được cấu hình, vui lòng thử lại!");
+      return false;
+    }
+    this.setState({
+      config: {
+        attachmentStamps: config.attachmentStamps,
+        attachmentUsed: config.attachmentUsed,
+      },
+      isConfirm: config.isConfirm,
+      configLoaded: true,
+    });
+    return true;
+  };
 
   componentWillMount() {
     const { getListTypeZoneProperty } = this.props;
@@ -181,8 +244,12 @@ class BusinessInformation extends Component {
         totalRequestedQuantity: item.quantity || item.Quantity || 0,
         stampRange: item.startNum && item.endNum 
           ? `${item.startNum} - ${item.endNum}` 
-          : item.stampRange || item.StampRange || "-",
-        printMethod: item.isPrint === true ? "Tự in" : "Yêu cầu in",
+          : item.stampRange || item.StampRange || "",
+        isPrint: item.isPrint !== undefined ? item.isPrint : item.IsPrint,
+        printMethod: (item.isPrint !== undefined ? item.isPrint : item.IsPrint) === true ? "Tự in" : "Yêu cầu in",
+        deliveryDate: item.deliveryDate || item.DeliveryDate || "",
+        reason: item.reason || item.Reason || "",
+        requestedUsedReason: item.requestedUsedReason || item.RequestedUsedReason || "",
         effect: item.requestedUsedStatus || item.RequestedUsedStatus || 0,
         currentStatus: item.status || item.Status || 0,
         parentID: "",
@@ -227,176 +294,117 @@ class BusinessInformation extends Component {
   onEditData = (item) => async () => {
     if (!item || !item.id) return;
 
+    this.priceTracker.cancel();
     this.setState({ isLoaded: true });
 
-    try {
-      // Load detail data from API
-      const detailData = await fetchData.stampRequest.getDetail(item.id);
-
-      if (detailData) {
-        const request = detailData.request || detailData;
-        console.log("Detail data from API:", request);
-        const initialData = {
-          id: item.id,
-          quantity: request.quantity || request.Quantity || 0,
-          stampRange: request.stampTemplateID || request.StampTemplateID || "",
-          size: request.size || request.Size || "",
-          printMethod: request.isPrint === true ? 1 : 0,
-          notes: request.note || request.Note || "",
-          status: request.status || request.Status || 0,
-        };
-        console.log("Initialized data:", initialData);
-
-        this.setState({
-          isShowForDetail: true,
-          editId: item.id,
-          dataInsert: initialData,
-          isLoaded: false,
-        });
-      } else {
-        toast.error("Không tải được dữ liệu chi tiết!");
-        this.setState({ isLoaded: false });
-      }
-    } catch (error) {
-      console.error("Lỗi khi tải chi tiết xin cấp tem:", error);
-      toast.error("Có lỗi xảy ra khi tải dữ liệu!");
+    const res = await openEditRequest(item.id, this.priceTracker);
+    if (!res.ok) {
+      toast.error(res.message);
       this.setState({ isLoaded: false });
-    }
-  };
-
-  onConfirm = async (toggleModal, closePopup) => {
-    const { dataInsert, editId } = this.state;
-
-    const errorInserts = this.checkDataInsert(true);
-    if (Object.keys(errorInserts).length > 0) {
-      this.setState({ errorInserts });
       return;
     }
 
-    this.setState({ isLoaded: true });
-
-    try {
-      // Parse quantity to ensure it's a valid number
-      const parsedQuantity = parseInt(dataInsert.quantity) || 0;
-      
-      // Build FormData instead of JSON
-      const formData = new FormData();
-      formData.append("Id", dataInsert.id || "");
-      formData.append("Quantity", parsedQuantity);
-      formData.append("StampTemplateID", dataInsert.stampRange || "");
-      formData.append("Size", dataInsert.size || "");
-      formData.append("IsPrint", "false");
-      formData.append("Note", dataInsert.notes || "");
-      formData.append("FileUpload", "");
-      formData.append("Files", "[]");
-      formData.append("Amount", 0);
-
-
-      // Call API
-      let result;
-      if (dataInsert.id) {
-        // Update
-        result = await fetchData.stampRequest.editFormData(formData);
-        if (result && result.status === 200) {
-          toast.success("Cập nhật xin cấp tem thành công!");
-        } else {
-          toast.error("Cập nhật xin cấp tem thất bại!");
-          this.setState({ isLoaded: false });
-          return;
-        }
-      } else {
-        // Create
-        result = await fetchData.stampRequest.addFormData(formData);
-        if (result && result.status === 200) {
-          toast.success("Thêm xin cấp tem thành công!");
-        } else {
-          toast.error("Thêm xin cấp tem thất bại!");
-          this.setState({ isLoaded: false });
-          return;
-        }
-      }
-
-      // Close modal and refresh data
-      if (toggleModal) {
-        toggleModal();
-      }
-
-      // Reset form
-      this.setState({
-        isShowForDetail: false,
-        editId: null,
-        dataInsert: {},
-        errorInserts: {},
-        isLoaded: false,
-      });
-
-      // Reload data
-      this.fetchSummary(
-        JSON.stringify({
-          search: "",
-          filter: "",
-          orderBy: "",
-          page: null,
-          limit: null,
-        })
-      );
-    } catch (error) {
-      console.error("Lỗi khi lưu xin cấp tem:", error);
-      toast.error("Có lỗi xảy ra, vui lòng thử lại!");
-      this.setState({ isLoaded: false });
-    }
+    this.setState({
+      isShowForDetail: true,
+      editId: item.id,
+      dataInsert: res.form,
+      errorInserts: {},
+      submitted: false,
+      isLoaded: false,
+    });
   };
 
-  onHandleChangeValue = (data) => {
-    this.setState(
-      (previousState) => {
-        return {
-          ...previousState,
-          dataInsert: data,
-        };
-      },
-      () => {
-        const errorInserts = this.checkDataInsert(false);
+  onConfirm = async (toggleModal, closePopup) => {
+    const { dataInsert, isConfirm, saving } = this.state;
+    if (saving) return;
 
-        this.setState((previousState) => {
-          return {
-            ...previousState,
-            errorInserts,
-          };
-        });
+    this.setState({ saving: true });
+    const res = await saveRequest({
+      form: dataInsert,
+      isConfirm,
+      price: this.priceTracker.price,
+      priceLoading: this.priceTracker.loading,
+    });
+    this.setState({ saving: false });
+
+    if (!res.ok) {
+      if (res.reason === "INVALID") {
+        this.setState({ errorInserts: res.errors, submitted: true });
+      } else {
+        toast.error(res.message);
       }
+      return;
+    }
+
+    toast.success(res.message);
+
+    if (toggleModal) {
+      toggleModal();
+    }
+
+    this.reloadList();
+  };
+
+  reloadList = () => {
+    this.fetchSummary(
+      JSON.stringify({
+        search: "",
+        filter: "",
+        orderBy: "",
+        page: null,
+        limit: null,
+      })
     );
   };
 
+  blankForm = () => ({
+    id: null,
+    quantity: "",
+    size: "",
+    stampRange: "",
+    printMethod: PRINT_METHOD.SELF,
+    notes: "",
+    fileUpload: "",
+  });
+
+  liveErrors = (data, changedField) => {
+    const { isConfirm, errorInserts, submitted } = this.state;
+    const all = validateRequest(data, { isConfirm });
+    const keep = submitted
+      ? Object.keys(all)
+      : [changedField, ...Object.keys(errorInserts || {})];
+    const errors = {};
+    keep.forEach((key) => {
+      if (all[key]) errors[key] = all[key];
+    });
+    return errors;
+  };
+
+  onHandleChangeValue = (data, changedField) => {
+    if (changedField === "printMethod") {
+      if (data.printMethod === PRINT_METHOD.REQUEST) {
+        this.priceTracker.fetchNow(data.quantity);
+      } else {
+        this.priceTracker.cancel();
+      }
+    } else if (changedField === "quantity" && data.printMethod === PRINT_METHOD.REQUEST) {
+      this.priceTracker.request(data.quantity);
+    }
+
+    this.setState({
+      dataInsert: data,
+      errorInserts: this.liveErrors(data, changedField),
+    });
+  };
+
   onCloseModal = () => {
+    this.priceTracker.cancel();
     this.setState({
       isShowForDetail: false,
       editId: null,
       dataInsert: {},
       errorInserts: {},
     });
-  };
-
-  checkDataInsert = (isSubmit = false) => {
-    const { dataInsert } = this.state;
-    let errors = {};
-
-    // Validate quantity
-    if (!dataInsert.quantity || dataInsert.quantity <= 0) {
-      errors.quantity = "Số lượng không được trống và phải lớn hơn 0";
-    }
-
-    // Validate stamp size
-    if (!dataInsert.size || String(dataInsert.size).trim() === "") {
-      errors.size = "Kích thước tem không được trống";
-    }
-
-    // Validate stamp template
-    if (!dataInsert.stampRange) {
-      errors.stampRange = "Vui lòng chọn mẫu in tem";
-    }
-
-    return errors;
   };
 
   closeStatusModal = () => {
@@ -505,14 +513,23 @@ class BusinessInformation extends Component {
     this.fetchSummary(JSON.stringify(payload));
   };
 
-  handleModal = (status, openModal, closeModal) => {
+  handleModal = async (status, openModal, closeModal) => {
     if (
       status ||
       this.state.isShowForHistoryList ||
       this.state.isShowForDetail
     ) {
+      this.priceTracker.cancel();
       closeModal && closeModal();
+      this.setState({ dataInsert: {}, errorInserts: {}, submitted: false });
     } else {
+      if (!(await this.ensureConfig())) return;
+      this.priceTracker.cancel();
+      this.setState({
+        dataInsert: this.blankForm(),
+        errorInserts: {},
+        submitted: false,
+      });
       openModal && openModal();
     }
 
@@ -574,15 +591,9 @@ class BusinessInformation extends Component {
     this.setState({
       isShowForDetail: true,
       editId: null,
-      dataInsert: {
-        id: null,
-        quantity: 0,
-        size: "",
-        stampRange: "",
-        printMethod: 0,
-        notes: "",
-      },
+      dataInsert: this.blankForm(),
       errorInserts: {},
+      submitted: false,
     });
   };
 
@@ -697,18 +708,71 @@ class BusinessInformation extends Component {
     return "";
   };
 
+  openUpload = (kind, item) => () => {
+    this.setState({ uploadModal: { kind, id: item.id, used: item.effect } });
+  };
+
+  openPrint = (item) => () => {
+    this.setState({ printRequestId: item.id });
+  };
+
+  renderMenuItems = (e, isDisableEdit, isDisableDelete) => {
+    const { isConfirm } = this.state;
+    const actions = isConfirm
+      ? getRowActions({
+          status: e.currentStatus,
+          requestedUsedStatus: e.effect,
+          isPrint: e.isPrint,
+        })
+      : getSimpleRowActions({ status: e.currentStatus });
+
+    const items = [];
+    actions.forEach((action) => {
+      switch (action) {
+        case ROW_ACTION.VIEW:
+          if (!isDisableEdit) items.push([action, "Xem chi tiết", this.onShowDetail(e)]);
+          break;
+        case ROW_ACTION.EDIT:
+          if (!isDisableEdit) items.push([action, "Chỉnh sửa", this.onEditData(e)]);
+          break;
+        case ROW_ACTION.DELETE:
+          if (!isDisableDelete) items.push([action, "Xoá", this.onDeleteData(e.id)]);
+          break;
+        case ROW_ACTION.RESUBMIT:
+          if (!isDisableEdit) items.push([action, "Nộp lại hồ sơ", this.openUpload("resubmit", e)]);
+          break;
+        case ROW_ACTION.REQUEST_PERMISSION:
+          if (!isDisableEdit) items.push([action, "Xin cấp phép sử dụng tem", this.openUpload("permission", e)]);
+          break;
+        case ROW_ACTION.PAYMENT:
+          if (!isDisableEdit) items.push([action, "Gửi chứng từ thanh toán", this.openUpload("payment", e)]);
+          break;
+        case ROW_ACTION.PRINT:
+          if (!isDisableEdit) items.push([action, "In tem", this.openPrint(e)]);
+          break;
+        default:
+          break;
+      }
+    });
+    return items;
+  };
+
   renderTable = (data, isDisableEdit, isDisableDelete) => {
-    const { beginItem, endItem, collapseList } = this.state;
+    const { beginItem, endItem, collapseList, isConfirm } = this.state;
     let list = [];
-    let autoIndex = 0;
 
     // Lọc dữ liệu theo pagination
     const filteredData = Array.isArray(data) 
       ? data.filter((item, key) => key >= beginItem && key < endItem)
       : [];
 
+    const note = { display: "block", fontSize: "12px", color: "#6c757d", whiteSpace: "normal" };
+
     // Render từng dòng của bảng
     filteredData.forEach((e, index) => {
+      const menuItems = this.renderMenuItems(e, isDisableEdit, isDisableDelete);
+      const showDelivery = e.currentStatus == 2 && e.effect != 3 && e.deliveryDate;
+
       list.push(
         <tr
           key={`row-${e.id}`}
@@ -731,30 +795,47 @@ class BusinessInformation extends Component {
             </span>
           </td>
 
-          <td className="table-scale-col">
-            <span style={{ fontSize: "14px" }}>
-              {e.stampRange ?? "-"}
-            </span>
-          </td>
-          <td className="table-scale-col">
-            <span>{e.printMethod}</span>
-          </td>
-          <td className="table-scale-col">
-            <span>
-              {this.showTitleWithStatus(e.currentStatus)}
-            </span>
-          </td>
-          <td className="table-scale-col">
-            <span>
-              {this.showTitleWithEffect(e.effect)}
-            </span>
-          </td>
+          {isConfirm ? (
+            <>
+              <td className="table-scale-col">
+                <span style={{ fontSize: "14px" }}>
+                  {e.stampRange}
+                </span>
+              </td>
+              <td className="table-scale-col">
+                <span>{e.printMethod}</span>
+                {showDelivery ? (
+                  <span style={note}>
+                    Ngày trả tem: {moment(e.deliveryDate).format("DD/MM/YYYY")}
+                  </span>
+                ) : null}
+              </td>
+              <td className="table-scale-col">
+                <span>
+                  {this.showTitleWithStatus(e.currentStatus)}
+                </span>
+                {e.currentStatus == 3 && e.reason ? (
+                  <span style={note}>Lý do không duyệt: {e.reason}</span>
+                ) : null}
+              </td>
+              <td className="table-scale-col">
+                <span>
+                  {this.showTitleWithEffect(e.effect)}
+                </span>
+                {e.effect == 3 && e.requestedUsedReason ? (
+                  <span style={note}>
+                    Lý do không cấp phép: {e.requestedUsedReason}
+                  </span>
+                ) : null}
+              </td>
+            </>
+          ) : null}
           <td className="table-scale-col">
             {collapseList
               .filter((item) => item.id === e.id)
               .map((ele, key) => (
                 <div key={key}>
-                  {isDisableEdit == true && isDisableDelete == true ? null : (
+                  {menuItems.length === 0 ? null : (
                     <ButtonDropdown
                       isOpen={ele.collapse}
                       toggle={() => this.toggle(key, e.id)}
@@ -763,31 +844,12 @@ class BusinessInformation extends Component {
                         <img src={MenuButton} />
                       </DropdownToggle>
                       <DropdownMenu>
-                        {isDisableEdit == true ? null : (
-                          <DropdownItem onClick={this.onShowDetail(e)}>
-                            Xem chi tiết
-                          </DropdownItem>
-                        )}
-
-                        {isDisableEdit == true || e.currentStatus == 2 || e.currentStatus == 4 ? null : (
-                          <>
-                            <DropdownItem divider />
-                            <DropdownItem onClick={this.onEditData(e)}>
-                              Chỉnh sửa
-                            </DropdownItem>
-                          </>
-                        )}
-
-                        {isDisableDelete == true ||
-                        e.currentStatus == 2 ||
-                        e.currentStatus == 4 ? null : (
-                          <>
-                            <DropdownItem divider />
-                            <DropdownItem onClick={this.onDeleteData(e.id)}>
-                              Xoá
-                            </DropdownItem>
-                          </>
-                        )}
+                        {menuItems.map(([action, label, onClick], i) => (
+                          <React.Fragment key={action}>
+                            {i > 0 ? <DropdownItem divider /> : null}
+                            <DropdownItem onClick={onClick}>{label}</DropdownItem>
+                          </React.Fragment>
+                        ))}
                       </DropdownMenu>
                     </ButtonDropdown>
                   )}
@@ -840,7 +902,19 @@ class BusinessInformation extends Component {
       STATUS_OPTIONS,
       EFFECT_OPTIONS,
       filter,
+      isConfirm,
+      config,
+      saving,
+      priceStamp,
+      priceLoading,
+      dataInsert,
+      uploadModal,
+      printRequestId,
     } = this.state;
+
+    const uploadConfig = uploadModal
+      ? getUploadConfig({ kind: uploadModal.kind, used: uploadModal.used })
+      : null;
 
     const statusPopup = { status: status, message: message };
     let isDisableAdd = true;
@@ -914,6 +988,7 @@ class BusinessInformation extends Component {
                                   labelName="title"
                                   val="id"
                                   value={filter.statusFilter ? parseInt(filter.statusFilter) : null}
+                                  defaultValue={filter.statusFilter || null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -931,6 +1006,7 @@ class BusinessInformation extends Component {
                                   labelName="title"
                                   val="id"
                                   value={filter.effectFilter ? parseInt(filter.effectFilter) : null}
+                                  defaultValue={filter.effectFilter || null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -957,24 +1033,23 @@ class BusinessInformation extends Component {
                         </>
                       }
                       isReadOnly={isShowForHistoryList}
+                      disableSubmit={saving || priceLoading}
                       moduleBody={
                         <div>
-                          {isShowForDetail ? (
-                            <ShowEditData
-                              dataInsert={this.state.dataInsert}
-                              errors={errorInserts}
-                              onHandleChangeValue={this.onHandleChangeValue}
-                            />
-                          ) : isShowForHistoryList ? (
+                          {isShowForHistoryList && !isShowForDetail ? (
                             <ShowHistoryData
                               id={editId}
+                              config={config}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
                               historyData={currentHistoryData}
                             />
                           ) : (
                             <ShowEditData
-                              dataInsert={{}}
+                              dataInsert={dataInsert}
+                              isConfirm={isConfirm}
+                              priceStamp={priceStamp}
+                              priceLoading={priceLoading}
                               errors={errorInserts}
                               onHandleChangeValue={this.onHandleChangeValue}
                             />
@@ -996,7 +1071,7 @@ class BusinessInformation extends Component {
                         responsive
                       >
                         <HeadTitleTable
-                          headerTitle={headerTitle}
+                          headerTitle={isConfirm ? headerTitle : headerTitle.slice(0, 3)}
                           classHeaderColumns={{
                             0: "table-scale-col table-user-col-1",
                           }}
@@ -1069,6 +1144,24 @@ class BusinessInformation extends Component {
               moduleTitle={"Thông báo"}
               moduleBody={message}
               toggleModal={this.toggleModal}
+            />
+
+            <UploadDocsModal
+              isOpen={!!uploadModal}
+              requestId={uploadModal ? uploadModal.id : null}
+              config={uploadConfig}
+              instructionHtml={uploadConfig ? config[uploadConfig.instruction] : ""}
+              onClose={() => this.setState({ uploadModal: null })}
+              onSuccess={() => {
+                this.setState({ uploadModal: null });
+                this.reloadList();
+              }}
+            />
+
+            <PrintStampModal
+              isOpen={!!printRequestId}
+              requestId={printRequestId}
+              onClose={() => this.setState({ printRequestId: null })}
             />
             <ToastContainer position="top-center" autoClose={3000} />
           </div>
