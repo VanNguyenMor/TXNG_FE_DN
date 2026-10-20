@@ -284,15 +284,18 @@ class InsertOrUpadte extends Component {
   fetchUnitNameByTrace = async (traceInformId) => {
     try {
       const unitName = await fetchData.consignments.getUnitNameByTraceInform(traceInformId);
-      if (unitName) {
-        this.setState({ unitName }, () => {
-          if (this.props.onHandleChangeValue) {
-            this.props.onHandleChangeValue(this.state);
-          }
-        });
-      }
+      const safeName = typeof unitName === "string" ? unitName : "";
+      this.setState({ unitName: safeName }, () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      });
     } catch (e) {
-      // unitName stays empty if API fails
+      this.setState({ unitName: "" }, () => {
+        if (this.props.onHandleChangeValue) {
+          this.props.onHandleChangeValue(this.state);
+        }
+      });
     }
   };
 
@@ -672,10 +675,12 @@ class InsertOrUpadte extends Component {
                   <Input
                     readOnly={true}
                     type="text"
-                    value={unitName}
+                    value={typeof unitName === "string" ? unitName : ""}
+                    placeholder="Theo nhật ký thu hoạch"
                     className="wrap-insert-or-update-zone-item-input"
                   />
                 </InputGroup>
+                <p className="form-error-message">{errors.unitName || ""}</p>
               </div>
             </div>
           </div>
