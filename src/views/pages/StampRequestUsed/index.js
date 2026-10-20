@@ -988,6 +988,7 @@ class BusinessInformation extends Component {
                                   labelName="title"
                                   val="id"
                                   value={filter.statusFilter ? parseInt(filter.statusFilter) : null}
+                                  defaultValue={filter.statusFilter || null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
@@ -1005,6 +1006,7 @@ class BusinessInformation extends Component {
                                   labelName="title"
                                   val="id"
                                   value={filter.effectFilter ? parseInt(filter.effectFilter) : null}
+                                  defaultValue={filter.effectFilter || null}
                                   handleChange={this.handleChangeSelectFilter}
                                 />
                               </div>
