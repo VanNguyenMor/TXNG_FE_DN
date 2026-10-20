@@ -992,7 +992,9 @@ export const fetchData = {
       try {
         const url = CONSIGNMENTS.getUnitNameByTraceInform.replace("{0}", traceInformId);
         const result = await callApi("get", url);
-        return result?.data?.unitName || result?.data || null;
+        // callApi/get đã unwrap ResultJs.data → { unitName }; không fallback object (gây [object Object])
+        const name = result?.data?.unitName ?? result?.data?.UnitName;
+        return typeof name === "string" && name.trim() ? name.trim() : null;
       } catch (error) {
         return null;
       }

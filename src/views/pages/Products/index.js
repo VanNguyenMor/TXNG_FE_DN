@@ -710,6 +710,14 @@ class Product extends Component {
       errorInserts.diaryId = "Vui lòng chọn nhật ký";
     }
 
+    if (
+      dataInsert.diaryId &&
+      (typeof dataInsert.unitName !== "string" || !dataInsert.unitName.trim())
+    ) {
+      errorInserts.unitName =
+        "Nhật ký chưa có đơn vị tính hợp lệ. Vui lòng chọn nhật ký khác hoặc bổ sung đơn vị trên nhật ký.";
+    }
+
     if (!dataInsert.quantity || dataInsert.quantity < 1) {
       errorInserts.quantity = "Số lượng phải lớn hơn 0";
     }
