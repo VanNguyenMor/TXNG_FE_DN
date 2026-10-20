@@ -212,6 +212,11 @@ export const submitUpload = async ({ config, id, newFiles, keptNames }) => {
   }
 };
 
+const getTemplateUrl = (template) => {
+  if (typeof template === "string") return template;
+  return (template && typeof template.template === "string" && template.template) || "";
+};
+
 export const loadPrintData = async (id, mode) => {
   try {
     const data = await api().printStamp(id);
@@ -219,7 +224,7 @@ export const loadPrintData = async (id, mode) => {
 
     const input = { listStamp: data.listStamp, quantity: data.quantity };
     const built = mode === "qr" ? buildPrintQR(input) : buildPrintList(input);
-    return { ok: true, template: data.template, quantity: data.quantity, ...built };
+    return { ok: true, template: getTemplateUrl(data.template), quantity: data.quantity, ...built };
   } catch (error) {
     return { ok: false, message: "Có lỗi xảy ra khi lấy dữ liệu in tem" };
   }

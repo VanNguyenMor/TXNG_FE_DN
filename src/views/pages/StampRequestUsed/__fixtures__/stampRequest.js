@@ -54,7 +54,7 @@ export const listStampOf = (codes) =>
 export const printStampResponse = ({
   listStamp,
   quantity,
-  template = "https://img/tpl.png",
+  template = { template: "https://img/tpl.png", size: "2x2" },
 }) => ({ listStamp, template, quantity });
 
 export const configResponse = ({ isConfirm = true } = {}) => ({

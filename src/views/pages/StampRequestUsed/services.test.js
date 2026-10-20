@@ -452,6 +452,15 @@ describe("loadPrintData", () => {
     });
   });
 
+  test("template là chuỗi URL thì giữ nguyên, thiếu hoặc sai kiểu thì rỗng", async () => {
+    api.printStamp.mockResolvedValue(printStampResponse({ listStamp: "", quantity: 0, template: "https://img/a.png" }));
+    expect((await loadPrintData("req-1", "list")).template).toBe("https://img/a.png");
+    api.printStamp.mockResolvedValue(printStampResponse({ listStamp: "", quantity: 0, template: null }));
+    expect((await loadPrintData("req-1", "list")).template).toBe("");
+    api.printStamp.mockResolvedValue(printStampResponse({ listStamp: "", quantity: 0, template: { size: "2x2" } }));
+    expect((await loadPrintData("req-1", "list")).template).toBe("");
+  });
+
   test("không lấy được dữ liệu in: ok = false", async () => {
     api.printStamp.mockResolvedValue(null);
     expect((await loadPrintData("req-1", "qr")).ok).toBe(false);

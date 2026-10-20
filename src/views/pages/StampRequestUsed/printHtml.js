@@ -7,7 +7,7 @@ export const PRINT_CSS = `
   .stamp-print { padding: 4mm; color: #000; font-family: Arial, Helvetica, sans-serif; }
   .stamp-print * { box-sizing: border-box; }
   .stamp-print .sp-item-title { font-size: 40px; color: #e67e22; word-break: break-all; width: 100%; margin: 10px 0 20px 0; }
-  .stamp-print .sp-item-image { width: 100%; margin-bottom: 20px; }
+  .stamp-print .sp-item-image { display: block; width: auto; max-width: 300px; max-height: 200px; height: auto; margin-bottom: 20px; }
   .stamp-print .sp-item-link { font-size: 25px; color: #000; word-break: break-all; width: 100%; margin: 0 0 15px 0; }
   .stamp-print .sp-page-break { width: 100%; display: flex; align-items: center; flex-direction: row; flex-wrap: wrap; }
   .stamp-print .sp-page-item { width: 16mm; height: auto; margin: 2mm; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
