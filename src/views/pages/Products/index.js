@@ -993,6 +993,7 @@ class Product extends Component {
       lockItem: item,
       lockWarehouseId: null,
     });
+    this.fetchWarehouseOptions();
   };
 
   closeLockModal = () => {
@@ -1577,15 +1578,23 @@ class Product extends Component {
                 <label className="form-control-label">
                   Chọn kho hàng để nhập <span style={{ color: "red" }}>*</span>
                 </label>
-                <Select
-                  name="lockWarehouseId"
-                  title="Chọn kho hàng"
-                  data={WAREHOUSE_OPTIONS}
-                  labelName="title"
-                  val="id"
-                  value={lockWarehouseId}
-                  handleChange={this.handleChangeLockWarehouse}
-                />
+                <Input
+                  type="select"
+                  value={lockWarehouseId || ""}
+                  onChange={(e) => this.handleChangeLockWarehouse(e.target.value)}
+                >
+                  <option value="">---Chọn kho hàng---</option>
+                  {(WAREHOUSE_OPTIONS || []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.title}
+                    </option>
+                  ))}
+                </Input>
+                {(!WAREHOUSE_OPTIONS || WAREHOUSE_OPTIONS.length === 0) && (
+                  <p className="text-muted mt-2 mb-0">
+                    Chưa có kho hàng. Tạo kho tại Quản lý tồn kho trước khi khoá lô.
+                  </p>
+                )}
               </ModalBody>
               <ModalFooter>
                 <Button color="primary" onClick={this.handleLockBatch}>
