@@ -1592,7 +1592,7 @@ class Product extends Component {
                 </Input>
                 {(!WAREHOUSE_OPTIONS || WAREHOUSE_OPTIONS.length === 0) && (
                   <p className="text-muted mt-2 mb-0">
-                    Chưa có kho hàng. Tạo kho tại Quản lý tồn kho trước khi khoá lô.
+                    Chưa có kho hàng. Tạo kho tại mục Kho hàng trước khi khoá lô.
                   </p>
                 )}
               </ModalBody>
