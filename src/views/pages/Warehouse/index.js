@@ -19,8 +19,12 @@ import {
   Table,
 } from "reactstrap";
 import MenuButton from "../../../assets/img/buttons/menu.png";
+import PlusImg from "../../../assets/img/buttons/plus.svg";
+import HeaderTable from "components/HeaderTable";
+import HeadTitleTable from "components/HeadTitleTable";
 import { fetchData } from "helpers/fetchData";
 import { getErrorMessageServer } from "utils/errorMessageServer.js";
+import classes from "./index.module.css";
 
 const emptyForm = {
   id: "",
@@ -208,54 +212,61 @@ class Warehouse extends Component {
 
     return (
       <>
-        <div>
+        <div className={classes.wrapper}>
           <Container fluid>
             {isLoaded ? (
-              <div style={{ display: "table", margin: "40px auto" }}>
+              <div style={{ display: "table", margin: "auto" }}>
                 <Spinner style={{ width: "3rem", height: "3rem" }} />
               </div>
             ) : (
               <Row>
                 <div className="col">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Input
-                      style={{ maxWidth: 280 }}
-                      placeholder="Tìm theo tên kho"
-                      value={keyword}
-                      onChange={(e) => this.setState({ keyword: e.target.value })}
-                    />
-                    {canAdd && (
-                      <Button color="primary" onClick={this.onOpenCreate}>
-                        Thêm kho
-                      </Button>
-                    )}
-                  </div>
+                  <HeaderTable
+                    hideSearch
+                    hideCreate
+                    dataReload={() => this.fetchList(page)}
+                    typeSearch={
+                      <Input
+                        className={classes.search}
+                        placeholder="Tìm theo tên kho"
+                        value={keyword}
+                        onChange={(e) => this.setState({ keyword: e.target.value })}
+                      />
+                    }
+                    customComponent={
+                      canAdd ? (
+                        <Button
+                          type="button"
+                          size="lg"
+                          className="btn-primary-cs"
+                          style={{ width: "auto", minWidth: 120, padding: "0.3rem 12px" }}
+                          onClick={this.onOpenCreate}
+                        >
+                          <img src={PlusImg} alt="" />
+                          <span>Thêm kho</span>
+                        </Button>
+                      ) : null
+                    }
+                  />
+
                   <Card className="shadow">
-                    <Table className="align-items-center" responsive>
-                      <thead className="thead-light">
-                        <tr>
-                          <th>STT</th>
-                          <th>Tên kho</th>
-                          <th>Địa chỉ</th>
-                          <th>Toạ độ</th>
-                          <th>Nhiệt độ</th>
-                          <th>Độ ẩm</th>
-                          <th />
-                        </tr>
-                      </thead>
+                    <Table className="align-items-center tablecs" responsive>
+                      <HeadTitleTable
+                        headerTitle={["STT", "Tên kho", "Địa chỉ", "Toạ độ", "Nhiệt độ", "Độ ẩm"]}
+                      />
                       <tbody>
                         {rows.length === 0 ? (
                           <tr>
-                            <td colSpan="7" className="text-center text-muted">
+                            <td colSpan="7" className="text-center">
                               Chưa có kho hàng
                             </td>
                           </tr>
                         ) : (
                           rows.map((item) => (
-                            <tr key={item.id}>
+                            <tr key={item.id} className="table-hover-css">
                               <td>{item.index}</td>
-                              <td>{item.name}</td>
-                              <td>{item.address}</td>
+                              <td style={{ textAlign: "left" }}>{item.name}</td>
+                              <td style={{ textAlign: "left" }}>{item.address}</td>
                               <td>{item.gps}</td>
                               <td>{item.temperature}</td>
                               <td>{item.humidity}</td>
@@ -294,28 +305,28 @@ class Warehouse extends Component {
                       </tbody>
                     </Table>
                   </Card>
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-                    <span>Tổng {totalCount} kho</span>
-                    <div>
-                      <Button
-                        size="sm"
-                        disabled={page <= 0}
-                        onClick={() => this.fetchList(page - 1)}
-                      >
-                        Trước
-                      </Button>
-                      <span className="mx-2">
-                        {page + 1} / {totalPage}
+                  <p className={classes.total}>
+                    Hiển thị {rows.length} trên {totalCount}
+                    {totalPage > 1 && (
+                      <span>
+                        {" "}
+                        <button type="button" disabled={page <= 0} onClick={() => this.fetchList(page - 1)}>
+                          Trước
+                        </button>
+                        <span>
+                          {" "}
+                          {page + 1}/{totalPage}{" "}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={page + 1 >= totalPage}
+                          onClick={() => this.fetchList(page + 1)}
+                        >
+                          Sau
+                        </button>
                       </span>
-                      <Button
-                        size="sm"
-                        disabled={page + 1 >= totalPage}
-                        onClick={() => this.fetchList(page + 1)}
-                      >
-                        Sau
-                      </Button>
-                    </div>
-                  </div>
+                    )}
+                  </p>
                 </div>
               </Row>
             )}

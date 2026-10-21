@@ -72,6 +72,7 @@ import Verified from './icons/menus/xacthuc.jpg';
 import Printer from './icons/menus/donviintem.jpg';
 import Location from './icons/common/location.svg'; 
 import StampRequestsUsed from './icons/menus/Tem.png';
+import KhoHang from './icons/menus/KhoHang.svg';
 
 import ReportZoningProduct from './icons/menus/Report1.png';
 import ReportZoningCompany from './icons/menus/Report1.png';
@@ -179,6 +180,7 @@ const ICON_MENUS = {
     DeclarationInformations: Informations,
     StampRequestUseds: StampRequestsUsed,
     QrCodeManagements: StampDetails,
+    WareHouses: KhoHang,
 }
 
 export {

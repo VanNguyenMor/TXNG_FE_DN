@@ -1,0 +1,16 @@
+.wrapper {
+  height: calc(100vh - 100px);
+  padding: 12px 0 20px;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+.search {
+  width: 260px;
+  height: 38px;
+}
+
+.total {
+  margin: 12px 4px 0;
+  color: #525f7f;
+}
