@@ -65,6 +65,7 @@ import MaterialManagement from "views/pages/MaterialManagement";
 import SummaryReport from "views/pages/SummaryReport";
 import ExportProduct from "views/pages/ExportProduct";
 import InventoryManagement from "views/pages/InventoryManagement";
+import Warehouse from "views/pages/Warehouse";
 import AdjustmentManagement from "views/pages/AdjustmentManagement";
 import ExportManagement from "views/pages/ExportManagement";
 import ImportManagement from "views/pages/ImportManagement";
@@ -1012,6 +1013,11 @@ const routeComponents = [
     layout: LAYOUT_HOME,
     key: "InventoryManagements",
     component: InventoryManagement,
+  },
+  {
+    layout: LAYOUT_HOME,
+    key: "WareHouses",
+    component: Warehouse,
   },
   {
     layout: LAYOUT_HOME,

@@ -1674,6 +1674,55 @@ export const fetchData = {
         return null;
       }
     },
+
+    getPage: async (payload = {}) => {
+      try {
+        const result = await callApi("post", WAREHOUSE_MANAGEMENT.getListComboBox, payload);
+        const data = result?.data || {};
+        const list = data.wareHouses || data.WareHouses || [];
+        return {
+          status: result?.status,
+          message: result?.message,
+          list: Array.isArray(list) ? list : [],
+          totalCount: data.totalCount || data.TotalCount || (Array.isArray(list) ? list.length : 0),
+        };
+      } catch (error) {
+        return { status: 0, message: "", list: [], totalCount: 0 };
+      }
+    },
+
+    getDetail: async (id) => {
+      try {
+        const result = await callApi("get", WAREHOUSE_MANAGEMENT.get.replace("{id}", id));
+        return result?.data?.wareHouse || result?.data?.WareHouse || null;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    create: async (payload) => {
+      try {
+        return await callApi("post", WAREHOUSE_MANAGEMENT.create, payload);
+      } catch (error) {
+        return null;
+      }
+    },
+
+    update: async (payload) => {
+      try {
+        return await callApi("post", WAREHOUSE_MANAGEMENT.update, payload);
+      } catch (error) {
+        return null;
+      }
+    },
+
+    remove: async (id) => {
+      try {
+        return await callApi("delete", WAREHOUSE_MANAGEMENT.delete.replace("{id}", id));
+      } catch (error) {
+        return null;
+      }
+    },
     getListComboBox: async (payload = {}) => {
       try {
         const result = await callApi("post", WAREHOUSE_MANAGEMENT.getListComboBox, payload);
