@@ -925,12 +925,19 @@ export const fetchData = {
 
     getListWarehouseForUpdate: async () => {
       try {
-        const result = await callApi("post", CONSIGNMENTS.getListWarehouseForUpdate, {});
-        // BE trả về { data: { wareHouses: [...] } }
-        return result?.data?.wareHouses || result?.data || null;
+        const result = await callApi("post", CONSIGNMENTS.getListWarehouseForUpdate, {
+          search: "",
+          filter: "",
+          orderBy: "",
+          page: 0,
+          limit: 1000,
+        });
+        const data = result?.data;
+        const list = data?.wareHouses || data?.WareHouses;
+        return Array.isArray(list) ? list : [];
       } catch (error) {
         console.error("Lỗi khi lấy danh sách kho hàng:", error);
-        return null;
+        return [];
       }
     },
 
