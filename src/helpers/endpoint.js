@@ -219,6 +219,10 @@ export const COMPANY_CONFIG = {
 
 export const WAREHOUSE_MANAGEMENT = {
   getListComboBox: "warehouse/getall",
+  get: "warehouse/get?id={id}",
+  create: "warehouse/create",
+  update: "warehouse/update",
+  delete: "warehouse/delete/{id}",
 };
 
 export const REPORT = {

@@ -218,6 +218,16 @@ export const MENU_DATA = [
     status: 1,
   },
   {
+    id: "029",
+    name: "Kho hàng",
+    url: "/kho_hang",
+    isCompany: 0,
+    sortOrder: 8.5,
+    parentID: "005",
+    uniqueCode: "WareHouses",
+    status: 1,
+  },
+  {
     id: "016",
     name: "Nhập hàng hoá, NVL",
     url: "/nhap_hang_hoa",
