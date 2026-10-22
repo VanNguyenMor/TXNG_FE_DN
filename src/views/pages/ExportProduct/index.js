@@ -131,10 +131,7 @@ class ExportProduct extends Component {
       transportTicketModal: false,
       transportTicketItem: null,
       STATUS_OPTIONS: GD_STATUS,
-      SUPPLIER_LIST: [
-        { id: 1, name: "Khách hàng A" },
-        { id: 2, name: "Khách hàng B" },
-      ],
+      SUPPLIER_LIST: [],
       INGREDIENT_LIST: [
         {
           id: 1,
@@ -170,6 +167,7 @@ class ExportProduct extends Component {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
     this.fetchSummary(this.state.filter);
+    this.loadCustomers();
 
     getListTypeZoneProperty({
       search: "",
@@ -186,6 +184,29 @@ class ExportProduct extends Component {
       });
     });
   }
+
+  loadCustomers = async () => {
+    try {
+      const partners = await fetchData.partner.getList({
+        partnerType: 0,
+        companyName: "",
+        phone: "",
+        email: "",
+        orderBy: "",
+        page: 0,
+        limit: 1000,
+      });
+
+      const customerList = (Array.isArray(partners) ? partners : []).map((item) => ({
+        id: String(item.id || item.ID || ""),
+        name: item.partnerName || item.PartnerName || item.name || "",
+      })).filter((item) => item.id && item.name);
+
+      this.setState({ SUPPLIER_LIST: customerList });
+    } catch (error) {
+      this.setState({ SUPPLIER_LIST: [] });
+    }
+  };
 
   fetchSummary = (data) => {
     const { getListGoodDeliveryNote } = this.props;
