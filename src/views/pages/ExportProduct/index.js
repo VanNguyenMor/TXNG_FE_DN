@@ -63,27 +63,8 @@ class ExportProduct extends Component {
   constructor(props) {
     super(props);
 
-    const dataMock = [
-      {
-        id: 1,
-        receiptNumber: "N001",
-        creationDate: "2025-11-17",
-        customer: "Khách hàng A",
-        importer: "Nguyễn A",
-        status: 1,
-      },
-      {
-        id: 2,
-        receiptNumber: "N002",
-        creationDate: "2025-11-16",
-        customer: "Khách hàng B",
-        importer: "Trần B",
-        status: 1,
-      },
-    ];
-
     this.state = {
-      data: dataMock,
+      data: [],
       detail: [],
       update: [],
       create: [],
