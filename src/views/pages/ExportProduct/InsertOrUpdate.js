@@ -272,7 +272,7 @@ class InsertOrUpadte extends Component {
               labelMark={null}
               className="wrap-insert-or-update-zone-item-select"
               name="supplierId"
-              title="Chọn nhà cung cấp"
+              title="Chọn khách hàng"
               data={SUPPLIER_LIST}
               labelName="name"
               val="id"
