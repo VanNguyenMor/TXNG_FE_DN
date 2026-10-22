@@ -127,7 +127,7 @@ class DashboardList extends Component {
       isDisableViewPlantingZone = false;
       isDisableViewStamp = false;
     } else {
-      ACCOUNT_CLAIM_FF = localStorage.getItem('ACCOUNT_CLAIM_FF').split(',').filter(x => x != "");
+      ACCOUNT_CLAIM_FF = (localStorage.getItem('ACCOUNT_CLAIM_FF') || "").split(',').filter(x => x != "");
       ACCOUNT_CLAIM_FF.filter(x => x == "StampRequests.View").map(y => isDisableViewStamp = false)
       ACCOUNT_CLAIM_FF.filter(x => x == "PlantingZones.View").map(y => isDisableViewPlantingZone = false)
     }
