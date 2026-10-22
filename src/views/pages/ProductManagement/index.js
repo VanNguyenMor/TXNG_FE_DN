@@ -56,7 +56,8 @@ class ProductManagement extends Component {
       ],
       AUTHENTIC_OPTIONS: [
         { id: 0, title: "Chưa xác thực" },
-        { id: 1, title: "Đã xác thực" },
+        { id: 1, title: "Chờ xác thực" },
+        { id: 2, title: "Đã xác thực" },
       ],
       HISTORY_DATA: [],
       FIELD_DATA: [],
@@ -193,7 +194,7 @@ class ProductManagement extends Component {
         title: item.productName,
         unit: item.unitName,
         islocked: item.islocked,
-        authentic: item.isProduct ? 1 : 0,
+        authentic: Number(item.verifiedStatus ?? 0),
         parentID: item.parentID || "",
       }));
 

@@ -73,6 +73,7 @@ class ShowEditData extends Component {
       productConversionUnits: [],
 
       verifiedStatus: null,
+      verifiedName: "",
       selectedFieldTypes: [],
 
       id: null,
@@ -204,6 +205,7 @@ class ShowEditData extends Component {
         typeof product.verifiedStatus !== "undefined"
           ? product.verifiedStatus
           : null,
+      verifiedName: product.verifiedName || "",
       avatar: finalAvatar,
       productImageFile: null,
       images: parseImages(product.images),
@@ -673,6 +675,7 @@ class ShowEditData extends Component {
       materialGroupId,
       productCateId,
       verifiedStatus,
+      verifiedName,
       selectedFieldTypes,
       isLocked,
     } = this.state;
@@ -721,7 +724,12 @@ class ShowEditData extends Component {
               style={{
                 textAlign: "center",
                 display: "block",
-                backgroundColor: verifiedStatus === 2 ? "#2dce89" : "#db0d0d",
+                backgroundColor:
+                  Number(verifiedStatus) === 2
+                    ? "#2dce89"
+                    : Number(verifiedStatus) === 1
+                    ? "#fb6340"
+                    : "#db0d0d",
                 color: "#fff",
                 padding: "8px 12px",
                 width: "fit-content",
@@ -729,8 +737,10 @@ class ShowEditData extends Component {
                 margin: "0 auto",
               }}
             >
-              {verifiedStatus === 2
-                ? "Sản phẩm đã được kiểm chứng và xác thực bởi LACOGROUP"
+              {Number(verifiedStatus) === 2
+                ? `Sản phẩm đã được kiểm chứng và xác thực bởi ${(verifiedName || "").trim() || "đơn vị xác thực"}`
+                : Number(verifiedStatus) === 1
+                ? "Sản phẩm đang chờ xác thực"
                 : "Thông tin chưa được kiểm chứng và xác thực"}
             </strong>
             {this.props.companyTypeLabel ? (
