@@ -23,6 +23,13 @@ export function setCookie(cname, cvalue, exdays) {
   var expires = "expires=" + d.toUTCString();
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
   var ccvalue = JSON.parse(cvalue);
+  var claims = [];
+
+  if (ccvalue) {
+    claims = Array.isArray(ccvalue.claims)
+      ? ccvalue.claims.filter(Boolean)
+      : splitMulti(ccvalue.claims || "", [",", "[", "]", '"']).filter((x) => x != "");
+  }
 
   localStorage.setItem("AUTHEN_INFO", ccvalue ? ccvalue : null);
   localStorage.setItem('TOKEN', ccvalue ? 'Bearer ' + ccvalue.token : null)
@@ -30,7 +37,8 @@ export function setCookie(cname, cvalue, exdays) {
   localStorage.setItem("IS_ADMIN", ccvalue ? ccvalue.isAdmin : null);
   localStorage.setItem("ACCOUNT_NAME", ccvalue ? ccvalue.fullName : null);
   localStorage.setItem("ACCOUNT_AVA", ccvalue ? ccvalue.avatar : null);
-  localStorage.setItem("ACCOUNT_CLAIM", ccvalue ? ccvalue.claims : []);
+  localStorage.setItem("ACCOUNT_CLAIM", claims.join(","));
+  localStorage.setItem("ACCOUNT_CLAIM_FF", claims.join(","));
 }
 
 export function deleteCookie(cname) {

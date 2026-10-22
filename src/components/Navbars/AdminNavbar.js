@@ -885,7 +885,7 @@ class AdminNavbar extends Component {
       // ACCOUNT_CLAIM_FF.filter(x => x == "Products.Confirm").map(y => isDisableConfirm = false)
       // ACCOUNT_CLAIM_FF.filter(x => x == "Products.Unconfirm").map(y => isDisableUnconfirm = false)
       
-      ACCOUNT_CLAIM_FF = localStorage.getItem('ACCOUNT_CLAIM_FF').split(',').filter(x => x != "");
+      ACCOUNT_CLAIM_FF = (localStorage.getItem('ACCOUNT_CLAIM_FF') || "").split(',').filter(x => x != "");
       ACCOUNT_CLAIM_FF.filter(x => x == "Products.Confirm").map(y => isDisableConfirm = false)
       ACCOUNT_CLAIM_FF.filter(x => x == "Products.Unconfirm").map(y => isDisableUnconfirm = false)
 

@@ -265,7 +265,7 @@ class DashboardChart extends Component {
         if (JSON.parse(localStorage.getItem('IS_ADMIN')) == true) {
             isDisableChart = false;
         } else {
-            ACCOUNT_CLAIM_FF = localStorage.getItem('ACCOUNT_CLAIM_FF').split(',').filter(x => x != "");
+            ACCOUNT_CLAIM_FF = (localStorage.getItem('ACCOUNT_CLAIM_FF') || "").split(',').filter(x => x != "");
             ACCOUNT_CLAIM_FF.filter(x => x == "StampRequests.View").map(y => isDisableChart = false)
         }
         if (isDisableChart === false) {
