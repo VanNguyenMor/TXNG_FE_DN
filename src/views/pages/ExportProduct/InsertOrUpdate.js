@@ -91,15 +91,20 @@ class InsertOrUpadte extends Component {
         };
 
         if (name === "ingredientId") {
-          const selected = prevState.INGREDIENT_LIST.find((i) => i.id == value);
+          const list = Array.isArray(this.props.INGREDIENT_LIST)
+            ? this.props.INGREDIENT_LIST
+            : [];
+          const selected = list.find(
+            (i) => String(i.id) === String(value)
+          );
 
           if (selected) {
             newState = {
               ...newState,
-              quantity: selected.quantity,
-              unit: selected.unit !== null ? selected.unit : "",
+              quantity: selected.quantity != null ? selected.quantity : 0,
+              unit: selected.unit != null ? selected.unit : "",
               warehouseId:
-                selected.warehouseId !== null ? selected.warehouseId : null,
+                selected.warehouseId != null ? selected.warehouseId : null,
             };
           }
         }
