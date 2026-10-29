@@ -135,6 +135,7 @@ class Select extends Component {
       // chỗ thì lật lên trên; đồng thời giới hạn chiều cao để có thể cuộn.
       const GAP = 4;
       const MAX_HEIGHT = 500;
+      const MIN_HEIGHT = 120;
       const MARGIN = 8;
       const viewportHeight =
         window.innerHeight || document.documentElement.clientHeight;
@@ -143,14 +144,18 @@ class Select extends Component {
 
       let dropTop;
       let maxHeight;
-      if (spaceBelow >= spaceAbove) {
-        // Mở xuống dưới
-        dropTop = top + height;
-        maxHeight = Math.min(MAX_HEIGHT, spaceBelow - GAP - MARGIN);
+      if (spaceBelow >= Math.min(spaceAbove, 80)) {
+        // Mở xuống dưới — clamp theo không gian thật, không kéo nhảy lên đỉnh màn hình
+        dropTop = top + height + GAP;
+        const available = Math.max(80, spaceBelow - GAP - MARGIN);
+        maxHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, available));
+        if (maxHeight > available) maxHeight = available;
       } else {
         // Mở lên trên
-        maxHeight = Math.min(MAX_HEIGHT, spaceAbove - GAP - MARGIN);
-        dropTop = top - maxHeight - GAP;
+        const available = Math.max(80, spaceAbove - GAP - MARGIN);
+        maxHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, available));
+        if (maxHeight > available) maxHeight = available;
+        dropTop = Math.max(MARGIN, top - maxHeight - GAP);
       }
 
       this.setState(

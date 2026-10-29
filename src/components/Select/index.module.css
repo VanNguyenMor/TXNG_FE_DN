@@ -105,7 +105,8 @@
     -ms-transform: translateY(4px);
     -o-transform: translateY(4px);
     cursor: pointer;
-    z-index: 2;
+    /* Cao hơn Bootstrap modal (1050) để dropdown trong popup không bị che */
+    z-index: 2000;
 }
 
 .selectBody :hover {

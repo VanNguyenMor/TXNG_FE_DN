@@ -19,6 +19,7 @@ import {
     RD_EMPLOYEE_LIST,
     RD_MATERIAL_LIST,
     RD_MATERIAL_UNIT_LIST,
+    UNIT_LIST,
     RD_WAREHOUSE_LIST,
     RD_VEHICLE_LIST,
     RD_FACTORY_LIST,
@@ -428,6 +429,14 @@ export const actionTrace = {
     requestRDMaterialUnitList: (materialId) => async () => {
         return new Promise(async resolve => {
             await get(RD_MATERIAL_UNIT_LIST + materialId)
+                .then(res => resolve({ status: true, data: res }))
+                .catch(err => resolve({ status: false, error: err }));
+        });
+    },
+    // unit/getall — dùng cho thuộc tính ĐVT (reference 60) khi không phải harvest/product
+    requestRDUnitList: (data) => async () => {
+        return new Promise(async resolve => {
+            await post(UNIT_LIST, data || { search: "", filter: "", orderBy: "", page: 0, limit: 1000 })
                 .then(res => resolve({ status: true, data: res }))
                 .catch(err => resolve({ status: false, error: err }));
         });
