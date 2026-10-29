@@ -230,6 +230,8 @@ class LoggingInformation extends Component {
         id: item.ID,
         title: item.ProductName,
         code: item.NameCode,
+        // App diary list: Số lô/mẻ = StampID
+        stampId: item.StampID || item.stampID || item.stampId || "",
         // list trả về tên vị trí ở PlantingZone, id thật ở PlantingZoneID
         plantingZoneId: item.PlantingZoneID,
         plantingZoneName: item.PlantingZone,
@@ -791,6 +793,9 @@ class LoggingInformation extends Component {
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>{e.code}</span>
+          </td>
+          <td style={{ textAlign: "left" }} className={renderClass}>
+            <span style={{ color: `${e.color}` }}>{e.stampId || ""}</span>
           </td>
           <td style={{ textAlign: "left" }} className={renderClass}>
             <span style={{ color: `${e.color}` }}>

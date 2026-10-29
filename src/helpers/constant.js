@@ -983,6 +983,7 @@ export const LOGGING_INFORMATION = [
   "Hình ảnh",
   "Tiêu đề",
   "Code",
+  "Số lô/mẻ",
   "Vị trí",
   "Trạng thái",
 ];
