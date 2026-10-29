@@ -5,8 +5,6 @@ import { replaceCommaDot } from "bases/helper";
 import SaveIcon1 from "../../../assets/img/buttons/save.svg";
 import "./select-search.css";
 import Noimg from "../../../assets/img/NoImg/NoImg.jpg";
-import axios from "axios";
-import { CONFIG_UPDATE_IMG } from "../../../apis";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import GoogleMapReact from "google-map-react";
@@ -23,6 +21,7 @@ import { fetchData } from "helpers/fetchData";
 import Select from "components/Select";
 import { parseImageUrls } from "utils/parseImageUrls";
 import formatFieldsForSelect from "utils/formatFieldsForSelect";
+import { createTinyMceImagePicker } from "../../../helpers/tinymceImagePicker";
 
 const AnyReactComponent = ({ text }) => (
   <div>
@@ -951,61 +950,11 @@ class BusinessInformation extends Component {
                           "removeformat | help",
                         content_style:
                           "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                        selector: "textarea#file-picker",
                         plugins: "image code link",
                         image_title: true,
                         automatic_uploads: true,
                         file_picker_types: "image",
-                        file_picker_callback: (cb, value, meta) => {
-                          let _this = this;
-
-                          var input = document.createElement("input");
-                          input.setAttribute("type", "file");
-                          input.setAttribute("accept", "image/*");
-                          input.onchange = async function () {
-                            var file = this.files[0];
-                            var reader = new FileReader();
-                            reader.onload = function () {
-                              var id = "blobid" + new Date().getTime();
-                              var blobCache =
-                                window.tinymce.activeEditor.editorUpload
-                                  .blobCache;
-                              var base64 = reader.result.split(",")[1];
-                              var blobInfo = blobCache.create(id, file, base64);
-                              blobCache.add(blobInfo);
-                              cb(blobInfo.blobUri(), { title: file.name });
-                            };
-                            let data = null;
-                            let imageFile = new FormData();
-                            let fileLink = null;
-                            imageFile.append("files", file);
-
-                            try {
-                              data = await axios({
-                                method: "post",
-                                url: CONFIG_UPDATE_IMG,
-                                headers: {
-                                  authorization: localStorage.getItem("TOKEN"),
-                                },
-                                data: imageFile,
-                              });
-                              if (data.data.status == 200) {
-                                fileLink = data.data.data;
-                                cb(fileLink);
-                              } else {
-                                _this.setState({ messageErr: "Lỗi hệ thống" });
-                                _this.toggleModal("popupMessage");
-                                return;
-                              }
-                            } catch (error) {
-                              _this.setState({ messageErr: "Lỗi hệ thống" });
-                              _this.toggleModal("popupMessage");
-                              return;
-                            }
-                          };
-
-                          input.click();
-                        },
+                        file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ messageErr: msg, popupMessage: true })),
                       }}
                     />
                   </InputGroup>

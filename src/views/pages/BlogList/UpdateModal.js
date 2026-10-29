@@ -7,9 +7,7 @@ import { Editor } from '@tinymce/tinymce-react';
 import PlusImg from "../../../assets/img/buttons/chonhinh.svg";
 import CloseIcon from "../../../assets/img/buttons/xoahinh.svg";
 import SelectTree from "components/SelectTree";
-import { BLOG_UPDATE_IMG } from "../../../apis";
 import NoImg from "../../../assets/img/NoImg/NoImg.jpg";
-import axios from "axios";
 import PopupMessage from "../../../components/PopupMessage";
 // reactstrap components
 import {
@@ -18,6 +16,7 @@ import {
     Button
 } from "reactstrap";
 import { get } from "services/Dataservice";
+import { createTinyMceImagePicker } from "../../../helpers/tinymceImagePicker";
 
 class UpdateModal extends Component {
     constructor(props) {
@@ -31,6 +30,7 @@ class UpdateModal extends Component {
                 Description: '',
                 Thumbnail: '',
                 Content: '',
+                contentSeed: '',
                 ThumbnailFile: '',
                 IsHot: false,
                 IsShow: false,
@@ -55,6 +55,7 @@ class UpdateModal extends Component {
                 newData.Title = typeof (data.title) ? data.title : newData.Title;
                 newData.Description = typeof (data.description) ? data.description : newData.Description;
                 newData.Content = typeof (data.content) ? data.content : newData.Content;
+                newData.contentSeed = typeof (data.content) ? data.content : (newData.contentSeed || '');
                 newData.IsShow = data.isShow ? true : false;
                 newData.IsHot = typeof (data.isHot) ? data.isHot : newData.IsHot;
                 newData.MenuID = typeof (data.menuID) ? parseInt(data.menuID) : parseInt(newData.MenuID);
@@ -306,7 +307,7 @@ class UpdateModal extends Component {
                                         onInit={(_, editor) => {
                                             this.refEditor = editor;
                                         }}
-                                        initialValue={newData.Content}
+                                        initialValue={newData.contentSeed || ''}
                                         init={{
                                             width: '100%',
                                             height: 500,
@@ -316,63 +317,12 @@ class UpdateModal extends Component {
                                                 'alignright alignjustify | bullist numlist outdent indent | ' +
                                                 'removeformat | help',
                                             content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                                            selector: 'textarea#file-picker',
                                             plugins: 'image code link',
                                             image_title: true,
 
                                             automatic_uploads: true,
                                             file_picker_types: 'image',
-                                            file_picker_callback: (cb, value, meta) => {
-                                                let _this = this;
-
-                                                var input = document.createElement('input');
-                                                input.setAttribute('type', 'file');
-                                                input.setAttribute('accept', 'image/*');
-                                                input.onchange = async function () {
-                                                    var file = this.files[0];
-                                                    var reader = new FileReader();
-                                                    reader.onload = function () {
-                                                        var id = 'blobid' + (new Date()).getTime();
-                                                        var blobCache = window.tinymce.activeEditor.editorUpload.blobCache;
-                                                        var base64 = reader.result.split(',')[1];
-                                                        var blobInfo = blobCache.create(id, file, base64);
-                                                        blobCache.add(blobInfo);
-                                                        cb(blobInfo.blobUri(), { title: file.name });
-                                                    };
-                                                    let data = null;
-                                                    let imageFile = new FormData();
-                                                    let fileLink = null;
-                                                    imageFile.append('files', file);
-
-                                                    try {
-                                                        data = await axios({
-                                                            method: 'post',
-                                                            url: BLOG_UPDATE_IMG,
-                                                            headers: {
-                                                                authorization: localStorage.getItem('TOKEN')
-                                                            },
-                                                            data: imageFile
-                                                        })
-                                                        if (data.data.status == 200) {
-                                                            fileLink = data.data.data;
-                                                            cb(fileLink);
-                                                        } else {
-                                                            _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                                            _this.toggleModal('popupMessage')
-                                                            return;
-                                                        }
-                                                    } catch (error) {
-                                                        _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                                        _this.toggleModal('popupMessage')
-                                                        return;
-                                                    }
-
-                                                    //reader.readAsDataURL(file);
-                                                };
-
-                                                input.click();
-
-                                            },
+                                            file_picker_callback: createTinyMceImagePicker((msg) => { this.setState({ messageErr: msg }); this.toggleModal('popupMessage'); }),
                                         }}
                                     />
                                 </InputGroup>
