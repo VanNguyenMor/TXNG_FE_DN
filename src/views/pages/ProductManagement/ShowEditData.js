@@ -24,8 +24,6 @@ import ConversionManagerTable from "components/ConversionManagerTable/Conversion
 import Select from "components/Select";
 import ImageUploader from "components/ImageUploader/ImageUploader";
 import { Editor } from "@tinymce/tinymce-react";
-import axios from "axios";
-import { CONFIG_UPDATE_IMG } from "apis";
 import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUploader";
 import { fetchData } from "helpers/fetchData";
 import { PRODUCT_TYPE_DATES } from "helpers/constant";
@@ -62,6 +60,16 @@ class ShowEditData extends Component {
       packing: "",
 
       productionProcess: "",
+
+      // TinyMCE seeds: only set when loading product. Do NOT update on each keystroke
+      // or @tinymce/tinymce-react resets content and caret (typing appears reversed).
+      introduceSeed: "",
+      productionProcessSeed: "",
+      ingredientSeed: "",
+      storageSeed: "",
+      usageSeed: "",
+      usageWarningValSeed: "",
+      packingSeed: "",
       unitVal: "",
       unitName: "",
 
@@ -80,6 +88,8 @@ class ShowEditData extends Component {
       collapseBaseInfo: true,
       expandedInformation: false,
       tabImage: false,
+      popupMessage: false,
+      errMessage: "",
       // permission modal
       permissionModalOpen: false,
       permissionGroups: [],
@@ -201,6 +211,13 @@ class ShowEditData extends Component {
       storage: product.storage || "",
       usage: product.usage || "",
       usageWarningVal: product.warningUsage || "",
+      introduceSeed: product.introduce || "",
+      productionProcessSeed: product.productionProcess || "",
+      ingredientSeed: product.ingredient || "",
+      storageSeed: product.storage || "",
+      usageSeed: product.usage || "",
+      usageWarningValSeed: product.warningUsage || "",
+      packingSeed: product.packing || "",
       verifiedStatus:
         typeof product.verifiedStatus !== "undefined"
           ? product.verifiedStatus
@@ -540,6 +557,33 @@ class ShowEditData extends Component {
       }
     );
   };
+
+  handleTinyMceImagePicker = (cb, value, meta) => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.onchange = async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const imageFile = new FormData();
+      imageFile.append("files", file, file.name);
+      try {
+        const data = await fetchData.infoCompany.uploadFile(imageFile);
+        const fileLink =
+          (data && (data.uploadKey || data.url || data.data)) ||
+          (typeof data === "string" ? data : null);
+        if (fileLink) {
+          cb(fileLink, { title: file.name });
+        } else {
+          this.setState({ errMessage: "Upload ảnh thất bại", popupMessage: true });
+        }
+      } catch (error) {
+        this.setState({ errMessage: "Upload ảnh thất bại", popupMessage: true });
+      }
+    };
+    input.click();
+  };
+
   onChangeValue = (name) => (e) => {
     let value = e && e.target ? e.target.value : e;
 
@@ -660,6 +704,13 @@ class ShowEditData extends Component {
       usage,
       usageWarningVal,
       packing,
+      introduceSeed,
+      productionProcessSeed,
+      ingredientSeed,
+      storageSeed,
+      usageSeed,
+      usageWarningValSeed,
+      packingSeed,
       tabImage,
       images,
       accreditation,
@@ -1159,7 +1210,7 @@ class ShowEditData extends Component {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
                           onEditorChange={this.onChangeValue("introduce")}
-                          initialValue={introduce}
+                          initialValue={introduceSeed}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1172,70 +1223,11 @@ class ShowEditData extends Component {
                               "removeformat | help",
                             content_style:
                               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                            selector: "textarea#file-picker",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: (cb, value, meta) => {
-                              let _this = this;
-
-                              var input = document.createElement("input");
-                              input.setAttribute("type", "file");
-                              input.setAttribute("accept", "image/*");
-                              input.onchange = async function () {
-                                var file = this.files[0];
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                  var id = "blobid" + new Date().getTime();
-                                  var blobCache =
-                                    window.tinymce.activeEditor.editorUpload
-                                      .blobCache;
-                                  var base64 = reader.result.split(",")[1];
-                                  var blobInfo = blobCache.create(
-                                    id,
-                                    file,
-                                    base64
-                                  );
-                                  blobCache.add(blobInfo);
-                                  cb(blobInfo.blobUri(), { title: file.name });
-                                };
-                                let data = null;
-                                let imageFile = new FormData();
-                                let fileLink = null;
-                                imageFile.append("files", file);
-
-                                try {
-                                  data = await axios({
-                                    method: "post",
-                                    url: CONFIG_UPDATE_IMG,
-                                    headers: {
-                                      authorization:
-                                        localStorage.getItem("TOKEN"),
-                                    },
-                                    data: imageFile,
-                                  });
-                                  if (data.data.status == 200) {
-                                    fileLink = data.data.data;
-                                    cb(fileLink);
-                                  } else {
-                                    _this.setState({
-                                      messageErr: "Lỗi hệ thống",
-                                    });
-                                    _this.toggleModal("popupMessage");
-                                    return;
-                                  }
-                                } catch (error) {
-                                  _this.setState({
-                                    messageErr: "Lỗi hệ thống",
-                                  });
-                                  _this.toggleModal("popupMessage");
-                                  return;
-                                }
-                              };
-
-                              input.click();
-                            },
+                            file_picker_callback: this.handleTinyMceImagePicker,
                           }}
                         />
                       </InputGroup>
@@ -1264,7 +1256,7 @@ class ShowEditData extends Component {
                           onEditorChange={this.onChangeValue(
                             "productionProcess"
                           )}
-                          initialValue={productionProcess}
+                          initialValue={productionProcessSeed}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1277,70 +1269,11 @@ class ShowEditData extends Component {
                               "removeformat | help",
                             content_style:
                               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                            selector: "textarea#file-picker",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: (cb, value, meta) => {
-                              let _this = this;
-
-                              var input = document.createElement("input");
-                              input.setAttribute("type", "file");
-                              input.setAttribute("accept", "image/*");
-                              input.onchange = async function () {
-                                var file = this.files[0];
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                  var id = "blobid" + new Date().getTime();
-                                  var blobCache =
-                                    window.tinymce.activeEditor.editorUpload
-                                      .blobCache;
-                                  var base64 = reader.result.split(",")[1];
-                                  var blobInfo = blobCache.create(
-                                    id,
-                                    file,
-                                    base64
-                                  );
-                                  blobCache.add(blobInfo);
-                                  cb(blobInfo.blobUri(), { title: file.name });
-                                };
-                                let data = null;
-                                let imageFile = new FormData();
-                                let fileLink = null;
-                                imageFile.append("files", file);
-
-                                try {
-                                  data = await axios({
-                                    method: "post",
-                                    url: CONFIG_UPDATE_IMG,
-                                    headers: {
-                                      authorization:
-                                        localStorage.getItem("TOKEN"),
-                                    },
-                                    data: imageFile,
-                                  });
-                                  if (data.data.status == 200) {
-                                    fileLink = data.data.data;
-                                    cb(fileLink);
-                                  } else {
-                                    _this.setState({
-                                      messageErr: "Lỗi hệ thống",
-                                    });
-                                    _this.toggleModal("popupMessage");
-                                    return;
-                                  }
-                                } catch (error) {
-                                  _this.setState({
-                                    messageErr: "Lỗi hệ thống",
-                                  });
-                                  _this.toggleModal("popupMessage");
-                                  return;
-                                }
-                              };
-
-                              input.click();
-                            },
+                            file_picker_callback: this.handleTinyMceImagePicker,
                           }}
                         />
                       </InputGroup>
@@ -1365,7 +1298,7 @@ class ShowEditData extends Component {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
                           onEditorChange={this.onChangeValue("ingredient")}
-                          initialValue={ingredient}
+                          initialValue={ingredientSeed}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1378,70 +1311,11 @@ class ShowEditData extends Component {
                               "removeformat | help",
                             content_style:
                               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                            selector: "textarea#file-picker",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: (cb, value, meta) => {
-                              let _this = this;
-
-                              var input = document.createElement("input");
-                              input.setAttribute("type", "file");
-                              input.setAttribute("accept", "image/*");
-                              input.onchange = async function () {
-                                var file = this.files[0];
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                  var id = "blobid" + new Date().getTime();
-                                  var blobCache =
-                                    window.tinymce.activeEditor.editorUpload
-                                      .blobCache;
-                                  var base64 = reader.result.split(",")[1];
-                                  var blobInfo = blobCache.create(
-                                    id,
-                                    file,
-                                    base64
-                                  );
-                                  blobCache.add(blobInfo);
-                                  cb(blobInfo.blobUri(), { title: file.name });
-                                };
-                                let data = null;
-                                let imageFile = new FormData();
-                                let fileLink = null;
-                                imageFile.append("files", file);
-
-                                try {
-                                  data = await axios({
-                                    method: "post",
-                                    url: CONFIG_UPDATE_IMG,
-                                    headers: {
-                                      authorization:
-                                        localStorage.getItem("TOKEN"),
-                                    },
-                                    data: imageFile,
-                                  });
-                                  if (data.data.status == 200) {
-                                    fileLink = data.data.data;
-                                    cb(fileLink);
-                                  } else {
-                                    _this.setState({
-                                      messageErr: "Lỗi hệ thống",
-                                    });
-                                    _this.toggleModal("popupMessage");
-                                    return;
-                                  }
-                                } catch (error) {
-                                  _this.setState({
-                                    messageErr: "Lỗi hệ thống",
-                                  });
-                                  _this.toggleModal("popupMessage");
-                                  return;
-                                }
-                              };
-
-                              input.click();
-                            },
+                            file_picker_callback: this.handleTinyMceImagePicker,
                           }}
                         />
                       </InputGroup>
@@ -1470,7 +1344,7 @@ class ShowEditData extends Component {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
                           onEditorChange={this.onChangeValue("storage")}
-                          initialValue={storage}
+                          initialValue={storageSeed}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1483,70 +1357,11 @@ class ShowEditData extends Component {
                               "removeformat | help",
                             content_style:
                               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                            selector: "textarea#file-picker",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: (cb, value, meta) => {
-                              let _this = this;
-
-                              var input = document.createElement("input");
-                              input.setAttribute("type", "file");
-                              input.setAttribute("accept", "image/*");
-                              input.onchange = async function () {
-                                var file = this.files[0];
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                  var id = "blobid" + new Date().getTime();
-                                  var blobCache =
-                                    window.tinymce.activeEditor.editorUpload
-                                      .blobCache;
-                                  var base64 = reader.result.split(",")[1];
-                                  var blobInfo = blobCache.create(
-                                    id,
-                                    file,
-                                    base64
-                                  );
-                                  blobCache.add(blobInfo);
-                                  cb(blobInfo.blobUri(), { title: file.name });
-                                };
-                                let data = null;
-                                let imageFile = new FormData();
-                                let fileLink = null;
-                                imageFile.append("files", file);
-
-                                try {
-                                  data = await axios({
-                                    method: "post",
-                                    url: CONFIG_UPDATE_IMG,
-                                    headers: {
-                                      authorization:
-                                        localStorage.getItem("TOKEN"),
-                                    },
-                                    data: imageFile,
-                                  });
-                                  if (data.data.status == 200) {
-                                    fileLink = data.data.data;
-                                    cb(fileLink);
-                                  } else {
-                                    _this.setState({
-                                      messageErr: "Lỗi hệ thống",
-                                    });
-                                    _this.toggleModal("popupMessage");
-                                    return;
-                                  }
-                                } catch (error) {
-                                  _this.setState({
-                                    messageErr: "Lỗi hệ thống",
-                                  });
-                                  _this.toggleModal("popupMessage");
-                                  return;
-                                }
-                              };
-
-                              input.click();
-                            },
+                            file_picker_callback: this.handleTinyMceImagePicker,
                           }}
                         />
                       </InputGroup>
@@ -1573,7 +1388,7 @@ class ShowEditData extends Component {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
                           onEditorChange={this.onChangeValue("usage")}
-                          initialValue={usage}
+                          initialValue={usageSeed}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1586,70 +1401,11 @@ class ShowEditData extends Component {
                               "removeformat | help",
                             content_style:
                               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                            selector: "textarea#file-picker",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: (cb, value, meta) => {
-                              let _this = this;
-
-                              var input = document.createElement("input");
-                              input.setAttribute("type", "file");
-                              input.setAttribute("accept", "image/*");
-                              input.onchange = async function () {
-                                var file = this.files[0];
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                  var id = "blobid" + new Date().getTime();
-                                  var blobCache =
-                                    window.tinymce.activeEditor.editorUpload
-                                      .blobCache;
-                                  var base64 = reader.result.split(",")[1];
-                                  var blobInfo = blobCache.create(
-                                    id,
-                                    file,
-                                    base64
-                                  );
-                                  blobCache.add(blobInfo);
-                                  cb(blobInfo.blobUri(), { title: file.name });
-                                };
-                                let data = null;
-                                let imageFile = new FormData();
-                                let fileLink = null;
-                                imageFile.append("files", file);
-
-                                try {
-                                  data = await axios({
-                                    method: "post",
-                                    url: CONFIG_UPDATE_IMG,
-                                    headers: {
-                                      authorization:
-                                        localStorage.getItem("TOKEN"),
-                                    },
-                                    data: imageFile,
-                                  });
-                                  if (data.data.status == 200) {
-                                    fileLink = data.data.data;
-                                    cb(fileLink);
-                                  } else {
-                                    _this.setState({
-                                      messageErr: "Lỗi hệ thống",
-                                    });
-                                    _this.toggleModal("popupMessage");
-                                    return;
-                                  }
-                                } catch (error) {
-                                  _this.setState({
-                                    messageErr: "Lỗi hệ thống",
-                                  });
-                                  _this.toggleModal("popupMessage");
-                                  return;
-                                }
-                              };
-
-                              input.click();
-                            },
+                            file_picker_callback: this.handleTinyMceImagePicker,
                           }}
                         />
                       </InputGroup>
@@ -1676,7 +1432,7 @@ class ShowEditData extends Component {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
                           onEditorChange={this.onChangeValue("usageWarningVal")}
-                          initialValue={usageWarningVal}
+                          initialValue={usageWarningValSeed}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1689,70 +1445,11 @@ class ShowEditData extends Component {
                               "removeformat | help",
                             content_style:
                               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                            selector: "textarea#file-picker",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: (cb, value, meta) => {
-                              let _this = this;
-
-                              var input = document.createElement("input");
-                              input.setAttribute("type", "file");
-                              input.setAttribute("accept", "image/*");
-                              input.onchange = async function () {
-                                var file = this.files[0];
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                  var id = "blobid" + new Date().getTime();
-                                  var blobCache =
-                                    window.tinymce.activeEditor.editorUpload
-                                      .blobCache;
-                                  var base64 = reader.result.split(",")[1];
-                                  var blobInfo = blobCache.create(
-                                    id,
-                                    file,
-                                    base64
-                                  );
-                                  blobCache.add(blobInfo);
-                                  cb(blobInfo.blobUri(), { title: file.name });
-                                };
-                                let data = null;
-                                let imageFile = new FormData();
-                                let fileLink = null;
-                                imageFile.append("files", file);
-
-                                try {
-                                  data = await axios({
-                                    method: "post",
-                                    url: CONFIG_UPDATE_IMG,
-                                    headers: {
-                                      authorization:
-                                        localStorage.getItem("TOKEN"),
-                                    },
-                                    data: imageFile,
-                                  });
-                                  if (data.data.status == 200) {
-                                    fileLink = data.data.data;
-                                    cb(fileLink);
-                                  } else {
-                                    _this.setState({
-                                      messageErr: "Lỗi hệ thống",
-                                    });
-                                    _this.toggleModal("popupMessage");
-                                    return;
-                                  }
-                                } catch (error) {
-                                  _this.setState({
-                                    messageErr: "Lỗi hệ thống",
-                                  });
-                                  _this.toggleModal("popupMessage");
-                                  return;
-                                }
-                              };
-
-                              input.click();
-                            },
+                            file_picker_callback: this.handleTinyMceImagePicker,
                           }}
                         />
                       </InputGroup>
@@ -1779,7 +1476,7 @@ class ShowEditData extends Component {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
                           onEditorChange={this.onChangeValue("packing")}
-                          initialValue={packing}
+                          initialValue={packingSeed}
                           init={{
                             width: "100%",
                             height: 300,
@@ -1792,70 +1489,11 @@ class ShowEditData extends Component {
                               "removeformat | help",
                             content_style:
                               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                            selector: "textarea#file-picker",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: (cb, value, meta) => {
-                              let _this = this;
-
-                              var input = document.createElement("input");
-                              input.setAttribute("type", "file");
-                              input.setAttribute("accept", "image/*");
-                              input.onchange = async function () {
-                                var file = this.files[0];
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                  var id = "blobid" + new Date().getTime();
-                                  var blobCache =
-                                    window.tinymce.activeEditor.editorUpload
-                                      .blobCache;
-                                  var base64 = reader.result.split(",")[1];
-                                  var blobInfo = blobCache.create(
-                                    id,
-                                    file,
-                                    base64
-                                  );
-                                  blobCache.add(blobInfo);
-                                  cb(blobInfo.blobUri(), { title: file.name });
-                                };
-                                let data = null;
-                                let imageFile = new FormData();
-                                let fileLink = null;
-                                imageFile.append("files", file);
-
-                                try {
-                                  data = await axios({
-                                    method: "post",
-                                    url: CONFIG_UPDATE_IMG,
-                                    headers: {
-                                      authorization:
-                                        localStorage.getItem("TOKEN"),
-                                    },
-                                    data: imageFile,
-                                  });
-                                  if (data.data.status == 200) {
-                                    fileLink = data.data.data;
-                                    cb(fileLink);
-                                  } else {
-                                    _this.setState({
-                                      messageErr: "Lỗi hệ thống",
-                                    });
-                                    _this.toggleModal("popupMessage");
-                                    return;
-                                  }
-                                } catch (error) {
-                                  _this.setState({
-                                    messageErr: "Lỗi hệ thống",
-                                  });
-                                  _this.toggleModal("popupMessage");
-                                  return;
-                                }
-                              };
-
-                              input.click();
-                            },
+                            file_picker_callback: this.handleTinyMceImagePicker,
                           }}
                         />
                       </InputGroup>
