@@ -1220,6 +1220,10 @@ class WriteLogging extends Component {
 
     const displayTitle = item ? (item.title || item.ProductName || "") : "";
     const displayCode = item ? (item.code || item.NameCode || "") : "";
+    const displayStampId =
+      item
+        ? (item.stampId || item.StampID || item.stampID || item.StampId || "")
+        : "";
 
     const informOptions = (informSelects || [])
       .map((it) => ({
@@ -1265,6 +1269,25 @@ class WriteLogging extends Component {
             </InputGroup>
           </div>
         </div>
+
+        {displayStampId ? (
+          <div
+            className="wrap-insert-or-update-zone-item"
+            style={{ pointerEvents: "none", opacity: ".5" }}
+          >
+            <label className="wrap-insert-or-update-zone-item-label">Số lô/mẻ</label>
+            <div className="wrap-insert-or-update-zone-item-box">
+              <InputGroup className="input-group-alternative css-border-input">
+                <input
+                  value={displayStampId}
+                  type="text"
+                  readOnly
+                  className="wrap-insert-or-update-zone-item-input"
+                />
+              </InputGroup>
+            </div>
+          </div>
+        ) : null}
 
         <div className="wrap-insert-or-update-zone-item">
           <label className="wrap-insert-or-update-zone-item-label">
