@@ -24,6 +24,7 @@ class UpdateModal extends Component {
                 MenuID: '',
                 Description: '',
                 Content: '',
+                contentSeed: '',
                 ThumbnailFile: '',
             },
             activeSubmit: false,
@@ -45,6 +46,7 @@ class UpdateModal extends Component {
                 newData.Title = typeof (data.title) ? data.title : newData.Title;
                 newData.Description = typeof (data.description) ? data.description : newData.Description;
                 newData.Content = typeof (data.content) ? data.content : newData.Content;
+                newData.contentSeed = typeof (data.content) ? data.content : (newData.contentSeed || '');
                 newData.MenuID = typeof (data.menuID) ? data.menuID : newData.MenuID;
             }
             this.setState({ newData })
@@ -238,7 +240,7 @@ class UpdateModal extends Component {
                                         onInit={(_, editor) => {
                                             this.refEditor = editor;
                                         }}
-                                        initialValue={newData.Content}
+                                        initialValue={newData.contentSeed || newData.Content || ''}
                                         init={{
                                             width: '100%',
                                             height: 300,

@@ -28,6 +28,7 @@ import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUp
 import { fetchData } from "helpers/fetchData";
 import { PRODUCT_TYPE_DATES } from "helpers/constant";
 import { PRODUCT_EXPIRED_TYPE } from "helpers/constant";
+import { createTinyMceImagePicker } from "../../../helpers/tinymceImagePicker";
 
 class ShowEditData extends Component {
   constructor(props) {
@@ -558,31 +559,6 @@ class ShowEditData extends Component {
     );
   };
 
-  handleTinyMceImagePicker = (cb, value, meta) => {
-    const input = document.createElement("input");
-    input.setAttribute("type", "file");
-    input.setAttribute("accept", "image/*");
-    input.onchange = async () => {
-      const file = input.files && input.files[0];
-      if (!file) return;
-      const imageFile = new FormData();
-      imageFile.append("files", file, file.name);
-      try {
-        const data = await fetchData.infoCompany.uploadFile(imageFile);
-        const fileLink =
-          (data && (data.uploadKey || data.url || data.data)) ||
-          (typeof data === "string" ? data : null);
-        if (fileLink) {
-          cb(fileLink, { title: file.name });
-        } else {
-          this.setState({ errMessage: "Upload ảnh thất bại", popupMessage: true });
-        }
-      } catch (error) {
-        this.setState({ errMessage: "Upload ảnh thất bại", popupMessage: true });
-      }
-    };
-    input.click();
-  };
 
   onChangeValue = (name) => (e) => {
     let value = e && e.target ? e.target.value : e;
@@ -1227,7 +1203,7 @@ class ShowEditData extends Component {
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: this.handleTinyMceImagePicker,
+                            file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ errMessage: msg, popupMessage: true })),
                           }}
                         />
                       </InputGroup>
@@ -1273,7 +1249,7 @@ class ShowEditData extends Component {
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: this.handleTinyMceImagePicker,
+                            file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ errMessage: msg, popupMessage: true })),
                           }}
                         />
                       </InputGroup>
@@ -1315,7 +1291,7 @@ class ShowEditData extends Component {
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: this.handleTinyMceImagePicker,
+                            file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ errMessage: msg, popupMessage: true })),
                           }}
                         />
                       </InputGroup>
@@ -1361,7 +1337,7 @@ class ShowEditData extends Component {
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: this.handleTinyMceImagePicker,
+                            file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ errMessage: msg, popupMessage: true })),
                           }}
                         />
                       </InputGroup>
@@ -1405,7 +1381,7 @@ class ShowEditData extends Component {
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: this.handleTinyMceImagePicker,
+                            file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ errMessage: msg, popupMessage: true })),
                           }}
                         />
                       </InputGroup>
@@ -1449,7 +1425,7 @@ class ShowEditData extends Component {
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: this.handleTinyMceImagePicker,
+                            file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ errMessage: msg, popupMessage: true })),
                           }}
                         />
                       </InputGroup>
@@ -1493,7 +1469,7 @@ class ShowEditData extends Component {
                             image_title: true,
                             automatic_uploads: true,
                             file_picker_types: "image",
-                            file_picker_callback: this.handleTinyMceImagePicker,
+                            file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ errMessage: msg, popupMessage: true })),
                           }}
                         />
                       </InputGroup>

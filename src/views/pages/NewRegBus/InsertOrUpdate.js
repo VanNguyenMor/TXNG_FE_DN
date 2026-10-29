@@ -42,6 +42,7 @@ class InsertOrUpdate extends Component {
             code: '',
             fieldId: '',
             introduce: '',
+            introduceSeed: '',
             address: '',
             phoneNumber: '',
             fax: '',
@@ -163,6 +164,7 @@ class InsertOrUpdate extends Component {
                                 fieldId: company.fieldID,
                                 address: company.address,
                                 introduce: company.introduce,
+                                introduceSeed: company.introduce || '',
                                 phoneNumber: company.phoneNumber,
                                 fax: company.fax,
                                 email: company.email,
@@ -1361,7 +1363,7 @@ class InsertOrUpdate extends Component {
                                                 onInit={(_, editor) => {
                                                     this.refEditor = editor;
                                                 }}
-                                                initialValue={introduce}
+                                                initialValue={this.state.introduceSeed || ''}
                                                 init={{
                                                     height: 300,
                                                     menubar: false,
