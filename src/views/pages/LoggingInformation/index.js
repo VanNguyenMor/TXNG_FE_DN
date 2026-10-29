@@ -990,6 +990,7 @@ class LoggingInformation extends Component {
                               requestRDEmployeeList={this.props.requestRDEmployeeList}
                               requestRDMaterialList={this.props.requestRDMaterialList}
                               requestRDMaterialUnitList={this.props.requestRDMaterialUnitList}
+                              requestRDUnitList={this.props.requestRDUnitList}
                               requestRDWarehouseList={this.props.requestRDWarehouseList}
                               requestRDVehicleList={this.props.requestRDVehicleList}
                               requestRDFactoryList={this.props.requestRDFactoryList}

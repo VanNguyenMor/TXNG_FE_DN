@@ -46,9 +46,7 @@ const REFERENCE_CONFIG = {
 };
 
 // Các reference chưa hỗ trợ đầy đủ trên web (cần luồng phụ phức tạp)
-const UNSUPPORTED_REFERENCES = {
-  [REFERENCE_DIARYS.donViTinh]: "Đơn vị tính (đang phát triển)",
-};
+const UNSUPPORTED_REFERENCES = {};
 
 const getResponseData = (res) => {
   const data = res && res.data;
@@ -192,7 +190,9 @@ class WriteLogging extends Component {
       {
         id: traceId,
         zoneId: item ? (item.plantingZoneId || item.PlantingZoneID || item.PlantingZone || null) : null,
-        productId: item ? (item.productId || item.ProductId || null) : null,
+        productId: item
+          ? (item.productId || item.ProductId || item.ProductID || item.productID || null)
+          : null,
       },
       () => {
         if (traceId) {
@@ -222,6 +222,14 @@ class WriteLogging extends Component {
           haveItem: trace.haveItem || data.haveItem || false,
           // Vị trí: ưu tiên id thật từ trace detail (bảng list chỉ trả tên nên không khớp option)
           zoneId: trace.plantingZoneID || trace.PlantingZoneID || prev.zoneId || null,
+          productId:
+            trace.productID ||
+            trace.ProductID ||
+            trace.productId ||
+            data.productID ||
+            data.ProductID ||
+            prev.productId ||
+            null,
           isLoaded: false,
         }),
         () => {
@@ -406,6 +414,15 @@ class WriteLogging extends Component {
             };
           }
 
+          // ĐVT: value lưu ở _valueUnit (đối chiếu app mobile)
+          if (ref === REFERENCE_DIARYS.donViTinh) {
+            return {
+              ...attr,
+              _valueUnit: value || "",
+              _displayUnit: displayValue || "",
+            };
+          }
+
           if (ref === REFERENCE_DIARYS.phieuNhap) {
             return {
               ...attr,
@@ -464,6 +481,12 @@ class WriteLogging extends Component {
       return;
     }
 
+    // ĐVT (ref 60): theo app — ưu tiên đơn vị theo product, fallback unit/getall
+    if (attr.reference === REFERENCE_DIARYS.donViTinh) {
+      this.loadDonViTinhUnits(attr);
+      return;
+    }
+
     const cfg = REFERENCE_CONFIG[attr.reference];
     if (!cfg) return;
 
@@ -473,26 +496,102 @@ class WriteLogging extends Component {
     actionFn(cfg.arg).then((res) => {
       const data = ((res.data || {}).data || {});
       const list = data[cfg.listKey] || [];
-      const options = list.map((it) => ({
-        id: it[cfg.value],
-        title: it[cfg.label],
-      }));
+      const options = list.map((it) => {
+        const opt = {
+          id: it[cfg.value] || it.id || it.ID,
+          title: it[cfg.label] || it.name || it.Name,
+        };
+        // NVL getlistforwritetrace: ID = BatchNum_MaterialID, đơn vị API cần MaterialID thật (giống app)
+        if (attr.reference === REFERENCE_DIARYS.nguyenVatLieu) {
+          opt.materialId =
+            it.MaterialID || it.materialID || it.MaterialId || it.materialId || null;
+          opt.warehouseId =
+            it.WarehouseID || it.warehouseID || it.WarehouseId || it.warehouseId || null;
+          opt.grId = it.GRID || it.Grid || it.grid || it.grId || it.GrId || null;
+          opt.materialName =
+            it.MaterialName || it.materialName || opt.title;
+        }
+        return opt;
+      }).filter((o) => o.id);
       this.updateAttribute(attr.id, { _options: options });
     });
   };
 
   // Tải danh sách đơn vị theo nguyên vật liệu đã chọn
-  loadMaterialUnits = (attr, materialId) => {
+  loadMaterialUnits = (attr, materialId, autoSelectSingle = true) => {
     const { requestRDMaterialUnitList } = this.props;
     if (!requestRDMaterialUnitList || !materialId) return;
 
     requestRDMaterialUnitList(materialId).then((res) => {
-      const data = ((res.data || {}).data || {});
-      const units = data.materialUnits || [];
-      const unitOptions = units.map((u) => ({
-        id: u.ID || u.id,
-        title: u.UnitName || u.unitName,
-      }));
+      const data = getResponseData(res) || {};
+      const units = data.materialUnits || data.MaterialUnits || [];
+      const unitOptions = units
+        .map((u) => ({
+          id: u.ID || u.id,
+          title: u.UnitName || u.unitName,
+        }))
+        .filter((u) => u.id);
+
+      const patch = { _unitOptions: unitOptions };
+      // App auto-chọn khi chỉ có 1 đơn vị
+      if (autoSelectSingle && unitOptions.length === 1 && !attr._valueUnit) {
+        patch._valueUnit = unitOptions[0].id;
+        patch._displayUnit = unitOptions[0].title;
+      }
+      this.updateAttribute(attr.id, patch);
+
+      if (patch._valueUnit) {
+        const { requestGetInventoryByMaterial } = this.props;
+        if (requestGetInventoryByMaterial) {
+          requestGetInventoryByMaterial(patch._valueUnit, materialId).then((invRes) => {
+            const inv = getResponseData(invRes) || {};
+            this.updateAttribute(attr.id, { metaData: inv });
+          });
+        }
+      }
+    });
+  };
+
+  // ĐVT: giống onPopupAttributeUnit2 trên mobile
+  loadDonViTinhUnits = (attr) => {
+    const { requestRDMaterialUnitList, requestRDUnitList } = this.props;
+    const productId = this.state.productId;
+
+    if (productId && requestRDMaterialUnitList) {
+      requestRDMaterialUnitList(productId).then((res) => {
+        const data = getResponseData(res) || {};
+        const units = data.materialUnits || data.MaterialUnits || [];
+        if (units.length > 0) {
+          const unitOptions = units
+            .map((u) => ({
+              id: u.ID || u.id,
+              title: u.UnitName || u.unitName,
+            }))
+            .filter((u) => u.id);
+          this.updateAttribute(attr.id, { _unitOptions: unitOptions });
+          return;
+        }
+        this.loadAllUnitsForDonViTinh(attr);
+      });
+      return;
+    }
+
+    this.loadAllUnitsForDonViTinh(attr);
+  };
+
+  loadAllUnitsForDonViTinh = (attr) => {
+    const { requestRDUnitList } = this.props;
+    if (!requestRDUnitList) return;
+
+    requestRDUnitList({ search: "", filter: "", orderBy: "", page: 0, size: 1000 }).then((res) => {
+      const data = getResponseData(res) || {};
+      const units = data.units || data.Units || [];
+      const unitOptions = units
+        .map((u) => ({
+          id: u.id || u.ID,
+          title: u.unitName || u.UnitName,
+        }))
+        .filter((u) => u.id);
       this.updateAttribute(attr.id, { _unitOptions: unitOptions });
     });
   };
@@ -525,17 +624,20 @@ class WriteLogging extends Component {
     const display = opt ? opt.title : "";
 
     if (attr && attr.reference === REFERENCE_DIARYS.nguyenVatLieu) {
-      // material: lưu cả _value và _value2, reset đơn vị + tải đơn vị theo material
+      // App: _value = ID ghép (Batch_Material), _value2 = MaterialID thật (dùng load đơn vị)
+      const materialId = (opt && opt.materialId) || value;
       this.updateAttribute(attrId, {
         _value: value,
-        _value2: value,
+        _value2: materialId,
         _display: display,
-        _display2: display,
+        _display2: (opt && opt.materialName) || display,
+        _valueWarehouse: (opt && opt.warehouseId) || "",
+        grId: (opt && opt.grId) || null,
         _valueUnit: "",
         _displayUnit: "",
         metaData: null,
       });
-      this.loadMaterialUnits(attr, value);
+      this.loadMaterialUnits({ ...attr, _value: value, _value2: materialId }, materialId);
     } else if (attr && attr.reference === REFERENCE_DIARYS.phieuNhap) {
       // phiếu nhập: lấy chi tiết để có số lượng / đơn vị / đối tác
       this.updateAttribute(attrId, { _value: value, _displayGoodReceipt: display });
@@ -569,14 +671,28 @@ class WriteLogging extends Component {
       _displayUnit: opt ? opt.title : "",
     });
 
+    // ĐVT không cần tồn kho theo NVL
+    if (attr && attr.reference === REFERENCE_DIARYS.donViTinh) {
+      return;
+    }
+
     // lấy tồn kho theo NVL + đơn vị để hiển thị
     const { requestGetInventoryByMaterial } = this.props;
     const materialId = attr ? (attr._value2 || attr._value) : null;
     if (requestGetInventoryByMaterial && materialId && value) {
       requestGetInventoryByMaterial(value, materialId).then((res) => {
-        const inv = ((res.data || {}).data || {});
+        const inv = getResponseData(res) || {};
         this.updateAttribute(attrId, { metaData: inv });
       });
+    }
+  };
+
+  // Bấm Đơn vị khi chưa chọn NVL → nhắc giống app (cần materialId)
+  onOpenMaterialUnit = (attr) => () => {
+    if (!(attr._value2 || attr._value)) {
+      toast.error("Bạn vui lòng chọn nguyên vật liệu trước");
+    } else if (!(attr._unitOptions || []).length) {
+      this.loadMaterialUnits(attr, attr._value2 || attr._value, false);
     }
   };
 
@@ -684,6 +800,18 @@ class WriteLogging extends Component {
       };
     }
 
+    if (ref === REFERENCE_DIARYS.donViTinh) {
+      return {
+        informID: attr.informID,
+        columnName: attr.name,
+        value: attr._valueUnit,
+        displayValue: attr._displayUnit,
+        material: null,
+        goodReceipt: null,
+        dataType: attr.dataType,
+      };
+    }
+
     if (REFERENCE_CONFIG[ref] || UNSUPPORTED_REFERENCES[ref]) {
       const extraData1 =
         ref === REFERENCE_DIARYS.nguyenVatLieu
@@ -694,6 +822,8 @@ class WriteLogging extends Component {
               unitID: attr._valueUnit,
               unitName: attr._displayUnit,
               reference: (ref || "").toString(),
+              warehouseID: attr._valueWarehouse || null,
+              grId: attr.grId || null,
             }
           : null;
 
@@ -799,7 +929,7 @@ class WriteLogging extends Component {
       return;
     }
 
-    // Validate riêng cho nguyên vật liệu (đơn vị + số lượng)
+    // Validate riêng cho nguyên vật liệu (đơn vị + số lượng) và ĐVT
     for (let i = 0; i < attributes.length; i++) {
       const attr = attributes[i];
       if (attr.reference === REFERENCE_DIARYS.nguyenVatLieu) {
@@ -816,6 +946,10 @@ class WriteLogging extends Component {
           toast.error("Bạn vui lòng nhập số lượng cho " + attr.name);
           return;
         }
+      }
+      if (attr.reference === REFERENCE_DIARYS.donViTinh && attr.isRequired && !attr._valueUnit) {
+        toast.error("Bạn vui lòng chọn " + (attr.name || "ĐVT"));
+        return;
       }
     }
 
@@ -890,6 +1024,22 @@ class WriteLogging extends Component {
       );
     }
 
+    // ĐVT (ref 60): chọn đơn vị — đối chiếu app onPopupAttributeUnit2
+    if (ref === REFERENCE_DIARYS.donViTinh) {
+      return (
+        <Select
+          value={attr._valueUnit}
+          name={`attr-dvt-${attr.id}`}
+          title={attr.name || "Đơn vị tính"}
+          data={attr._unitOptions || []}
+          labelName="title"
+          val="id"
+          notActiveRoot={true}
+          handleChange={this.onChangeAttrUnit(attr.id)}
+        />
+      );
+    }
+
     // nguyên vật liệu: chọn NVL + đơn vị + số lượng
     if (ref === REFERENCE_DIARYS.nguyenVatLieu) {
       return (
@@ -901,10 +1051,11 @@ class WriteLogging extends Component {
             data={attr._options || []}
             labelName="title"
             val="id"
+            notActiveRoot={true}
             handleChange={this.onChangeAttrReference(attr.id)}
           />
           <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1 }} onClick={this.onOpenMaterialUnit(attr)}>
               <Select
                 value={attr._valueUnit}
                 name={`attr-unit-${attr.id}`}
@@ -912,6 +1063,7 @@ class WriteLogging extends Component {
                 data={attr._unitOptions || []}
                 labelName="title"
                 val="id"
+                notActiveRoot={true}
                 handleChange={this.onChangeAttrUnit(attr.id)}
               />
             </div>
