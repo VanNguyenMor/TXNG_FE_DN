@@ -47,13 +47,12 @@ import InsertOrUpdateAlert from "./InsertOrUpdateAlert";
 import WarningPopup from "../../../components/WarningPopup";
 import WarningPopupDel from "../../../components/WarningPopupDel";
 import observable from "../../../components/Toastify";
-import axios from "axios";
-import { CONFIG_UPDATE_IMG } from "../../../apis";
 import PopupMessage from "../../../components/PopupMessage";
 import eye from "../../../assets/img/icons/common/eye.png";
 import eyeOff from "../../../assets/img/icons/common/eye-off.png";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { createTinyMceImagePicker } from "../../../helpers/tinymceImagePicker";
 import {
   Card,
   Table,
@@ -2311,62 +2310,11 @@ class ConfigSystem extends Component {
                           'alignright alignjustify | bullist numlist outdent indent | ' +
                           'removeformat | help',
                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        selector: 'textarea#file-picker',
                         plugins: 'image code link',
                         image_title: true,
                         automatic_uploads: true,
                         file_picker_types: 'image',
-                        file_picker_callback: (cb, value, meta) => {
-                          let _this = this;
-
-                          var input = document.createElement('input');
-                          input.setAttribute('type', 'file');
-                          input.setAttribute('accept', 'image/*');
-                          input.onchange = async function () {
-                            var file = this.files[0];
-                            var reader = new FileReader();
-                            reader.onload = function () {
-                              var id = 'blobid' + (new Date()).getTime();
-                              var blobCache = window.tinymce.activeEditor.editorUpload.blobCache;
-                              var base64 = reader.result.split(',')[1];
-                              var blobInfo = blobCache.create(id, file, base64);
-                              blobCache.add(blobInfo);
-                              cb(blobInfo.blobUri(), { title: file.name });
-                            };
-                            let data = null;
-                            let imageFile = new FormData();
-                            let fileLink = null;
-                            imageFile.append('files', file);
-
-                            try {
-                              data = await axios({
-                                method: 'post',
-                                url: CONFIG_UPDATE_IMG,
-                                headers: {
-                                  authorization: localStorage.getItem('TOKEN')
-                                },
-                                data: imageFile
-                              })
-                              if (data.data.status == 200) {
-                                fileLink = data.data.data;
-                                cb(fileLink);
-                              } else {
-                                _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                _this.toggleModal('popupMessage')
-                                return;
-                              }
-                            } catch (error) {
-                              _this.setState({ messageErr: 'Lỗi hệ thống' })
-                              _this.toggleModal('popupMessage')
-                              return;
-                            }
-
-                            //reader.readAsDataURL(file);
-                          };
-
-                          input.click();
-
-                        },
+                        file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ messageErr: msg })),
                       }} />
                   </InputGroup>
 
@@ -2391,62 +2339,11 @@ class ConfigSystem extends Component {
                           'alignright alignjustify | bullist numlist outdent indent | ' +
                           'removeformat | help',
                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        selector: 'textarea#file-picker',
                         plugins: 'image code link',
                         image_title: true,
                         automatic_uploads: true,
                         file_picker_types: 'image',
-                        file_picker_callback: (cb, value, meta) => {
-                          let _this = this;
-
-                          var input = document.createElement('input');
-                          input.setAttribute('type', 'file');
-                          input.setAttribute('accept', 'image/*');
-                          input.onchange = async function () {
-                            var file = this.files[0];
-                            var reader = new FileReader();
-                            reader.onload = function () {
-                              var id = 'blobid' + (new Date()).getTime();
-                              var blobCache = window.tinymce.activeEditor.editorUpload.blobCache;
-                              var base64 = reader.result.split(',')[1];
-                              var blobInfo = blobCache.create(id, file, base64);
-                              blobCache.add(blobInfo);
-                              cb(blobInfo.blobUri(), { title: file.name });
-                            };
-                            let data = null;
-                            let imageFile = new FormData();
-                            let fileLink = null;
-                            imageFile.append('files', file);
-
-                            try {
-                              data = await axios({
-                                method: 'post',
-                                url: CONFIG_UPDATE_IMG,
-                                headers: {
-                                  authorization: localStorage.getItem('TOKEN')
-                                },
-                                data: imageFile
-                              })
-                              if (data.data.status == 200) {
-                                fileLink = data.data.data;
-                                cb(fileLink);
-                              } else {
-                                _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                _this.toggleModal('popupMessage')
-                                return;
-                              }
-                            } catch (error) {
-                              _this.setState({ messageErr: 'Lỗi hệ thống' })
-                              _this.toggleModal('popupMessage')
-                              return;
-                            }
-
-                            //reader.readAsDataURL(file);
-                          };
-
-                          input.click();
-
-                        },
+                        file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ messageErr: msg })),
                       }} />
                   </InputGroup>
 
@@ -2471,62 +2368,11 @@ class ConfigSystem extends Component {
                           'alignright alignjustify | bullist numlist outdent indent | ' +
                           'removeformat | help',
                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        selector: 'textarea#file-picker',
                         plugins: 'image code link',
                         image_title: true,
                         automatic_uploads: true,
                         file_picker_types: 'image',
-                        file_picker_callback: (cb, value, meta) => {
-                          let _this = this;
-
-                          var input = document.createElement('input');
-                          input.setAttribute('type', 'file');
-                          input.setAttribute('accept', 'image/*');
-                          input.onchange = async function () {
-                            var file = this.files[0];
-                            var reader = new FileReader();
-                            reader.onload = function () {
-                              var id = 'blobid' + (new Date()).getTime();
-                              var blobCache = window.tinymce.activeEditor.editorUpload.blobCache;
-                              var base64 = reader.result.split(',')[1];
-                              var blobInfo = blobCache.create(id, file, base64);
-                              blobCache.add(blobInfo);
-                              cb(blobInfo.blobUri(), { title: file.name });
-                            };
-                            let data = null;
-                            let imageFile = new FormData();
-                            let fileLink = null;
-                            imageFile.append('files', file);
-
-                            try {
-                              data = await axios({
-                                method: 'post',
-                                url: CONFIG_UPDATE_IMG,
-                                headers: {
-                                  authorization: localStorage.getItem('TOKEN')
-                                },
-                                data: imageFile
-                              })
-                              if (data.data.status == 200) {
-                                fileLink = data.data.data;
-                                cb(fileLink);
-                              } else {
-                                _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                _this.toggleModal('popupMessage')
-                                return;
-                              }
-                            } catch (error) {
-                              _this.setState({ messageErr: 'Lỗi hệ thống' })
-                              _this.toggleModal('popupMessage')
-                              return;
-                            }
-
-                            //reader.readAsDataURL(file);
-                          };
-
-                          input.click();
-
-                        },
+                        file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ messageErr: msg })),
                       }} />
                   </InputGroup>
 
@@ -2562,62 +2408,11 @@ class ConfigSystem extends Component {
                           'alignright alignjustify | bullist numlist outdent indent | ' +
                           'removeformat | help',
                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        selector: 'textarea#file-picker',
                         plugins: 'image code link',
                         image_title: true,
                         automatic_uploads: true,
                         file_picker_types: 'image',
-                        file_picker_callback: (cb, value, meta) => {
-                          let _this = this;
-
-                          var input = document.createElement('input');
-                          input.setAttribute('type', 'file');
-                          input.setAttribute('accept', 'image/*');
-                          input.onchange = async function () {
-                            var file = this.files[0];
-                            var reader = new FileReader();
-                            reader.onload = function () {
-                              var id = 'blobid' + (new Date()).getTime();
-                              var blobCache = window.tinymce.activeEditor.editorUpload.blobCache;
-                              var base64 = reader.result.split(',')[1];
-                              var blobInfo = blobCache.create(id, file, base64);
-                              blobCache.add(blobInfo);
-                              cb(blobInfo.blobUri(), { title: file.name });
-                            };
-                            let data = null;
-                            let imageFile = new FormData();
-                            let fileLink = null;
-                            imageFile.append('files', file);
-
-                            try {
-                              data = await axios({
-                                method: 'post',
-                                url: CONFIG_UPDATE_IMG,
-                                headers: {
-                                  authorization: localStorage.getItem('TOKEN')
-                                },
-                                data: imageFile
-                              })
-                              if (data.data.status == 200) {
-                                fileLink = data.data.data;
-                                cb(fileLink);
-                              } else {
-                                _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                _this.toggleModal('popupMessage')
-                                return;
-                              }
-                            } catch (error) {
-                              _this.setState({ messageErr: 'Lỗi hệ thống' })
-                              _this.toggleModal('popupMessage')
-                              return;
-                            }
-
-                            //reader.readAsDataURL(file);
-                          };
-
-                          input.click();
-
-                        },
+                        file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ messageErr: msg })),
                       }} />
                   </InputGroup>
 
@@ -2652,62 +2447,11 @@ class ConfigSystem extends Component {
                           'alignright alignjustify | bullist numlist outdent indent | ' +
                           'removeformat | help',
                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        selector: 'textarea#file-picker',
                         plugins: 'image code link',
                         image_title: true,
                         automatic_uploads: true,
                         file_picker_types: 'image',
-                        file_picker_callback: (cb, value, meta) => {
-                          let _this = this;
-
-                          var input = document.createElement('input');
-                          input.setAttribute('type', 'file');
-                          input.setAttribute('accept', 'image/*');
-                          input.onchange = async function () {
-                            var file = this.files[0];
-                            var reader = new FileReader();
-                            reader.onload = function () {
-                              var id = 'blobid' + (new Date()).getTime();
-                              var blobCache = window.tinymce.activeEditor.editorUpload.blobCache;
-                              var base64 = reader.result.split(',')[1];
-                              var blobInfo = blobCache.create(id, file, base64);
-                              blobCache.add(blobInfo);
-                              cb(blobInfo.blobUri(), { title: file.name });
-                            };
-                            let data = null;
-                            let imageFile = new FormData();
-                            let fileLink = null;
-                            imageFile.append('files', file);
-
-                            try {
-                              data = await axios({
-                                method: 'post',
-                                url: CONFIG_UPDATE_IMG,
-                                headers: {
-                                  authorization: localStorage.getItem('TOKEN')
-                                },
-                                data: imageFile
-                              })
-                              if (data.data.status == 200) {
-                                fileLink = data.data.data;
-                                cb(fileLink);
-                              } else {
-                                _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                _this.toggleModal('popupMessage')
-                                return;
-                              }
-                            } catch (error) {
-                              _this.setState({ messageErr: 'Lỗi hệ thống' })
-                              _this.toggleModal('popupMessage')
-                              return;
-                            }
-
-                            //reader.readAsDataURL(file);
-                          };
-
-                          input.click();
-
-                        },
+                        file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ messageErr: msg })),
                       }} />
                   </InputGroup>
 
@@ -2732,62 +2476,11 @@ class ConfigSystem extends Component {
                           'alignright alignjustify | bullist numlist outdent indent | ' +
                           'removeformat | help',
                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        selector: 'textarea#file-picker',
                         plugins: 'image code link',
                         image_title: true,
                         automatic_uploads: true,
                         file_picker_types: 'image',
-                        file_picker_callback: (cb, value, meta) => {
-                          let _this = this;
-
-                          var input = document.createElement('input');
-                          input.setAttribute('type', 'file');
-                          input.setAttribute('accept', 'image/*');
-                          input.onchange = async function () {
-                            var file = this.files[0];
-                            var reader = new FileReader();
-                            reader.onload = function () {
-                              var id = 'blobid' + (new Date()).getTime();
-                              var blobCache = window.tinymce.activeEditor.editorUpload.blobCache;
-                              var base64 = reader.result.split(',')[1];
-                              var blobInfo = blobCache.create(id, file, base64);
-                              blobCache.add(blobInfo);
-                              cb(blobInfo.blobUri(), { title: file.name });
-                            };
-                            let data = null;
-                            let imageFile = new FormData();
-                            let fileLink = null;
-                            imageFile.append('files', file);
-
-                            try {
-                              data = await axios({
-                                method: 'post',
-                                url: CONFIG_UPDATE_IMG,
-                                headers: {
-                                  authorization: localStorage.getItem('TOKEN')
-                                },
-                                data: imageFile
-                              })
-                              if (data.data.status == 200) {
-                                fileLink = data.data.data;
-                                cb(fileLink);
-                              } else {
-                                _this.setState({ messageErr: 'Lỗi hệ thống' })
-                                _this.toggleModal('popupMessage')
-                                return;
-                              }
-                            } catch (error) {
-                              _this.setState({ messageErr: 'Lỗi hệ thống' })
-                              _this.toggleModal('popupMessage')
-                              return;
-                            }
-
-                            //reader.readAsDataURL(file);
-                          };
-
-                          input.click();
-
-                        },
+                        file_picker_callback: createTinyMceImagePicker((msg) => this.setState({ messageErr: msg })),
                       }} />
                   </InputGroup>
 
