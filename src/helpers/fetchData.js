@@ -422,7 +422,11 @@ export const fetchData = {
       const result = await callApi(
         "post",
         PRODUCT_MANAGEMENT.getListMaterialGroup,
-        PAYLOAD.defaultPayLoad
+        {
+          ...PAYLOAD.defaultPayLoad,
+          // Chỉ nhóm sản phẩm (IsProduct = 1), không lấy nhóm NVL
+          filter: "1",
+        }
       );
       const groupsData = result?.data || result;
       return extractGroupsData(groupsData);
