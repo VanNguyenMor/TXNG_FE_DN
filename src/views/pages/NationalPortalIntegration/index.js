@@ -71,6 +71,7 @@ class NationalPortalIntegration extends Component {
       isSavingMappings: false,
       isSyncing: false,
       isCreatingLocation: false,
+      isCreatingDiaDiem: false,
       companyId: "",
       companyName: "",
       productId: null,
@@ -87,10 +88,13 @@ class NationalPortalIntegration extends Component {
       idSanPham: "",
       idNganhHang: "",
       idVungTrong: "",
+      idDiaDiemSanXuat: "",
       existingLocationText: "",
+      existingDiaDiemText: "",
       tenChuoiCungUng: "",
       tenSanPham: "",
       glnCode: "",
+      glnDiaDiemSanXuat: "",
       provinceId: null,
       provinceName: "",
       provinceIdRoot: "",
@@ -147,13 +151,16 @@ class NationalPortalIntegration extends Component {
       idSanPham: "",
       idNganhHang: "",
       idVungTrong: "",
+      idDiaDiemSanXuat: "",
       glnCode: "",
+      glnDiaDiemSanXuat: "",
       tenChuoiCungUng: "",
       tenSanPham: "",
       congViecOptions: [],
       informSelects: [],
       congViecMappings: {},
       existingLocationText: "",
+      existingDiaDiemText: "",
       provinceId: null,
       provinceName: "",
       provinceIdRoot: "",
@@ -248,6 +255,7 @@ class NationalPortalIntegration extends Component {
           await this.runSyncPreview({
             silent: true,
             preserveVungTrong: true,
+            preserveDiaDiem: true,
             preserveCongViecOptions: true,
           });
         }
@@ -311,6 +319,7 @@ class NationalPortalIntegration extends Component {
             idSanPham: config.idSanPham || "",
             idNganhHang: config.idNganhHang || "",
             idVungTrong: config.idVungTrong || "",
+            idDiaDiemSanXuat: config.idDiaDiemSanXuat || "",
             glnCode: gtinCode,
             plantingZoneId: config.plantingZoneId || null,
             informSelects: informSelectsToUse,
@@ -324,13 +333,10 @@ class NationalPortalIntegration extends Component {
         await this.runSyncPreview({
           silent: true,
           preserveVungTrong: true,
+          preserveDiaDiem: true,
           gtinCode,
           idChuoiCungUng,
         });
-      }
-
-      if (gtinCode && config.idToChuc) {
-        await this.loadLocationByGln(gtinCode, config.idToChuc, false, true);
       }
     } catch (error) {
       toast.error("Không thể tải cấu hình đấu nối đã lưu.");
@@ -354,13 +360,13 @@ class NationalPortalIntegration extends Component {
   runSyncPreview = async ({
     silent = false,
     preserveVungTrong = false,
+    preserveDiaDiem = false,
     preserveCongViecOptions = false,
     gtinCode: gtinOverride,
     idChuoiCungUng: idChuoiOverride,
   } = {}) => {
     const gtinCode = (gtinOverride ?? this.state.gtinCode)?.trim();
     const idChuoiCungUng = (idChuoiOverride ?? this.state.idChuoiCungUng)?.trim();
-    const { idVungTrong } = this.state;
 
     if (!gtinCode || !idChuoiCungUng) {
       if (!silent) {
@@ -413,11 +419,12 @@ class NationalPortalIntegration extends Component {
         nextState.existingLocationText = "";
       }
 
-      this.setState(nextState);
-
-      if (!preserveVungTrong && preview.idToChuc) {
-        await this.loadLocationByGln(trimmedGtin, preview.idToChuc, false);
+      if (!preserveDiaDiem) {
+        nextState.idDiaDiemSanXuat = "";
+        nextState.existingDiaDiemText = "";
       }
+
+      this.setState(nextState);
 
       if (!silent) {
         toast.success(result?.message || "Đồng bộ thông tin từ cổng thành công.");
@@ -528,10 +535,10 @@ class NationalPortalIntegration extends Component {
     });
   };
 
-  applyLocationResult = (locationData, toastMessage) => {
-    const idVungTrong =
+  applyLocationResult = (locationData, target, toastMessage) => {
+    const portalId =
       locationData?.idVungTrong || locationData?.IdVungTrong || "";
-    const existingLocationText =
+    const locationText =
       locationData?.diaChiText ||
       locationData?.DiaChiText ||
       locationData?.ten ||
@@ -540,10 +547,17 @@ class NationalPortalIntegration extends Component {
     const alreadyExists =
       locationData?.alreadyExists || locationData?.AlreadyExists;
 
-    this.setState({
-      idVungTrong,
-      existingLocationText,
-    });
+    if (target === "diaDiem") {
+      this.setState({
+        idDiaDiemSanXuat: portalId,
+        existingDiaDiemText: locationText,
+      });
+    } else {
+      this.setState({
+        idVungTrong: portalId,
+        existingLocationText: locationText,
+      });
+    }
 
     if (toastMessage) {
       if (alreadyExists) {
@@ -554,42 +568,9 @@ class NationalPortalIntegration extends Component {
     }
   };
 
-  loadLocationByGln = async (glnCode, idToChuc, showNotFound = false, silent = false) => {
-    if (!glnCode?.trim()) {
-      return false;
-    }
-
-    const result = await fetchData.nationalPortalIntegration.getLocationByGln({
-      glnCode: glnCode.trim(),
-      idToChuc: idToChuc || "",
-    });
-
-    if (result?.status === 200 && (result?.data?.idVungTrong || result?.data?.IdVungTrong)) {
-      this.applyLocationResult(
-        result.data,
-        silent ? null : (result.message || "Đã lấy vùng trồng hiện có trên cổng.")
-      );
-      return true;
-    }
-
-    if (showNotFound) {
-      toast.warning(
-        result?.message || "Không tìm thấy vùng trồng trên cổng với mã GLN này."
-      );
-    }
-
-    return false;
-  };
-
-  handleSyncPreview = async () => {
-    await this.runSyncPreview({ silent: false, preserveVungTrong: false });
-  };
-
-  handleCreateLocation = async () => {
+  createPortalLocation = async (glnCode) => {
     const {
       idToChuc,
-      gtinCode,
-      glnCode,
       provinceId,
       provinceName,
       wardId,
@@ -599,40 +580,178 @@ class NationalPortalIntegration extends Component {
       lng,
     } = this.state;
 
+    return fetchData.nationalPortalIntegration.createLocation({
+      idToChuc,
+      glnCode: glnCode.trim(),
+      provinceId,
+      provinceName,
+      wardId,
+      wardName,
+      street: street.trim(),
+      lat: lat ? Number(lat) : null,
+      lng: lng ? Number(lng) : null,
+    });
+  };
+
+  loadLocationByGln = async (
+    glnCode,
+    idToChuc,
+    target,
+    showNotFound = false,
+    silent = false
+  ) => {
+    if (!glnCode?.trim()) {
+      return false;
+    }
+
+    const result = await fetchData.nationalPortalIntegration.getLocationByGln({
+      glnCode: glnCode.trim(),
+      idToChuc: idToChuc || "",
+    });
+
+    if (
+      result?.status === 200 &&
+      (result?.data?.idVungTrong || result?.data?.IdVungTrong)
+    ) {
+      const defaultMsg =
+        target === "diaDiem"
+          ? "Đã lấy địa điểm đơn vị sản xuất trên cổng."
+          : "Đã lấy vùng trồng hiện có trên cổng.";
+      this.applyLocationResult(
+        result.data,
+        target,
+        silent ? null : result.message || defaultMsg
+      );
+      return true;
+    }
+
+    if (showNotFound) {
+      toast.warning(
+        result?.message ||
+          (target === "diaDiem"
+            ? "Không tìm thấy địa điểm trên cổng với mã GLN này."
+            : "Không tìm thấy vùng trồng trên cổng với mã GLN này.")
+      );
+    }
+
+    return false;
+  };
+
+  handleSyncPreview = async () => {
+    await this.runSyncPreview({
+      silent: false,
+      preserveVungTrong: false,
+      preserveDiaDiem: false,
+    });
+  };
+
+  validateAddressForm = (glnCode, actionLabel) => {
+    const { idToChuc, provinceId, wardId, street } = this.state;
+
     if (!idToChuc) {
-      toast.warning("Hãy lấy thông tin cổng trước khi tạo vùng trồng.");
+      return `Hãy lấy thông tin cổng trước khi ${actionLabel}.`;
+    }
+
+    if (!glnCode?.trim() || !provinceId || !wardId || !street?.trim()) {
+      return "Vui lòng nhập đủ mã GLN, tỉnh, phường/xã và ấp/đường.";
+    }
+
+    return null;
+  };
+
+  handleCreateDiaDiemSanXuat = async () => {
+    const gln = (this.state.glnDiaDiemSanXuat || "").trim();
+    const validation = this.validateAddressForm(gln, "tạo địa điểm");
+    if (validation) {
+      toast.warning(validation);
       return;
     }
 
-    const effectiveGln = (glnCode || gtinCode || "").trim();
+    const { idVungTrong } = this.state;
+    this.setState({ isCreatingDiaDiem: true });
 
-    if (!effectiveGln || !provinceId || !wardId || !street?.trim()) {
-      toast.warning("Vui lòng nhập đủ mã GLN, tỉnh, phường/xã và ấp/đường.");
+    try {
+      const result = await this.createPortalLocation(gln);
+      if (result?.status !== 200) {
+        toast.error(result?.message || "Không tạo được địa điểm trên cổng.");
+        return;
+      }
+
+      const portalId =
+        result?.data?.idVungTrong || result?.data?.IdVungTrong || "";
+      if (portalId && idVungTrong && portalId === idVungTrong) {
+        toast.error(
+          "Địa điểm ĐVSX trùng vùng trồng. Dùng mã GLN khác với vùng trồng."
+        );
+        return;
+      }
+
+      this.applyLocationResult(
+        result.data,
+        "diaDiem",
+        result?.message || "Tạo địa điểm đơn vị sản xuất trên cổng thành công."
+      );
+    } catch (error) {
+      toast.error("Không tạo được địa điểm trên cổng.");
+    } finally {
+      this.setState({ isCreatingDiaDiem: false });
+    }
+  };
+
+  handleLoadDiaDiemSanXuat = async () => {
+    const { glnDiaDiemSanXuat, idToChuc } = this.state;
+    const gln = (glnDiaDiemSanXuat || "").trim();
+
+    if (!idToChuc) {
+      toast.warning("Hãy lấy thông tin cổng trước.");
+      return;
+    }
+    if (!gln) {
+      toast.warning("Vui lòng nhập mã GLN địa điểm đơn vị sản xuất.");
+      return;
+    }
+
+    this.setState({ isCreatingDiaDiem: true });
+    try {
+      await this.loadLocationByGln(gln, idToChuc, "diaDiem", true);
+    } finally {
+      this.setState({ isCreatingDiaDiem: false });
+    }
+  };
+
+  handleCreateLocation = async () => {
+    const { gtinCode, glnCode, idDiaDiemSanXuat } = this.state;
+    const effectiveGln = (glnCode || gtinCode || "").trim();
+    const validation = this.validateAddressForm(
+      effectiveGln,
+      "tạo vùng trồng"
+    );
+    if (validation) {
+      toast.warning(validation);
       return;
     }
 
     this.setState({ isCreatingLocation: true, glnCode: effectiveGln });
 
     try {
-      const result = await fetchData.nationalPortalIntegration.createLocation({
-        idToChuc,
-        glnCode: effectiveGln,
-        provinceId,
-        provinceName,
-        wardId,
-        wardName,
-        street: street.trim(),
-        lat: lat ? Number(lat) : null,
-        lng: lng ? Number(lng) : null,
-      });
-
+      const result = await this.createPortalLocation(effectiveGln);
       if (result?.status !== 200) {
         toast.error(result?.message || "Không tạo được vùng trồng trên cổng.");
         return;
       }
 
+      const portalId =
+        result?.data?.idVungTrong || result?.data?.IdVungTrong || "";
+      if (portalId && idDiaDiemSanXuat && portalId === idDiaDiemSanXuat) {
+        toast.error(
+          "Vùng trồng trùng địa điểm ĐVSX. Dùng mã GLN khác với địa điểm đơn vị sản xuất."
+        );
+        return;
+      }
+
       this.applyLocationResult(
         result.data,
+        "vungTrong",
         result?.message || "Tạo vùng trồng trên cổng thành công."
       );
     } catch (error) {
@@ -652,29 +771,43 @@ class NationalPortalIntegration extends Component {
     }
 
     if (!effectiveGln) {
-      toast.warning("Vui lòng nhập mã GTIN trước.");
+      toast.warning("Vui lòng nhập mã GTIN/GLN vùng trồng.");
       return;
     }
 
     this.setState({ isCreatingLocation: true, glnCode: effectiveGln });
 
     try {
-      await this.loadLocationByGln(effectiveGln, idToChuc, true);
+      await this.loadLocationByGln(effectiveGln, idToChuc, "vungTrong", true);
     } finally {
       this.setState({ isCreatingLocation: false });
     }
   };
 
   validateForm = () => {
-    const { companyId, productId, gtinCode, idChuoiCungUng, idVungTrong } =
-      this.state;
+    const {
+      companyId,
+      productId,
+      gtinCode,
+      idChuoiCungUng,
+      idVungTrong,
+      idDiaDiemSanXuat,
+    } = this.state;
 
     if (!companyId) return "Không xác định được doanh nghiệp hiện tại.";
     if (!productId) return "Vui lòng chọn sản phẩm.";
     if (!gtinCode?.trim()) return "Vui lòng nhập mã GTIN.";
     if (!idChuoiCungUng?.trim()) return "Vui lòng nhập idChuoiCungUng.";
+    if (!idDiaDiemSanXuat?.trim()) {
+      return "Vui lòng tạo/lấy địa điểm đơn vị sản xuất trên cổng trước khi lưu.";
+    }
     if (!idVungTrong?.trim()) {
-      return "Vui lòng tạo vùng trồng trên cổng trước khi lưu.";
+      return "Vui lòng tạo/lấy vùng trồng trên cổng trước khi lưu.";
+    }
+    if (
+      idDiaDiemSanXuat.trim().toLowerCase() === idVungTrong.trim().toLowerCase()
+    ) {
+      return "Địa điểm ĐVSX và vùng trồng phải khác nhau (2 mã GLN trên cổng).";
     }
 
     return null;
@@ -698,6 +831,7 @@ class NationalPortalIntegration extends Component {
       idSanPham,
       idNganhHang,
       idVungTrong,
+      idDiaDiemSanXuat,
       congViecMappings,
     } = this.state;
 
@@ -712,6 +846,7 @@ class NationalPortalIntegration extends Component {
       idSanPham: idSanPham.trim(),
       idNganhHang: idNganhHang.trim(),
       idVungTrong: idVungTrong.trim(),
+      idDiaDiemSanXuat: idDiaDiemSanXuat.trim(),
       congViecMappings: fieldId
         ? buildCongViecMappingsPayload(congViecMappings)
         : [],
@@ -821,6 +956,7 @@ class NationalPortalIntegration extends Component {
       isSavingMappings,
       isSyncing,
       isCreatingLocation,
+      isCreatingDiaDiem,
       companyName,
       products,
       fields,
@@ -841,11 +977,15 @@ class NationalPortalIntegration extends Component {
       gtinCode,
       idChuoiCungUng,
       glnCode,
+      glnDiaDiemSanXuat,
       idVungTrong,
+      idDiaDiemSanXuat,
       existingLocationText,
+      existingDiaDiemText,
     } = this.state;
 
     const effectiveGln = (glnCode || gtinCode || "").trim();
+    const locationBusy = isCreatingLocation || isCreatingDiaDiem;
 
     const provinceOptions = (provinces || []).map((item) => ({
       name: item.name,
@@ -951,11 +1091,12 @@ class NationalPortalIntegration extends Component {
                   )}
 
                   <div className={classes.sectionTitle}>
-                    3. Thông tin vùng sản xuất
+                    3. Địa chỉ trên cổng (địa điểm ĐVSX + vùng trồng)
                   </div>
                   <p className={classes.hint}>
-                    Tỉnh/thành và phường/xã lấy từ Cổng TXNG Quốc gia. Mã GLN
-                    dùng chung với mã GTIN.
+                    Cổng bắt buộc 2 ID khác nhau: địa điểm đơn vị sản xuất
+                    (hiển thị địa chỉ ĐVSX) và vùng trồng (nhật ký). Dùng 2 mã
+                    GLN khác nhau. Tỉnh/xã lấy từ Cổng TXNG Quốc gia.
                   </p>
                   <div className={classes.formRowTwoCol}>
                     {this.renderAddressSelectSearch(
@@ -985,7 +1126,7 @@ class NationalPortalIntegration extends Component {
                     )}
                     <div className={classes.formItem}>
                       <label className={classes.label}>
-                        Mã GLN vùng sản xuất
+                        Mã GLN vùng trồng (mặc định = GTIN)
                       </label>
                       <div className={classes.readonlyValue}>
                         {effectiveGln || "Tự động lấy theo mã GTIN"}
@@ -996,25 +1137,71 @@ class NationalPortalIntegration extends Component {
                     {this.renderInput("Vĩ độ", "lat", "Ví dụ: 10.3756", "number")}
                     {this.renderInput("Kinh độ", "lng", "Ví dụ: 106.3604", "number")}
                   </div>
+
+                  <p className={classes.hint}>
+                    <strong>3a. Địa điểm đơn vị sản xuất</strong> — hiện ở khối
+                    Thông tin đơn vị sản xuất trên cổng. GLN phải khác GTIN/vùng
+                    trồng.
+                  </p>
+                  <div className={classes.formRow}>
+                    {this.renderInput(
+                      "Mã GLN địa điểm ĐVSX",
+                      "glnDiaDiemSanXuat",
+                      "GLN khác với GTIN / vùng trồng"
+                    )}
+                  </div>
                   <div className={classes.inlineActions}>
                     <Button
                       color="info"
                       className="mr-2"
-                      disabled={isCreatingLocation || isLoading || !effectiveGln}
+                      disabled={locationBusy || isLoading || !glnDiaDiemSanXuat}
+                      onClick={this.handleLoadDiaDiemSanXuat}
+                    >
+                      {isCreatingDiaDiem
+                        ? "Đang tra cứu..."
+                        : "Lấy địa điểm ĐVSX từ GLN"}
+                    </Button>
+                    <Button
+                      color="secondary"
+                      disabled={locationBusy || isLoading}
+                      onClick={this.handleCreateDiaDiemSanXuat}
+                    >
+                      {isCreatingDiaDiem
+                        ? "Đang tạo địa điểm..."
+                        : "Tạo địa điểm ĐVSX trên cổng"}
+                    </Button>
+                  </div>
+                  {idDiaDiemSanXuat && (
+                    <div className={classes.previewBox}>
+                      <div>idDiaDiemSanXuat: {idDiaDiemSanXuat}</div>
+                      {existingDiaDiemText ? (
+                        <div>Địa chỉ cổng: {existingDiaDiemText}</div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  <p className={classes.hint}>
+                    <strong>3b. Vùng trồng</strong> — gắn nhật ký / lệnh sản xuất.
+                  </p>
+                  <div className={classes.inlineActions}>
+                    <Button
+                      color="info"
+                      className="mr-2"
+                      disabled={locationBusy || isLoading || !effectiveGln}
                       onClick={this.handleLoadLocationByGln}
                     >
                       {isCreatingLocation
                         ? "Đang tra cứu..."
-                        : "Lấy vùng sản xuất từ GLN"}
+                        : "Lấy vùng trồng từ GLN"}
                     </Button>
                     <Button
                       color="secondary"
-                      disabled={isCreatingLocation || isLoading}
+                      disabled={locationBusy || isLoading}
                       onClick={this.handleCreateLocation}
                     >
                       {isCreatingLocation
-                        ? "Đang tạo vùng sản xuất..."
-                        : "Tạo vùng sản xuất trên cổng"}
+                        ? "Đang tạo vùng trồng..."
+                        : "Tạo vùng trồng trên cổng"}
                     </Button>
                   </div>
                   {idVungTrong && (
