@@ -61,6 +61,41 @@ const buildCongViecMappingsPayload = (congViecMappings = {}) =>
       npCongViecId: congViecMappings[informSelectId],
     }));
 
+/** GS1 check digit cho 12 chữ số đầu (GTIN-13 / GLN). */
+const gs1CheckDigit = (digits12) => {
+  let sum = 0;
+  for (let i = 0; i < 12; i += 1) {
+    const n = Number(digits12[i]);
+    const weight = (11 - i) % 2 === 0 ? 3 : 1;
+    sum += n * weight;
+  }
+  return String((10 - (sum % 10)) % 10);
+};
+
+/**
+ * GLN địa điểm ĐVSX tự sinh từ GTIN: +1 trên 12 số đầu, tính lại check digit
+ * → luôn khác GLN vùng trồng (= GTIN), deterministic để Lấy lại được.
+ */
+const deriveDiaDiemGlnFromGtin = (gtin) => {
+  const digits = String(gtin || "").replace(/\D/g, "");
+  if (digits.length !== 13) {
+    return "";
+  }
+
+  const base = digits.slice(0, 12);
+  let next = Number(base) + 1;
+  if (next > 999999999999) {
+    next = Number(base) - 1;
+  }
+  if (next < 0) {
+    return "";
+  }
+
+  const next12 = String(next).padStart(12, "0");
+  const derived = `${next12}${gs1CheckDigit(next12)}`;
+  return derived === digits ? "" : derived;
+};
+
 class NationalPortalIntegration extends Component {
   constructor(props) {
     super(props);
@@ -671,8 +706,15 @@ class NationalPortalIntegration extends Component {
     return null;
   };
 
+  getDiaDiemGln = () =>
+    deriveDiaDiemGlnFromGtin(this.state.gtinCode || this.state.glnCode);
+
   handleCreateDiaDiemSanXuat = async () => {
-    const gln = (this.state.glnDiaDiemSanXuat || "").trim();
+    const gln = this.getDiaDiemGln();
+    if (!gln) {
+      toast.warning("Vui lòng nhập mã GTIN (13 số) trước — hệ thống tự sinh GLN ĐVSX.");
+      return;
+    }
     const validation = this.validateAddressForm(gln, "tạo địa điểm");
     if (validation) {
       toast.warning(validation);
@@ -711,15 +753,15 @@ class NationalPortalIntegration extends Component {
   };
 
   handleLoadDiaDiemSanXuat = async () => {
-    const { glnDiaDiemSanXuat, idToChuc } = this.state;
-    const gln = (glnDiaDiemSanXuat || "").trim();
+    const { idToChuc } = this.state;
+    const gln = this.getDiaDiemGln();
 
     if (!idToChuc) {
       toast.warning("Hãy lấy thông tin cổng trước.");
       return;
     }
     if (!gln) {
-      toast.warning("Vui lòng nhập mã GLN địa điểm đơn vị sản xuất.");
+      toast.warning("Vui lòng nhập mã GTIN (13 số) trước — hệ thống tự sinh GLN ĐVSX.");
       return;
     }
 
@@ -989,7 +1031,6 @@ class NationalPortalIntegration extends Component {
       gtinCode,
       idChuoiCungUng,
       glnCode,
-      glnDiaDiemSanXuat,
       idVungTrong,
       idDiaDiemSanXuat,
       existingLocationText,
@@ -997,6 +1038,7 @@ class NationalPortalIntegration extends Component {
     } = this.state;
 
     const effectiveGln = (glnCode || gtinCode || "").trim();
+    const diaDiemGln = deriveDiaDiemGlnFromGtin(gtinCode || glnCode);
     const locationBusy = isCreatingLocation || isCreatingDiaDiem;
 
     const provinceOptions = (provinces || []).map((item) => ({
@@ -1152,21 +1194,24 @@ class NationalPortalIntegration extends Component {
 
                   <p className={classes.hint}>
                     <strong>3a. Địa điểm đơn vị sản xuất</strong> — hiện ở khối
-                    Thông tin đơn vị sản xuất trên cổng. GLN phải khác GTIN/vùng
-                    trồng.
+                    Thông tin đơn vị sản xuất trên cổng. GLN tự sinh từ GTIN
+                    (+1, khác vùng trồng), không cần nhập tay.
                   </p>
                   <div className={classes.formRow}>
-                    {this.renderInput(
-                      "Mã GLN địa điểm ĐVSX",
-                      "glnDiaDiemSanXuat",
-                      "GLN khác với GTIN / vùng trồng"
-                    )}
+                    <div className={classes.formItem}>
+                      <label className={classes.label}>
+                        Mã GLN địa điểm ĐVSX (tự động)
+                      </label>
+                      <div className={classes.readonlyValue}>
+                        {diaDiemGln || "Nhập GTIN 13 số để tự sinh"}
+                      </div>
+                    </div>
                   </div>
                   <div className={classes.inlineActions}>
                     <Button
                       color="info"
                       className="mr-2"
-                      disabled={locationBusy || isLoading || !glnDiaDiemSanXuat}
+                      disabled={locationBusy || isLoading || !diaDiemGln}
                       onClick={this.handleLoadDiaDiemSanXuat}
                     >
                       {isCreatingDiaDiem
@@ -1175,7 +1220,7 @@ class NationalPortalIntegration extends Component {
                     </Button>
                     <Button
                       color="secondary"
-                      disabled={locationBusy || isLoading}
+                      disabled={locationBusy || isLoading || !diaDiemGln}
                       onClick={this.handleCreateDiaDiemSanXuat}
                     >
                       {isCreatingDiaDiem
