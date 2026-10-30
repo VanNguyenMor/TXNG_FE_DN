@@ -91,6 +91,7 @@ class NationalPortalIntegration extends Component {
       idDiaDiemSanXuat: "",
       existingLocationText: "",
       existingDiaDiemText: "",
+      diaDiemHasIdDiaChi: false,
       tenChuoiCungUng: "",
       tenSanPham: "",
       glnCode: "",
@@ -161,6 +162,7 @@ class NationalPortalIntegration extends Component {
       congViecMappings: {},
       existingLocationText: "",
       existingDiaDiemText: "",
+      diaDiemHasIdDiaChi: false,
       provinceId: null,
       provinceName: "",
       provinceIdRoot: "",
@@ -546,12 +548,22 @@ class NationalPortalIntegration extends Component {
       "";
     const alreadyExists =
       locationData?.alreadyExists || locationData?.AlreadyExists;
+    const hasIdDiaChi =
+      locationData?.hasIdDiaChi === true ||
+      locationData?.HasIdDiaChi === true ||
+      !!(locationData?.idDiaChi || locationData?.IdDiaChi);
 
     if (target === "diaDiem") {
       this.setState({
         idDiaDiemSanXuat: portalId,
         existingDiaDiemText: locationText,
+        diaDiemHasIdDiaChi: hasIdDiaChi,
       });
+      if (!hasIdDiaChi) {
+        toast.warning(
+          "Địa điểm chưa có idDiaChi — tem sẽ trống Địa chỉ. Bấm Tạo địa điểm ĐVSX (đủ tỉnh/xã/ấp) để gắn địa chỉ."
+        );
+      }
     } else {
       this.setState({
         idVungTrong: portalId,
@@ -1177,6 +1189,12 @@ class NationalPortalIntegration extends Component {
                       {existingDiaDiemText ? (
                         <div>Địa chỉ cổng: {existingDiaDiemText}</div>
                       ) : null}
+                      <div>
+                        idDiaChi:{" "}
+                        {this.state.diaDiemHasIdDiaChi
+                          ? "đã gắn (tem sẽ hiện địa chỉ)"
+                          : "CHƯA CÓ — bấm Tạo địa điểm ĐVSX để gắn"}
+                      </div>
                     </div>
                   )}
 
