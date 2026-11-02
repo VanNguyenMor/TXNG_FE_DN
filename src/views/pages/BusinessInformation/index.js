@@ -52,6 +52,7 @@ class BusinessInformation extends Component {
         businessAvatar: "",
         companyName: "",
         companyCode: "",
+        taxCode: "",
         industryId: null,
         introduce: "",
         isShowMapViewLocation: false,
@@ -206,6 +207,8 @@ class BusinessInformation extends Component {
       const {
         companyName,
         companyCode,
+        taxCode,
+        TaxCode,
         id: companyId,
         fieldID,
         fieldName,
@@ -233,6 +236,8 @@ class BusinessInformation extends Component {
         verifiedImage,
         verifiedStatus,
       } = res;
+      // companyCode = mã DN hệ thống; taxCode = MST thật (không lẫn hai field)
+      const resolvedTaxCode = taxCode || TaxCode || "";
       const listFieldsData = formatFieldsForSelect(fieldID, fieldName);
 
       // Parse saved GPS location to set map position
@@ -264,6 +269,7 @@ class BusinessInformation extends Component {
               ...prevState.configSetting,
               companyName,
               companyCode,
+              taxCode: resolvedTaxCode,
               id: companyId,
               introduce: introduce || "",
               address,
@@ -400,7 +406,7 @@ class BusinessInformation extends Component {
       formData.append("ID", configSetting.id || "");
       formData.append("WardID", configSetting.wardID || "");
       formData.append("Address", configSetting.address || "");
-      formData.append("TaxCode", configSetting.companyCode || "");
+      formData.append("TaxCode", configSetting.taxCode || "");
       formData.append("DistrictID", configSetting.districtID || "");
       formData.append("Logo", configSetting.logo || "");
       formData.append("ProvinceID", configSetting.provinceID || "");
@@ -859,14 +865,14 @@ class BusinessInformation extends Component {
                   </label>
                   <div className="config-system-content-config-system-item-box">
                     <input
-                      onChange={this.onChangeValue("companyCode")}
-                      value={configSetting.companyCode}
+                      onChange={this.onChangeValue("taxCode")}
+                      value={configSetting.taxCode}
                       type="text"
                       className="config-system-content-config-system-item-input"
                       autoComplete="new-password"
                     />
                     <p className="form-error-message">
-                      {errorsConfigSystem.companyCode}
+                      {errorsConfigSystem.taxCode || errorsConfigSystem.companyCode}
                     </p>
                   </div>
                 </div>
