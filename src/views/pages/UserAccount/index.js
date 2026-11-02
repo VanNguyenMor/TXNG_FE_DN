@@ -332,11 +332,13 @@ class UserAccount extends Component {
 
     if (!data.roleID) err.roleID = "Chưa chọn Nhóm quyền";
 
-    if (!data.userName) err.userName = "Tên đăng nhập không được bỏ trống";
-    else if (data.userName.length < 6)
-      err.userName = "Tên đăng nhập phải có ít nhất 6 kí tự";
-    else if (data.userName.length > 255)
-      err.userName = "Tên đăng nhập nhập tối đa 255 ký tự";
+    if (isUpdate) {
+      if (!data.userName) err.userName = "Tên đăng nhập không được bỏ trống";
+      else if (data.userName.length < 6)
+        err.userName = "Tên đăng nhập phải có ít nhất 6 kí tự";
+      else if (data.userName.length > 255)
+        err.userName = "Tên đăng nhập nhập tối đa 255 ký tự";
+    }
     if (data.position && data.position.length > 255)
       err.position = "Chức vụ nhập tối đa 255 ký tự";
     if (data.department && data.department.length > 255)
