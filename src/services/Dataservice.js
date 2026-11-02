@@ -79,7 +79,7 @@ export const get = async (url, params = {}) => {
     });
 }
 
-export const post = async (url, data) => {
+export const post = async (url, data, attempt = 0) => {
 
   return await axios({
     method: 'post',
@@ -98,18 +98,19 @@ export const post = async (url, data) => {
       return { data: null, status: res.data.status, message: res.data.message };
     }
   }).catch(err => {
-    if ((err.response || {}).status == 401) {
+    if ((err.response || {}).status == 401 && attempt < 1) {
 
       VARIABLES.isFechingAlert = false;
 
-      getRefreshToken(actionCreators.userLogin, actionCreators.loginSuccess).then(async result => {
+      return getRefreshToken(actionCreators.userLogin, actionCreators.loginSuccess).then(async result => {
         VARIABLES.isFechingAlert = true;
 
         if (result) {
-          return await post(url, data);
+          return await post(url, data, attempt + 1);
         } else {
           deleteCookie('AUTHEN_INFO');
           window.location.href = '/';
+          return { data: null, status: 401, message: '' };
         }
       });
     } else {
