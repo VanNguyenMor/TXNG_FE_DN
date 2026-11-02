@@ -520,14 +520,14 @@ class Login extends Component {
                       <h3 style={{
                         textAlign: 'center',
                         color: '#f3a833'
-                      }}>LACOGROUP</h3>
+                      }}>Hệ thống quản lí thông tin truy xuất nguồn gốc sản phẩm, hàng hoá tỉnh Đồng Tháp</h3>
                       <p style={{
                         textAlign: 'center',
                         color: '#f3a833',
                         fontWeight: 800,
                         fontSize: 10,
                         marginTop: "-10px"
-                      }}>Version 1.0.0.0001 - 2021</p>
+                      }}>Version 1.0.0.0001 - 2026</p>
                     </div>
                   </CardBody>
                 </Card>

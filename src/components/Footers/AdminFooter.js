@@ -37,7 +37,7 @@ const Footer = () => {
               TRACECENTER
             </a>
 
-            <span> © {new Date().getFullYear()}{" "} . LACOGROUP. All rights reserved.</span>
+            <span> © {new Date().getFullYear()}{" "} . Hệ thống quản lí thông tin truy xuất nguồn gốc sản phẩm, hàng hoá tỉnh Đồng Tháp. All rights reserved.</span>
           </div>
         </div>
       </div>

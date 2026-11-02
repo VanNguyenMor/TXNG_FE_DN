@@ -562,7 +562,7 @@ class Partners extends Component {
                                   <strong>{item.partnerName}</strong>
                                   {item.verifiedStatus === 2 && (
                                     <span className={classes.verifiedBadge}>
-                                      Đã xác thực LACOGROUP
+                                      Đã xác thực Hệ thống quản lí thông tin truy xuất nguồn gốc sản phẩm, hàng hoá tỉnh Đồng Tháp
                                     </span>
                                   )}
                                   <br />
