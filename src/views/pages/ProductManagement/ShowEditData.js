@@ -29,12 +29,14 @@ import { fetchData } from "helpers/fetchData";
 import { PRODUCT_TYPE_DATES } from "helpers/constant";
 import { PRODUCT_EXPIRED_TYPE } from "helpers/constant";
 import { createTinyMceImagePicker } from "../../../helpers/tinymceImagePicker";
+import TraceScanPreviewModal from "components/TraceScanPreview/TraceScanPreviewModal";
 
 class ShowEditData extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
+      showTracePreview: false,
       // state for tab 1
       productImageFile: null,
       avatar: Noimg,
@@ -1178,6 +1180,29 @@ class ShowEditData extends Component {
                     <Label className="form-control-label">Giới thiệu</Label>
 
                     <div className={classes.inputArea}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                          gap: 8,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <small className="text-muted">
+                          Nội dung hiển thị khi quét tem. Xem trước khung điện thoại trước
+                          khi khóa sản phẩm (sau khóa không sửa được).
+                        </small>
+                        <Button
+                          color="info"
+                          size="sm"
+                          type="button"
+                          onClick={() => this.setState({ showTracePreview: true })}
+                        >
+                          Xem trước khi quét tem
+                        </Button>
+                      </div>
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
@@ -1189,7 +1214,7 @@ class ShowEditData extends Component {
                           initialValue={introduceSeed}
                           init={{
                             width: "100%",
-                            height: 300,
+                            height: 480,
                             menubar: false,
                             readonly: false,
                             toolbar:
@@ -1198,7 +1223,7 @@ class ShowEditData extends Component {
                               "alignright alignjustify | bullist numlist outdent indent | " +
                               "removeformat | help",
                             content_style:
-                              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; max-width:390px; margin:0 auto; }",
                             plugins: "image code link",
                             image_title: true,
                             automatic_uploads: true,
@@ -1541,6 +1566,17 @@ class ShowEditData extends Component {
           moduleTitle={"Thông báo"}
           moduleBody={errMessage}
           toggleModal={this.toggleModal}
+        />
+
+        <TraceScanPreviewModal
+          isOpen={this.state.showTracePreview}
+          toggle={() =>
+            this.setState((s) => ({ showTracePreview: !s.showTracePreview }))
+          }
+          type="product"
+          title={this.state.productName}
+          logoUrl={this.state.avatar}
+          html={this.state.introduce}
         />
       </div>
     );

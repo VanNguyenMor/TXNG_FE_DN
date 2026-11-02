@@ -17,6 +17,7 @@ import locationIcon from "../../../assets/img/locationIcon/location.png";
 import GoogleAutoCompleteInput from "../../../components/GoogleAutoCompleteInput";
 import ImageUploader from "components/ImageUploader/ImageUploader";
 import ImageGalleryUploader from "components/ImageGalleryUploader/ImageGalleryUploader";
+import TraceScanPreviewModal from "components/TraceScanPreview/TraceScanPreviewModal";
 import { fetchData } from "helpers/fetchData";
 import Select from "components/Select";
 import { parseImageUrls } from "utils/parseImageUrls";
@@ -39,6 +40,7 @@ class BusinessInformation extends Component {
       districts: null,
       wards: null,
 
+      showTracePreview: false,
       // Seed cố định cho TinyMCE "Giới thiệu". CHỈ cập nhật khi load dữ liệu,
       // KHÔNG cập nhật theo từng phím gõ. Tránh việc initialValue đổi mỗi keystroke
       // khiến @tinymce/tinymce-react gọi editor.setContent() (reset nội dung +
@@ -934,6 +936,29 @@ class BusinessInformation extends Component {
                   Giới thiệu
                 </label>
                 <div className="config-system-content-config-system-item-box">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <small className="text-muted">
+                      Nội dung hiển thị trên trang quét tem. Nên xem trước khung điện
+                      thoại trước khi lưu / khóa sản phẩm.
+                    </small>
+                    <Button
+                      color="info"
+                      size="sm"
+                      type="button"
+                      onClick={() => this.setState({ showTracePreview: true })}
+                    >
+                      Xem trước khi quét tem
+                    </Button>
+                  </div>
                   <InputGroup className="input-group-alternative css-border-input css-border-webConfig">
                     <Editor
                       key={`introduce-editor-${configSetting.id || "new"}`}
@@ -947,7 +972,7 @@ class BusinessInformation extends Component {
                       }}
                       init={{
                         width: "100%",
-                        height: 300,
+                        height: 480,
                         menubar: false,
                         toolbar:
                           "undo redo | formatselect | image | link | code | " +
@@ -955,7 +980,7 @@ class BusinessInformation extends Component {
                           "alignright alignjustify | bullist numlist outdent indent | " +
                           "removeformat | help",
                         content_style:
-                          "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                          "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; max-width:390px; margin:0 auto; }",
                         plugins: "image code link",
                         image_title: true,
                         automatic_uploads: true,
@@ -970,6 +995,29 @@ class BusinessInformation extends Component {
                   </p>
                 </div>
               </div>
+              <TraceScanPreviewModal
+                isOpen={this.state.showTracePreview}
+                toggle={() =>
+                  this.setState((s) => ({ showTracePreview: !s.showTracePreview }))
+                }
+                type="company"
+                title={configSetting.companyName}
+                logoUrl={configSetting.logo}
+                html={configSetting.introduce}
+                contact={{
+                  phone: configSetting.phoneNumber,
+                  email: configSetting.email,
+                  taxCode: configSetting.taxCode,
+                  address: [
+                    configSetting.address,
+                    configSetting.wardName,
+                    configSetting.districtName,
+                    configSetting.pRovinceName,
+                  ]
+                    .filter(Boolean)
+                    .join(", "),
+                }}
+              />
               <div className="config-system-content-config-system-multi">
                 <div className="config-system-content-config-system-multi-item ml-2 mr-2">
                   <label className="config-system-content-config-system-item-label">
