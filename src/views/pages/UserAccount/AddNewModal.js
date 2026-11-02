@@ -66,7 +66,6 @@ class AddNewModal extends Component {
     if (
       data.fullName.length > 0 &&
       data.roleID.length > 0 &&
-      data.userName.length > 0 &&
       data.passwordHash.length > 0 &&
       data.passwordConfirm.length > 0 &&
       data.passwordHash === data.passwordConfirm
@@ -239,23 +238,10 @@ class AddNewModal extends Component {
         </div>
 
         <div className={`${classes.rowItem} mr-b-0 `}>
-          <label className="form-control-label">
-            Tên đăng nhập&nbsp;<b style={{ color: "red" }}>*</b>
-          </label>
-
+          <label className="form-control-label">Tên đăng nhập</label>
           <div className={classes.inputArea}>
-            <InputGroup className="input-group-alternative css-border-input">
-              <Input
-                type="text"
-                name="userName"
-                placeholder="Tên đăng nhập"
-                value={data.userName}
-                required
-                onKeyUp={(event) => this.handleChange(event)}
-              />
-            </InputGroup>
-            <p className="form-error-message margin-bottom-0">
-              {errorInsert["userName"] || ""}
+            <p className="form-control-label" style={{ marginBottom: 0 }}>
+              Hệ thống cấp tài khoản sau khi lưu.
             </p>
           </div>
         </div>
