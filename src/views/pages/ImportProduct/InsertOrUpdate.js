@@ -45,6 +45,8 @@ class InsertOrUpadte extends Component {
       files: [], // Tệp mới chọn để upload (mảng File)
       existingFiles: [], // Chứng từ đã đính kèm trước đó ({ name, url })
       unit: "",
+      unitId: "",
+      unitName: "",
       quantity: 0,
       vat: 0,
       price: 0,
@@ -134,6 +136,8 @@ class InsertOrUpadte extends Component {
             vat: "",
             price: "",
             unit: "",
+            unitId: "",
+            unitName: "",
             grDetails: [],
           }
         : {}),
@@ -181,7 +185,7 @@ class InsertOrUpadte extends Component {
 
   fetchUnitForItem = async (fieldName, itemId) => {
     if (!itemId) {
-      this.setState({ unit: "" });
+      this.setState({ unit: "", unitId: "", unitName: "" });
       return;
     }
 
@@ -196,8 +200,8 @@ class InsertOrUpadte extends Component {
             (item) => String(item.id) === String(itemId)
           );
           if (ingredient) {
-            unitName = ingredient.unit || "";
-            unitId = ingredient.unitId || ingredient.id || "";
+            unitName = ingredient.unit || ingredient.unitName || "";
+            unitId = ingredient.unitId || "";
           }
         }
       } else if (fieldName === "productId") {
@@ -207,13 +211,18 @@ class InsertOrUpadte extends Component {
             (item) => String(item.id) === String(itemId)
           );
           if (product) {
-            unitName = product.unit || "";
-            unitId = product.unitId || product.id || "";
+            unitName = product.unit || product.unitName || "";
+            unitId = product.unitId || "";
           }
         }
       }
 
-      this.setState({ unit: unitId || unitName });
+      // Hiển thị UnitName; giữ UnitID riêng để lưu phiếu
+      this.setState({
+        unit: unitName || unitId,
+        unitName,
+        unitId,
+      });
     } catch (error) {
       console.error("Error fetching unit:", error);
     }
@@ -313,24 +322,25 @@ class InsertOrUpadte extends Component {
       return;
     }
 
-    let unitId = unit;
-    let unitName = unit;
+    let resolvedUnitId = this.state.unitId || unit;
+    let resolvedUnitName = this.state.unitName || unit;
 
     if (ingredientId && INGREDIENT_LIST) {
       const ingredient = INGREDIENT_LIST.find(
         (i) => String(i.id) === String(ingredientId)
       );
       if (ingredient) {
-        unitId = ingredient.unitId || unit;
-        unitName = ingredient.unit || unit;
+        resolvedUnitId = ingredient.unitId || resolvedUnitId;
+        resolvedUnitName =
+          ingredient.unit || ingredient.unitName || resolvedUnitName;
       }
     } else if (productId && PRODUCT_LIST) {
       const product = PRODUCT_LIST.find(
         (p) => String(p.id) === String(productId)
       );
       if (product) {
-        unitId = product.unitId || unit;
-        unitName = product.unit || unit;
+        resolvedUnitId = product.unitId || resolvedUnitId;
+        resolvedUnitName = product.unit || product.unitName || resolvedUnitName;
       }
     }
 
@@ -343,8 +353,8 @@ class InsertOrUpadte extends Component {
       quantity: Number(quantity),
       price: Number(price),
       vat: Number(vat),
-      unit: unitId, // Store unitId
-      unitName: unitName, // Store unitName for display
+      unit: resolvedUnitId, // Store unitId
+      unitName: resolvedUnitName, // Store unitName for display
       amount: this.calculateTotalAmount(quantity, price, vat),
       // Store names for display
       ingredientName: this.getItemName("ingredient", ingredientId),
@@ -364,6 +374,8 @@ class InsertOrUpadte extends Component {
         price: 0,
         vat: 0,
         unit: "",
+        unitId: "",
+        unitName: "",
       }),
       () => {
         // Update parent component with new state
