@@ -11,9 +11,9 @@ export const PRINT_CSS = `
   .stamp-print .sp-item-link { font-size: 25px; color: #000; word-break: break-all; width: 100%; margin: 0 0 15px 0; }
   .stamp-print .sp-page-break { width: 100%; display: flex; align-items: center; flex-direction: row; flex-wrap: wrap; }
   .stamp-print .sp-page-item { width: 16mm; max-width: 16mm; min-width: 0; height: auto; margin: 2mm; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; overflow: hidden; }
-  .stamp-print .sp-page-item-image { width: 16mm; height: 16mm; }
-  .stamp-print .sp-page-item-image svg { width: 100%; height: 100%; display: block; }
-  .stamp-print .sp-page-item-title { width: 100%; font-size: 1.35mm; color: #000; text-align: center; white-space: nowrap; line-height: 1.15; margin: 0.5mm 0 0 0; }
+  .stamp-print .sp-page-item-image { width: 16mm; height: 16mm; overflow: hidden; line-height: 0; }
+  .stamp-print .sp-page-item-image svg { width: 16mm !important; height: 16mm !important; max-width: 100%; max-height: 100%; display: block; }
+  .stamp-print .sp-page-item-title { width: 100%; font-size: 1.35mm; color: #000; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: clip; line-height: 1.15; margin: 0.5mm 0 0 0; }
 `;
 
 export const escapeHtml = (value) =>
@@ -26,7 +26,7 @@ export const escapeHtml = (value) =>
 
 const qrSvg = (value) =>
   renderToStaticMarkup(
-    <QRCode value={value} size={256} level="H" renderAs="svg" />
+    <QRCode value={value || " "} size={64} level="M" renderAs="svg" />
   );
 
 const renderHead = ({ template, title }) => {

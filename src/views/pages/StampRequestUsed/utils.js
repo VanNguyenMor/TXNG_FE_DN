@@ -210,15 +210,22 @@ export const buildPrintList = ({ listStamp, quantity }) => ({
   lines: splitStamps(listStamp),
 });
 
+const stampLabelFromValue = (value) => {
+  const text = String(value || "");
+  const match = text.match(/\/?\?qr=(.*)$/i);
+  return match ? match[1] : text;
+};
+
 export const buildPrintQR = ({ listStamp, quantity }) => {
   const codes = splitStamps(listStamp);
   const blocks = [];
 
   codes.forEach((value, i) => {
     if (i % PRINT_BLOCK_SIZE === 0) blocks.push([]);
-    const index = value.indexOf("/?qr=");
-    const label = index === -1 ? value : value.slice(index + 5);
-    blocks[blocks.length - 1].push({ value, label });
+    blocks[blocks.length - 1].push({
+      value,
+      label: stampLabelFromValue(value),
+    });
   });
 
   return { title: printTitle(quantity), blocks, total: codes.length };
