@@ -1576,7 +1576,15 @@ class ShowEditData extends Component {
           type="product"
           title={this.state.productName}
           logoUrl={this.state.avatar}
-          html={this.state.introduce}
+          sections={[
+            { title: "GIỚI THIỆU", html: this.state.introduce },
+            { title: "HƯỚNG DẪN BẢO QUẢN", html: this.state.storage },
+            { title: "HƯỚNG DẪN SỬ DỤNG", html: this.state.usage },
+            { title: "THÀNH PHẦN", html: this.state.ingredient },
+            { title: "THÔNG TIN CẢNH BÁO", html: this.state.usageWarningVal },
+            { title: "QUY TRÌNH", html: this.state.productionProcess },
+            { title: "QUY CÁCH ĐÓNG GÓI", html: this.state.packing },
+          ]}
         />
       </div>
     );

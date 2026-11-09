@@ -1,9 +1,52 @@
 import React from "react";
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap";
 
+const hasHtml = (html) => html && String(html).replace(/<[^>]+>/g, "").trim();
+
+const PreviewSection = ({ title, html, emptyText }) => {
+  if (!hasHtml(html) && !emptyText) {
+    return null;
+  }
+
+  return (
+    <div style={{ marginTop: 16, borderTop: "1px solid #e5e7eb", paddingTop: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: 8,
+          gap: 6,
+        }}
+      >
+        <span style={{ color: "#a5c422", fontWeight: 700, fontSize: 15 }}>
+          {title}
+        </span>
+      </div>
+      <div
+        className="trace-scan-preview-html"
+        style={{
+          fontSize: 14,
+          lineHeight: 1.55,
+          color: "#111827",
+          wordBreak: "break-word",
+          minHeight: 40,
+          textAlign: "justify",
+        }}
+        dangerouslySetInnerHTML={{
+          __html: hasHtml(html)
+            ? html
+            : `<p style='color:#9ca3af'><i>${emptyText}</i></p>`,
+        }}
+      />
+    </div>
+  );
+};
+
 /**
  * Preview nội dung rich-text theo khung gần với trang quét tem (mobile).
  * type: "company" | "product"
+ * product: truyền sections [{ title, html }] theo thứ tự trang QRScan
+ * company: vẫn dùng html (giới thiệu) + contact
  */
 const TraceScanPreviewModal = ({
   isOpen,
@@ -13,12 +56,18 @@ const TraceScanPreviewModal = ({
   subtitle,
   logoUrl,
   html,
+  sections = [],
   contact = {},
 }) => {
-  const sectionTitle =
-    type === "product" ? "GIỚI THIỆU SẢN PHẨM" : "GIỚI THIỆU";
   const headerTitle =
-    type === "product" ? "XEM TRƯỚC TRANG QUÉT TEM — SẢN PHẨM" : "XEM TRƯỚC TRANG QUÉT TEM — DOANH NGHIỆP";
+    type === "product"
+      ? "XEM TRƯỚC TRANG QUÉT TEM — SẢN PHẨM"
+      : "XEM TRƯỚC TRANG QUÉT TEM — DOANH NGHIỆP";
+
+  const productSections =
+    type === "product"
+      ? sections.filter((s) => hasHtml(s && s.html))
+      : [];
 
   return (
     <Modal isOpen={isOpen} toggle={toggle} size="lg" centered>
@@ -35,10 +84,11 @@ const TraceScanPreviewModal = ({
           style={{
             width: "100%",
             maxWidth: 390,
+            maxHeight: "70vh",
+            overflowY: "auto",
             background: "#fff",
             borderRadius: 16,
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-            overflow: "hidden",
             border: "1px solid #e5e7eb",
           }}
         >
@@ -50,6 +100,9 @@ const TraceScanPreviewModal = ({
               fontWeight: 700,
               textTransform: "uppercase",
               fontSize: 14,
+              position: "sticky",
+              top: 0,
+              zIndex: 1,
             }}
           >
             {type === "product" ? "Thông tin sản phẩm" : "Thông tin doanh nghiệp"}
@@ -91,35 +144,29 @@ const TraceScanPreviewModal = ({
               </p>
             ) : null}
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                marginBottom: 8,
-                gap: 6,
-              }}
-            >
-              <span style={{ color: "#a5c422", fontWeight: 700, fontSize: 15 }}>
-                {sectionTitle}
-              </span>
-            </div>
-
-            <div
-              className="trace-scan-preview-html"
-              style={{
-                fontSize: 14,
-                lineHeight: 1.55,
-                color: "#111827",
-                wordBreak: "break-word",
-                minHeight: 80,
-              }}
-              dangerouslySetInnerHTML={{
-                __html:
-                  html && String(html).trim()
-                    ? html
-                    : "<p style='color:#9ca3af'><i>Chưa có nội dung giới thiệu</i></p>",
-              }}
-            />
+            {type === "product" ? (
+              productSections.length > 0 ? (
+                productSections.map((section, index) => (
+                  <PreviewSection
+                    key={`${section.title}-${index}`}
+                    title={section.title}
+                    html={section.html}
+                  />
+                ))
+              ) : (
+                <PreviewSection
+                  title="GIỚI THIỆU"
+                  html=""
+                  emptyText="Chưa có nội dung giới thiệu / thông tin mở rộng"
+                />
+              )
+            ) : (
+              <PreviewSection
+                title="GIỚI THIỆU"
+                html={html}
+                emptyText="Chưa có nội dung giới thiệu"
+              />
+            )}
 
             {type === "company" &&
             (contact.phone || contact.email || contact.taxCode || contact.address) ? (
@@ -148,8 +195,8 @@ const TraceScanPreviewModal = ({
       </ModalBody>
       <ModalFooter>
         <small className="text-muted mr-auto">
-          Khung ~390px (điện thoại). Chỉnh nội dung trong editor rồi xem lại trước khi
-          khóa sản phẩm.
+          Khung ~390px (điện thoại). Cuộn trong khung để xem đủ nội dung trước khi khóa
+          sản phẩm.
         </small>
         <Button color="secondary" onClick={toggle}>
           Đóng
