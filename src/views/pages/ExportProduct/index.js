@@ -28,6 +28,8 @@ import "react-toastify/dist/ReactToastify.css";
 import ReactDatetime from "react-datetime";
 
 import { fetchData } from "helpers/fetchData";
+import { post } from "services/Dataservice";
+import { PARTNER_LIST } from "apis";
 import moment from "moment";
 
 // reactstrap components
@@ -144,7 +146,7 @@ class ExportProduct extends Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     const { getListTypeZoneProperty } = this.props;
     /* Fetch Summary */
     this.fetchSummary(this.state.filter);
@@ -168,20 +170,31 @@ class ExportProduct extends Component {
 
   loadCustomers = async () => {
     try {
-      const partners = await fetchData.partner.getList({
-        partnerType: 0,
-        companyName: "",
-        phone: "",
-        email: "",
-        orderBy: "",
-        page: 0,
-        limit: 1000,
-      });
+      // Cùng request với tab Khách hàng ở màn Đối tác.
+      const res = await post(
+        PARTNER_LIST,
+        JSON.stringify({
+          partnerType: 0,
+          companyName: "",
+          phone: "",
+          taxCode: "",
+          email: "",
+          orderBy: "",
+          page: null,
+          limit: null,
+        })
+      );
+      const payload = (res && res.data) || {};
+      const partners = Array.isArray(payload)
+        ? payload
+        : payload.partners || payload.Partners || [];
 
-      const customerList = (Array.isArray(partners) ? partners : []).map((item) => ({
-        id: String(item.id || item.ID || ""),
-        name: item.partnerName || item.PartnerName || item.name || "",
-      })).filter((item) => item.id && item.name);
+      const customerList = (Array.isArray(partners) ? partners : [])
+        .map((item) => ({
+          id: String(item.id || item.iD || item.ID || item.Id || ""),
+          name: item.partnerName || item.PartnerName || item.name || "",
+        }))
+        .filter((item) => item.id && item.name);
 
       this.setState({ SUPPLIER_LIST: customerList });
     } catch (error) {
