@@ -273,7 +273,11 @@ class ProductManagement extends Component {
   };
 
   onConfirm = async (toggleModal) => {
-    const { dataInsert } = this.state;
+    const { dataInsert, isShowForDetail, islocked } = this.state;
+    if (isShowForDetail && islocked) {
+      toast.error("Sản phẩm đã khoá, không được cập nhật");
+      return;
+    }
     console.log(dataInsert);
     try {
       const uploadSingleFile = async (file, type = "file") => {
@@ -728,7 +732,9 @@ class ProductManagement extends Component {
                 onConfirm={this.onConfirm}
                 hideReload={false}
                 isShowForEdit={isShowForDetail || isShowForHistoryList}
-                isReadOnly={isShowForHistoryList}
+                isReadOnly={
+                  isShowForHistoryList || (isShowForDetail && !!islocked)
+                }
                 closeForm={this.onCloseModal}
                 moduleBody={
                   <div>
