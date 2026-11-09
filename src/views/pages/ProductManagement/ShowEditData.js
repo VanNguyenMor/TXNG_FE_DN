@@ -739,10 +739,8 @@ class ShowEditData extends Component {
     ];
     const checkType = allSelectedFieldTypes.some((t) => String(t) === "3");
 
-    // Mirror mobile: web doanh nghiệp coi SP thuộc công ty (isBelongTo = true).
-    // -> field bị khóa theo trạng thái khóa SP; riêng mã SP/đơn vị tính luôn read-only,
-    //    editor + ảnh luôn cho sửa. Xem bảng đối chiếu trong ShowEditData.
-    const lockedProduct = !!isLocked;
+    // Sản phẩm đã khóa: không cho sửa form / editor / ảnh (chỉ xem).
+    const lockedProduct = !!(isLocked || islocked);
 
     return (
       <div id="detailLoggingAccordion">
@@ -813,7 +811,7 @@ class ShowEditData extends Component {
                     <label className="form-control-label">Hình đại diện</label>
                     {console.log('DEBUG render: avatar =', avatar, 'Noimg =', Noimg)}
                     <ImageUploader
-                      disabled={false}
+                      disabled={lockedProduct}
                       initialImageUrl={avatar || Noimg}
                       onFileSelected={this.handleImageUploadSuccess}
                     />
@@ -861,7 +859,7 @@ class ShowEditData extends Component {
                           name="barcode"
                           placeholder="Mã vạch"
                           value={barcode}
-                          readOnly={false}
+                          readOnly={lockedProduct}
                           onChange={this.onChangeValue("barcode")}
                         />
                       </InputGroup>
@@ -1131,7 +1129,7 @@ class ShowEditData extends Component {
                           placeholder="Số công bố chất lượng"
                           value={qualityNum}
                           required
-                          readOnly={false}
+                          readOnly={lockedProduct}
                           onChange={this.onChangeValue("qualityNum")}
                         />
                       </InputGroup>
@@ -1206,7 +1204,7 @@ class ShowEditData extends Component {
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
-                          disabled={false}
+                          disabled={lockedProduct}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1216,7 +1214,7 @@ class ShowEditData extends Component {
                             width: "100%",
                             height: 480,
                             menubar: false,
-                            readonly: false,
+                            readonly: lockedProduct,
                             toolbar:
                               "undo redo | formatselect | image | link | code | " +
                               "bold italic forecolor backcolor | alignleft aligncenter " +
@@ -1250,7 +1248,7 @@ class ShowEditData extends Component {
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
-                          disabled={false}
+                          disabled={lockedProduct}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1262,7 +1260,7 @@ class ShowEditData extends Component {
                             width: "100%",
                             height: 300,
                             menubar: false,
-                            readonly: false,
+                            readonly: lockedProduct,
                             toolbar:
                               "undo redo | formatselect | image | link | code | " +
                               "bold italic forecolor backcolor | alignleft aligncenter " +
@@ -1294,7 +1292,7 @@ class ShowEditData extends Component {
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
-                          disabled={false}
+                          disabled={lockedProduct}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1304,7 +1302,7 @@ class ShowEditData extends Component {
                             width: "100%",
                             height: 300,
                             menubar: false,
-                            readonly: false,
+                            readonly: lockedProduct,
                             toolbar:
                               "undo redo | formatselect | image | link | code | " +
                               "bold italic forecolor backcolor | alignleft aligncenter " +
@@ -1340,7 +1338,7 @@ class ShowEditData extends Component {
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
-                          disabled={false}
+                          disabled={lockedProduct}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1350,7 +1348,7 @@ class ShowEditData extends Component {
                             width: "100%",
                             height: 300,
                             menubar: false,
-                            readonly: false,
+                            readonly: lockedProduct,
                             toolbar:
                               "undo redo | formatselect | image | link | code | " +
                               "bold italic forecolor backcolor | alignleft aligncenter " +
@@ -1384,7 +1382,7 @@ class ShowEditData extends Component {
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
-                          disabled={false}
+                          disabled={lockedProduct}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1394,7 +1392,7 @@ class ShowEditData extends Component {
                             width: "100%",
                             height: 300,
                             menubar: false,
-                            readonly: false,
+                            readonly: lockedProduct,
                             toolbar:
                               "undo redo | formatselect | image | link | code | " +
                               "bold italic forecolor backcolor | alignleft aligncenter " +
@@ -1428,7 +1426,7 @@ class ShowEditData extends Component {
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
-                          disabled={false}
+                          disabled={lockedProduct}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1438,7 +1436,7 @@ class ShowEditData extends Component {
                             width: "100%",
                             height: 300,
                             menubar: false,
-                            readonly: false,
+                            readonly: lockedProduct,
                             toolbar:
                               "undo redo | formatselect | image | link | code | " +
                               "bold italic forecolor backcolor | alignleft aligncenter " +
@@ -1472,7 +1470,7 @@ class ShowEditData extends Component {
                       <InputGroup className="input-group-alternative css-border-input">
                         <Editor
                           tinymceScriptSrc="/tinymce/tinymce.min.js"
-                          disabled={false}
+                          disabled={lockedProduct}
                           onInit={(_, editor) => {
                             this.refcontentEmailSendToPrinter = editor;
                           }}
@@ -1482,7 +1480,7 @@ class ShowEditData extends Component {
                             width: "100%",
                             height: 300,
                             menubar: false,
-                            readonly: false,
+                            readonly: lockedProduct,
                             toolbar:
                               "undo redo | formatselect | image | link | code | " +
                               "bold italic forecolor backcolor | alignleft aligncenter " +
@@ -1536,7 +1534,7 @@ class ShowEditData extends Component {
                 title="Hình ảnh sản phẩm"
                 initialImages={images}
                 noMutil={true}
-                disabled={false}
+                disabled={lockedProduct}
                 onImagesChange={this.handleGalleryImagesChange}
               />
 
@@ -1545,7 +1543,7 @@ class ShowEditData extends Component {
                 title="Thông tin kiểm định"
                 initialImages={accreditation}
                 noMutil={true}
-                disabled={false}
+                disabled={lockedProduct}
                 onImagesChange={this.handleInspectionInformationChange}
               />
 
@@ -1553,7 +1551,7 @@ class ShowEditData extends Component {
                 key={`certification-${certification.length}-${this.state.id}`}
                 title="Thông tin chứng nhận"
                 noMutil={true}
-                disabled={false}
+                disabled={lockedProduct}
                 initialImages={certification}
                 onImagesChange={this.handleCertificationInformationChange}
               />
