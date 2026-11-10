@@ -501,7 +501,7 @@ class CompanyListCertified extends Component {
     //const { getWardList } = this.props;
     filter[name] = value;
     this.setState({ filter });
-    //getWardList(filter.districtID)
+    //getWardList('')
 
   }
   handleSelectWard = (value, name) => {
@@ -509,7 +509,7 @@ class CompanyListCertified extends Component {
     const { getWardList } = this.props;
     filter[name] = value;
     this.setState({ filter });
-    getWardList(filter.districtID)
+    getWardList('')
 
   }
   handleChangeFilter = (event) => {

@@ -406,7 +406,7 @@ class CompanyListExpiring extends Component {
     //const { getWardList } = this.props;
     filter[name] = value;
     this.setState({ filter });
-    //getWardList(filter.districtID)
+    //getWardList('')
 
   }
   handleSelectWard = (value, name) => {
@@ -414,7 +414,7 @@ class CompanyListExpiring extends Component {
     const { getWardList } = this.props;
     filter[name] = value;
     this.setState({ filter });
-    getWardList(filter.districtID)
+    getWardList('')
 
   }
   handleSubmitSearchForm = () => {

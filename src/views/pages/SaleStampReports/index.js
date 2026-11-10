@@ -602,24 +602,12 @@ class SaleStampReports extends Component {
                                         }
                                     </div>
                                 </div>
-                                {/* <div>Chọn quận huyện</div> */}
-                                <div style={{ marginTop: -4 }}>
-                                    <Select
-                                        ref={ref => this.redSelectDis = ref}
-                                        //name="status"
-                                        title='Chọn quận huyện'
-                                        data={district}
-                                        labelName='districtName'
-                                        val='id'
-                                        handleChange={this.handleSelectDis}
-                                    />
-                                </div>
                                 {/* <div>Chọn phường xã</div> */}
                                 <div style={{ marginTop: -4, marginLeft: 4 }}>
                                     <Select
                                         //name="status"
                                         title='Chọn phường xã'
-                                        isDisable={this.state.districtId ? false : true}
+                                        isDisable={false}
                                         ref={ref => this.redSelect = ref}
                                         data={ward}
                                         labelName='wardName'

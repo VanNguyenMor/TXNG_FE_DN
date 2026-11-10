@@ -355,25 +355,13 @@ class ReportZoningCompany extends Component {
                                             </div>
                                         </div>
                                         {/* <div>Chọn quận huyện</div> */}
-                                        <div>
-                                            <label className="form-control-label">Quận/Huyện</label>
-                                            <Select
-                                                //name="status"
-                                                title='Chọn quận huyện'
-                                                ref={ref => this.redSelectDis = ref}
-                                                data={district}
-                                                labelName='districtName'
-                                                val='id'
-                                                handleChange={this.handleSelectDis}
-                                            />
-                                        </div>
                                         {/* <div>Chọn phường xã</div> */}
                                         <div>
                                             <label className="form-control-label">Phường/Xã</label>
                                             <Select
                                                 //name="status"
                                                 title='Chọn phường xã'
-                                                isDisable={this.state.districtId ? false : true}
+                                                isDisable={false}
                                                 ref={ref => this.redSelect = ref}
                                                 data={ward}
                                                 labelName='wardName'

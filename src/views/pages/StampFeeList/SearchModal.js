@@ -214,24 +214,7 @@ class SearchModal extends Component {
             </div>
           </div>
         </div>
-        <div className={classes.searchRow}>
-          <div className={classes.searchRowItem}>
-            <label>Quận Huyện</label>
-            <div>
-              <Select
-                name="districtID"
-                defaultValue={filter.districtID}
-                title='Chọn quận huyện'
-                data={district}
-                labelName='districtName'
-                val='id'
-                handleChange={handleSelectWard}
-              />
-            </div>
-          </div>
-        </div>
-        {filter.districtID == '' ? null :
-          <div className={classes.searchRow}>
+                  <div className={classes.searchRow}>
             <div className={classes.searchRowItem}>
               <label>Phường Xã</label>
               <div>
@@ -247,7 +230,7 @@ class SearchModal extends Component {
               </div>
             </div>
           </div>
-        } */}
+ */}
       </div>
     );
   }
