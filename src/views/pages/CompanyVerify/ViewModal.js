@@ -305,7 +305,7 @@ class ViewModal extends Component {
                   </label>
                 </div>
                 <div style={{ width: '100%' }}>
-                  <span className="css-margin-span-company-verify">{data.address + ', ' + data.wardName + ', ' + data.districtName + ', ' + data.pRovinceName}</span>
+                  <span className="css-margin-span-company-verify">{data.address + ', ' + data.wardName + ', ' + data.pRovinceName}</span>
                   {/* <div className={classes.inputArea} >
                     <InputGroup className="input-group-alternative">
                     <Input
@@ -317,7 +317,7 @@ class ViewModal extends Component {
                       }}
                       type="text"
                       defaultValue={
-                        data.address + ', ' + data.wardName + ', ' + data.districtName + ', ' + data.pRovinceName
+                        data.address + ', ' + data.wardName + ', ' + data.pRovinceName
                       }
                       readOnly
                       onKeyUp={(event) => this.handleChange(event)}

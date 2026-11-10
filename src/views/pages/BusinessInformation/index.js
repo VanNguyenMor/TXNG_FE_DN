@@ -1011,7 +1011,6 @@ class BusinessInformation extends Component {
                   address: [
                     configSetting.address,
                     configSetting.wardName,
-                    configSetting.districtName,
                     configSetting.pRovinceName,
                   ]
                     .filter(Boolean)

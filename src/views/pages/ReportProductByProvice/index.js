@@ -439,7 +439,6 @@ class ReportProductByProvice extends Component {
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.productGroupName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.unitName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.companyName}</td>
-                                                            <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.districtName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.wardName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.createdDate ? moment(item.createdDate).format('DD/MM/YYYY HH:mm') : ''}</td>
                                                         </tr>

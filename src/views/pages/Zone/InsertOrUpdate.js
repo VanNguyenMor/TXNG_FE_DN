@@ -535,7 +535,7 @@ class InsertOrUpadte extends Component {
                                     return (
                                         <div key={item.id} className='wrap-insert-or-update-zone-area-list-item'>
                                             <p className='wrap-insert-or-update-zone-area-list-item-label'>
-                                                {item.nameAddress} {item.wardName ? (item.wardName + ' -') : null} {item.districtName ? (item.districtName + ' -') : null} {item.provinceName}</p>
+                                                {item.nameAddress} {item.wardName ? (item.wardName + ' -') : null} {item.provinceName}</p>
                                             <button onClick={this.onDeleteArea(item.id)} className='wrap-insert-or-update-zone-area-list-item-delete'>
                                                 <img className='wrap-insert-or-update-zone-area-list-item-delete-icon' src={IconDelete} />
                                             </button>
