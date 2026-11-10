@@ -1287,27 +1287,10 @@ class ConfigSystem extends Component {
       }
     })
 
-    if (districtId) {
-      this.props.getListWardForInfoCompany({ districtId }).then(res => {
-        const data = (res.data || {}).data || [];
-        if (data.length > 0 && wardId) {
-          const ward = data.find(p => p.id == wardId);
-
-          if (ward) {
-            wardName = ward.name;
-
-            this.setState(previousState => {
-              return {
-                ...previousState,
-                //wardName,
-                //wardId
-                dataWard: data
-              }
-            });
-          }
-        }
-      });
-    }
+    this.props.getListWardForInfoCompany({ districtId: '' }).then(res => {
+      const data = (res.data || {}).data || [];
+      this.setState({ dataWard: data });
+    });
   }
 
   checkValidateFormInfoCompany = () => {
@@ -1663,16 +1646,26 @@ class ConfigSystem extends Component {
         }
       }
     }, () => {
-      if (name === 'districtId') {
+      if (name === 'provinceId' || name === 'provinceId1') {
         if (this.redSelect) {
           this.redSelect.resetValue();
         }
-        if (value) {
-          this.props.getListWardForInfoCompany({ districtId: value }).then((res) => {
-            if (res.data.status == 200) {
-              this.setState({ dataWard: res.data.data })
+        this.props.getListWardForInfoCompany({ districtId: '' }).then((res) => {
+          if (res && res.data && res.data.status == 200) {
+            this.setState({ dataWard: res.data.data || [], dataDistrict: [] })
+          }
+        })
+      }
+      if (name === 'wardId') {
+        const ward = (this.state.dataWard || []).find((w) => w.id == value);
+        if (ward) {
+          this.setState((prev) => ({
+            infoCompany: {
+              ...prev.infoCompany,
+              districtId: ward.districtID || ward.DistrictID || ward.districtId || '',
+              wardName: ward.wardName || ward.name || '',
             }
-          })
+          }));
         }
       }
     });
@@ -2130,23 +2123,6 @@ class ConfigSystem extends Component {
                                             />
                                         ) : null}
                                         <p className='form-error-message'>{errorsInfoCompany.provinceId1}</p>
-                                    </div>
-                                    <div className='config-system-content-info-company-item-group-item'>
-                                        {dataDistrict.length > 0 ? (
-                                            <Select1
-                                                labelMark={infoCompany.districtName}
-                                                defaultValue={infoCompany.districtId}
-                                                className='config-system-content-info-company-item-group-item-select'
-                                                name="districtId"
-                                                title='Chọn Quận/Huyện'
-                                                //data={ConfigSystemStore.districtsForInfoCompany}
-                                                data={dataDistrict}
-                                                labelName='districtName'
-                                                val='id'
-                                                handleChange={this.onChangeSelectInfoCompany('districtId')}
-                                            />
-                                        ) : null}
-                                        <p className='form-error-message'>{errorsInfoCompany.districtId}</p>
                                     </div>
                                     <div className='config-system-content-info-company-item-group-item'>
                                         {dataWard.length > 0 ? (
