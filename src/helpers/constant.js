@@ -76,7 +76,6 @@ export const COMPANY_AWAIT_HEADER = [
 export const REPORT_ZONING_PRODUCT = [
   "Stt",
   "Vùng",
-  "Quận/Huyện",
   "Phường/Xã",
   "Loại SP",
   "SL Doanh nghiệp",
@@ -98,7 +97,6 @@ export const REPORT_QUANTITY_PRODUCT = [
   "DVT",
   "Mã SP",
   "Tên SP",
-  "Quận/Huyện",
   "Phường/Xã",
   "Sản lượng",
 ];
@@ -107,7 +105,6 @@ export const REPORT_QUANTITY_PRODUCT_BY_ZONE = [
   "Vùng",
   "Loại SP",
   "DVT",
-  "Quận/Huyện",
   "Phường/Xã",
   "Sản lượng",
 ];
@@ -118,7 +115,6 @@ export const REPORT_PRODUCT_BY_PROVICE = [
   "Loại sản phẩm",
   "ĐVT",
   "Đơn vị sở hữu",
-  "Quận/Huyện",
   "Phường/Xã",
   "Ngày đăng ký",
 ];
@@ -128,7 +124,6 @@ export const REPORT_ZONING_COMPANY = [
   "MST/CCCD",
   "Doanh nghiệp/Cá nhân",
   "Địa chỉ",
-  "Quận/Huyện",
   "Phường/Xã",
   "Thuộc quy hoạch",
 ];
@@ -137,7 +132,6 @@ export const REPORT_LIST_COMPANY = [
   "MST",
   "Tên đầy đủ",
   "Địa chỉ",
-  "Quận/Huyện",
   "Phường/Xã",
   "Ngày đăng kí",
   "Số lượng mặt hàng",

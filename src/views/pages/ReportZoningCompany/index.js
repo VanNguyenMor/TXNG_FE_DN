@@ -466,7 +466,6 @@ class ReportZoningCompany extends Component {
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.taxCode}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.companyName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.address}</td>
-                                                            <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.districtName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.wardName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.belongOnTotal}</td>
                                                         </tr>

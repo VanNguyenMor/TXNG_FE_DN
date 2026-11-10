@@ -405,7 +405,6 @@ class ReportListCompany extends Component {
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>
                                                                 {item.address}
                                                             </td>
-                                                            <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.districtName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.wardName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.registeredDate ? moment(item.registeredDate).format('DD/MM/YYYY HH:mm') : ''}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.quantity || '0'}</td>

@@ -365,7 +365,7 @@ class ViewModal extends Component {
                                     }}
                                     type="text"
                                     defaultValue={
-                                        data.address + ', ' + data.wardName + ', ' + data.districtName + ', ' + data.pRovinceName
+                                        data.address + ', ' + data.wardName + ', ' + data.pRovinceName
                                     }
                                     readOnly
                                     onKeyUp={(event) => this.handleChange(event)}

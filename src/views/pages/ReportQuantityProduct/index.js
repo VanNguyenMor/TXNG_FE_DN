@@ -458,7 +458,6 @@ class ReportQuantityProduct extends Component {
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.unitName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.productCode}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.productName}</td>
-                                                            <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.districtName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.wardName}</td>
                                                             <td style={{ textAlign: 'left' }} className='table-scale-col'>{item.quantity || 0}</td>
                                                         </tr>
