@@ -149,6 +149,39 @@ export const companyAction = {
             });
         });
     },
+    // 2 cấp: load phường/xã theo tỉnh (districtId rỗng)
+    getListWardByProvince: data => async (dispatch, _) => {
+        return new Promise(resolve => {
+            dispatch({
+                type: FETCH_LIST_WARD_BY_DISTRICT_SUCCESS,
+                data: []
+            });
+
+            const url = LOCATION_WARD_BY_DISTRICT.replace('{0}', '');
+
+            get(url, data).then(res => {
+                dispatch({
+                    type: FETCH_LIST_WARD_BY_DISTRICT_SUCCESS,
+                    data: res.data || []
+                });
+
+                resolve({
+                    ok: true,
+                    data: res
+                });
+            }).catch(err => {
+                dispatch({
+                    type: FETCH_LIST_WARD_BY_DISTRICT_FAILURE,
+                    data: []
+                });
+
+                resolve({
+                    ok: false,
+                    data: err
+                });
+            });
+        });
+    },
     addCompany: data => async (dispatch, _) => {
         return new Promise(resolve => {
             postFormData(COMPANY_ADD, data).then(res => {

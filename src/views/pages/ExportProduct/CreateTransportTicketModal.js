@@ -52,9 +52,7 @@ class CreateTransportTicketModal extends Component {
       // combobox data
       partners: [],
       provinces: [],
-      districtsFrom: [],
       wardsFrom: [],
-      districtsTo: [],
       wardsTo: [],
       errors: {},
     };
@@ -106,11 +104,7 @@ class CreateTransportTicketModal extends Component {
         wardFrom: info.wardID || "",
       });
       if (info.provinceID) {
-        const districts = await fetchData.district.getByProvinceId(info.provinceID);
-        this.setState({ districtsFrom: Array.isArray(districts) ? districts : [] });
-      }
-      if (info.districtID) {
-        const wards = await fetchData.ward.getByDistrictId(info.districtID);
+        const wards = await fetchData.ward.getByProvinceId(info.provinceID);
         this.setState({ wardsFrom: Array.isArray(wards) ? wards : [] });
       }
     } catch (e) {
@@ -146,25 +140,24 @@ class CreateTransportTicketModal extends Component {
 
   onChangeProvince = (which) => async (value) => {
     if (which === "from") {
-      this.setState({ provinceFrom: value, districtFrom: "", wardFrom: "", districtsFrom: [], wardsFrom: [] });
-      const districts = await fetchData.district.getByProvinceId(value);
-      this.setState({ districtsFrom: Array.isArray(districts) ? districts : [] });
+      this.setState({ provinceFrom: value, districtFrom: "", wardFrom: "", wardsFrom: [] });
+      const wards = await fetchData.ward.getByProvinceId(value);
+      this.setState({ wardsFrom: Array.isArray(wards) ? wards : [] });
     } else {
-      this.setState({ provinceTo: value, districtTo: "", wardTo: "", districtsTo: [], wardsTo: [] });
-      const districts = await fetchData.district.getByProvinceId(value);
-      this.setState({ districtsTo: Array.isArray(districts) ? districts : [] });
+      this.setState({ provinceTo: value, districtTo: "", wardTo: "", wardsTo: [] });
+      const wards = await fetchData.ward.getByProvinceId(value);
+      this.setState({ wardsTo: Array.isArray(wards) ? wards : [] });
     }
   };
 
-  onChangeDistrict = (which) => async (value) => {
+  onChangeWard = (which) => (value) => {
+    const wards = which === "from" ? this.state.wardsFrom : this.state.wardsTo;
+    const ward = (wards || []).find((w) => w.id === value);
+    const districtId = ward?.districtID || ward?.DistrictID || ward?.districtId || "";
     if (which === "from") {
-      this.setState({ districtFrom: value, wardFrom: "", wardsFrom: [] });
-      const wards = await fetchData.ward.getByDistrictId(value);
-      this.setState({ wardsFrom: Array.isArray(wards) ? wards : [] });
+      this.setState({ wardFrom: value, districtFrom: districtId });
     } else {
-      this.setState({ districtTo: value, wardTo: "", wardsTo: [] });
-      const wards = await fetchData.ward.getByDistrictId(value);
-      this.setState({ wardsTo: Array.isArray(wards) ? wards : [] });
+      this.setState({ wardTo: value, districtTo: districtId });
     }
   };
 
@@ -284,8 +277,8 @@ class CreateTransportTicketModal extends Component {
     const { isOpen, onClose, goodDelivery } = this.props;
     const {
       submitting, formality, organization, partnerId, refCode, transportedBy,
-      addressFrom, addressTo, provinceFrom, districtFrom, wardFrom, provinceTo, districtTo, wardTo,
-      transportDate, note, partners, provinces, districtsFrom, wardsFrom, districtsTo, wardsTo,
+      addressFrom, addressTo, provinceFrom, wardFrom, provinceTo, wardTo,
+      transportDate, note, partners, provinces, wardsFrom, wardsTo,
       errors,
     } = this.state;
 
@@ -337,12 +330,9 @@ class CreateTransportTicketModal extends Component {
           {this.renderRow("Tỉnh/Thành",
             <Select name="provinceFrom" title="Chọn tỉnh/thành" value={provinceFrom}
               data={provinces} labelName="name" val="id" handleChange={this.onChangeProvince("from")} />)}
-          {this.renderRow("Quận/Huyện",
-            <Select name="districtFrom" title="Chọn quận/huyện" value={districtFrom}
-              data={districtsFrom} labelName="name" val="id" handleChange={this.onChangeDistrict("from")} />)}
           {this.renderRow("Phường/Xã",
             <Select name="wardFrom" title="Chọn phường/xã" value={wardFrom}
-              data={wardsFrom} labelName="name" val="id" handleChange={this.onSelect("wardFrom")} />)}
+              data={wardsFrom} labelName="name" val="id" handleChange={this.onChangeWard("from")} />)}
           {this.renderRow("Địa chỉ đi",
             <InputGroup className="input-group-alternative css-border-input">
               <Input value={addressFrom} placeholder="Địa chỉ chi tiết nơi đi"
@@ -353,12 +343,9 @@ class CreateTransportTicketModal extends Component {
           {this.renderRow("Tỉnh/Thành",
             <Select name="provinceTo" title="Chọn tỉnh/thành" value={provinceTo}
               data={provinces} labelName="name" val="id" handleChange={this.onChangeProvince("to")} />)}
-          {this.renderRow("Quận/Huyện",
-            <Select name="districtTo" title="Chọn quận/huyện" value={districtTo}
-              data={districtsTo} labelName="name" val="id" handleChange={this.onChangeDistrict("to")} />)}
           {this.renderRow("Phường/Xã",
             <Select name="wardTo" title="Chọn phường/xã" value={wardTo}
-              data={wardsTo} labelName="name" val="id" handleChange={this.onSelect("wardTo")} />)}
+              data={wardsTo} labelName="name" val="id" handleChange={this.onChangeWard("to")} />)}
           {this.renderRow("Địa chỉ đến",
             <InputGroup className="input-group-alternative css-border-input">
               <Input value={addressTo} placeholder="Địa chỉ chi tiết nơi đến"

@@ -101,7 +101,7 @@ class InsertOrUpdate extends Component {
     }
 
     async componentDidMount() {
-        const { history, getListField, getListProvince, getListDistrictByProvince, getListWardByDistrict, match, getDetailCompany } = this.props;
+        const { history, getListField, getListProvince, getListWardByProvince, match, getDetailCompany } = this.props;
 
         if (match) {
             if (match.params) {
@@ -205,25 +205,25 @@ class InsertOrUpdate extends Component {
             }
         });
 
-        getListDistrictByProvince({});
+        getListWardByProvince({});
     }
 
     onChangeSelect = name => value => {
+        const { wards } = this.props;
 
         this.setState(previousState => {
-            return {
+            const next = {
                 ...previousState,
                 [name]: value
-            }
-        }, () => {
-            const { getListWardByDistrict } = this.props;
+            };
 
-            if (name === 'districtId') {
-                if (this.redSelect) {
-                    this.redSelect.resetValue();
-                }
-                getListWardByDistrict({ id: value });
+            if (name === 'wardId') {
+                const ward = (wards || []).find((w) => w.id == value);
+                next.districtId = ward?.districtID || ward?.DistrictID || ward?.districtId || null;
+                next.wardName = ward?.wardName || '';
             }
+
+            return next;
         });
     }
 
@@ -1023,10 +1023,6 @@ class InsertOrUpdate extends Component {
         //     errors.provinceId = 'Bạn vui lòng chọn tỉnh/thành';
         // }
 
-        if (!districtId) {
-            errors.districtId = 'Bạn vui lòng chọn quận/huyện';
-        }
-
         if (!wardId) {
             errors.wardId = 'Bạn vui lòng chọn phường/xã';
         }
@@ -1427,23 +1423,6 @@ class InsertOrUpdate extends Component {
                                                     </div>
                                                     <p className="form-error-message">{errors.provinceId || ''}</p>
                                                 </div>
-                                                <div className='wrap-manage-company-body-item-group-address-item wrap-manage-company-body-item-group-address-item-district'>
-                                                    <div className='wrap-manage-company-body-item-group-address-item-box'>
-                                                        <Select
-                                                            className='wrap-manage-company-body-item-select'
-                                                            name="districtId"
-                                                            title='Chọn Quận/Huyện'
-                                                            data={districts || []}
-                                                            labelName='districtName'
-                                                            defaultValue={districtId}
-                                                            value={districtId}
-                                                            labelMark={districtName}
-                                                            val='id'
-                                                            handleChange={this.onChangeSelect('districtId')}
-                                                        />
-                                                    </div>
-                                                    <p className="form-error-message">{errors.districtId || ''}</p>
-                                                </div>
                                                 <div className='wrap-manage-company-body-item-group-address-item'>
                                                     <div className='wrap-manage-company-body-item-group-address-item-box'>
 
@@ -1766,23 +1745,6 @@ class InsertOrUpdate extends Component {
                                                         />
                                                     </div>
                                                     <p className="form-error-message">{errors.provinceId || ''}</p>
-                                                </div>
-                                                <div className='wrap-manage-company-body-item-group-address-item wrap-manage-company-body-item-group-address-item-district'>
-                                                    <div className='wrap-manage-company-body-item-group-address-item-box'>
-                                                        <Select
-                                                            className='wrap-manage-company-body-item-select'
-                                                            name="districtId"
-                                                            title='Chọn Quận/Huyện'
-                                                            data={districts || []}
-                                                            labelName='districtName'
-                                                            defaultValue={districtId}
-                                                            value={districtId}
-                                                            labelMark={districtName}
-                                                            val='id'
-                                                            handleChange={this.onChangeSelect('districtId')}
-                                                        />
-                                                    </div>
-                                                    <p className="form-error-message">{errors.districtId || ''}</p>
                                                 </div>
                                                 <div className='wrap-manage-company-body-item-group-address-item'>
                                                     <div className='wrap-manage-company-body-item-group-address-item-box'>
