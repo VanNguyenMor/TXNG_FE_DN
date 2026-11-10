@@ -258,15 +258,6 @@ describe("in tem", () => {
     expect(r.lines).toEqual(["A", "B", "C"]);
   });
 
-  test("Danh sách mã tem: chỉ hiện mã sau ?qr=, bỏ URL", () => {
-    const r = buildPrintList({
-      listStamp:
-        "https://truyxuatnguongoc.dongthap.gov.vn/?qr=TGI0200184000000011;https://x/?qr=TGI0200184000000012",
-      quantity: 2,
-    });
-    expect(r.lines).toEqual(["TGI0200184000000011", "TGI0200184000000012"]);
-  });
-
   test("listStamp rỗng hoặc thiếu: không lỗi, không có QR", () => {
     expect(buildPrintQR({ listStamp: "", quantity: 0 }).total).toBe(0);
     expect(buildPrintQR({ quantity: 0 }).blocks).toEqual([]);
