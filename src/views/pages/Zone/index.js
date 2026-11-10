@@ -360,7 +360,7 @@ class Zone extends Component {
 			errorInserts.name = 'Nhập tối đa 255 ký tự';
 		}
 
-		if (![1, 2, 3].includes(typeManage)) {
+		if (![1, 2].includes(typeManage)) {
 			errorInserts.manage = 'Chưa chọn cấp quản lý';
 		}
 
@@ -370,12 +370,6 @@ class Zone extends Component {
 
 		if (zones.length <= 0 && typeManage != 1) {
 			errorInserts.zone = 'Danh sách khu vực không được bỏ trống';
-		}
-		if (!districtId && (typeManage === 2 || typeManage === 3)) {
-			errorInserts.districtId = "Quận huyện không được bỏ trống"
-		}
-		if (!wardId && typeManage === 3) {
-			errorInserts.wardId = "Phường/xã không được bỏ trống"
 		}
 
 		return errorInserts;

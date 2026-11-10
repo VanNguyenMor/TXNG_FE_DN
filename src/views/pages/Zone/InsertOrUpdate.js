@@ -25,19 +25,16 @@ class InsertOrUpadte extends Component {
         this.state = {
             errMessage: '',
             typeManage: 1,
-            districtId: null,
             provinceId: null,
             provinceName: '',
             wardId: null,
             zones: [],
-            isDisableSelectDistrict: true,
             isDisableSelectWard: true,
             isShowArea: false,
             id: null
         }
 
         this.refInputName = null;
-        this.redSelect = null;
         this.redSelect1 = null;
     }
 
@@ -46,12 +43,10 @@ class InsertOrUpadte extends Component {
             return {
                 ...previousState,
                 typeManage: 1,
-                districtId: null,
                 provinceId: null,
                 provinceName: '',
                 wardId: null,
                 zones: [],
-                isDisableSelectDistrict: true,
                 isDisableSelectWard: true,
                 isShowArea: false,
                 id: null
@@ -60,7 +55,7 @@ class InsertOrUpadte extends Component {
     }
 
     async componentDidMount() {
-        const { getDetailArea, getListProvince, getListDistrictByProvince, onHandleChangeValue, id } = this.props;
+        const { getDetailArea, getListProvince, getListWardByProvince, onHandleChangeValue, id } = this.props;
 
         if (onHandleChangeValue) {
             onHandleChangeValue(this.state);
@@ -97,15 +92,6 @@ class InsertOrUpadte extends Component {
                 this.setState(previousState => {
                     return {
                         ...previousState,
-                        isDisableSelectDistrict: false,
-                        isDisableSelectWard: true,
-                    }
-                })
-            } else if (data.zone.level == 3) {
-                this.setState(previousState => {
-                    return {
-                        ...previousState,
-                        isDisableSelectDistrict: false,
                         isDisableSelectWard: false,
                     }
                 })
@@ -113,7 +99,6 @@ class InsertOrUpadte extends Component {
                 this.setState(previousState => {
                     return {
                         ...previousState,
-                        isDisableSelectDistrict: true,
                         isDisableSelectWard: true,
                     }
                 })
@@ -139,14 +124,18 @@ class InsertOrUpadte extends Component {
         getListProvince({}).then(res => {
             const data = res.data;
             if (data.status == 200) {
-                const id = data.data[0].id;
+                const list = Array.isArray(data.data) ? data.data : (data.data ? [data.data] : []);
 
-                if (id) {
+                // Chỉ tự điền khi tài khoản gắn đúng 1 tỉnh. Nếu truy cập được
+                // nhiều tỉnh (Administrator) thì để trống cho người dùng tự chọn.
+                if (list.length === 1 && list[0] && list[0].id) {
+                    const province = list[0];
+
                     this.setState(previousState => {
                         return {
                             ...previousState,
-                            provinceId: id,
-                            provinceName: data.data[0].provinceName
+                            provinceId: province.id,
+                            provinceName: province.provinceName
                         }
                     }, () => {
                         if (this.props.onHandleChangeValue) {
@@ -157,7 +146,7 @@ class InsertOrUpadte extends Component {
             }
         });
 
-        getListDistrictByProvince({});
+        getListWardByProvince({});
 
         this.focusInput();
     }
@@ -172,39 +161,50 @@ class InsertOrUpadte extends Component {
         }
     }
 
-    onChangeTypeManage = type => () => {
-        if (this.redSelect) {
-            this.redSelect.resetValue();
+    // Lấy provinceID của 1 phường/xã (xử lý cả 2 kiểu đặt tên field).
+    getWardProvinceId = (w) => {
+        if (!w) return null;
+        return w.provinceID != null ? w.provinceID : (w.provinceId != null ? w.provinceId : null);
+    }
+
+    // Danh sách tỉnh để chọn: ưu tiên kết quả getprovince; nếu rỗng
+    // (vd tài khoản Administrator) thì suy ra từ danh sách phường/xã đã load.
+    getProvinceOptions = () => {
+        const { provinces, wards } = this.props;
+
+        if (Array.isArray(provinces) && provinces.length > 0) {
+            return provinces;
         }
+
+        const map = {};
+        (wards || []).forEach(w => {
+            const pid = this.getWardProvinceId(w);
+            if (pid != null && !map[pid]) {
+                map[pid] = { id: pid, provinceName: w.provinceName || ('Tỉnh ' + pid) };
+            }
+        });
+
+        return Object.values(map).sort((a, b) => (a.provinceName > b.provinceName ? 1 : -1));
+    }
+
+    onChangeTypeManage = type => () => {
         if (this.redSelect1) {
             this.redSelect1.resetValue();
         }
 
-        let isDisableSelectDistrict = true;
         let isDisableSelectWard = true;
 
         if (type == 1) {
-            isDisableSelectDistrict = true;
             isDisableSelectWard = true;
         } else if (type == 2) {
-            isDisableSelectDistrict = false;
-            isDisableSelectWard = true;
-            this.setState({
-                zone: []
-            })
-        } else if (type == 3) {
-            isDisableSelectDistrict = false;
             isDisableSelectWard = false;
-            this.setState({
-                zone: []
-            })
         }
         this.setState(previousState => {
             return {
                 ...previousState,
                 typeManage: type,
-                isDisableSelectDistrict,
                 isDisableSelectWard,
+                wardId: null,
                 zones: [],
                 isShowArea: type == 1 ? false : true,
             }
@@ -218,6 +218,31 @@ class InsertOrUpadte extends Component {
     onChangeSelect = name => value => {
         this.setState({ errMessageQH: '', errMessagePX: '' })
 
+        if (name === 'provinceId') {
+            // Đổi tỉnh => reset phường/xã đã chọn và danh sách khu vực,
+            // đồng thời cập nhật tên tỉnh hiển thị.
+            const province = this.getProvinceOptions().find(p => p.id == value);
+
+            if (this.redSelect1) {
+                this.redSelect1.resetValue();
+            }
+
+            this.setState(previousState => {
+                return {
+                    ...previousState,
+                    provinceId: value,
+                    provinceName: (province || {}).provinceName || '',
+                    wardId: null,
+                    zones: []
+                }
+            }, () => {
+                if (this.props.onHandleChangeValue) {
+                    this.props.onHandleChangeValue(this.state);
+                }
+            });
+
+            return;
+        }
 
         this.setState(previousState => {
             return {
@@ -225,13 +250,6 @@ class InsertOrUpadte extends Component {
                 [name]: value
             }
         }, () => {
-            if (name === 'districtId') {
-
-                const { getListWardByDistrict } = this.props;
-
-                getListWardByDistrict({ id: value });
-            }
-
             if (this.props.onHandleChangeValue) {
                 this.props.onHandleChangeValue(this.state);
             }
@@ -249,9 +267,9 @@ class InsertOrUpadte extends Component {
         }
     };
     onAddArea = () => {
-        const { provinceId, districtId, wardId, typeManage, popupMessage, errMessage } = this.state;
-        const { provinces, districts, wards } = this.props;
-        //console.log(districtId)
+        const { provinceId, wardId, typeManage } = this.state;
+        const { wards } = this.props;
+
         if (typeManage == 1) {
 
             this.setState({
@@ -272,48 +290,18 @@ class InsertOrUpadte extends Component {
             return;
         }
 
-        if (!districtId && (typeManage == 2 || typeManage == 3)) {
-
-            this.setState({
-                errMessageQH: 'Chưa chọn Quận/Huyện'
-            })
-            //this.toggleModal('popupMessage')
-            return;
-        }
-
-        if (districtId && (typeManage == 2
-            // || typeManage == 3
-        )) {
-            const checkDistrict = zones.filter(p => p.districtId == districtId).length > 0 ? false : true;
-
-            if (!checkDistrict) {
-                this.setState({
-                    errMessage: 'Khu vực này đã có'
-                })
-                this.toggleModal('popupMessage')
-                //alert('Bạn đã chọn Quận/Huyện này');
-
-                return;
-            }
-        }
-
-        if (!wardId && typeManage == 3) {
-
+        if (!wardId && typeManage == 2) {
 
             this.setState({
                 errMessagePX: 'Chưa chọn Phường/Xã'
             })
-            //this.toggleModal('popupMessage')
-            //alert('Bạn đã chọn Quận/Huyện này');
-
             return;
         }
 
-        if (districtId && typeManage == 2) {
+        if (wardId && typeManage == 2) {
             const checkWard = zones.filter(p => p.wardId == wardId).length > 0 ? false : true;
 
             if (!checkWard) {
-                //alert('Bạn đã chọn Phường/Xã này');
                 this.setState({
                     errMessage: 'Khu vực này đã có'
                 })
@@ -322,7 +310,7 @@ class InsertOrUpadte extends Component {
             }
         }
 
-        const province = provinces[0].find(p => p.id == provinceId);
+        const province = this.getProvinceOptions().find(p => p.id == provinceId);
         if (!province) {
 
             this.setState({
@@ -332,19 +320,9 @@ class InsertOrUpadte extends Component {
             return;
         }
 
-        const district = districts.find(p => p.id == districtId);
-
-        if (!district && (typeManage == 2 || typeManage == 3)) {
-            this.setState({
-                errMessage: 'Không tìm thấy Quận/Huyện này'
-            })
-            this.toggleModal('popupMessage')
-            return;
-        }
-
         const ward = wards.find(p => p.id == wardId);
 
-        if (!ward && typeManage == 3) {
+        if (!ward && typeManage == 2) {
             this.setState({
                 errMessage: 'Không tìm thấy Phường/Xã này'
             })
@@ -352,15 +330,13 @@ class InsertOrUpadte extends Component {
             return;
         }
 
-
-
         zones.push({
             id: Guid.create().toString(),
             wardId: (ward || {}).id || '',
-            districtId: (district || {}).id || '',
+            districtId: '',
             provinceId: (province || {}).id || '',
             wardName: (ward || {}).wardName || '',
-            districtName: (district || {}).districtName || '',
+            districtName: '',
             provinceName: province.provinceName
         });
 
@@ -369,7 +345,6 @@ class InsertOrUpadte extends Component {
                 ...previousState,
                 zones,
                 wardId: null,
-                //districtId: null
             }
         }, () => {
             if (this.props.onHandleChangeValue) {
@@ -422,15 +397,17 @@ class InsertOrUpadte extends Component {
     }
 
     render() {
-        const { isShowArea, name, provinceName, isDisableSelectDistrict, isDisableSelectWard, typeManage, zones, popupMessage, errMessage } = this.state;
-        const { errors, provinces, districts, wards } = this.props;
-        const districtFilters = zones.map(p => p.districtId);
+        const { isShowArea, name, provinceId, provinceName, isDisableSelectWard, typeManage, zones, popupMessage, errMessage } = this.state;
+        const { errors, wards } = this.props;
+        const provinceOptions = this.getProvinceOptions();
         const wardFilters = zones.map(p => p.wardId);
 
-        const _districts = districts.filter(p => districtFilters.filter(m => m == p.id).length === 0);
-        const _districtssort = _districts.sort((a, b) => a.districtName > b.districtName ? 1 : -1)
-
-        const _wards = wards.filter(p => wardFilters.filter(m => m == p.id).length === 0);
+        const _wards = wards.filter(p => {
+            if (wardFilters.filter(m => m == p.id).length !== 0) return false;
+            // Lọc phường/xã theo tỉnh đang chọn (nếu dữ liệu phường/xã có provinceID).
+            const pid = this.getWardProvinceId(p);
+            return !provinceId || pid == null || pid == provinceId;
+        });
         const _wardssort = _wards.sort((a, b) => a.wardName > b.wardName ? 1 : -1)
         //console.log(zones)
         return (
@@ -455,12 +432,8 @@ class InsertOrUpadte extends Component {
                             </div>
                             <div onClick={this.onChangeTypeManage(2)} className='wrap-insert-or-update-zone-item-check-item'>
                                 <input checked={typeManage == 2 ? true : false} className='wrap-insert-or-update-zone-item-check-item-radio' type='radio' name='typeManage' />
-                                <label className='wrap-insert-or-update-zone-item-check-item-label'>Quận/huyện</label>
-                            </div>
-                            {/* <div onClick={this.onChangeTypeManage(3)} className='wrap-insert-or-update-zone-item-check-item'>
-                                <input checked={typeManage == 3 ? true : false} className='wrap-insert-or-update-zone-item-check-item-radio' type='radio' name='typeManage' />
                                 <label className='wrap-insert-or-update-zone-item-check-item-label'>Phường/xã</label>
-                            </div> */}
+                            </div>
                         </div>
                         <p className='form-error-message'>{errors.manage || ''}</p>
                     </div>
@@ -470,11 +443,11 @@ class InsertOrUpadte extends Component {
                     <div className='wrap-insert-or-update-zone-item-box'>
                         <Select
                             labelMark={provinceName}
-                            isDisable={true}
+                            isDisable={false}
                             className='css-select-border'
                             name="provinceId"
                             title='Chọn Tỉnh/Thành'
-                            data={provinces}
+                            data={provinceOptions}
                             labelName='provinceName'
                             val='id'
                             handleChange={this.onChangeSelect('provinceId')}
@@ -483,40 +456,23 @@ class InsertOrUpadte extends Component {
                     </div>
                 </div>
                 <div className='wrap-insert-or-update-zone-item'>
-                    <label className='wrap-insert-or-update-zone-item-label'>Quận/Huyện &nbsp;<b style={{ color: 'red' }}>*</b></label>
-                    <div className='wrap-insert-or-update-zone-item-box'>
-                        <Select
-                            ref={ref => this.redSelect = ref}
-                            isDisable={isDisableSelectDistrict}
-                            className='css-select-border '
-                            name="districtId"
-                            title='Chọn Quận/Huyện'
-                            data={_districtssort}
-                            defaultValue={districtFilters[0]}
-                            labelName='districtName'
-                            val='id'
-                            handleChange={this.onChangeSelect('districtId')}
-                        />
-                        <p className='form-error-message'>{errors.districtId || ''}</p>
-                    </div>
-                </div>
-                {/* <div className='wrap-insert-or-update-zone-item'>
                     <label className='wrap-insert-or-update-zone-item-label'>Phường/Xã &nbsp;<b style={{ color: 'red' }}>*</b></label>
                     <div className='wrap-insert-or-update-zone-item-box'>
                         <Select
                             ref={ref => this.redSelect1 = ref}
                             isDisable={isDisableSelectWard}
-                            className='wrap-insert-or-update-zone-item-select'
+                            className='css-select-border '
                             name="wardId"
                             title='Chọn Phường/Xã'
                             data={_wardssort}
+                            defaultValue={wardFilters[0]}
                             labelName='wardName'
                             val='id'
                             handleChange={this.onChangeSelect('wardId')}
                         />
                         <p className='form-error-message'>{errors.wardId || ''}</p>
                     </div>
-                </div> */}
+                </div>
                 <div className='wrap-insert-or-update-zone-add'>
                     {typeManage != 1 ? (
                         <button onClick={this.onAddArea} className='wrap-insert-or-update-zone-add-button'>

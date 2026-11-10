@@ -115,6 +115,39 @@ export const areaDataAction = {
             });
         });
     },
+    // 2 cấp hành chính: Tỉnh/Thành -> Phường/Xã (districtId rỗng)
+    getListWardByProvince: data => async (dispatch, _) => {
+        dispatch({
+            type: AREA_CODE_FETCH_LIST_WARD_BY_DISTRICT_SUCCESS,
+            data: []
+        });
+
+        const url = AREA_CODE_WARD_BY_DISTRICT.replace('{0}', '');
+
+        return new Promise(resolve => {
+            get(url, data).then(res => {
+                dispatch({
+                    type: AREA_CODE_FETCH_LIST_WARD_BY_DISTRICT_SUCCESS,
+                    data: res.data || []
+                });
+
+                resolve({
+                    ok: true,
+                    data: res
+                });
+            }).catch(err => {
+                dispatch({
+                    type: AREA_CODE_FETCH_LIST_WARD_BY_DISTRICT_FAILURE,
+                    data: []
+                });
+
+                resolve({
+                    ok: false,
+                    data: err
+                });
+            });
+        });
+    },
     addArea: data => async (dispatch, _) => {
         return new Promise(resolve => {
             post(AREA_CODE_ADD, data).then(res => {
