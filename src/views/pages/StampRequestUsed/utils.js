@@ -205,16 +205,16 @@ const printTitle = (quantity) => `Danh sách mã tem. Số lượng: ${quantity}
 const splitStamps = (listStamp) =>
   (listStamp || "").split(";").filter((code) => code !== "");
 
-export const buildPrintList = ({ listStamp, quantity }) => ({
-  title: printTitle(quantity),
-  lines: splitStamps(listStamp),
-});
-
 const stampLabelFromValue = (value) => {
   const text = String(value || "");
   const match = text.match(/\/?\?qr=(.*)$/i);
   return match ? match[1] : text;
 };
+
+export const buildPrintList = ({ listStamp, quantity }) => ({
+  title: printTitle(quantity),
+  lines: splitStamps(listStamp).map(stampLabelFromValue),
+});
 
 export const buildPrintQR = ({ listStamp, quantity }) => {
   const codes = splitStamps(listStamp);
