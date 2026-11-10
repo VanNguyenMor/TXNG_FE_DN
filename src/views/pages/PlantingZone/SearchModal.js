@@ -21,7 +21,7 @@ class SearchModal extends Component {
 
 
     this.setState({ filter });
-    //getWardList(filter.districtID)
+    //getWardList('')
 
   }
 

@@ -297,7 +297,7 @@ class StampFeeList extends Component {
     filter[name] = value;
 
     this.setState({ filter });
-    getWardList(filter.districtID)
+    getWardList('')
   }
 
   componentWillMount() {

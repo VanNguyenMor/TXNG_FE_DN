@@ -514,7 +514,7 @@ class CompanyListRegistered extends Component {
     //const { getWardList } = this.props;
     filter[name] = value;
     this.setState({ filter });
-    //getWardList(filter.districtID)
+    //getWardList('')
 
   }
   handleSelectWard = (value, name) => {
@@ -522,7 +522,7 @@ class CompanyListRegistered extends Component {
     const { getWardList } = this.props;
     filter[name] = value;
     this.setState({ filter });
-    getWardList(filter.districtID)
+    getWardList('')
 
   }
   handleChangeFilter = (event) => {

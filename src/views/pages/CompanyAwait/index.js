@@ -692,7 +692,7 @@
 //     //const { getWardList } = this.props;
 //     filter[name] = value;
 //     this.setState({ filter });
-//     //getWardList(filter.districtID)
+//     //getWardList('')
 
 //   }
 
@@ -702,7 +702,7 @@
 //     filter[name] = value;
 
 //     this.setState({ filter });
-//     getWardList(filter.districtID);
+//     getWardList('');
 //   }
 
 //   handleCloseXEM = (value) => {
@@ -1958,7 +1958,7 @@ class CompanyAwait extends Component {
     //const { getWardList } = this.props;
     filter[name] = value;
     this.setState({ filter });
-    //getWardList(filter.districtID)
+    //getWardList('')
 
   }
 
@@ -1968,7 +1968,7 @@ class CompanyAwait extends Component {
     filter[name] = value;
 
     this.setState({ filter });
-    getWardList(filter.districtID);
+    getWardList('');
   }
 
   handleCloseXEM = (value) => {

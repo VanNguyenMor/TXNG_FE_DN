@@ -765,24 +765,12 @@ class CompanyAreaReports extends Component {
                                         handleChange={this.handleSelectField}
                                     />
                                 </div>
-                                <div style={{ marginRight: 4, display: 'flex', alignItems: 'center' }}>Quận/Huyện</div>
-                                <div style={{ marginTop: -4, marginRight: 8 }}>
-                                    <Select
-                                        ref={ref => this.redSelectDis = ref}
-                                        //name="status"
-                                        title='Chọn quận huyện'
-                                        data={district}
-                                        labelName='districtName'
-                                        val='id'
-                                        handleChange={this.handleSelectDis}
-                                    />
-                                </div>
                                 <div style={{ marginRight: 4, display: 'flex', alignItems: 'center' }}>Phường/Xã</div>
                                 <div style={{ marginTop: -4, marginLeft: 4 }}>
                                     <Select
                                         //name="status"
                                         title='Chọn phường xã'
-                                        isDisable={this.state.districtId ? false : true}
+                                        isDisable={false}
                                         ref={ref => this.redSelect = ref}
                                         data={ward}
                                         labelName='wardName'
